@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Phlebotomist Roster - Kulsum International Hospital</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --red:#C8102E;
+  --blue:#1E5BA8;
+  --red-dark:#a30d25;
+  --blue-dark:#164683;
+  --bg:#f2f4f7;
+  --card:#ffffff;
+  --text:#1c2430;
+  --muted:#65707d;
+  --border:#e1e5ea;
+  --success:#1f9d55;
+  --warn:#e0a800;
+  --danger:#c8102e;
+  --radius:12px;
+  --shadow:0 2px 10px rgba(20,30,50,.08);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Segoe UI",Roboto,Tahoma,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;}
+a{color:inherit;}
+.hidden{display:none !important;}
+.scroll-x{overflow-x:auto;}
+
+/* ===== Buttons ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:.15s;white-space:nowrap;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:var(--blue-dark);}
+.btn-red{background:var(--red);color:#fff;}
+.btn-red:hover{background:var(--red-dark);}
+.btn-outline{background:#fff;color:var(--blue);border:1.5px solid var(--blue);}
+.btn-outline:hover{background:#eef4fc;}
+.btn-ghost{background:transparent;color:var(--muted);}
+.btn-ghost:hover{background:#eceff2;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:5px 10px;font-size:12.5px;border-radius:6px;}
+.btn-block{width:100%;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.icon-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px 8px;border-radius:6px;}
+.icon-btn:hover{background:#eceff2;}
+
+/* ===== Layout shell ===== */
+#loginScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--red) 0%,var(--blue) 100%);
+  padding:16px;
+}
+.login-card{
+  background:#fff;border-radius:16px;width:100%;max-width:400px;
+  box-shadow:0 10px 40px rgba(0,0,0,.25);overflow:hidden;
+}
+.login-head{padding:28px 24px 16px;text-align:center;}
+.kih-logo{
+  width:64px;height:64px;border-radius:14px;margin:0 auto 10px;
+  background:linear-gradient(135deg,var(--red),var(--blue));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:22px;letter-spacing:1px;
+}
+.login-head h1{font-size:17px;margin:6px 0 2px;}
+.login-head p{font-size:12.5px;color:var(--muted);margin:0;}
+.login-tabs{display:flex;border-bottom:1px solid var(--border);}
+.login-tab{flex:1;text-align:center;padding:12px;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;}
+.login-tab.active{color:var(--blue);border-color:var(--blue);}
+.login-body{padding:22px 24px 26px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+.field input,.field select,.field textarea{
+  width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:#fbfcfd;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);background:#fff;}
+.login-err{color:var(--danger);font-size:12.5px;margin-top:6px;min-height:16px;}
+
+#app{display:none;min-height:100vh;}
+.topbar{
+  background:#fff;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:10px 18px;position:sticky;top:0;z-index:40;
+}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--blue);}
+.topbar .brand .kih-logo{width:36px;height:36px;font-size:13px;border-radius:9px;}
+.topbar-spacer{flex:1;}
+.topnav{display:flex;gap:2px;}
+.topnav button{
+  background:none;border:none;padding:9px 13px;border-radius:8px;font-size:13.5px;font-weight:600;
+  color:var(--muted);cursor:pointer;
+}
+.topnav button.active{background:#eaf1fb;color:var(--blue);}
+.badge-bell{position:relative;}
+.badge-bell .dot{
+  position:absolute;top:-2px;left:-2px;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+.userchip{display:flex;align-items:center;gap:8px;font-size:13px;}
+.userchip .av{
+  width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-weight:700;font-size:12px;
+}
+
+.main-wrap{max-width:1300px;margin:0 auto;padding:16px;padding-bottom:80px;}
+.section{display:none;}
+.section.active{display:block;}
+
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px;}
+.card h2{font-size:16px;margin:0 0 12px;color:var(--text);}
+.card h3{font-size:14px;margin:0 0 10px;}
+.grid{display:grid;gap:14px;}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
+
+.stat-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;border-inline-start:4px solid var(--blue);}
+.stat-card .num{font-size:26px;font-weight:800;}
+.stat-card .lbl{font-size:12.5px;color:var(--muted);}
+.stat-card.red{border-color:var(--red);}
+.stat-card.green{border-color:var(--success);}
+.stat-card.amber{border-color:var(--warn);}
+
+.mydata-banner{
+  background:linear-gradient(135deg,#eaf1fb,#fdeef0);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;
+}
+.mydata-banner h3{margin:0 0 8px;color:var(--blue-dark);font-size:14px;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{padding:8px 10px;border:1px solid var(--border);text-align:center;white-space:nowrap;}
+th{background:#f4f6f9;font-weight:700;}
+tr.mine td{background:#fff6e0;}
+.roster-table{font-size:12px;}
+.roster-table td.cellcode{cursor:pointer;font-weight:700;}
+.roster-table td.cellcode:hover{outline:2px solid var(--blue);}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;color:#fff;}
+.pill-pending{background:var(--warn);color:#3a2c00;}
+.pill-approved{background:var(--success);}
+.pill-rejected{background:var(--danger);}
+.pill-off{background:#8a8a8a;}
+.pill-gh{background:#6b3fa0;}
+
+.tabsbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.tabsbar button{
+  background:none;border:none;padding:9px 14px;font-weight:600;font-size:13px;color:var(--muted);
+  cursor:pointer;border-bottom:3px solid transparent;
+}
+.tabsbar button.active{color:var(--blue);border-color:var(--blue);}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.search-box{flex:1;min-width:160px;}
+.search-box input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;}
+
+.list-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);
+  border-radius:10px;margin-bottom:8px;background:#fff;flex-wrap:wrap;
+}
+.list-row .grow{flex:1;min-width:150px;}
+.list-row .name{font-weight:700;font-size:13.5px;}
+.list-row .sub{font-size:12px;color:var(--muted);}
+
+/* modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(15,20,30,.55);display:flex;align-items:flex-start;
+  justify-content:center;z-index:200;overflow-y:auto;padding:24px 12px;
+}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.modal-head{display:flex;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border);}
+.modal-head h3{margin:0;flex:1;font-size:15.5px;}
+.modal-body{padding:18px;max-height:70vh;overflow-y:auto;}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--border);}
+.modal-box.wide{max-width:1100px;}
+
+.dyn-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;padding:10px;background:#f8f9fb;border-radius:8px;}
+.dyn-row .field{margin:0;flex:1;min-width:120px;}
+
+.toast-wrap{position:fixed;top:14px;left:14px;z-index:400;display:flex;flex-direction:column;gap:8px;}
+.toast{
+  background:#242c38;color:#fff;padding:11px 16px;border-radius:9px;font-size:13.5px;box-shadow:0 6px 20px rgba(0,0,0,.3);
+  animation:toastIn .2s ease;max-width:320px;
+}
+.toast.success{background:#1f9d55;}
+.toast.error{background:#c8102e;}
+.toast.warn{background:#c98a00;}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
+.notif-panel{
+  position:fixed;top:56px;left:14px;width:330px;max-width:90vw;background:#fff;border-radius:12px;
+  box-shadow:0 12px 40px rgba(0,0,0,.25);z-index:150;max-height:70vh;overflow-y:auto;
+}
+.notif-item{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.notif-item.unread{background:#eef4fc;}
+.notif-item .t{font-weight:700;margin-bottom:2px;}
+.notif-item .b{color:var(--muted);font-size:12px;}
+.notif-item .ts{color:#9aa4af;font-size:10.5px;margin-top:3px;}
+
+/* bottom nav mobile */
+.bottomnav{
+  display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);
+  z-index:60;padding:4px 2px;
+}
+.bottomnav .bn-scroll{display:flex;overflow-x:auto;}
+.bottomnav button{
+  flex:0 0 auto;min-width:64px;background:none;border:none;display:flex;flex-direction:column;
+  align-items:center;gap:2px;padding:7px 6px;font-size:10px;color:var(--muted);cursor:pointer;
+}
+.bottomnav button .ic{font-size:18px;}
+.bottomnav button.active{color:var(--blue);font-weight:700;}
+
+@media(max-width:860px){
+  .topnav{display:none;}
+  .bottomnav{display:block;}
+  .main-wrap{padding-bottom:76px;}
+}
+
+.chat-wrap{display:flex;height:70vh;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.chat-side{width:220px;border-inline-end:1px solid var(--border);overflow-y:auto;background:#f8f9fb;}
+.chat-side .cuser{padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);}
+.chat-side .cuser.active{background:#eaf1fb;font-weight:700;}
+.chat-main{flex:1;display:flex;flex-direction:column;}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;background:#eef1f5;}
+.msg{max-width:70%;margin-bottom:8px;padding:8px 12px;border-radius:12px;font-size:13px;background:#fff;box-shadow:var(--shadow);}
+.msg.mine{margin-inline-start:auto;background:#dceafd;}
+.msg .sender{font-weight:700;font-size:11px;color:var(--blue);margin-bottom:2px;}
+.msg img{max-width:180px;border-radius:8px;display:block;margin-top:4px;}
+.msg .ts{font-size:9.5px;color:#8a95a2;margin-top:3px;}
+.chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:#fff;}
+.chat-input input[type=text]{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:20px;}
+@media(max-width:700px){.chat-side{width:130px;}}
+
+.settings-tab-content{margin-top:10px;}
+.color-swatch{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);display:inline-block;vertical-align:middle;margin-inline-end:6px;}
+
+.wizard-steps{display:flex;justify-content:space-between;margin-bottom:18px;}
+.wizard-steps .ws{flex:1;text-align:center;font-size:12px;color:var(--muted);padding-bottom:8px;border-bottom:3px solid var(--border);}
+.wizard-steps .ws.active{color:var(--blue);border-color:var(--blue);font-weight:700;}
+.wizard-steps .ws.done{color:var(--success);border-color:var(--success);}
+
+.warn-box{background:#fff6e0;border:1px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px;}
+.err-box{background:#fdeaea;border:1px solid var(--danger);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px;color:var(--red-dark);}
+.ok-box{background:#e9f9ee;border:1px solid var(--success);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px;color:#12703a;}
+
+.empty-state{text-align:center;padding:30px 10px;color:var(--muted);font-size:13.5px;}
+
+@media print{
+  .no-print{display:none !important;}
+  body{background:#fff;}
+  .main-wrap{padding:0;max-width:100%;}
+}
+.print-header{display:none;}
+@media print{
+  .print-header{display:block;text-align:center;margin-bottom:14px;}
+  .print-header h2{margin:2px 0;color:#000;}
+  .print-header p{margin:1px 0;font-size:12px;}
+}
+.cell-off,.cell-leave,.cell-gh,.cell-12,.cell-16{background:#111 !important;color:#fff !important;}
+</style>
+</head>
+<body>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="kih-logo">KIH</div>
+      <h1>Kulsum International Hospital</h1>
+      <p>Phlebotomy Department — Duty Roster</p>
+    </div>
+    <div class="login-tabs">
+      <div class="login-tab active" id="tabStaffBtn" onclick="switchLoginTab('staff')">Staff Login</div>
+      <div class="login-tab" id="tabAdminBtn" onclick="switchLoginTab('admin')">Admin Login</div>
+    </div>
+    <div class="login-body">
+      <div id="staffLoginForm">
+        <div class="field"><label>Mobile Number</label><input type="text" id="staffLoginMobile" placeholder="03XX-XXXXXXX" inputmode="numeric"></div>
+        <div class="field"><label>Password</label><input type="password" id="staffLoginPass" placeholder="Default 123456"></div>
+        <button class="btn btn-primary btn-block" onclick="doStaffLogin()">Login</button>
+      </div>
+      <div id="adminLoginForm" class="hidden">
+        <div class="field"><label>Username / Mobile</label><input type="text" id="adminLoginUser" placeholder="admin"></div>
+        <div class="field"><label>Password</label><input type="password" id="adminLoginPass" placeholder="Password"></div>
+        <button class="btn btn-red btn-block" onclick="doAdminLogin()">Login as Admin</button>
+      </div>
+      <div class="login-err" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="app">
+  <div class="topbar no-print">
+    <div class="brand"><div class="kih-logo">KIH</div><span id="brandTitle">Phlebotomist Roster</span></div>
+    <div class="topnav" id="topNav"></div>
+    <div class="topbar-spacer"></div>
+    <button class="icon-btn badge-bell" onclick="toggleNotifPanel()">🔔<span class="dot hidden" id="bellDot">0</span></button>
+    <button class="icon-btn" onclick="openChat()">💬</button>
+    <div class="userchip"><div class="av" id="userAv">?</div><span id="userNameChip"></span></div>
+    <button class="icon-btn" onclick="logout()" title="Logout">⏻</button>
+  </div>
+
+  <div class="notif-panel hidden no-print" id="notifPanel"></div>
+
+  <div class="main-wrap">
+
+    <!-- DASHBOARD -->
+    <div class="section" id="sec-dashboard">
+      <div class="print-header"><h2>Kulsum International Hospital</h2><p>Phlebotomy Department</p></div>
+      <div class="mydata-banner" id="myDataDashboard"></div>
+      <div class="grid grid-4" id="dashStats"></div>
+      <div class="card" id="pendingApprovalsCard"></div>
+      <div class="card">
+        <h2>Today's Duty (All Staff)</h2>
+        <div class="scroll-x"><table id="todayDutyTable"><thead><tr><th>Name</th><th>Designation</th><th>Shift</th><th>Time</th><th>Station</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- STAFF MANAGEMENT -->
+    <div class="section" id="sec-staff">
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0;flex:1;">Staff Management</h2>
+          <button class="btn btn-primary" id="addStaffBtn" onclick="openStaffModal()">+ Add Staff</button>
+        </div>
+        <div class="tabsbar">
+          <button class="active" onclick="switchStaffTab('active',this)">Active</button>
+          <button onclick="switchStaffTab('archived',this)">Archived</button>
+        </div>
+        <div class="toolbar"><div class="search-box"><input type="text" id="staffSearch" placeholder="Search by name, mobile, employee ID..." oninput="renderStaffList()"></div></div>
+        <div id="staffListWrap"></div>
+      </div>
+    </div>
+
+    <!-- ROSTER -->
+    <div class="section" id="sec-roster">
+      <div class="print-header"><h2>Kulsum International Hospital — Phlebotomy Department</h2><p id="rosterPrintPeriod"></p></div>
+      <div class="card no-print">
+        <div class="toolbar">
+          <h2 style="margin:0;flex:1;">Duty Roster</h2>
+          <select id="periodSelect" onchange="onPeriodChange()"></select>
+          <button class="btn btn-primary" onclick="openAutoGenWizard()">⚙ Auto Generate</button>
+          <button class="btn btn-outline" onclick="exportRosterExcel()">⬇ Excel</button>
+          <button class="btn btn-outline" onclick="window.print()">🖨 Print</button>
+        </div>
+      </div>
+      <div class="card" id="myDataRosterWrap"></div>
+      <div class="card"><div class="scroll-x"><table class="roster-table" id="rosterTable"></table></div></div>
+      <div class="card no-print" id="rosterSummaryCard"></div>
+    </div>
+
+    <!-- LEAVE MANAGEMENT -->
+    <div class="section" id="sec-leave">
+      <div class="mydata-banner" id="myDataLeave"></div>
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0;flex:1;">Leave Management</h2>
+          <button class="btn btn-primary" onclick="openLeaveModal()">+ Add Leave / OFF</button>
+        </div>
+        <div class="tabsbar">
+          <button class="active" onclick="switchLeaveTab('pending',this)">Pending Approvals</button>
+          <button onclick="switchLeaveTab('all',this)">All Records</button>
+        </div>
+        <div id="leaveListWrap"></div>
+      </div>
+    </div>
+
+    <!-- SHIFT EXCHANGE -->
+    <div class="section" id="sec-exchange">
+      <div class="mydata-banner" id="myDataExchange"></div>
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0;flex:1;">Shift Exchange & Duty Change</h2>
+          <button class="btn btn-primary" id="newExchangeBtn" onclick="openExchangeModal()">+ New Exchange Request</button>
+        </div>
+        <div class="tabsbar">
+          <button class="active" onclick="switchExchTab('pending',this)">Pending</button>
+          <button onclick="switchExchTab('duty',this)">Duty Change Requests</button>
+          <button onclick="switchExchTab('all',this)">All</button>
+        </div>
+        <div id="exchangeListWrap"></div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="section" id="sec-reports">
+      <div class="mydata-banner" id="myDataReports"></div>
+      <div class="card">
+        <h2>Reports</h2>
+        <div class="tabsbar">
+          <button class="active" onclick="switchReportTab('daily',this)">Daily Duty</button>
+          <button onclick="switchReportTab('monthly',this)">Monthly Summary</button>
+          <button onclick="switchReportTab('cpl',this)">CPL/Overtime</button>
+          <button onclick="switchReportTab('leave',this)">Leave Report</button>
+          <button onclick="switchReportTab('seen',this)">Roster Seen</button>
+          <button onclick="switchReportTab('audit',this)">Audit Log</button>
+        </div>
+        <div class="toolbar no-print">
+          <button class="btn btn-outline btn-sm" onclick="exportReportExcel()">⬇ Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print/PDF</button>
+        </div>
+        <div id="reportContentWrap"></div>
+      </div>
+    </div>
+
+    <!-- CHAT (also opened as floating panel) -->
+    <div class="section" id="sec-chat">
+      <div class="card">
+        <h2>Chat</h2>
+        <div class="chat-wrap">
+          <div class="chat-side" id="chatSide"></div>
+          <div class="chat-main">
+            <div class="chat-msgs" id="chatMsgs"></div>
+            <div class="chat-input">
+              <input type="file" id="chatImgInput" accept="image/*" class="hidden" onchange="sendChatImage()">
+              <button class="icon-btn" onclick="document.getElementById('chatImgInput').click()">📷</button>
+              <input type="text" id="chatTextInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChatText();">
+              <button class="btn btn-primary btn-sm" onclick="sendChatText()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECHNOLOGIST (separate module) -->
+    <div class="section" id="sec-tech">
+      <div class="card">
+        <div class="toolbar"><h2 style="margin:0;flex:1;">Technologist Roster (Separate Module)</h2>
+          <button class="btn btn-primary" onclick="openTechStaffModal()">+ Add Technologist</button>
+          <button class="btn btn-outline" onclick="exportTechExcel()">⬇ Excel</button>
+        </div>
+        <div class="tabsbar">
+          <button class="active" onclick="switchTechTab('staff',this)">Staff</button>
+          <button onclick="switchTechTab('roster',this)">Roster</button>
+          <button onclick="switchTechTab('reports',this)">Reports</button>
+          <button onclick="switchTechTab('chat',this)">Chat</button>
+        </div>
+        <div id="techContentWrap"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="sec-settings">
+      <div class="card">
+        <h2>Settings</h2>
+        <div class="tabsbar" id="settingsTabsBar">
+          <button class="active" onclick="switchSettingsTab('general',this)">General</button>
+          <button onclick="switchSettingsTab('shifts',this)">Shift Timings</button>
+          <button onclick="switchSettingsTab('weekly',this)">Weekly Setup</button>
+          <button onclick="switchSettingsTab('stations',this)">Stations</button>
+          <button onclick="switchSettingsTab('holidays',this)">Gazetted Holidays</button>
+          <button onclick="switchSettingsTab('leavetypes',this)">Leave Types</button>
+          <button onclick="switchSettingsTab('limits',this)">Daily Leave Limits</button>
+          <button onclick="switchSettingsTab('colors',this)">Colors</button>
+          <button onclick="switchSettingsTab('users',this)">Login Credentials</button>
+        </div>
+        <div class="settings-tab-content" id="settingsContentWrap"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottomnav no-print"><div class="bn-scroll" id="bottomNav"></div></div>
+</div>
+
+<!-- Generic Modal Root -->
+<div id="modalRoot"></div>
+
+<script>
+/* =========================================================================
+   FIREBASE CONFIG & INIT
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyB4uyNiVe5CQ-vAZalcYpQxz2XCq4XY17o",
+  authDomain: "phlebotomy-roster-f618f.firebaseapp.com",
+  databaseURL: "https://phlebotomy-roster-f618f-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "phlebotomy-roster-f618f",
+  storageBucket: "phlebotomy-roster-f618f.firebasestorage.app",
+  messagingSenderId: "433203658029",
+  appId: "1:433203658029:web:bf2a31f75f4c3273df27a4"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
+
+/* =========================================================================
+   GLOBAL STATE
+   ========================================================================= */
+let CURRENT_USER = null;     // { uid, name, mobile, role: 'admin'|'staff', staffId }
+let CURRENT_STAFF = null;    // full staff record if role === staff
+let STATE = {
+  staff:{}, techStaff:{}, users:{}, settings:{}, shifts:{}, weeklySetup:{}, leaveLimits:{},
+  leaveTypes:["OFF","EL","CPL","CL","GH","SL","AL","ML"], stations:{}, holidays:{},
+  periods:{}, roster:{}, techRoster:{}, leaves:{}, exchanges:{}, dutyChangeRequests:{},
+  chatGroup:{}, chatIndividual:{}, notifications:{}, auditLog:{}, currentPeriodId:null
+};
+let activeSection = 'dashboard';
+let chatActivePeer = 'group';
+
+const DEFAULT_SHIFTS = {
+  M:{code:"M",name:"Morning",start:"07:00",end:"15:30",monSat:true,sun:false,station:"Any",gender:"Any",color:"#1E5BA8"},
+  E:{code:"E",name:"Evening",start:"15:00",end:"23:00",monSat:true,sun:true,station:"Any",gender:"Any",color:"#C8102E"},
+  E4:{code:"E4",name:"Evening4",start:"16:00",end:"00:00",monSat:true,sun:false,station:"Any",gender:"Male",color:"#a0522d"},
+  N12:{code:"N12",name:"Night12",start:"00:00",end:"08:00",monSat:true,sun:false,station:"Basement",gender:"Male",color:"#333333"},
+  N:{code:"N",name:"Night",start:"23:00",end:"07:00",monSat:false,sun:true,station:"Basement",gender:"Male",color:"#555555"},
+  D:{code:"D",name:"Day-Gynee",start:"09:00",end:"21:00",monSat:true,sun:false,station:"Gynee",gender:"Female",color:"#8a3fa0"},
+  X:{code:"X",name:"Extra",start:"",end:"",monSat:true,sun:false,station:"Any",gender:"Any",color:"#888888"}
+};
+const DEFAULT_WEEKLY = {
+  Monday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1}, Tuesday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
+  Wednesday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1}, Thursday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
+  Friday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1}, Saturday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
+  Sunday:{M:2,E:2,E4:0,N12:0,N:1,D:0,X:0}, Holiday:{M:2,E:2,E4:0,N12:0,N:1,D:0,X:0}
+};
+const DEFAULT_LEAVE_LIMITS = {
+  Monday:{OFF:2,Leave:1}, Tuesday:{OFF:2,Leave:1}, Wednesday:{OFF:2,Leave:1}, Thursday:{OFF:2,Leave:1},
+  Friday:{OFF:2,Leave:1}, Saturday:{OFF:2,Leave:1}, Sunday:{OFF:7,Leave:0}, Holiday:{OFF:7,Leave:0}
+};
+const DEFAULT_STATIONS = {
+  firstfloor:{name:"First Floor",weekday:{M:2,E:2},sunday:{M:1,E:1}},
+  basement:{name:"Basement",weekday:{M:1,E:1,N12:1},sunday:{M:1,E:1,N:1}},
+  diagnostic:{name:"Diagnostic",weekday:{M:1,E:1},sunday:{}},
+  gynee:{name:"Gynee",weekday:{D:1},sunday:{}}
+};
+const DEFAULT_HOLIDAYS_2026 = {
+  "2026-02-05":"Kashmir Solidarity Day","2026-03-23":"Pakistan Day","2026-03-21":"Eid-ul-Fitr (Tentative)",
+  "2026-05-01":"Labour Day","2026-05-28":"Eid-ul-Azha (Tentative)","2026-08-14":"Independence Day",
+  "2026-09-05":"Defence Day","2026-11-09":"Iqbal Day","2026-12-25":"Quaid-e-Azam Day"
+};
+const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+/* =========================================================================
+   UTILITIES
+   ========================================================================= */
+function $(id){return document.getElementById(id);}
+function uid(){return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function nowTs(){return Date.now();}
+function fmtDate(d){ // yyyy-mm-dd -> dd-mm-yyyy
+  if(!d) return '';
+  const p=d.split('-'); return p.length===3? `${p[2]}-${p[1]}-${p[0]}` : d;
+}
+function todayStr(){const d=new Date(); return d.toISOString().slice(0,10);}
+function addDays(dateStr,n){const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10);}
+function dateRange(start,end){const out=[]; let cur=start; let guard=0; while(cur<=end && guard<400){out.push(cur); cur=addDays(cur,1); guard++;} return out;}
+function dayNameFor(dateStr){ if(STATE.holidays[dateStr]) return 'Holiday'; const d=new Date(dateStr+'T00:00:00'); return WEEKDAY_NAMES[d.getDay()]; }
+function isSunday(dateStr){const d=new Date(dateStr+'T00:00:00'); return d.getDay()===0;}
+function isHolidayOrSunday(dateStr){return isSunday(dateStr) || !!STATE.holidays[dateStr];}
+function escapeHtml(s){ if(s===undefined||s===null) return ''; return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg,type){
+  const wrap=$('toastWrap'); const el=document.createElement('div');
+  el.className='toast'+(type?(' '+type):''); el.textContent=msg;
+  wrap.appendChild(el); setTimeout(()=>el.remove(),4200);
+}
+function objToArr(obj){ if(!obj) return []; return Object.keys(obj).map(k=>({_id:k,...obj[k]})); }
+function findStaff(staffId){return STATE.staff[staffId]||null;}
+function staffName(staffId){const s=findStaff(staffId); return s? s.name : '(deleted)';}
+function activeStaffArr(){return objToArr(STATE.staff).filter(s=>!s.archived);}
+function isSupervisor(){return CURRENT_USER && (CURRENT_USER.role==='admin' || (CURRENT_STAFF && CURRENT_STAFF.isSupervisor));}
+function isAdmin(){return CURRENT_USER && CURRENT_USER.role==='admin';}
+
+/* Audit log */
+function logAudit(action,details){
+  const entry={ts:nowTs(), user:CURRENT_USER? CURRENT_USER.name:'system', role:CURRENT_USER?CURRENT_USER.role:'system', action, details: details||''};
+  db.ref('auditLog/'+uid()).set(entry);
+}
+
+/* Notifications */
+function pushNotification(targetStaffId,title,body){
+  const n={ts:nowTs(), title, body, target: targetStaffId || 'all', read:false};
+  db.ref('notifications/'+uid()).set(n);
+}
+function whatsappLink(mobile,text){
+  let m=(mobile||'').replace(/[^0-9]/g,'');
+  if(m.startsWith('0')) m='92'+m.slice(1);
+  return `https://wa.me/${m}?text=${encodeURIComponent(text)}`;
+}
+
+/* =========================================================================
+   LOGIN / AUTH
+   ========================================================================= */
+function switchLoginTab(tab){
+  $('tabStaffBtn').classList.toggle('active',tab==='staff');
+  $('tabAdminBtn').classList.toggle('active',tab==='admin');
+  $('staffLoginForm').classList.toggle('hidden',tab!=='staff');
+  $('adminLoginForm').classList.toggle('hidden',tab!=='admin');
+  $('loginErr').textContent='';
+}
+function normalizeMobile(m){return (m||'').replace(/[\s-]/g,'');}
+
+function doAdminLogin(){
+  const u=normalizeMobile($('adminLoginUser').value.trim());
+  const p=$('adminLoginPass').value;
+  $('loginErr').textContent='';
+  db.ref('users').once('value').then(snap=>{
+    const users=snap.val()||{};
+    let found=null,fid=null;
+    Object.keys(users).forEach(k=>{
+      const usr=users[k];
+      if(usr.role==='admin' && (usr.name===u || normalizeMobile(usr.mobile)===u) && usr.password===p){found=usr; fid=k;}
+    });
+    // fallback bootstrap default admin if none exists yet
+    if(!found && Object.keys(users).filter(k=>users[k].role==='admin').length===0 && u==='admin' && p==='admin123'){
+      const newAdmin={name:'admin',mobile:'admin',password:'admin123',role:'admin'};
+      db.ref('users/'+uid()).set(newAdmin).then(()=>doAdminLogin())
+        .catch(err=>{ $('loginErr').textContent='Firebase Error: '+err.message+' (Database Rules چیک کریں)'; console.error(err); });
+      return;
+    }
+    if(found){
+      CURRENT_USER={uid:fid,name:found.name||'Admin',mobile:found.mobile,role:'admin',staffId:found.staffId||null};
+      afterLoginSuccess();
+    } else {
+      $('loginErr').textContent='غلط یوزرنیم یا پاسورڈ (Invalid username or password)';
+    }
+  }).catch(err=>{
+    $('loginErr').textContent='Firebase Error: '+err.message+' — Database Rules میں Read/Write کی اجازت چیک کریں';
+    console.error('Firebase login error:',err);
+  });
+}
+function doStaffLogin(){
+  const m=normalizeMobile($('staffLoginMobile').value.trim());
+  const p=$('staffLoginPass').value;
+  $('loginErr').textContent='';
+  db.ref('users').once('value').then(snap=>{
+    const users=snap.val()||{};
+    let found=null,fid=null;
+    Object.keys(users).forEach(k=>{
+      const usr=users[k];
+      if(usr.role==='staff' && normalizeMobile(usr.mobile)===m && usr.password===p){found=usr; fid=k;}
+    });
+    if(found){
+      CURRENT_USER={uid:fid,name:found.name,mobile:found.mobile,role:'staff',staffId:found.staffId};
+      afterLoginSuccess();
+    } else {
+      $('loginErr').textContent='غلط موبائل نمبر یا پاسورڈ (Invalid mobile or password)';
+    }
+  }).catch(err=>{
+    $('loginErr').textContent='Firebase Error: '+err.message+' — Database Rules میں Read/Write کی اجازت چیک کریں';
+    console.error('Firebase login error:',err);
+  });
+}
+function afterLoginSuccess(){
+  logAudit('Login','User logged in: '+CURRENT_USER.name+' ('+CURRENT_USER.role+')');
+  $('loginScreen').style.display='none';
+  $('app').style.display='block';
+  $('userNameChip').textContent=CURRENT_USER.name;
+  $('userAv').textContent=(CURRENT_USER.name||'?').slice(0,1).toUpperCase();
+  history.pushState({view:'dashboard'},'','');
+  bootDataListeners();
+}
+function logout(){
+  logAudit('Logout','User logged out: '+(CURRENT_USER?CURRENT_USER.name:''));
+  CURRENT_USER=null; CURRENT_STAFF=null;
+  $('app').style.display='none';
+  $('loginScreen').style.display='flex';
+  $('staffLoginMobile').value=''; $('staffLoginPass').value='';
+  $('adminLoginUser').value=''; $('adminLoginPass').value='';
+}
+</script>
+<script>
+/* =========================================================================
+   DATA BOOTSTRAP & LIVE LISTENERS
+   ========================================================================= */
+function bootDataListeners(){
+  db.ref('settings').once('value').then(s=>{
+    if(!s.exists()){
+      db.ref('settings').set({hospital:"Kulsum International Hospital",department:"Phlebotomy",
+        address:"Islamabad", whatsapp:"", periodStartDay:26, periodEndDay:25, redColor:"#C8102E", blueColor:"#1E5BA8"});
+    }
+  });
+  db.ref('shifts').once('value').then(s=>{ if(!s.exists()) db.ref('shifts').set(DEFAULT_SHIFTS); });
+  db.ref('weeklySetup').once('value').then(s=>{ if(!s.exists()) db.ref('weeklySetup').set(DEFAULT_WEEKLY); });
+  db.ref('leaveLimits').once('value').then(s=>{ if(!s.exists()) db.ref('leaveLimits').set(DEFAULT_LEAVE_LIMITS); });
+  db.ref('leaveTypes').once('value').then(s=>{ if(!s.exists()) db.ref('leaveTypes').set(STATE.leaveTypes); });
+  db.ref('stations').once('value').then(s=>{ if(!s.exists()) db.ref('stations').set(DEFAULT_STATIONS); });
+  db.ref('holidays').once('value').then(s=>{ if(!s.exists()) db.ref('holidays').set(DEFAULT_HOLIDAYS_2026); });
+
+  db.ref('staff').on('value',s=>{STATE.staff=s.val()||{}; if(CURRENT_USER && CURRENT_USER.role==='staff') CURRENT_STAFF=STATE.staff[CURRENT_USER.staffId]; renderCurrentSection();});
+  db.ref('techStaff').on('value',s=>{STATE.techStaff=s.val()||{}; renderCurrentSection();});
+  db.ref('users').on('value',s=>{STATE.users=s.val()||{}; renderCurrentSection();});
+  db.ref('settings').on('value',s=>{STATE.settings=s.val()||{}; applyBrandSettings(); renderCurrentSection();});
+  db.ref('shifts').on('value',s=>{STATE.shifts=s.val()||DEFAULT_SHIFTS; renderCurrentSection();});
+  db.ref('weeklySetup').on('value',s=>{STATE.weeklySetup=s.val()||DEFAULT_WEEKLY; renderCurrentSection();});
+  db.ref('leaveLimits').on('value',s=>{STATE.leaveLimits=s.val()||DEFAULT_LEAVE_LIMITS; renderCurrentSection();});
+  db.ref('leaveTypes').on('value',s=>{STATE.leaveTypes=s.val()||STATE.leaveTypes; renderCurrentSection();});
+  db.ref('stations').on('value',s=>{STATE.stations=s.val()||DEFAULT_STATIONS; renderCurrentSection();});
+  db.ref('holidays').on('value',s=>{STATE.holidays=s.val()||{}; renderCurrentSection();});
+  db.ref('periods').on('value',s=>{STATE.periods=s.val()||{}; ensureCurrentPeriod(); renderCurrentSection();});
+  db.ref('roster').on('value',s=>{STATE.roster=s.val()||{}; renderCurrentSection();});
+  db.ref('techRoster').on('value',s=>{STATE.techRoster=s.val()||{}; renderCurrentSection();});
+  db.ref('leaves').on('value',s=>{STATE.leaves=s.val()||{}; renderCurrentSection();});
+  db.ref('exchanges').on('value',s=>{STATE.exchanges=s.val()||{}; renderCurrentSection();});
+  db.ref('dutyChangeRequests').on('value',s=>{STATE.dutyChangeRequests=s.val()||{}; renderCurrentSection();});
+  db.ref('chat/group').on('value',s=>{STATE.chatGroup=s.val()||{}; if(activeSection==='chat')renderChat();});
+  db.ref('chat/individual').on('value',s=>{STATE.chatIndividual=s.val()||{}; if(activeSection==='chat')renderChat();});
+  db.ref('auditLog').on('value',s=>{STATE.auditLog=s.val()||{}; renderCurrentSection();});
+  db.ref('notifications').on('value',s=>{STATE.notifications=s.val()||{}; renderNotifBell();});
+
+  buildNav();
+  showSection('dashboard');
+}
+function applyBrandSettings(){
+  if(STATE.settings.hospital) $('brandTitle').textContent='Phlebotomist Roster';
+  const r=STATE.settings.redColor||'#C8102E', b=STATE.settings.blueColor||'#1E5BA8';
+  document.documentElement.style.setProperty('--red',r);
+  document.documentElement.style.setProperty('--blue',b);
+}
+function ensureCurrentPeriod(){
+  const arr=objToArr(STATE.periods).sort((a,b)=>b.start.localeCompare(a.start));
+  if(arr.length && !STATE.currentPeriodId){ STATE.currentPeriodId=arr[0]._id; }
+  if(!arr.length){ STATE.currentPeriodId=null; }
+}
+
+/* =========================================================================
+   NAVIGATION
+   ========================================================================= */
+const NAV_ITEMS=[
+  {id:'dashboard',label:'Dashboard',ic:'🏠'},
+  {id:'roster',label:'Roster',ic:'📅'},
+  {id:'staff',label:'Staff',adminOnly:true,ic:'👥'},
+  {id:'leave',label:'Leave',ic:'📝'},
+  {id:'exchange',label:'Exchange',ic:'🔄'},
+  {id:'chat',label:'Chat',ic:'💬'},
+  {id:'reports',label:'Reports',ic:'📊'},
+  {id:'tech',label:'Technologist',ic:'🧪'},
+  {id:'settings',label:'Settings',adminOnly:true,ic:'⚙️'}
+];
+function buildNav(){
+  const items=NAV_ITEMS.filter(n=> !n.adminOnly || isAdmin());
+  $('topNav').innerHTML=items.map(n=>`<button data-sec="${n.id}" onclick="showSection('${n.id}')">${n.label}</button>`).join('');
+  $('bottomNav').innerHTML=items.map(n=>`<button data-sec="${n.id}" onclick="showSection('${n.id}')"><span class="ic">${n.ic}</span>${n.label}</button>`).join('');
+}
+function showSection(sec,pushHist){
+  activeSection=sec;
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  const el=$('sec-'+sec); if(el) el.classList.add('active');
+  document.querySelectorAll('#topNav button,#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.sec===sec));
+  if(pushHist!==false) history.pushState({view:sec},'','');
+  closeNotifPanel();
+  renderCurrentSection();
+  if(sec==='roster') markRosterSeen();
+  if(sec==='chat') renderChat();
+}
+function renderCurrentSection(){
+  if(!CURRENT_USER) return;
+  try{
+    if(activeSection==='dashboard') renderDashboard();
+    else if(activeSection==='staff') renderStaffList();
+    else if(activeSection==='roster') renderRosterSection();
+    else if(activeSection==='leave') renderLeaveSection();
+    else if(activeSection==='exchange') renderExchangeSection();
+    else if(activeSection==='reports') renderReportsSection();
+    else if(activeSection==='settings') renderSettingsSection();
+    else if(activeSection==='tech') renderTechSection();
+  }catch(e){console.error(e);}
+}
+window.addEventListener('popstate',(e)=>{
+  // Back button handling per spec: modal>chat panel>section>dashboard; never logout
+  if(document.querySelector('.modal-overlay')){ closeModal(); history.pushState({view:activeSection},'',''); return; }
+  if(!$('notifPanel').classList.contains('hidden')){ closeNotifPanel(); history.pushState({view:activeSection},'',''); return; }
+  if(activeSection!=='dashboard'){ showSection('dashboard',false); history.pushState({view:'dashboard'},'',''); return; }
+  history.pushState({view:'dashboard'},''); // stay, block exit
+});
+
+/* =========================================================================
+   MODAL HELPERS
+   ========================================================================= */
+function openModal(title,bodyHtml,footHtml,wide){
+  $('modalRoot').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box ${wide?'wide':''}">
+      <div class="modal-head"><h3>${title}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+      <div class="modal-body">${bodyHtml}</div>
+      <div class="modal-foot">${footHtml||''}</div>
+    </div>
+  </div>`;
+}
+function closeModal(){$('modalRoot').innerHTML='';}
+
+/* =========================================================================
+   NOTIFICATIONS UI
+   ========================================================================= */
+function toggleNotifPanel(){ $('notifPanel').classList.contains('hidden')? openNotifPanel(): closeNotifPanel(); }
+function openNotifPanel(){
+  const arr=objToArr(STATE.notifications).filter(n=> n.target==='all' || n.target===(CURRENT_STAFF? CURRENT_USER.staffId : null) || (isAdmin()&&n.target==='admin'))
+    .sort((a,b)=>b.ts-a.ts).slice(0,40);
+  $('notifPanel').innerHTML = arr.length? arr.map(n=>`
+    <div class="notif-item ${n.read?'':'unread'}">
+      <div class="t">${escapeHtml(n.title)}</div>
+      <div class="b">${escapeHtml(n.body)}</div>
+      <div class="ts">${new Date(n.ts).toLocaleString()}</div>
+    </div>`).join('') : `<div class="empty-state">کوئی Notification نہیں</div>`;
+  $('notifPanel').classList.remove('hidden');
+  arr.forEach(n=>{ if(!n.read) db.ref('notifications/'+n._id+'/read').set(true); });
+}
+function closeNotifPanel(){$('notifPanel').classList.add('hidden');}
+function renderNotifBell(){
+  const arr=objToArr(STATE.notifications).filter(n=> !n.read && (n.target==='all' || n.target===(CURRENT_USER&&CURRENT_USER.staffId) || (isAdmin()&&n.target==='admin')));
+  const dot=$('bellDot'); if(!dot) return;
+  if(arr.length){dot.textContent=arr.length>9?'9+':arr.length; dot.classList.remove('hidden');} else {dot.classList.add('hidden');}
+}
+</script>
+<script>
+/* =========================================================================
+   STAFF MANAGEMENT
+   ========================================================================= */
+let staffTabView='active';
+function switchStaffTab(tab,btn){
+  staffTabView=tab;
+  document.querySelectorAll('#sec-staff .tabsbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStaffList();
+}
+function renderStaffList(){
+  const q=($('staffSearch')?$('staffSearch').value:'').trim().toLowerCase();
+  let arr=objToArr(STATE.staff).filter(s=> staffTabView==='active'? !s.archived : !!s.archived);
+  if(q) arr=arr.filter(s=> (s.name||'').toLowerCase().includes(q) || (s.mobile||'').includes(q) || (s.empId||'').toLowerCase().includes(q));
+  arr.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  // my data first
+  if(!isAdmin() && CURRENT_USER && CURRENT_USER.staffId){
+    arr.sort((a,b)=> (a._id===CURRENT_USER.staffId?-1:0) - (b._id===CURRENT_USER.staffId?-1:0));
+  }
+  const wrap=$('staffListWrap');
+  if(!arr.length){wrap.innerHTML='<div class="empty-state">کوئی Staff نہیں ملا</div>'; return;}
+  wrap.innerHTML=arr.map(s=>`
+    <div class="list-row ${s._id===(CURRENT_USER&&CURRENT_USER.staffId)?'mine':''}">
+      <div class="av" style="width:34px;height:34px;border-radius:50%;background:${s.gender==='Female'?'#8a3fa0':'#1E5BA8'};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">${(s.name||'?').slice(0,1)}</div>
+      <div class="grow">
+        <div class="name">${escapeHtml(s.name)} ${s.isSupervisor?'<span class="pill" style="background:#6b3fa0;">Supervisor</span>':''}</div>
+        <div class="sub">${escapeHtml(s.designation||'')} • ${escapeHtml(s.mobile||'')} • ID: ${escapeHtml(s.empId||'')} • ${escapeHtml(s.gender||'')} ${s.fixedShift? ' • Fixed: '+s.fixedShift : (s.multiShifts&&s.multiShifts.length? ' • Shifts: '+s.multiShifts.join(','):'')}</div>
+      </div>
+      ${isAdmin()? `
+        <button class="btn btn-outline btn-sm" onclick='openStaffModal(${JSON.stringify(s._id)})'>Edit</button>
+        ${s.archived? `<button class="btn btn-success btn-sm" onclick="restoreStaff('${s._id}')">Restore</button>` :
+          `<button class="btn btn-danger btn-sm" onclick="archiveStaff('${s._id}')">Archive</button>`}
+      `:''}
+    </div>`).join('');
+}
+function openStaffModal(staffId){
+  const s = staffId? STATE.staff[staffId] : {name:'',gender:'Male',mobile:'',designation:'',empId:'',fixedShift:'',multiShifts:[],specialOffDates:[],password:'123456',isSupervisor:false};
+  const shiftOpts=Object.keys(STATE.shifts||DEFAULT_SHIFTS);
+  const body=`
+    <div class="grid grid-2">
+      <div class="field"><label>Name *</label><input id="stf_name" value="${escapeHtml(s.name)}"></div>
+      <div class="field"><label>Gender *</label><select id="stf_gender"><option ${s.gender==='Male'?'selected':''}>Male</option><option ${s.gender==='Female'?'selected':''}>Female</option></select></div>
+      <div class="field"><label>Mobile *</label><input id="stf_mobile" value="${escapeHtml(s.mobile)}" placeholder="03XXXXXXXXX"></div>
+      <div class="field"><label>Designation *</label><input id="stf_desig" value="${escapeHtml(s.designation)}" placeholder="Phlebotomist"></div>
+      <div class="field"><label>Employee ID *</label><input id="stf_empid" value="${escapeHtml(s.empId)}"></div>
+      <div class="field"><label>Password</label><input id="stf_pass" value="${escapeHtml(s.password||'123456')}"></div>
+    </div>
+    <div class="field"><label>Fixed Shift (optional)</label>
+      <select id="stf_fixed"><option value="">-- None --</option>${shiftOpts.map(c=>`<option value="${c}" ${s.fixedShift===c?'selected':''}>${c}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Multiple Shifts (priority order, comma separated e.g. M,E,X)</label>
+      <input id="stf_multi" value="${(s.multiShifts||[]).join(',')}" placeholder="M,E,X">
+    </div>
+    <div class="field"><label>Special Off Dates (comma separated yyyy-mm-dd, optional period note)</label>
+      <input id="stf_specialoff" value="${(s.specialOffDates||[]).join(',')}" placeholder="2026-09-20,2026-09-21">
+    </div>
+    <div class="field"><label><input type="checkbox" id="stf_super" ${s.isSupervisor?'checked':''} style="width:auto;"> Is Supervisor</label></div>
+  `;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStaff(${staffId?`'${staffId}'`:'null'})">Save</button>`;
+  openModal(staffId?'Edit Staff':'Add Staff', body, foot);
+}
+function saveStaff(staffId){
+  const name=$('stf_name').value.trim(), mobile=normalizeMobile($('stf_mobile').value.trim());
+  const desig=$('stf_desig').value.trim(), empId=$('stf_empid').value.trim();
+  if(!name||!mobile||!desig||!empId){toast('تمام Mandatory فیلڈز بھریں','error'); return;}
+  const rec={
+    name, gender:$('stf_gender').value, mobile, designation:desig, empId,
+    fixedShift:$('stf_fixed').value||null,
+    multiShifts:$('stf_multi').value.split(',').map(x=>x.trim()).filter(Boolean),
+    specialOffDates:$('stf_specialoff').value.split(',').map(x=>x.trim()).filter(Boolean),
+    password:$('stf_pass').value||'123456',
+    isSupervisor:$('stf_super').checked,
+    archived:false, updatedAt:nowTs()
+  };
+  const id = staffId || uid();
+  if(!staffId) rec.createdAt=nowTs(); else rec.createdAt=STATE.staff[staffId].createdAt||nowTs();
+  db.ref('staff/'+id).update(rec).then(()=>{
+    // auto-create/update user login entry
+    let userKey=null;
+    Object.keys(STATE.users||{}).forEach(k=>{ if(STATE.users[k].staffId===id) userKey=k; });
+    const userRec={name:rec.name, mobile:rec.mobile, password:rec.password, role:'staff', staffId:id};
+    db.ref('users/'+(userKey||uid())).set(userRec);
+    logAudit(staffId?'Staff Edit':'Staff Add','Staff: '+rec.name);
+    toast(staffId?'Staff Updated':'Staff Added','success');
+    closeModal();
+  });
+}
+function archiveStaff(id){
+  if(!confirm('کیا آپ واقعی اس Staff کو Archive کرنا چاہتے ہیں؟')) return;
+  db.ref('staff/'+id+'/archived').set(true).then(()=>{ logAudit('Staff Archive','Staff ID: '+id); toast('Staff Archived','success'); });
+}
+function restoreStaff(id){
+  db.ref('staff/'+id+'/archived').set(false).then(()=>{ logAudit('Staff Restore','Staff ID: '+id); toast('Staff Restored','success'); });
+}
+</script>
+<script>
+/* =========================================================================
+   SETTINGS MODULE
+   ========================================================================= */
+let settingsTab='general';
+function switchSettingsTab(tab,btn){
+  settingsTab=tab;
+  document.querySelectorAll('#settingsTabsBar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSettingsSection();
+}
+function renderSettingsSection(){
+  if(!isAdmin()){ $('settingsContentWrap').innerHTML='<div class="empty-state">صرف Admin Settings دیکھ سکتا ہے</div>'; return; }
+  const w=$('settingsContentWrap');
+  if(settingsTab==='general') w.innerHTML=tplGeneralSettings();
+  else if(settingsTab==='shifts') w.innerHTML=tplShiftSettings();
+  else if(settingsTab==='weekly') w.innerHTML=tplWeeklySettings();
+  else if(settingsTab==='stations') w.innerHTML=tplStationSettings();
+  else if(settingsTab==='holidays') w.innerHTML=tplHolidaySettings();
+  else if(settingsTab==='leavetypes') w.innerHTML=tplLeaveTypeSettings();
+  else if(settingsTab==='limits') w.innerHTML=tplLeaveLimitSettings();
+  else if(settingsTab==='colors') w.innerHTML=tplColorSettings();
+  else if(settingsTab==='users') w.innerHTML=tplUserCredSettings();
+}
+/* ---- General ---- */
+function tplGeneralSettings(){
+  const s=STATE.settings||{};
+  return `
+  <div class="grid grid-2">
+    <div class="field"><label>Hospital Name</label><input id="gs_hosp" value="${escapeHtml(s.hospital||'')}"></div>
+    <div class="field"><label>Department</label><input id="gs_dept" value="${escapeHtml(s.department||'')}"></div>
+    <div class="field"><label>Address</label><input id="gs_addr" value="${escapeHtml(s.address||'')}"></div>
+    <div class="field"><label>WhatsApp Number</label><input id="gs_wa" value="${escapeHtml(s.whatsapp||'')}"></div>
+    <div class="field"><label>Period Start Day (of month)</label><input type="number" id="gs_pstart" value="${s.periodStartDay||26}" min="1" max="31"></div>
+    <div class="field"><label>Period End Day (of month)</label><input type="number" id="gs_pend" value="${s.periodEndDay||25}" min="1" max="31"></div>
+  </div>
+  <button class="btn btn-primary" onclick="saveGeneralSettings()">Save General Settings</button>`;
+}
+function saveGeneralSettings(){
+  const rec={hospital:$('gs_hosp').value,department:$('gs_dept').value,address:$('gs_addr').value,whatsapp:$('gs_wa').value,
+    periodStartDay:parseInt($('gs_pstart').value)||26, periodEndDay:parseInt($('gs_pend').value)||25};
+  db.ref('settings').update(rec).then(()=>{logAudit('Settings Change','General settings updated'); toast('محفوظ ہو گیا','success');});
+}
+/* ---- Shift Timings ---- */
+function tplShiftSettings(){
+  const arr=objToArr(STATE.shifts||DEFAULT_SHIFTS);
+  return `
+  <div class="toolbar"><button class="btn btn-primary btn-sm" onclick="openShiftEditModal()">+ Add Shift</button></div>
+  <div class="scroll-x"><table><thead><tr><th>Code</th><th>Name</th><th>Start</th><th>End</th><th>Mon-Sat</th><th>Sun</th><th>Station</th><th>Gender</th><th>Color</th><th>Action</th></tr></thead>
+  <tbody>${arr.map(s=>`<tr>
+    <td>${s.code}</td><td>${escapeHtml(s.name)}</td><td>${s.start}</td><td>${s.end}</td>
+    <td>${s.monSat?'✅':'❌'}</td><td>${s.sun?'✅':'❌'}</td><td>${escapeHtml(s.station)}</td><td>${escapeHtml(s.gender)}</td>
+    <td><span class="color-swatch" style="background:${s.color}"></span></td>
+    <td><button class="btn btn-outline btn-sm" onclick='openShiftEditModal(${JSON.stringify(s.code)})'>Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteShift('${s.code}')">Delete</button></td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+function openShiftEditModal(code){
+  const s=code? STATE.shifts[code] : {code:'',name:'',start:'',end:'',monSat:true,sun:false,station:'Any',gender:'Any',color:'#1E5BA8'};
+  const body=`
+  <div class="grid grid-2">
+    <div class="field"><label>Code</label><input id="sh_code" value="${escapeHtml(s.code)}" ${code?'disabled':''}></div>
+    <div class="field"><label>Name</label><input id="sh_name" value="${escapeHtml(s.name)}"></div>
+    <div class="field"><label>Start Time</label><input type="time" id="sh_start" value="${s.start}"></div>
+    <div class="field"><label>End Time</label><input type="time" id="sh_end" value="${s.end}"></div>
+    <div class="field"><label>Mon-Sat Active</label><select id="sh_monsat"><option value="true" ${s.monSat?'selected':''}>Yes</option><option value="false" ${!s.monSat?'selected':''}>No</option></select></div>
+    <div class="field"><label>Sunday Active</label><select id="sh_sun"><option value="true" ${s.sun?'selected':''}>Yes</option><option value="false" ${!s.sun?'selected':''}>No</option></select></div>
+    <div class="field"><label>Station</label><input id="sh_station" value="${escapeHtml(s.station)}"></div>
+    <div class="field"><label>Gender Requirement</label><select id="sh_gender"><option ${s.gender==='Any'?'selected':''}>Any</option><option ${s.gender==='Male'?'selected':''}>Male</option><option ${s.gender==='Female'?'selected':''}>Female</option></select></div>
+    <div class="field"><label>Color</label><input type="color" id="sh_color" value="${s.color||'#1E5BA8'}"></div>
+  </div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveShift()">Save</button>`;
+  openModal(code?'Edit Shift':'Add Shift',body,foot);
+}
+function saveShift(){
+  const code=$('sh_code').value.trim().toUpperCase();
+  if(!code){toast('Code لازمی ہے','error'); return;}
+  const rec={code,name:$('sh_name').value,start:$('sh_start').value,end:$('sh_end').value,
+    monSat:$('sh_monsat').value==='true', sun:$('sh_sun').value==='true',
+    station:$('sh_station').value, gender:$('sh_gender').value, color:$('sh_color').value};
+  db.ref('shifts/'+code).set(rec).then(()=>{logAudit('Settings Change','Shift saved: '+code); toast('محفوظ ہو گیا','success'); closeModal();});
+}
+function deleteShift(code){
+  if(!confirm('Delete this shift?')) return;
+  db.ref('shifts/'+code).remove().then(()=>{logAudit('Settings Change','Shift deleted: '+code); toast('حذف ہو گیا','success');});
+}
+/* ---- Weekly Setup ---- */
+function tplWeeklySettings(){
+  const days=Object.keys(DEFAULT_WEEKLY);
+  const shiftCodes=Object.keys(STATE.shifts||DEFAULT_SHIFTS);
+  return `
+  <p style="font-size:12.5px;color:var(--muted);">ہر دن ہر Shift میں کتنے Staff چاہیے (یہ Auto Generate میں استعمال ہوگا)</p>
+  <div class="scroll-x"><table><thead><tr><th>Day</th>${shiftCodes.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+  <tbody>${days.map(day=>`<tr><td><b>${day}</b></td>${shiftCodes.map(c=>`<td><input type="number" min="0" style="width:52px;text-align:center;" id="ws_${day}_${c}" value="${(STATE.weeklySetup[day]&&STATE.weeklySetup[day][c])||0}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <button class="btn btn-primary" style="margin-top:12px;" onclick="saveWeeklySettings()">Save Weekly Setup</button>`;
+}
+function saveWeeklySettings(){
+  const days=Object.keys(DEFAULT_WEEKLY); const shiftCodes=Object.keys(STATE.shifts||DEFAULT_SHIFTS);
+  const rec={};
+  days.forEach(day=>{ rec[day]={}; shiftCodes.forEach(c=>{ const el=$('ws_'+day+'_'+c); rec[day][c]= el? (parseInt(el.value)||0) : 0; }); });
+  db.ref('weeklySetup').set(rec).then(()=>{logAudit('Settings Change','Weekly Setup updated'); toast('محفوظ ہو گیا','success');});
+}
+/* ---- Stations ---- */
+function tplStationSettings(){
+  const arr=objToArr(STATE.stations||DEFAULT_STATIONS);
+  return `
+  <div class="toolbar"><button class="btn btn-primary btn-sm" onclick="openStationModal()">+ Add Station</button></div>
+  ${arr.map(st=>`<div class="list-row"><div class="grow"><div class="name">${escapeHtml(st.name)}</div>
+    <div class="sub">Weekday: ${JSON.stringify(st.weekday||{})} | Sunday: ${JSON.stringify(st.sunday||{})}</div></div>
+    <button class="btn btn-outline btn-sm" onclick='openStationModal(${JSON.stringify(st._id)})'>Edit</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteStation('${st._id}')">Delete</button></div>`).join('')}`;
+}
+function openStationModal(id){
+  const st=id? STATE.stations[id] : {name:'',weekday:{},sunday:{}};
+  const body=`
+  <div class="field"><label>Station Name</label><input id="st_name" value="${escapeHtml(st.name)}"></div>
+  <div class="field"><label>Weekday requirement (JSON, e.g. {"M":2,"E":2})</label><textarea id="st_weekday" rows="2">${escapeHtml(JSON.stringify(st.weekday||{}))}</textarea></div>
+  <div class="field"><label>Sunday requirement (JSON, e.g. {"M":1,"E":1})</label><textarea id="st_sunday" rows="2">${escapeHtml(JSON.stringify(st.sunday||{}))}</textarea></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStation(${id?`'${id}'`:'null'})">Save</button>`;
+  openModal(id?'Edit Station':'Add Station',body,foot);
+}
+function saveStation(id){
+  let wd={},sd={};
+  try{wd=JSON.parse($('st_weekday').value||'{}');}catch(e){toast('Weekday JSON غلط ہے','error'); return;}
+  try{sd=JSON.parse($('st_sunday').value||'{}');}catch(e){toast('Sunday JSON غلط ہے','error'); return;}
+  const rec={name:$('st_name').value,weekday:wd,sunday:sd};
+  db.ref('stations/'+(id||uid())).set(rec).then(()=>{logAudit('Settings Change','Station saved: '+rec.name); toast('محفوظ ہو گیا','success'); closeModal();});
+}
+function deleteStation(id){ if(!confirm('Delete?'))return; db.ref('stations/'+id).remove().then(()=>toast('حذف ہو گیا','success')); }
+/* ---- Holidays ---- */
+function tplHolidaySettings(){
+  const arr=Object.keys(STATE.holidays||{}).sort().map(d=>({date:d,name:STATE.holidays[d]}));
+  return `
+  <div class="dyn-row">
+    <div class="field"><label>Date</label><input type="date" id="hol_date"></div>
+    <div class="field"><label>Name</label><input id="hol_name" placeholder="Holiday name"></div>
+    <button class="btn btn-primary btn-sm" onclick="addHoliday()">+ Add</button>
+  </div>
+  ${arr.map(h=>`<div class="list-row"><div class="grow"><b>${fmtDate(h.date)}</b> — ${escapeHtml(h.name)}</div>
+    <button class="btn btn-danger btn-sm" onclick="delHoliday('${h.date}')">Delete</button></div>`).join('') || '<div class="empty-state">کوئی Holiday نہیں</div>'}`;
+}
+function addHoliday(){
+  const d=$('hol_date').value, n=$('hol_name').value.trim();
+  if(!d||!n){toast('تاریخ اور نام درج کریں','error'); return;}
+  db.ref('holidays/'+d).set(n).then(()=>{logAudit('Settings Change','Holiday added: '+n); toast('Holiday Added','success'); switchSettingsTab('holidays',document.querySelector('#settingsTabsBar button:nth-child(5)'));});
+}
+function delHoliday(d){ db.ref('holidays/'+d).remove().then(()=>toast('حذف ہو گیا','success')); }
+/* ---- Leave Types ---- */
+function tplLeaveTypeSettings(){
+  return `
+  <div class="dyn-row"><div class="field"><label>New Leave Type Code</label><input id="lt_new" placeholder="e.g. HAJJ"></div>
+  <button class="btn btn-primary btn-sm" onclick="addLeaveType()">+ Add</button></div>
+  ${(STATE.leaveTypes||[]).map(t=>`<span class="pill" style="background:var(--blue);margin:4px;">${t} <a href="#" onclick="delLeaveType('${t}');return false;" style="color:#fff;margin-inline-start:6px;">✕</a></span>`).join('')}`;
+}
+function addLeaveType(){
+  const v=$('lt_new').value.trim().toUpperCase(); if(!v) return;
+  const arr=[...(STATE.leaveTypes||[])]; if(!arr.includes(v)) arr.push(v);
+  db.ref('leaveTypes').set(arr).then(()=>{logAudit('Settings Change','Leave type added: '+v); toast('محفوظ ہو گیا','success');});
+}
+function delLeaveType(t){
+  const arr=(STATE.leaveTypes||[]).filter(x=>x!==t);
+  db.ref('leaveTypes').set(arr).then(()=>toast('حذف ہو گیا','success'));
+}
+/* ---- Daily Leave Limits ---- */
+function tplLeaveLimitSettings(){
+  const days=Object.keys(DEFAULT_LEAVE_LIMITS);
+  return `<div class="scroll-x"><table><thead><tr><th>Day</th><th>OFF Max</th><th>Leave Max</th></tr></thead>
+  <tbody>${days.map(d=>`<tr><td><b>${d}</b></td>
+    <td><input type="number" min="0" style="width:70px;" id="ll_${d}_OFF" value="${(STATE.leaveLimits[d]&&STATE.leaveLimits[d].OFF)||0}"></td>
+    <td><input type="number" min="0" style="width:70px;" id="ll_${d}_Leave" value="${(STATE.leaveLimits[d]&&STATE.leaveLimits[d].Leave)||0}"></td></tr>`).join('')}</tbody></table></div>
+  <button class="btn btn-primary" style="margin-top:12px;" onclick="saveLeaveLimits()">Save Limits</button>`;
+}
+function saveLeaveLimits(){
+  const days=Object.keys(DEFAULT_LEAVE_LIMITS); const rec={};
+  days.forEach(d=>{ rec[d]={OFF:parseInt($('ll_'+d+'_OFF').value)||0, Leave:parseInt($('ll_'+d+'_Leave').value)||0}; });
+  db.ref('leaveLimits').set(rec).then(()=>{logAudit('Settings Change','Leave limits updated'); toast('محفوظ ہو گیا','success');});
+}
+/* ---- Colors ---- */
+function tplColorSettings(){
+  const s=STATE.settings||{};
+  return `
+  <div class="field"><label>Primary Red</label><input type="color" id="cs_red" value="${s.redColor||'#C8102E'}"></div>
+  <div class="field"><label>Primary Blue</label><input type="color" id="cs_blue" value="${s.blueColor||'#1E5BA8'}"></div>
+  <button class="btn btn-primary" onclick="saveColors()">Save Colors</button>`;
+}
+function saveColors(){
+  db.ref('settings').update({redColor:$('cs_red').value, blueColor:$('cs_blue').value}).then(()=>{logAudit('Settings Change','Colors updated'); toast('محفوظ ہو گیا','success');});
+}
+/* ---- Login Credentials (reset passwords) ---- */
+function tplUserCredSettings(){
+  const arr=objToArr(STATE.users||{});
+  return `<div class="scroll-x"><table><thead><tr><th>Name</th><th>Mobile/User</th><th>Role</th><th>Reset Password</th></tr></thead>
+  <tbody>${arr.map(u=>`<tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.mobile)}</td><td>${u.role}</td>
+    <td><input style="width:120px;" id="pw_${u._id}" placeholder="New Password"><button class="btn btn-sm btn-outline" onclick="resetUserPass('${u._id}')">Reset</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+function resetUserPass(id){
+  const val=$('pw_'+id).value.trim(); if(!val){toast('نیا پاسورڈ درج کریں','error'); return;}
+  const u=STATE.users[id];
+  db.ref('users/'+id+'/password').set(val).then(()=>{
+    if(u.staffId) db.ref('staff/'+u.staffId+'/password').set(val);
+    logAudit('Settings Change','Password reset for: '+u.name); toast('پاسورڈ تبدیل ہو گیا','success');
+  });
+}
+</script>
+<script>
+/* =========================================================================
+   ROSTER SECTION (view/manual edit)
+   ========================================================================= */
+function periodDates(periodId){
+  const p=STATE.periods[periodId]; if(!p) return [];
+  return dateRange(p.start,p.end);
+}
+function renderRosterSection(){
+  const sel=$('periodSelect');
+  const arr=objToArr(STATE.periods).sort((a,b)=>b.start.localeCompare(a.start));
+  sel.innerHTML = arr.length? arr.map(p=>`<option value="${p._id}" ${p._id===STATE.currentPeriodId?'selected':''}>${escapeHtml(p.label||(p.start+' to '+p.end))}</option>`).join('') : '<option value="">کوئی Period نہیں — Auto Generate سے بنائیں</option>';
+  if(!STATE.currentPeriodId && arr.length) STATE.currentPeriodId=arr[0]._id;
+  const pid=STATE.currentPeriodId;
+  $('rosterPrintPeriod').textContent = pid && STATE.periods[pid]? ('Period: '+STATE.periods[pid].label) : '';
+  renderMyDataRoster();
+  renderRosterTable(pid);
+  renderRosterSummary(pid);
+}
+function onPeriodChange(){ STATE.currentPeriodId=$('periodSelect').value; renderRosterSection(); markRosterSeen(); }
+function renderMyDataRoster(){
+  const w=$('myDataRosterWrap');
+  if(isAdmin() && !CURRENT_STAFF){ w.innerHTML=''; return; }
+  const pid=STATE.currentPeriodId; const today=todayStr();
+  const myCode = (pid && CURRENT_USER.staffId && STATE.roster[pid] && STATE.roster[pid][today]) ? STATE.roster[pid][today][CURRENT_USER.staffId] : null;
+  w.innerHTML = `<h3>میری آج کی Duty</h3><div style="font-size:20px;font-weight:800;color:var(--blue);">${myCode? shiftLabel(myCode) : 'آج Roster میں entry نہیں'}</div>`;
+}
+function shiftLabel(code){
+  if(STATE.shifts[code]) return code+' - '+STATE.shifts[code].name;
+  if((STATE.leaveTypes||[]).includes(code)) return code+' (Leave)';
+  return code;
+}
+function cellClass(code){
+  if(code==='OFF') return 'cell-off';
+  if(code==='GH') return 'cell-gh';
+  if(code==='12HR') return 'cell-12';
+  if(code==='16HR') return 'cell-16';
+  if((STATE.leaveTypes||[]).includes(code) && code!=='OFF' && code!=='GH') return 'cell-leave';
+  return '';
+}
+function renderRosterTable(pid){
+  const table=$('rosterTable');
+  if(!pid || !STATE.periods[pid]){ table.innerHTML='<tr><td class="empty-state">Roster موجود نہیں۔ Auto Generate استعمال کریں۔</td></tr>'; return; }
+  const dates=periodDates(pid);
+  let staffArr=activeStaffArr().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  if(!isAdmin() && CURRENT_USER.staffId){
+    staffArr.sort((a,b)=>(a._id===CURRENT_USER.staffId?-1:0)-(b._id===CURRENT_USER.staffId?-1:0));
+  }
+  let head='<tr><th>Staff</th>'+dates.map(d=>`<th>${d.slice(8,10)}/${d.slice(5,7)}<br><span style="font-size:9px;font-weight:400;">${dayNameFor(d).slice(0,3)}</span></th>`).join('')+'</tr>';
+  let body=staffArr.map(s=>{
+    const mine = s._id===(CURRENT_USER&&CURRENT_USER.staffId);
+    const cells=dates.map(d=>{
+      const code=(STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][s._id]) || '';
+      const editable = isAdmin();
+      return `<td class="cellcode ${cellClass(code)}" ${editable?`onclick="editRosterCell('${pid}','${d}','${s._id}')"`:''}>${escapeHtml(code)}</td>`;
+    }).join('');
+    return `<tr class="${mine?'mine':''}"><td style="text-align:right;font-weight:700;">${escapeHtml(s.name)}</td>${cells}</tr>`;
+  }).join('');
+  table.innerHTML='<thead>'+head+'</thead><tbody>'+body+'</tbody>';
+}
+function editRosterCell(pid,date,staffId){
+  const cur=(STATE.roster[pid] && STATE.roster[pid][date] && STATE.roster[pid][date][staffId])||'';
+  const allCodes=[...Object.keys(STATE.shifts||{}), ...(STATE.leaveTypes||[]),'12HR','16HR'];
+  const body=`<p>${staffName(staffId)} — ${fmtDate(date)}</p>
+  <div class="field"><label>Code</label><select id="cellCodeSel"><option value="">-- Clear --</option>${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('')}</select></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveRosterCell('${pid}','${date}','${staffId}')">Save</button>`;
+  openModal('Edit Roster Cell',body,foot);
+}
+function saveRosterCell(pid,date,staffId){
+  const v=$('cellCodeSel').value;
+  const path='roster/'+pid+'/'+date+'/'+staffId;
+  (v? db.ref(path).set(v) : db.ref(path).remove()).then(()=>{
+    logAudit('Roster Edit',`${staffName(staffId)} on ${date} => ${v||'(cleared)'}`);
+    toast('Roster Updated','success'); closeModal();
+  });
+}
+function renderRosterSummary(pid){
+  const w=$('rosterSummaryCard');
+  if(!pid || !STATE.periods[pid]){ w.innerHTML=''; return; }
+  const dates=periodDates(pid);
+  const staffArr=activeStaffArr();
+  let rows=staffArr.map(s=>{
+    let off=0,leave=0,gh=0,duties=0;
+    dates.forEach(d=>{
+      const code=(STATE.roster[pid]&&STATE.roster[pid][d]&&STATE.roster[pid][d][s._id])||'';
+      if(code==='OFF') off++; else if(code==='GH') gh++;
+      else if((STATE.leaveTypes||[]).includes(code)) leave++;
+      else if(code) duties++;
+    });
+    return `<tr><td>${escapeHtml(s.name)}</td><td>${off}</td><td>${leave}</td><td>${gh}</td><td>${duties}</td></tr>`;
+  }).join('');
+  w.innerHTML=`<h2>Summary</h2><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Leave</th><th>GH</th><th>Duties</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function markRosterSeen(){
+  if(!CURRENT_USER || isAdmin() || !CURRENT_USER.staffId) return;
+  const pid=STATE.currentPeriodId; if(!pid) return;
+  db.ref('periods/'+pid+'/seenBy/'+CURRENT_USER.staffId).set(nowTs());
+}
+function exportRosterExcel(){
+  const pid=STATE.currentPeriodId; if(!pid){toast('کوئی Period منتخب نہیں','error'); return;}
+  const dates=periodDates(pid); const staffArr=activeStaffArr();
+  const s=STATE.settings||{};
+  const aoa=[[s.hospital||'Kulsum International Hospital'],[s.department||'Phlebotomy'],['Period: '+(STATE.periods[pid].label||'')],['Generated: '+new Date().toLocaleString()],[]];
+  aoa.push(['Staff',...dates.map(d=>fmtDate(d))]);
+  staffArr.forEach(st=>{
+    aoa.push([st.name, ...dates.map(d=>(STATE.roster[pid]&&STATE.roster[pid][d]&&STATE.roster[pid][d][st._id])||'')]);
+  });
+  aoa.push([]); aoa.push(['Summary','OFF','Leave','GH','Duties']);
+  staffArr.forEach(st=>{
+    let off=0,leave=0,gh=0,duties=0;
+    dates.forEach(d=>{const code=(STATE.roster[pid]&&STATE.roster[pid][d]&&STATE.roster[pid][d][st._id])||'';
+      if(code==='OFF')off++;else if(code==='GH')gh++;else if((STATE.leaveTypes||[]).includes(code))leave++;else if(code)duties++;});
+    aoa.push([st.name,off,leave,gh,duties]);
+  });
+  aoa.push([]); aoa.push(['Generated by:____________','Prepared by:____________','Approved by:____________']);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  XLSX.utils.book_append_sheet(wb,ws,'Roster');
+  XLSX.writeFile(wb,'Roster_'+(STATE.periods[pid].label||pid)+'.xlsx');
+  logAudit('Report Export','Roster excel exported');
+}
+</script>
+<script>
+/* =========================================================================
+   AUTO GENERATE WIZARD (4 Steps)
+   ========================================================================= */
+let WIZ = null; // wizard working state, reset every time opened
+function freshWizard(){
+  const s=STATE.settings||{};
+  const today=new Date();
+  return {
+    step:1, mode:'simple',
+    period:{start:'',end:'',label:''},
+    simple:{ off:[], leave:[], hr12:[], hr16:[], gynee:[], diagnostic:[], stationOverride:[], shiftOverride:[], gh:[], specialOff:[] },
+    detailed:{}, // staffId -> {defaultShift, defaultStation, overrides:[{date,shift,leave,station,off}]}
+    generated:null, // {grid, warnings, summary}
+  };
+}
+function openAutoGenWizard(){
+  if(!isAdmin()){toast('صرف Admin Roster Generate کر سکتا ہے','error'); return;}
+  WIZ = freshWizard();
+  const s=STATE.settings||{};
+  // default period suggestion based on settings start/end day
+  const now=new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const sd=s.periodStartDay||26, ed=s.periodEndDay||25;
+  WIZ.period.start=`${y}-${String(m+1).padStart(2,'0')}-${String(sd).padStart(2,'0')}`;
+  const endMonth=new Date(y,m+1,ed);
+  WIZ.period.end=endMonth.toISOString().slice(0,10);
+  renderWizard();
+}
+function wizStepsBar(){
+  const labels=['Period','Mode','Instructions','Preview'];
+  return `<div class="wizard-steps">${labels.map((l,i)=>`<div class="ws ${WIZ.step===i+1?'active':(WIZ.step>i+1?'done':'')}">${i+1}. ${l}</div>`).join('')}</div>`;
+}
+function renderWizard(){
+  let body='', foot='';
+  if(WIZ.step===1){
+    body=wizStepsBar()+`
+    <div class="grid grid-2">
+      <div class="field"><label>Start Date</label><input type="date" id="wz_start" value="${WIZ.period.start}"></div>
+      <div class="field"><label>End Date</label><input type="date" id="wz_end" value="${WIZ.period.end}"></div>
+    </div>
+    <div class="field"><label>Label</label><input id="wz_label" value="${WIZ.period.label||(WIZ.period.start+' to '+WIZ.period.end)}"></div>`;
+    foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="wizNextFromStep1()">Next</button>`;
+  } else if(WIZ.step===2){
+    body=wizStepsBar()+`
+    <div class="grid grid-2">
+      <div class="card" style="cursor:pointer;border:2px solid ${WIZ.mode==='simple'?'var(--blue)':'var(--border)'};" onclick="WIZ.mode='simple';renderWizard();">
+        <h3>Simple Mode</h3><p style="font-size:12.5px;color:var(--muted);">صرف خاص ہدایات دیں (OFF, Leave, Overrides وغیرہ)۔ باقی Weekly Setup کے مطابق خودکار بنے گا۔</p>
+      </div>
+      <div class="card" style="cursor:pointer;border:2px solid ${WIZ.mode==='detailed'?'var(--blue)':'var(--border)'};" onclick="WIZ.mode='detailed';renderWizard();">
+        <h3>Detailed Mode</h3><p style="font-size:12.5px;color:var(--muted);">ہر Staff کا default Shift/Station مقرر کریں + Date-wise Overrides۔</p>
+      </div>
+    </div>`;
+    foot=`<button class="btn btn-ghost" onclick="WIZ.step=1;renderWizard();">Back</button><button class="btn btn-primary" onclick="WIZ.step=3;renderWizard();">Next</button>`;
+  } else if(WIZ.step===3){
+    body=wizStepsBar()+(WIZ.mode==='simple'? tplWizSimple() : tplWizDetailed());
+    foot=`<button class="btn btn-ghost" onclick="WIZ.step=2;renderWizard();">Back</button><button class="btn btn-primary" onclick="wizGenerate();">Generate Preview</button>`;
+  } else if(WIZ.step===4){
+    body=wizStepsBar()+tplWizPreview();
+    const canSave = WIZ.generated && WIZ.generated.warnings.length===0;
+    foot=`<button class="btn btn-ghost" onclick="WIZ.step=3;renderWizard();">Back</button>
+      <button class="btn ${canSave?'btn-primary':'btn-ghost'}" ${canSave?'':'disabled'} onclick="wizSaveRoster()">Save Roster</button>`;
+  }
+  openModal('Auto Generate Roster',body,foot,true);
+}
+function wizNextFromStep1(){
+  WIZ.period.start=$('wz_start').value; WIZ.period.end=$('wz_end').value; WIZ.period.label=$('wz_label').value;
+  if(!WIZ.period.start||!WIZ.period.end||WIZ.period.end<WIZ.period.start){toast('صحیح Start/End Date دیں','error'); return;}
+  WIZ.step=2; renderWizard();
+}
+/* ---- Step 3: Simple Mode sections ---- */
+const SIMPLE_SECTIONS=[
+  {key:'off',title:'1. OFF',fields:['staff','start','end']},
+  {key:'leave',title:'2. Leave',fields:['staff','type','start','end']},
+  {key:'hr12',title:'3. 12 Hour Duty',fields:['staff','start','end']},
+  {key:'hr16',title:'4. 16 Hour Duty',fields:['staff','start','end']},
+  {key:'gynee',title:'5. Gynee (Female)',fields:['staff','start','end']},
+  {key:'diagnostic',title:'6. Diagnostic',fields:['staff','start','end']},
+  {key:'stationOverride',title:'7. Station Override',fields:['staff','station','start','end']},
+  {key:'shiftOverride',title:'8. Shift Override',fields:['staff','shift','start','end']},
+  {key:'gh',title:'9. Gazetted Holiday',fields:['date','name']},
+  {key:'specialOff',title:'10. Special Off Dates',fields:['staff','dates']}
+];
+function tplWizSimple(){
+  return SIMPLE_SECTIONS.map(sec=>`
+    <div class="card">
+      <h3>${sec.title}</h3>
+      <div id="wzsec_${sec.key}">${WIZ.simple[sec.key].map((row,i)=>wizRowHtml(sec,row,i)).join('')}</div>
+      <button class="btn btn-outline btn-sm" onclick="wizAddRow('${sec.key}')">+ Add</button>
+    </div>`).join('');
+}
+function wizRowHtml(sec,row,i){
+  const staffOpts=()=>activeStaffArr().map(s=>`<option value="${s._id}" ${row.staff===s._id?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+  const femaleOpts=()=>activeStaffArr().filter(s=>s.gender==='Female').map(s=>`<option value="${s._id}" ${row.staff===s._id?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+  const shiftOpts=()=>Object.keys(STATE.shifts||{}).map(c=>`<option value="${c}" ${row.shift===c?'selected':''}>${c}</option>`).join('');
+  const typeOpts=()=>(STATE.leaveTypes||[]).map(t=>`<option value="${t}" ${row.type===t?'selected':''}>${t}</option>`).join('');
+  const stationOpts=()=>objToArr(STATE.stations||{}).map(s=>`<option value="${s.name}" ${row.station===s.name?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+  let fields = sec.fields.map(f=>{
+    if(f==='staff') return `<div class="field"><label>Staff</label><select onchange="wizUpdateRow('${sec.key}',${i},'staff',this.value)">${'<option value="">--select--</option>'+(sec.key==='gynee'?femaleOpts():staffOpts())}</select></div>`;
+    if(f==='type') return `<div class="field"><label>Type</label><select onchange="wizUpdateRow('${sec.key}',${i},'type',this.value)"><option value="">--select--</option>${typeOpts()}</select></div>`;
+    if(f==='shift') return `<div class="field"><label>Shift</label><select onchange="wizUpdateRow('${sec.key}',${i},'shift',this.value)"><option value="">--select--</option>${shiftOpts()}</select></div>`;
+    if(f==='station') return `<div class="field"><label>Station</label><select onchange="wizUpdateRow('${sec.key}',${i},'station',this.value)"><option value="">--select--</option>${stationOpts()}</select></div>`;
+    if(f==='start') return `<div class="field"><label>Start Date</label><input type="date" value="${row.start||''}" onchange="wizUpdateRow('${sec.key}',${i},'start',this.value)"></div>`;
+    if(f==='end') return `<div class="field"><label>End Date</label><input type="date" value="${row.end||''}" onchange="wizUpdateRow('${sec.key}',${i},'end',this.value)"></div>`;
+    if(f==='date') return `<div class="field"><label>Date</label><input type="date" value="${row.date||''}" onchange="wizUpdateRow('${sec.key}',${i},'date',this.value)"></div>`;
+    if(f==='name') return `<div class="field"><label>Holiday Name</label><input value="${escapeHtml(row.name||'')}" onchange="wizUpdateRow('${sec.key}',${i},'name',this.value)"></div>`;
+    if(f==='dates') return `<div class="field"><label>Dates (comma separated)</label><input value="${escapeHtml((row.dates||[]).join(','))}" onchange="wizUpdateRow('${sec.key}',${i},'dates',this.value.split(',').map(x=>x.trim()).filter(Boolean))"></div>`;
+    return '';
+  }).join('');
+  return `<div class="dyn-row">${fields}<button class="icon-btn" onclick="wizRemoveRow('${sec.key}',${i})">✕</button></div>`;
+}
+function wizAddRow(key){ WIZ.simple[key].push({}); renderWizard(); }
+function wizRemoveRow(key,i){ WIZ.simple[key].splice(i,1); renderWizard(); }
+function wizUpdateRow(key,i,field,val){ WIZ.simple[key][i][field]=val; }
+
+/* ---- Step 3: Detailed Mode ---- */
+function tplWizDetailed(){
+  const staffArr=activeStaffArr();
+  staffArr.forEach(s=>{ if(!WIZ.detailed[s._id]) WIZ.detailed[s._id]={defaultShift:s.fixedShift||'', defaultStation:'', overrides:[]}; });
+  return staffArr.map(s=>{
+    const d=WIZ.detailed[s._id];
+    return `<div class="card">
+      <h3>${escapeHtml(s.name)} <span style="font-weight:400;font-size:12px;color:var(--muted);">(${s.gender})</span></h3>
+      <div class="grid grid-2">
+        <div class="field"><label>Default Shift</label><select onchange="WIZ.detailed['${s._id}'].defaultShift=this.value">
+          <option value="">--none--</option>${Object.keys(STATE.shifts||{}).map(c=>`<option value="${c}" ${d.defaultShift===c?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Default Station</label><select onchange="WIZ.detailed['${s._id}'].defaultStation=this.value">
+          <option value="">--any--</option>${objToArr(STATE.stations||{}).map(st=>`<option value="${st.name}" ${d.defaultStation===st.name?'selected':''}>${escapeHtml(st.name)}</option>`).join('')}</select></div>
+      </div>
+      <div id="wzov_${s._id}">${d.overrides.map((o,i)=>`
+        <div class="dyn-row">
+          <div class="field"><label>Date</label><input type="date" value="${o.date||''}" onchange="WIZ.detailed['${s._id}'].overrides[${i}].date=this.value"></div>
+          <div class="field"><label>Shift</label><select onchange="WIZ.detailed['${s._id}'].overrides[${i}].shift=this.value"><option value="">-</option>${Object.keys(STATE.shifts||{}).map(c=>`<option ${o.shift===c?'selected':''}>${c}</option>`).join('')}</select></div>
+          <div class="field"><label>Leave</label><select onchange="WIZ.detailed['${s._id}'].overrides[${i}].leave=this.value"><option value="">-</option>${(STATE.leaveTypes||[]).map(t=>`<option ${o.leave===t?'selected':''}>${t}</option>`).join('')}</select></div>
+          <div class="field"><label>Mark OFF</label><select onchange="WIZ.detailed['${s._id}'].overrides[${i}].off=(this.value==='yes')"><option value="no">No</option><option value="yes" ${o.off?'selected':''}>Yes</option></select></div>
+          <button class="icon-btn" onclick="WIZ.detailed['${s._id}'].overrides.splice(${i},1);renderWizard();">✕</button>
+        </div>`).join('')}</div>
+      <button class="btn btn-outline btn-sm" onclick="WIZ.detailed['${s._id}'].overrides.push({});renderWizard();">+ Override</button>
+    </div>`;
+  }).join('');
+}
+
+/* ---- Generation Engine ---- */
+function wizGenerate(){
+  const dates=dateRange(WIZ.period.start,WIZ.period.end);
+  const staffArr=activeStaffArr();
+  const grid={}; // date -> staffId -> code
+  dates.forEach(d=>grid[d]={});
+
+  // apply gazetted holidays entered in wizard to global holidays (staged, applied on save)
+  const stagedHolidays={};
+  if(WIZ.mode==='simple') (WIZ.simple.gh||[]).forEach(h=>{ if(h.date&&h.name) stagedHolidays[h.date]=h.name; });
+
+  function isHolidayNow(d){ return isSunday(d) || !!STATE.holidays[d] || !!stagedHolidays[d]; }
+
+  if(WIZ.mode==='detailed'){
+    staffArr.forEach(s=>{
+      const d=WIZ.detailed[s._id]||{};
+      dates.forEach(date=>{
+        const ov=(d.overrides||[]).find(o=>o.date===date);
+        if(ov){
+          if(ov.off) grid[date][s._id]='OFF';
+          else if(ov.leave) grid[date][s._id]=ov.leave;
+          else if(ov.shift) grid[date][s._id]=ov.shift;
+          else if(d.defaultShift) grid[date][s._id]=d.defaultShift;
+        } else if(d.defaultShift){
+          const sh=STATE.shifts[d.defaultShift];
+          const active = sh ? (isHolidayNow(date)? sh.sun : sh.monSat) : true;
+          if(active) grid[date][s._id]=d.defaultShift;
+        }
+      });
+    });
+  } else {
+    // SIMPLE MODE: start from Weekly Setup auto-fill, then apply instruction layers
+    dates.forEach(date=>{
+      const dayKey = isHolidayNow(date) ? (isSunday(date)?'Sunday':'Holiday') : dayNameFor(date);
+      const need = STATE.weeklySetup[dayKey] || STATE.weeklySetup[isSunday(date)?'Sunday':'Monday'] || {};
+      // candidate pool: staff without fixed conflicting assignment yet, respecting gender rule and multiShifts priority
+      const assignedToday=new Set();
+      Object.keys(need).forEach(code=>{
+        const shiftDef=STATE.shifts[code]; if(!shiftDef) return;
+        const activeToday = isHolidayNow(date) ? shiftDef.sun : shiftDef.monSat;
+        if(!activeToday) return;
+        let count=need[code]||0;
+        // prefer staff with fixedShift===code or multiShifts includes code, respect gender
+        let pool=staffArr.filter(s=> !assignedToday.has(s._id) && (shiftDef.gender==='Any' || s.gender===shiftDef.gender));
+        pool.sort((a,b)=>{
+          const aScore=(a.fixedShift===code?0:( (a.multiShifts||[]).indexOf(code)>=0? (a.multiShifts.indexOf(code)+1) : 99));
+          const bScore=(b.fixedShift===code?0:( (b.multiShifts||[]).indexOf(code)>=0? (b.multiShifts.indexOf(code)+1) : 99));
+          return aScore-bScore;
+        });
+        for(let i=0;i<pool.length && count>0;i++){
+          grid[date][pool[i]._id]=code; assignedToday.add(pool[i]._id); count--;
+        }
+      });
+    });
+    // Apply instruction layers (override everything, in order)
+    function applyRange(rows,fn){ (rows||[]).forEach(r=>{ if(!r.staff||!r.start||!r.end) return; dateRange(r.start,r.end).forEach(d=>{ if(grid[d]) fn(r,d); }); }); }
+    applyRange(WIZ.simple.off, (r,d)=>{ grid[d][r.staff]='OFF'; });
+    applyRange(WIZ.simple.leave, (r,d)=>{ if(r.type) grid[d][r.staff]=r.type; });
+    applyRange(WIZ.simple.hr12, (r,d)=>{ grid[d][r.staff]='12HR'; });
+    applyRange(WIZ.simple.hr16, (r,d)=>{ grid[d][r.staff]='16HR'; });
+    applyRange(WIZ.simple.gynee, (r,d)=>{ grid[d][r.staff]='D'; });
+    applyRange(WIZ.simple.diagnostic, (r,d)=>{ grid[d][r.staff]= grid[d][r.staff]||'M'; });
+    applyRange(WIZ.simple.stationOverride, (r,d)=>{ /* station is metadata; keep shift, tag station via separate note not needed in grid code */ });
+    applyRange(WIZ.simple.shiftOverride, (r,d)=>{ if(r.shift) grid[d][r.staff]=r.shift; });
+    (WIZ.simple.specialOff||[]).forEach(r=>{ (r.dates||[]).forEach(d=>{ if(grid[d] && r.staff) grid[d][r.staff]='OFF'; }); });
+  }
+
+  // ===== Validation: warnings =====
+  const warnings=[];
+  dates.forEach(date=>{
+    const dayKey = isHolidayNow(date) ? (isSunday(date)?'Sunday':'Holiday') : dayNameFor(date);
+    const need = STATE.weeklySetup[dayKey]||{};
+    Object.keys(need).forEach(code=>{
+      const shiftDef=STATE.shifts[code]; if(!shiftDef) return;
+      const activeToday = isHolidayNow(date) ? shiftDef.sun : shiftDef.monSat;
+      if(!activeToday || !need[code]) return;
+      const filled=Object.values(grid[date]).filter(c=>c===code).length;
+      if(filled<need[code]) warnings.push(`${fmtDate(date)}: ${code} میں ${need[code]-filled} Staff کم ہیں`);
+      if((code==='D'||code==='N12'||code==='N')&&filled>0){
+        const genderReq=shiftDef.gender;
+        if(genderReq!=='Any'){
+          const bad=Object.keys(grid[date]).filter(sid=>grid[date][sid]===code).some(sid=>{const st=findStaff(sid); return st && st.gender!==genderReq;});
+          if(bad) warnings.push(`${fmtDate(date)}: ${code} میں Gender Rule خلاف ورزی`);
+        }
+      }
+    });
+    // leave limits check
+    let offCount=0,leaveCount=0;
+    Object.values(grid[date]).forEach(c=>{ if(c==='OFF') offCount++; else if((STATE.leaveTypes||[]).includes(c)&&c!=='OFF'&&c!=='GH') leaveCount++; });
+    const limitDay = isHolidayNow(date)?(isSunday(date)?'Sunday':'Holiday'):dayNameFor(date);
+    const lim=STATE.leaveLimits[limitDay]||{OFF:99,Leave:99};
+    if(offCount>lim.OFF) warnings.push(`${fmtDate(date)}: OFF حد سے زیادہ (${offCount}/${lim.OFF})`);
+    if(leaveCount>lim.Leave) warnings.push(`${fmtDate(date)}: Leave حد سے زیادہ (${leaveCount}/${lim.Leave})`);
+  });
+
+  // summary
+  const summary=staffArr.map(s=>{
+    let off=0,leave=0,gh=0,duties=0;
+    dates.forEach(d=>{const code=grid[d][s._id]||''; if(code==='OFF')off++; else if(code==='GH')gh++; else if((STATE.leaveTypes||[]).includes(code))leave++; else if(code)duties++;});
+    return {name:s.name, off,leave,gh,duties};
+  });
+
+  WIZ.generated={grid, warnings, summary, dates, stagedHolidays};
+  WIZ.step=4; renderWizard();
+}
+function tplWizPreview(){
+  const g=WIZ.generated; if(!g) return '<div class="empty-state">Generate کریں</div>';
+  const staffArr=activeStaffArr();
+  let html='';
+  if(g.warnings.length){
+    html+=`<div class="err-box"><b>⚠ Warnings (${g.warnings.length}) — Save نہیں ہو سکتا جب تک Adjust نہ کریں:</b><ul>${g.warnings.map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul></div>`;
+  } else {
+    html+=`<div class="ok-box">✅ کوئی Warning نہیں — Roster Save کے لیے تیار ہے</div>`;
+  }
+  html+=`<div class="scroll-x"><table class="roster-table"><thead><tr><th>Staff</th>${g.dates.map(d=>`<th>${d.slice(8,10)}/${d.slice(5,7)}</th>`).join('')}</tr></thead>
+  <tbody>${staffArr.map(s=>`<tr><td>${escapeHtml(s.name)}</td>${g.dates.map(d=>{
+    const code=g.grid[d][s._id]||''; return `<td class="cellcode ${cellClass(code)}" onclick="wizEditCell('${d}','${s._id}')">${escapeHtml(code)}</td>`;
+  }).join('')}</tr>`).join('')}</tbody></table></div>`;
+  html+=`<h3 style="margin-top:14px;">Summary</h3><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Leave</th><th>GH</th><th>Duties</th></tr></thead>
+  <tbody>${g.summary.map(r=>`<tr><td>${escapeHtml(r.name)}</td><td>${r.off}</td><td>${r.leave}</td><td>${r.gh}</td><td>${r.duties}</td></tr>`).join('')}</tbody></table></div>`;
+  return html;
+}
+function wizEditCell(date,staffId){
+  const allCodes=[...Object.keys(STATE.shifts||{}), ...(STATE.leaveTypes||[]),'12HR','16HR'];
+  const cur=WIZ.generated.grid[date][staffId]||'';
+  const body=`<p>${staffName(staffId)} — ${fmtDate(date)}</p><div class="field"><select id="wzCellSel"><option value="">--Clear--</option>${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('')}</select></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="renderWizard()">Cancel</button><button class="btn btn-primary" onclick="wizSaveCellEdit('${date}','${staffId}')">Apply</button>`;
+  openModal('Edit Cell',body,foot,true);
+}
+function wizSaveCellEdit(date,staffId){
+  const v=$('wzCellSel').value;
+  if(v) WIZ.generated.grid[date][staffId]=v; else delete WIZ.generated.grid[date][staffId];
+  wizRevalidate();
+}
+function wizRevalidate(){
+  // re-run warning checks on edited grid without regenerating base assignment
+  const g=WIZ.generated; const warnings=[];
+  g.dates.forEach(date=>{
+    const dayKey = isHolidayOrSunday(date) ? (isSunday(date)?'Sunday':'Holiday') : dayNameFor(date);
+    const need = STATE.weeklySetup[dayKey]||{};
+    Object.keys(need).forEach(code=>{
+      const shiftDef=STATE.shifts[code]; if(!shiftDef||!need[code]) return;
+      const filled=Object.values(g.grid[date]).filter(c=>c===code).length;
+      if(filled<need[code]) warnings.push(`${fmtDate(date)}: ${code} میں ${need[code]-filled} Staff کم ہیں`);
+    });
+  });
+  g.warnings=warnings;
+  g.summary=activeStaffArr().map(s=>{
+    let off=0,leave=0,gh=0,duties=0;
+    g.dates.forEach(d=>{const code=g.grid[d][s._id]||''; if(code==='OFF')off++; else if(code==='GH')gh++; else if((STATE.leaveTypes||[]).includes(code))leave++; else if(code)duties++;});
+    return {name:s.name, off,leave,gh,duties};
+  });
+  renderWizard();
+}
+function wizSaveRoster(){
+  const g=WIZ.generated;
+  if(g.warnings.length){toast('Warnings موجود ہیں — پہلے حل کریں','error'); return;}
+  const pid=uid();
+  const periodRec={start:WIZ.period.start,end:WIZ.period.end,label:WIZ.period.label||(WIZ.period.start+' to '+WIZ.period.end),createdAt:nowTs()};
+  const updates={};
+  updates['periods/'+pid]=periodRec;
+  g.dates.forEach(d=>{ updates['roster/'+pid+'/'+d]=g.grid[d]; });
+  if(g.stagedHolidays) Object.keys(g.stagedHolidays).forEach(d=>{ updates['holidays/'+d]=g.stagedHolidays[d]; });
+  db.ref().update(updates).then(()=>{
+    STATE.currentPeriodId=pid;
+    logAudit('Roster Edit','Auto-generated roster for period '+periodRec.label);
+    toast('Roster Save ہو گیا','success');
+    closeModal();
+    showSection('roster');
+  });
+}
+</script>
+<script>
+/* =========================================================================
+   LEAVE MANAGEMENT MODULE
+   ========================================================================= */
+let leaveTabView='pending';
+function switchLeaveTab(tab,btn){ leaveTabView=tab; document.querySelectorAll('#sec-leave .tabsbar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderLeaveSection(); }
+
+function renderLeaveSection(){
+  renderMyDataLeave();
+  const w=$('leaveListWrap');
+  let arr=objToArr(STATE.leaves);
+  if(!isAdmin() && !isSupervisor()) arr=arr.filter(l=>l.staffId===CURRENT_USER.staffId);
+  if(leaveTabView==='pending') arr=arr.filter(l=>l.status==='pending');
+  arr.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  if(!arr.length){ w.innerHTML='<div class="empty-state">کوئی Record نہیں</div>'; return; }
+  w.innerHTML=arr.map(l=>`
+    <div class="list-row ${l.staffId===(CURRENT_USER&&CURRENT_USER.staffId)?'mine':''}">
+      <div class="grow">
+        <div class="name">${escapeHtml(staffName(l.staffId))} — ${l.type} <span class="pill pill-${l.status}">${l.status}</span></div>
+        <div class="sub">${fmtDate(l.startDate)} سے ${fmtDate(l.endDate)} تک ${l.reason?(' — '+escapeHtml(l.reason)):''}</div>
+        ${l.rejectReason?`<div class="sub" style="color:var(--danger);">وجہ: ${escapeHtml(l.rejectReason)}</div>`:''}
+      </div>
+      ${ (isSupervisor()) && l.status==='pending' ? `
+        <button class="btn btn-success btn-sm" onclick="approveLeave('${l._id}')">✅ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectLeaveModal('${l._id}')">❌ Reject</button>
+        <button class="btn btn-outline btn-sm" onclick="modifyLeaveModal('${l._id}')">✏️ Modify</button>
+      `:''}
+    </div>`).join('');
+}
+function renderMyDataLeave(){
+  const w=$('myDataLeave');
+  if(isAdmin() && !CURRENT_STAFF){ w.innerHTML=''; return; }
+  const myLeaves=objToArr(STATE.leaves).filter(l=>l.staffId===CURRENT_USER.staffId);
+  const pending=myLeaves.filter(l=>l.status==='pending').length;
+  const pid=STATE.currentPeriodId;
+  let off=0,gh=0,leave=0;
+  if(pid){ periodDates(pid).forEach(d=>{ const c=STATE.roster[pid]&&STATE.roster[pid][d]&&STATE.roster[pid][d][CURRENT_USER.staffId];
+    if(c==='OFF')off++; else if(c==='GH')gh++; else if((STATE.leaveTypes||[]).includes(c))leave++; }); }
+  const cpl=myLeaves.filter(l=>l.type==='CPL' && l.status==='approved').length;
+  w.innerHTML=`<h3>میرا ڈیٹا</h3><div class="grid grid-4">
+    <div class="stat-card"><div class="num">${myLeaves.length}</div><div class="lbl">کل Leave Records</div></div>
+    <div class="stat-card amber"><div class="num">${pending}</div><div class="lbl">Pending</div></div>
+    <div class="stat-card"><div class="num">${off} / ${gh} / ${leave}</div><div class="lbl">اس Period کا OFF/GH/Leave</div></div>
+    <div class="stat-card green"><div class="num">${cpl}</div><div class="lbl">CPL Balance (Approved)</div></div>
+  </div>`;
+}
+function openLeaveModal(){
+  let entries=[{staff: isAdmin()? '' : CURRENT_USER.staffId, start:'', end:'', type:'', reason:''}];
+  renderLeaveModalBody(entries);
+}
+function renderLeaveModalBody(entries){
+  const staffOpts=(sel)=>activeStaffArr().map(s=>`<option value="${s._id}" ${sel===s._id?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+  const typeOpts=(sel)=>(STATE.leaveTypes||[]).map(t=>`<option value="${t}" ${sel===t?'selected':''}>${t}</option>`).join('');
+  const body=`<div id="leaveEntriesWrap">${entries.map((e,i)=>`
+    <div class="dyn-row" data-idx="${i}">
+      ${isAdmin()?`<div class="field"><label>Staff</label><select onchange="LEAVE_ENTRIES[${i}].staff=this.value"><option value="">--select--</option>${staffOpts(e.staff)}</select></div>`:''}
+      <div class="field"><label>Type</label><select onchange="LEAVE_ENTRIES[${i}].type=this.value"><option value="">--select--</option>${typeOpts(e.type)}</select></div>
+      <div class="field"><label>Start</label><input type="date" value="${e.start}" onchange="LEAVE_ENTRIES[${i}].start=this.value"></div>
+      <div class="field"><label>End</label><input type="date" value="${e.end}" onchange="LEAVE_ENTRIES[${i}].end=this.value"></div>
+      <div class="field"><label>Reason (optional)</label><input value="${escapeHtml(e.reason||'')}" onchange="LEAVE_ENTRIES[${i}].reason=this.value"></div>
+      <button class="icon-btn" onclick="removeLeaveEntry(${i})">✕</button>
+    </div>`).join('')}</div>
+  <button class="btn btn-outline btn-sm" onclick="addLeaveEntry()">+ مزید Entry</button>
+  <div id="leaveModalMsg"></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="submitLeaveEntries()">Submit</button>`;
+  LEAVE_ENTRIES=entries;
+  openModal('Add Leave / OFF',body,foot,true);
+}
+let LEAVE_ENTRIES=[];
+function addLeaveEntry(){ LEAVE_ENTRIES.push({staff:isAdmin()?'':CURRENT_USER.staffId,start:'',end:'',type:'',reason:''}); renderLeaveModalBody(LEAVE_ENTRIES); }
+function removeLeaveEntry(i){ LEAVE_ENTRIES.splice(i,1); renderLeaveModalBody(LEAVE_ENTRIES.length?LEAVE_ENTRIES:[{staff:isAdmin()?'':CURRENT_USER.staffId,start:'',end:'',type:'',reason:''}]); }
+
+function submitLeaveEntries(){
+  const msgEl=$('leaveModalMsg');
+  const errors=[];
+  for(const e of LEAVE_ENTRIES){
+    if(!e.staff||!e.type||!e.start||!e.end){ errors.push('تمام فیلڈز بھریں (Staff/Type/Start/End)'); continue; }
+    const check=checkLeaveCriteria(e.staff,e.type,e.start,e.end);
+    if(check.length) errors.push(...check);
+  }
+  if(errors.length){ msgEl.innerHTML=`<div class="err-box"><b>مسئلہ:</b><ul>${errors.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>Admin کو Adjust کرنا ہوگا — کوئی Override نہیں۔</div>`; return; }
+  // all clear -> save
+  const updates={};
+  LEAVE_ENTRIES.forEach(e=>{
+    const autoApprove = (e.type==='OFF' || e.type==='GH');
+    const id=uid();
+    updates['leaves/'+id]={ staffId:e.staff, startDate:e.start, endDate:e.end, type:e.type, reason:e.reason||'',
+      status: autoApprove?'approved':'pending', addedBy:CURRENT_USER.name, addedAt:nowTs(), approvedBy: autoApprove? 'Auto':null };
+    if(autoApprove){
+      dateRange(e.start,e.end).forEach(d=>{
+        const pid=periodForDate(d); if(pid) updates['roster/'+pid+'/'+d+'/'+e.staff]=e.type;
+      });
+    }
+  });
+  db.ref().update(updates).then(()=>{
+    LEAVE_ENTRIES.forEach(e=>{
+      const autoApprove=(e.type==='OFF'||e.type==='GH');
+      logAudit('Leave Add', `${staffName(e.staff)} ${e.type} ${e.start}-${e.end} (${autoApprove?'auto-approved':'pending'})`);
+      pushNotification(e.staff,'Leave Submitted',`${e.type} ${fmtDate(e.start)} سے ${fmtDate(e.end)} — ${autoApprove?'Approved':'Supervisor کی منظوری کا انتظار'}`);
+      if(!autoApprove) pushNotification('admin','New Leave Pending',`${staffName(e.staff)} — ${e.type}`);
+    });
+    toast('Leave جمع ہو گئی','success'); closeModal();
+  });
+}
+function periodForDate(d){
+  let found=null;
+  Object.keys(STATE.periods||{}).forEach(pid=>{ const p=STATE.periods[pid]; if(p.start<=d && d<=p.end) found=pid; });
+  return found;
+}
+function checkLeaveCriteria(staffId,type,start,end){
+  const problems=[];
+  dateRange(start,end).forEach(d=>{
+    const dayKey=isHolidayOrSunday(d)?(isSunday(d)?'Sunday':'Holiday'):dayNameFor(d);
+    const lim=STATE.leaveLimits[dayKey]||{OFF:99,Leave:99};
+    const pid=periodForDate(d);
+    let offCount=0,leaveCount=0;
+    if(pid && STATE.roster[pid] && STATE.roster[pid][d]){
+      Object.values(STATE.roster[pid][d]).forEach(c=>{ if(c==='OFF')offCount++; else if((STATE.leaveTypes||[]).includes(c)&&c!=='OFF'&&c!=='GH')leaveCount++; });
+    }
+    // also count other pending/approved leave entries for same date not yet in roster
+    objToArr(STATE.leaves).forEach(l=>{
+      if(l.status==='rejected') return;
+      if(d>=l.startDate && d<=l.endDate){
+        if(l.type==='OFF') offCount++; else if(l.type!=='GH') leaveCount++;
+      }
+    });
+    if(type==='OFF' && offCount+1>lim.OFF) problems.push(`${fmtDate(d)}: OFF کی حد پوری ہو چکی ہے (Max ${lim.OFF})`);
+    if(type!=='OFF' && type!=='GH' && leaveCount+1>lim.Leave) problems.push(`${fmtDate(d)}: Leave کی حد پوری ہو چکی ہے (Max ${lim.Leave})`);
+    // shift/station shortage check if roster exists
+    if(pid && STATE.roster[pid] && STATE.roster[pid][d]){
+      const staffCurCode=STATE.roster[pid][d][staffId];
+      if(staffCurCode && STATE.shifts[staffCurCode]){
+        const need=(STATE.weeklySetup[dayKey]||{})[staffCurCode]||0;
+        const filled=Object.values(STATE.roster[pid][d]).filter(c=>c===staffCurCode).length;
+        if(need>0 && filled-1<need) problems.push(`${fmtDate(d)}: ${staffCurCode} Shift میں Staff کم ہو جائیں گے`);
+      }
+    }
+  });
+  return problems;
+}
+function approveLeave(id){
+  const l=STATE.leaves[id];
+  const updates={}; updates['leaves/'+id+'/status']='approved'; updates['leaves/'+id+'/approvedBy']=CURRENT_USER.name;
+  dateRange(l.startDate,l.endDate).forEach(d=>{ const pid=periodForDate(d); if(pid) updates['roster/'+pid+'/'+d+'/'+l.staffId]=l.type; });
+  db.ref().update(updates).then(()=>{
+    logAudit('Leave Approve',`${staffName(l.staffId)} ${l.type} approved`);
+    pushNotification(l.staffId,'Leave Approved',`${l.type} ${fmtDate(l.startDate)}-${fmtDate(l.endDate)} منظور ہو گئی`);
+    toast('Approved','success');
+  });
+}
+function rejectLeaveModal(id){
+  const body=`<div class="field"><label>Reason</label><textarea id="rejReason" rows="3"></textarea></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="doRejectLeave('${id}')">Reject</button>`;
+  openModal('Reject Leave',body,foot);
+}
+function doRejectLeave(id){
+  const reason=$('rejReason').value.trim();
+  const l=STATE.leaves[id];
+  db.ref('leaves/'+id).update({status:'rejected',rejectReason:reason,approvedBy:CURRENT_USER.name}).then(()=>{
+    logAudit('Leave Reject',`${staffName(l.staffId)} ${l.type} rejected: ${reason}`);
+    pushNotification(l.staffId,'Leave Rejected',`${l.type} ${fmtDate(l.startDate)}-${fmtDate(l.endDate)} — وجہ: ${reason}`);
+    toast('Rejected','success'); closeModal();
+  });
+}
+function modifyLeaveModal(id){
+  const l=STATE.leaves[id];
+  const body=`
+  <div class="field"><label>Type</label><select id="modType">${(STATE.leaveTypes||[]).map(t=>`<option ${l.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+  <div class="field"><label>Start</label><input type="date" id="modStart" value="${l.startDate}"></div>
+  <div class="field"><label>End</label><input type="date" id="modEnd" value="${l.endDate}"></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doModifyLeave('${id}')">Save & Approve</button>`;
+  openModal('Modify Leave',body,foot);
+}
+function doModifyLeave(id){
+  const l=STATE.leaves[id];
+  const newType=$('modType').value, newStart=$('modStart').value, newEnd=$('modEnd').value;
+  const updates={}; updates['leaves/'+id]={...l,type:newType,startDate:newStart,endDate:newEnd,status:'approved',approvedBy:CURRENT_USER.name};
+  dateRange(newStart,newEnd).forEach(d=>{ const pid=periodForDate(d); if(pid) updates['roster/'+pid+'/'+d+'/'+l.staffId]=newType; });
+  db.ref().update(updates).then(()=>{
+    logAudit('Leave Modify',`${staffName(l.staffId)} modified to ${newType} ${newStart}-${newEnd}`);
+    pushNotification(l.staffId,'Leave Modified',`آپ کی Leave کو ${newType} (${fmtDate(newStart)}-${fmtDate(newEnd)}) میں تبدیل کر کے منظور کر دیا گیا ہے`);
+    toast('Modified & Approved','success'); closeModal();
+  });
+}
+</script>
+<script>
+/* =========================================================================
+   SHIFT EXCHANGE + DUTY CHANGE (1-Day Rule)
+   ========================================================================= */
+let exchTabView='pending';
+function switchExchTab(tab,btn){ exchTabView=tab; document.querySelectorAll('#sec-exchange .tabsbar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderExchangeSection(); }
+
+function withinOneDayOfPublish(pid){
+  const p=STATE.periods[pid]; if(!p) return false;
+  return (nowTs()-(p.createdAt||0)) <= 24*3600*1000;
+}
+function renderMyDataExchange(){
+  const w=$('myDataExchange');
+  if(isAdmin() && !CURRENT_STAFF){ w.innerHTML=''; return; }
+  const mine=objToArr(STATE.exchanges).filter(e=>e.fromStaffId===CURRENT_USER.staffId||e.toStaffId===CURRENT_USER.staffId);
+  const mineDCR=objToArr(STATE.dutyChangeRequests).filter(d=>d.staffId===CURRENT_USER.staffId);
+  w.innerHTML=`<h3>میرے Exchange Requests</h3><p style="font-size:12.5px;color:var(--muted);">${mine.length} Staff Exchange, ${mineDCR.length} Duty Change Requests</p>`;
+}
+function renderExchangeSection(){
+  renderMyDataExchange();
+  const w=$('exchangeListWrap');
+  if(exchTabView==='duty'){
+    let arr=objToArr(STATE.dutyChangeRequests);
+    if(!isAdmin()) arr=arr.filter(d=>d.staffId===CURRENT_USER.staffId);
+    arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
+    w.innerHTML=arr.length? arr.map(d=>`
+      <div class="list-row"><div class="grow"><div class="name">${escapeHtml(staffName(d.staffId))} — ${fmtDate(d.date)} <span class="pill pill-${d.status}">${d.status}</span></div>
+      <div class="sub">${d.oldShift||'-'} ➜ ${d.newShift||'-'} — وجہ: ${escapeHtml(d.reason||'')}</div></div>
+      ${isAdmin()&&d.status==='pending'?`<button class="btn btn-success btn-sm" onclick="approveDutyChange('${d._id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectDutyChange('${d._id}')">Reject</button>`:''}
+      </div>`).join('') : '<div class="empty-state">کوئی Duty Change Request نہیں</div>';
+    return;
+  }
+  let arr=objToArr(STATE.exchanges);
+  if(!isAdmin() && !isSupervisor()) arr=arr.filter(e=>e.fromStaffId===CURRENT_USER.staffId||e.toStaffId===CURRENT_USER.staffId);
+  if(exchTabView==='pending') arr=arr.filter(e=>e.status==='pending' || e.status==='accepted_by_b');
+  arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  w.innerHTML=arr.length? arr.map(e=>`
+    <div class="list-row"><div class="grow">
+      <div class="name">${escapeHtml(staffName(e.fromStaffId))} ↔ ${escapeHtml(staffName(e.toStaffId))} — ${fmtDate(e.date)} <span class="pill pill-${e.status.includes('reject')?'rejected':(e.status==='approved'?'approved':'pending')}">${e.status}</span></div>
+      <div class="sub">${e.fromShift||'-'} ↔ ${e.toShift||'-'} — وجہ: ${escapeHtml(e.reason||'')}</div>
+    </div>
+    ${e.status==='pending' && e.toStaffId===CURRENT_USER.staffId ? `<button class="btn btn-success btn-sm" onclick="staffBAccept('${e._id}')">Accept</button><button class="btn btn-danger btn-sm" onclick="staffBReject('${e._id}')">Reject</button>`:''}
+    ${e.status==='accepted_by_b' && isSupervisor() ? `<button class="btn btn-success btn-sm" onclick="supervisorApproveExchange('${e._id}')">Supervisor Approve</button><button class="btn btn-danger btn-sm" onclick="supervisorRejectExchange('${e._id}')">Reject</button>`:''}
+    </div>`).join('') : '<div class="empty-state">کوئی Record نہیں</div>';
+}
+function openExchangeModal(){
+  const pid=STATE.currentPeriodId;
+  const oneDay = pid && withinOneDayOfPublish(pid);
+  const body=`
+  <div class="tabsbar" style="border:none;">
+    <button class="active" id="exchModeStaffBtn" onclick="setExchMode('staff')">Staff ↔ Staff Exchange</button>
+    ${(oneDay)?`<button id="exchModeAdminBtn" onclick="setExchMode('admin')">Duty Change to Admin (1-Day Rule)</button>`:''}
+  </div>
+  <div id="exchModeBody"></div>`;
+  openModal('New Exchange Request',body,'',true);
+  setExchMode('staff');
+}
+function setExchMode(mode){
+  document.getElementById('exchModeStaffBtn')?.classList.toggle('active',mode==='staff');
+  document.getElementById('exchModeAdminBtn')?.classList.toggle('active',mode==='admin');
+  const w=$('exchModeBody');
+  const myPid=STATE.currentPeriodId;
+  const staffOpts=activeStaffArr().filter(s=>s._id!==CURRENT_USER.staffId).map(s=>`<option value="${s._id}">${escapeHtml(s.name)}</option>`).join('');
+  const shiftOpts=Object.keys(STATE.shifts||{}).map(c=>`<option>${c}</option>`).join('');
+  if(mode==='staff'){
+    w.innerHTML=`
+    <div class="field"><label>Exchange کس کے ساتھ (اصل نام)</label><select id="exToStaff">${staffOpts}</select></div>
+    <div class="field"><label>Date</label><input type="date" id="exDate"></div>
+    <div class="field"><label>میری موجودہ Shift</label><select id="exFromShift">${shiftOpts}</select></div>
+    <div class="field"><label>نئی Shift (ان سے)</label><select id="exToShift">${shiftOpts}</select></div>
+    <div class="field"><label>وجہ</label><input id="exReason"></div>
+    <button class="btn btn-primary btn-block" onclick="submitStaffExchange()">Send Request</button>`;
+  } else {
+    w.innerHTML=`
+    <div class="field"><label>Date</label><input type="date" id="dcDate"></div>
+    <div class="field"><label>موجودہ Shift</label><select id="dcOld">${shiftOpts}</select></div>
+    <div class="field"><label>نئی Shift درکار</label><select id="dcNew">${shiftOpts}</select></div>
+    <div class="field"><label>وجہ</label><input id="dcReason"></div>
+    <button class="btn btn-primary btn-block" onclick="submitDutyChange()">Send to Admin</button>`;
+  }
+}
+function checkExchangeGenderRule(shift,staffId){
+  const sh=STATE.shifts[shift]; if(!sh||sh.gender==='Any') return true;
+  const s=findStaff(staffId); return s && s.gender===sh.gender;
+}
+function submitStaffExchange(){
+  const toStaff=$('exToStaff').value, date=$('exDate').value, fromShift=$('exFromShift').value, toShift=$('exToShift').value, reason=$('exReason').value;
+  if(!toStaff||!date){toast('تمام فیلڈز بھریں','error'); return;}
+  if(!checkExchangeGenderRule(toShift,CURRENT_USER.staffId) || !checkExchangeGenderRule(fromShift,toStaff)){
+    toast('Gender Rule کی خلاف ورزی (N12/N صرف Male، D صرف Female)','error'); return;
+  }
+  const id=uid();
+  db.ref('exchanges/'+id).set({fromStaffId:CURRENT_USER.staffId,toStaffId:toStaff,date,fromShift,toShift,reason,status:'pending',ts:nowTs()}).then(()=>{
+    logAudit('Exchange Request',`${CURRENT_USER.name} -> ${staffName(toStaff)} on ${date}`);
+    pushNotification(toStaff,'Exchange Request',`${CURRENT_USER.name} نے آپ سے Shift Exchange کی درخواست کی ہے (${fmtDate(date)})`);
+    toast('Request بھیج دی گئی','success'); closeModal();
+  });
+}
+function staffBAccept(id){
+  db.ref('exchanges/'+id+'/status').set('accepted_by_b').then(()=>{
+    const e=STATE.exchanges[id];
+    logAudit('Exchange Accept',`${staffName(e.toStaffId)} accepted`);
+    pushNotification(e.fromStaffId,'Exchange Accepted',`${staffName(e.toStaffId)} نے Accept کر لیا، Supervisor کی منظوری باقی ہے`);
+    pushNotification('admin','Exchange Needs Approval',`${staffName(e.fromStaffId)} ↔ ${staffName(e.toStaffId)}`);
+    toast('Accepted','success');
+  });
+}
+function staffBReject(id){
+  db.ref('exchanges/'+id+'/status').set('rejected_by_b').then(()=>{
+    const e=STATE.exchanges[id];
+    pushNotification(e.fromStaffId,'Exchange Rejected',`${staffName(e.toStaffId)} نے Reject کر دیا`);
+    toast('Rejected','success');
+  });
+}
+function supervisorApproveExchange(id){
+  const e=STATE.exchanges[id]; const pid=periodForDate(e.date);
+  const updates={}; updates['exchanges/'+id+'/status']='approved';
+  if(pid){ updates['roster/'+pid+'/'+e.date+'/'+e.fromStaffId]=e.toShift; updates['roster/'+pid+'/'+e.date+'/'+e.toStaffId]=e.fromShift; }
+  db.ref().update(updates).then(()=>{
+    logAudit('Exchange Approve',`${staffName(e.fromStaffId)} ↔ ${staffName(e.toStaffId)}`);
+    pushNotification(e.fromStaffId,'Exchange Approved','Roster خودکار Update ہو گیا'); pushNotification(e.toStaffId,'Exchange Approved','Roster خودکار Update ہو گیا');
+    toast('Approved','success');
+  });
+}
+function supervisorRejectExchange(id){
+  db.ref('exchanges/'+id+'/status').set('rejected').then(()=>{ toast('Rejected','success'); });
+}
+function submitDutyChange(){
+  const date=$('dcDate').value, oldS=$('dcOld').value, newS=$('dcNew').value, reason=$('dcReason').value;
+  if(!date){toast('Date درج کریں','error'); return;}
+  const id=uid();
+  db.ref('dutyChangeRequests/'+id).set({staffId:CURRENT_USER.staffId,date,oldShift:oldS,newShift:newS,reason,status:'pending',ts:nowTs()}).then(()=>{
+    logAudit('Duty Change Request',`${CURRENT_USER.name} requested ${oldS}->${newS} on ${date}`);
+    pushNotification('admin','Duty Change Request',`${CURRENT_USER.name} — ${date}`);
+    toast('Request بھیج دی گئی','success'); closeModal();
+  });
+}
+function approveDutyChange(id){
+  const d=STATE.dutyChangeRequests[id]; const pid=periodForDate(d.date);
+  const updates={}; updates['dutyChangeRequests/'+id+'/status']='approved';
+  if(pid) updates['roster/'+pid+'/'+d.date+'/'+d.staffId]=d.newShift;
+  db.ref().update(updates).then(()=>{
+    logAudit('Duty Change Approve',`${staffName(d.staffId)} ${d.date}`);
+    pushNotification(d.staffId,'Duty Change Approved','Roster خودکار Update ہو گیا');
+    toast('Approved','success');
+  });
+}
+function rejectDutyChange(id){
+  db.ref('dutyChangeRequests/'+id+'/status').set('rejected').then(()=>{
+    const d=STATE.dutyChangeRequests[id];
+    pushNotification(d.staffId,'Duty Change Rejected','آپ کی درخواست مسترد ہو گئی');
+    toast('Rejected','success');
+  });
+}
+
+/* =========================================================================
+   DASHBOARD
+   ========================================================================= */
+function renderDashboard(){
+  const pid=STATE.currentPeriodId; const today=todayStr();
+  const staffArr=activeStaffArr();
+  const pendingLeaves=objToArr(STATE.leaves).filter(l=>l.status==='pending').length;
+  const pendingExch=objToArr(STATE.exchanges).filter(e=>e.status==='pending'||e.status==='accepted_by_b').length;
+  const pendingDCR=objToArr(STATE.dutyChangeRequests).filter(d=>d.status==='pending').length;
+  $('dashStats').innerHTML=`
+    <div class="stat-card"><div class="num">${staffArr.length}</div><div class="lbl">فعال Staff</div></div>
+    <div class="stat-card amber"><div class="num">${pendingLeaves}</div><div class="lbl">Pending Leave</div></div>
+    <div class="stat-card amber"><div class="num">${pendingExch+pendingDCR}</div><div class="lbl">Pending Exchange/Duty Change</div></div>
+    <div class="stat-card green"><div class="num">${pid?fmtDate(today):'-'}</div><div class="lbl">آج کی تاریخ</div></div>`;
+  // my data
+  const w=$('myDataDashboard');
+  if(CURRENT_STAFF){
+    const myCode=pid && STATE.roster[pid] && STATE.roster[pid][today] ? STATE.roster[pid][today][CURRENT_USER.staffId] : null;
+    w.innerHTML=`<h3>میرا ڈیٹا</h3><p>آج کی Duty: <b>${myCode? shiftLabel(myCode):'موجود نہیں'}</b></p>`;
+  } else { w.innerHTML=''; }
+  // pending approvals card (supervisor view)
+  const pc=$('pendingApprovalsCard');
+  if(isSupervisor()){
+    const items=[];
+    objToArr(STATE.leaves).filter(l=>l.status==='pending').forEach(l=>items.push(`Leave: ${staffName(l.staffId)} — ${l.type} (${fmtDate(l.startDate)})`));
+    objToArr(STATE.exchanges).filter(e=>e.status==='accepted_by_b').forEach(e=>items.push(`Exchange: ${staffName(e.fromStaffId)} ↔ ${staffName(e.toStaffId)}`));
+    objToArr(STATE.dutyChangeRequests).filter(d=>d.status==='pending').forEach(d=>items.push(`Duty Change: ${staffName(d.staffId)} — ${fmtDate(d.date)}`));
+    pc.innerHTML=`<h2>Pending Approvals</h2>${items.length? '<ul>'+items.map(i=>`<li>${escapeHtml(i)}</li>`).join('')+'</ul>' : '<div class="empty-state">کوئی Pending نہیں</div>'}`;
+  } else { pc.innerHTML=''; }
+  // today duty table
+  const tbody=document.querySelector('#todayDutyTable tbody');
+  const rows=staffArr.map(s=>{
+    const code=pid && STATE.roster[pid] && STATE.roster[pid][today] ? STATE.roster[pid][today][s._id] : null;
+    if(!code) return null;
+    const sh=STATE.shifts[code];
+    return `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.designation)}</td><td>${code}</td><td>${sh?sh.start+'-'+sh.end:'-'}</td><td>${sh?sh.station:'-'}</td></tr>`;
+  }).filter(Boolean);
+  tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="5" class="empty-state">آج کوئی Roster Entry نہیں</td></tr>';
+}
+</script>
+<script>
+/* =========================================================================
+   CHAT MODULE
+   ========================================================================= */
+function openChat(){ showSection('chat'); }
+function renderChat(){
+  const side=$('chatSide');
+  const others=activeStaffArr().filter(s=>s._id!==CURRENT_USER.staffId);
+  let html=`<div class="cuser ${chatActivePeer==='group'?'active':''}" onclick="setChatPeer('group')">👥 Group Chat</div>`;
+  html+= (isAdmin()?activeStaffArr():others).map(s=>`<div class="cuser ${chatActivePeer===s._id?'active':''}" onclick="setChatPeer('${s._id}')">${escapeHtml(s.name)}</div>`).join('');
+  side.innerHTML=html;
+  renderChatMsgs();
+}
+function setChatPeer(p){ chatActivePeer=p; renderChat(); }
+function pairKey(a,b){ return [a,b].sort().join('__'); }
+function renderChatMsgs(){
+  const wrap=$('chatMsgs');
+  let msgs=[];
+  if(chatActivePeer==='group'){
+    msgs=objToArr(STATE.chatGroup);
+  } else {
+    const key=pairKey(CURRENT_USER.staffId||CURRENT_USER.uid, chatActivePeer);
+    msgs=objToArr((STATE.chatIndividual||{})[key]||{});
+  }
+  msgs.sort((a,b)=>a.ts-b.ts);
+  wrap.innerHTML=msgs.map(m=>{
+    const mine=m.senderId===(CURRENT_USER.staffId||CURRENT_USER.uid);
+    return `<div class="msg ${mine?'mine':''}"><div class="sender">${escapeHtml(m.senderName)}</div>
+    ${m.type==='image'?`<img src="${m.url}">`:`<div>${escapeHtml(m.text)}</div>`}
+    <div class="ts">${new Date(m.ts).toLocaleTimeString()}</div></div>`;
+  }).join('') || '<div class="empty-state">کوئی Message نہیں</div>';
+  wrap.scrollTop=wrap.scrollHeight;
+}
+function chatBasePath(){
+  if(chatActivePeer==='group') return 'chat/group';
+  const key=pairKey(CURRENT_USER.staffId||CURRENT_USER.uid, chatActivePeer);
+  return 'chat/individual/'+key;
+}
+function sendChatText(){
+  const val=$('chatTextInput').value.trim(); if(!val) return;
+  const senderId=CURRENT_USER.staffId||CURRENT_USER.uid;
+  db.ref(chatBasePath()+'/'+uid()).set({senderId, senderName:CURRENT_USER.name, text:val, type:'text', ts:nowTs()}).then(()=>{
+    $('chatTextInput').value='';
+  });
+}
+function sendChatImage(){
+  const file=$('chatImgInput').files[0]; if(!file) return;
+  const senderId=CURRENT_USER.staffId||CURRENT_USER.uid;
+  const path='chatImages/'+uid()+'_'+file.name;
+  const ref=storage.ref(path);
+  toast('Image بھیجی جا رہی ہے...','warn');
+  ref.put(file).then(snap=>snap.ref.getDownloadURL()).then(url=>{
+    db.ref(chatBasePath()+'/'+uid()).set({senderId, senderName:CURRENT_USER.name, url, type:'image', ts:nowTs()});
+    toast('Image بھیج دی گئی','success');
+  }).catch(()=>toast('Image بھیجنے میں مسئلہ ہوا','error'));
+  $('chatImgInput').value='';
+}
+
+/* =========================================================================
+   REPORTS MODULE (6 reports)
+   ========================================================================= */
+let reportTabView='daily';
+function switchReportTab(tab,btn){ reportTabView=tab; document.querySelectorAll('#sec-reports .tabsbar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderReportsSection(); }
+function renderReportsSection(){
+  const w=$('myDataReports');
+  if(CURRENT_STAFF){
+    const myLeaves=objToArr(STATE.leaves).filter(l=>l.staffId===CURRENT_USER.staffId);
+    w.innerHTML=`<h3>میری Summary</h3><p>کل Leave Records: ${myLeaves.length} | Pending: ${myLeaves.filter(l=>l.status==='pending').length}</p>`;
+  } else w.innerHTML='';
+  const c=$('reportContentWrap');
+  if(reportTabView==='daily') c.innerHTML=reportDaily();
+  else if(reportTabView==='monthly') c.innerHTML=reportMonthly();
+  else if(reportTabView==='cpl') c.innerHTML=reportCPL();
+  else if(reportTabView==='leave') c.innerHTML=reportLeave();
+  else if(reportTabView==='seen') c.innerHTML=reportSeen();
+  else if(reportTabView==='audit') c.innerHTML=reportAudit();
+}
+function reportDaily(){
+  const today=todayStr(); const pid=STATE.currentPeriodId;
+  const staffArr=activeStaffArr();
+  const rows=staffArr.map(s=>{
+    const code= pid&&STATE.roster[pid]&&STATE.roster[pid][today]? STATE.roster[pid][today][s._id]:'';
+    const sh=STATE.shifts[code];
+    return `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.designation)}</td><td>${code||'-'}</td><td>${sh?sh.start+'-'+sh.end:'-'}</td><td>${sh?sh.station:'-'}</td></tr>`;
+  }).join('');
+  return `<h3>Daily Duty Report — ${fmtDate(today)}</h3><div class="scroll-x"><table><thead><tr><th>Name</th><th>Designation</th><th>Shift</th><th>Time</th><th>Station</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function reportMonthly(){
+  const pid=STATE.currentPeriodId; if(!pid) return '<div class="empty-state">کوئی Period نہیں</div>';
+  const dates=periodDates(pid); const staffArr=activeStaffArr();
+  const rows=staffArr.map(s=>{
+    let off=0,leave=0,gh=0,duties=0;
+    dates.forEach(d=>{const code=(STATE.roster[pid]&&STATE.roster[pid][d]&&STATE.roster[pid][d][s._id])||''; if(code==='OFF')off++;else if(code==='GH')gh++;else if((STATE.leaveTypes||[]).includes(code))leave++;else if(code)duties++;});
+    return `<tr><td>${escapeHtml(s.name)}</td><td>${off}</td><td>${leave}</td><td>${gh}</td><td>${duties}</td></tr>`;
+  }).join('');
+  return `<h3>Monthly Staff Summary — ${escapeHtml(STATE.periods[pid].label||'')}</h3><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Leave</th><th>GH</th><th>Duties</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function reportCPL(){
+  const staffArr=activeStaffArr();
+  const rows=staffArr.map(s=>{
+    const cplApproved=objToArr(STATE.leaves).filter(l=>l.staffId===s._id&&l.type==='CPL'&&l.status==='approved').length;
+    let overtime=0;
+    Object.keys(STATE.roster||{}).forEach(pid=>{ Object.keys(STATE.roster[pid]||{}).forEach(d=>{ const c=STATE.roster[pid][d][s._id]; if(c==='12HR'||c==='16HR') overtime++; }); });
+    return `<tr><td>${escapeHtml(s.name)}</td><td>${cplApproved}</td><td>${overtime}</td></tr>`;
+  }).join('');
+  return `<h3>CPL / Overtime Balance</h3><div class="scroll-x"><table><thead><tr><th>Staff</th><th>CPL Approved</th><th>Overtime Duties (12/16HR)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function reportLeave(){
+  let arr=objToArr(STATE.leaves);
+  if(!isAdmin()&&!isSupervisor()) arr=arr.filter(l=>l.staffId===CURRENT_USER.staffId);
+  arr.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+  const rows=arr.map(l=>`<tr><td>${escapeHtml(staffName(l.staffId))}</td><td>${l.type}</td><td>${fmtDate(l.startDate)}</td><td>${fmtDate(l.endDate)}</td><td>${l.status}</td><td>${escapeHtml(l.reason||'')}</td></tr>`).join('');
+  return `<h3>Leave Report</h3><div class="scroll-x"><table><thead><tr><th>Staff</th><th>Type</th><th>Start</th><th>End</th><th>Status</th><th>Reason</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function reportSeen(){
+  if(!isAdmin()) return '<div class="empty-state">صرف Admin دیکھ سکتا ہے</div>';
+  const pid=STATE.currentPeriodId; if(!pid) return '<div class="empty-state">کوئی Period نہیں</div>';
+  const seenBy=(STATE.periods[pid]&&STATE.periods[pid].seenBy)||{};
+  const rows=activeStaffArr().map(s=>{
+    const ts=seenBy[s._id];
+    return `<tr><td>${escapeHtml(s.name)}</td><td>${ts?'✅ دیکھا':'❌ نہیں دیکھا'}</td><td>${ts?new Date(ts).toLocaleString():'-'}</td></tr>`;
+  }).join('');
+  return `<h3>Roster Seen Report — ${escapeHtml(STATE.periods[pid].label||'')}</h3><div class="scroll-x"><table><thead><tr><th>Staff</th><th>Status</th><th>Timestamp</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function reportAudit(){
+  if(!isAdmin()) return '<div class="empty-state">صرف Admin دیکھ سکتا ہے</div>';
+  const arr=objToArr(STATE.auditLog).sort((a,b)=>b.ts-a.ts).slice(0,300);
+  const rows=arr.map(a=>`<tr><td>${new Date(a.ts).toLocaleString()}</td><td>${escapeHtml(a.user)}</td><td>${a.role}</td><td>${escapeHtml(a.action)}</td><td>${escapeHtml(a.details)}</td></tr>`).join('');
+  return `<h3>Audit Log</h3><div class="scroll-x"><table><thead><tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function exportReportExcel(){
+  const c=$('reportContentWrap');
+  const table=c.querySelector('table'); if(!table){toast('کوئی Data نہیں','error'); return;}
+  const wb=XLSX.utils.table_to_book(table); XLSX.writeFile(wb,'Report_'+reportTabView+'_'+todayStr()+'.xlsx');
+  logAudit('Report Export',reportTabView+' report exported');
+}
+
+/* =========================================================================
+   TECHNOLOGIST MODULE (separate, simplified mirror)
+   ========================================================================= */
+let techTab='staff';
+function switchTechTab(tab,btn){ techTab=tab; document.querySelectorAll('#sec-tech .tabsbar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderTechSection(); }
+function renderTechSection(){
+  const w=$('techContentWrap');
+  if(techTab==='staff'){
+    const arr=objToArr(STATE.techStaff).filter(s=>!s.archived);
+    w.innerHTML = arr.length? arr.map(s=>`<div class="list-row"><div class="grow"><div class="name">${escapeHtml(s.name)}</div><div class="sub">${escapeHtml(s.mobile||'')} • ${escapeHtml(s.designation||'')}</div></div>
+      ${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="db.ref('techStaff/${s._id}/archived').set(true)">Archive</button>`:''}</div>`).join('') : '<div class="empty-state">کوئی Technologist نہیں</div>';
+  } else if(techTab==='roster'){
+    w.innerHTML='<div class="empty-state">Technologist Roster یہاں الگ سے بنایا جا سکتا ہے (Phlebotomy Roster سے مکمل الگ ڈیٹا)۔</div>';
+  } else if(techTab==='reports'){
+    w.innerHTML='<div class="empty-state">Technologist Reports یہاں دکھائی جائیں گی۔</div>';
+  } else if(techTab==='chat'){
+    w.innerHTML='<div class="empty-state">Technologist Group Chat الگ سے۔ (Phlebotomy Chat سے مکمل الگ)</div>';
+  }
+}
+function openTechStaffModal(){
+  const body=`
+  <div class="field"><label>Name</label><input id="ts_name"></div>
+  <div class="field"><label>Mobile</label><input id="ts_mobile"></div>
+  <div class="field"><label>Designation</label><input id="ts_desig" value="Technologist"></div>`;
+  const foot=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTechStaff()">Save</button>`;
+  openModal('Add Technologist',body,foot);
+}
+function saveTechStaff(){
+  const name=$('ts_name').value.trim(); if(!name){toast('نام درج کریں','error'); return;}
+  db.ref('techStaff/'+uid()).set({name,mobile:$('ts_mobile').value,designation:$('ts_desig').value,archived:false}).then(()=>{
+    logAudit('Staff Add','Technologist: '+name); toast('محفوظ ہو گیا','success'); closeModal();
+  });
+}
+function exportTechExcel(){
+  const arr=objToArr(STATE.techStaff).filter(s=>!s.archived);
+  const aoa=[['Name','Mobile','Designation'],...arr.map(s=>[s.name,s.mobile||'',s.designation||''])];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'Technologists');
+  XLSX.writeFile(wb,'Technologist_Staff.xlsx');
+}
+</script>
+</body>
+</html>
