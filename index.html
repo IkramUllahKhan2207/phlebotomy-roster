@@ -2006,9 +2006,19 @@ function wizStartGeneration(){
     return;
   }
   
+  /* ==================== GENERATION ENGINE (FIXED) ==================== */
+function wizStartGeneration(){
+  WIZ.dates = dateRange(WIZ.period.start, WIZ.period.end);
+  WIZ.staffArr = activeStaffArr();
+  
+  if(!WIZ.staffArr.length){
+    toast('No active staff. Please add staff first.','error');
+    return;
+  }
+  
   WIZ.offTarget = countSundays(WIZ.period.start, WIZ.period.end);
   
-  // Add confirmed holidays to STATE temporarily (for isHoliday checks)
+  // Apply confirmed holidays
   WIZ.confirmedHolidays.forEach(h=>{ STATE.holidays[h.date] = h.name; });
   
   WIZ.grid = {};
@@ -2017,7 +2027,7 @@ function wizStartGeneration(){
   WIZ.dates.forEach(d => { WIZ.grid[d] = {}; WIZ.locked[d] = {}; });
   WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
   
-  // Apply manual instructions first (locked, cannot be changed)
+  // Apply manual instructions first (locked)
   if(WIZ.mode === 'manual'){
     WIZ.manual.offs.forEach(x=>{
       dateRange(x.start, x.end).forEach(d=>{
@@ -2048,16 +2058,174 @@ function wizStartGeneration(){
     });
   }
   
+  // Apply existing leaves from Firebase
+  objToArr(STATE.leaves).forEach(l=>{
+    if(l.status === 'rejected') return;
+    const ls = l.startDate || l.date;
+    const le = l.endDate || l.date;
+    if(!WIZ.staffArr.some(s=>s._id===l.staffId)) return;
+    dateRange(ls, le).forEach(d=>{
+      if(WIZ.grid[d] && !WIZ.locked[d][l.staffId]){
+        WIZ.grid[d][l.staffId] = l.type;
+        WIZ.locked[d][l.staffId] = true;
+      }
+    });
+  });
+  
   WIZ.currentDayIndex = 0;
   WIZ.conflictLog = [];
   WIZ.warnings = [];
   
+  // ⭐ KEY FIX: First assign OFF to ALL staff equally
+  assignOFFToAllStaff();
+  
+  // Then continue day-by-day to fill shifts
   WIZ.step = 5;
   processNextDay();
 }
 
+/* ==================== NEW: OFF ASSIGNMENT FIRST ==================== */
+function assignOFFToAllStaff(){
+  // Separate days by type
+  const sundays = WIZ.dates.filter(d => isSunday(d) || isHoliday(d));
+  const saturdays = WIZ.dates.filter(d => {
+    if(isSunday(d) || isHoliday(d)) return false;
+    return new Date(d+'T00:00:00').getDay() === 6;
+  });
+  const weekdays = WIZ.dates.filter(d => {
+    if(isSunday(d) || isHoliday(d)) return false;
+    const dn = new Date(d+'T00:00:00').getDay();
+    return dn >= 1 && dn <= 5;
+  });
+  
+  // Track days assigned per staff (for even distribution)
+  const daysAssigned = {};
+  WIZ.staffArr.forEach(s => { daysAssigned[s._id] = []; });
+  
+  // Helper: how many staff are already OFF (via locked) on a day
+  function getLockedOffCount(date){
+    let count = 0;
+    WIZ.staffArr.forEach(s => {
+      if(WIZ.grid[date][s._id] === 'OFF') count++;
+    });
+    return count;
+  }
+  
+  // Helper: how many staff have leave (locked) on a day
+  function getLockedLeaveCount(date){
+    let count = 0;
+    WIZ.staffArr.forEach(s => {
+      const c = WIZ.grid[date][s._id];
+      if(c && (STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH') count++;
+    });
+    return count;
+  }
+  
+  // Helper: check if staff needs OFF
+  function needsOff(staffId){
+    return WIZ.offCount[staffId] < WIZ.offTarget;
+  }
+  
+  // Helper: check if staff can take OFF on this day
+  function canTakeOff(date, staffId){
+    if(WIZ.grid[date][staffId]) return false; // Already assigned (locked/leave/manual)
+    return true;
+  }
+  
+  // ⭐ PHASE 1: Sundays — give OFF to 7 staff per Sunday
+  sundays.forEach(sunday => {
+    const dayKey = isHoliday(sunday) ? 'Holiday' : 'Sunday';
+    const limits = STATE.leaveLimits[dayKey] || {OFF:7, Leave:0};
+    const offLimit = limits.OFF || 7;
+    const leaveCount = getLockedLeaveCount(sunday);
+    const slotsLeft = offLimit - leaveCount - getLockedOffCount(sunday);
+    
+    if(slotsLeft <= 0) return;
+    
+    // Priority: staff with fewest OFF
+    const candidates = WIZ.staffArr
+      .filter(s => canTakeOff(sunday, s._id) && needsOff(s._id))
+      .sort((a, b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
+    
+    for(let i = 0; i < slotsLeft && i < candidates.length; i++){
+      const s = candidates[i];
+      WIZ.grid[sunday][s._id] = 'OFF';
+      WIZ.offCount[s._id]++;
+      daysAssigned[s._id].push(sunday);
+    }
+  });
+  
+  // ⭐ PHASE 2: Saturdays — give OFF to 2 staff per Saturday
+  saturdays.forEach(sat => {
+    const limits = STATE.leaveLimits['Saturday'] || {OFF:2, Leave:0};
+    const offLimit = limits.OFF || 2;
+    const leaveCount = getLockedLeaveCount(sat);
+    const slotsLeft = offLimit - leaveCount - getLockedOffCount(sat);
+    
+    if(slotsLeft <= 0) return;
+    
+    const candidates = WIZ.staffArr
+      .filter(s => canTakeOff(sat, s._id) && needsOff(s._id))
+      .sort((a, b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
+    
+    for(let i = 0; i < slotsLeft && i < candidates.length; i++){
+      const s = candidates[i];
+      WIZ.grid[sat][s._id] = 'OFF';
+      WIZ.offCount[s._id]++;
+      daysAssigned[s._id].push(sat);
+    }
+  });
+  
+  // ⭐ PHASE 3: Weekdays — give OFF to 1 staff per weekday
+  weekdays.forEach(wd => {
+    const dayKey = dayNameFor(wd);
+    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
+    const offLimit = limits.OFF || 1;
+    const leaveCount = getLockedLeaveCount(wd);
+    const slotsLeft = offLimit - leaveCount - getLockedOffCount(wd);
+    
+    if(slotsLeft <= 0) return;
+    
+    const candidates = WIZ.staffArr
+      .filter(s => canTakeOff(wd, s._id) && needsOff(s._id))
+      .sort((a, b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
+    
+    for(let i = 0; i < slotsLeft && i < candidates.length; i++){
+      const s = candidates[i];
+      WIZ.grid[wd][s._id] = 'OFF';
+      WIZ.offCount[s._id]++;
+      daysAssigned[s._id].push(wd);
+    }
+  });
+  
+  // ⭐ PHASE 4: Any staff still below target? Add extra OFF
+  WIZ.staffArr.forEach(s => {
+    while(WIZ.offCount[s._id] < WIZ.offTarget){
+      let found = false;
+      // Try remaining days with capacity
+      for(const d of WIZ.dates){
+        if(!canTakeOff(d, s._id)) continue;
+        
+        const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
+        const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
+        const offLimit = limits.OFF || 1;
+        const leaveCount = getLockedLeaveCount(d);
+        
+        if(getLockedOffCount(d) + leaveCount < offLimit){
+          WIZ.grid[d][s._id] = 'OFF';
+          WIZ.offCount[s._id]++;
+          daysAssigned[s._id].push(d);
+          found = true;
+          break;
+        }
+      }
+      if(!found) break;
+    }
+  });
+}
+
+/* ==================== DAY-BY-DAY PROCESSING (FILL SHIFTS) ==================== */
 function processNextDay(){
-  // All days done?
   if(WIZ.currentDayIndex >= WIZ.dates.length){
     finalizeGeneration();
     WIZ.step = 6;
@@ -2069,16 +2237,13 @@ function processNextDay(){
   const result = processDay(d);
   
   if(result.conflict){
-    // PAUSE - show conflict to Admin
     WIZ.currentConflictDay = d;
     WIZ.currentConflictResult = result;
     renderWizard();
     return;
   }
   
-  // No conflict → continue
   WIZ.currentDayIndex++;
-  // Small delay to allow UI update
   setTimeout(processNextDay, 10);
 }
 
@@ -2086,24 +2251,15 @@ function processDay(date){
   const isOff = isHolidayOrSunday(date);
   const dayKey = isHoliday(date) ? 'Holiday' : dayNameFor(date);
   const need = STATE.weeklySetup[dayKey] || {};
+  const dayGrid = WIZ.grid[date];
+  
+  // Fill shifts with remaining (non-OFF, non-Leave) staff
+  fillDayShifts(date, need, isOff);
+  
+  // Check relax limit
   const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:1};
   const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
   
-  const dayGrid = WIZ.grid[date];
-  
-  // Apply existing leaves from Firebase
-  objToArr(STATE.leaves).forEach(l=>{
-    if(l.status === 'rejected') return;
-    const ls = l.startDate || l.date;
-    const le = l.endDate || l.date;
-    if(date >= ls && date <= le){
-      if(!WIZ.staffArr.some(s=>s._id===l.staffId)) return;
-      if(dayGrid[l.staffId]) return; // Manual override wins
-      dayGrid[l.staffId] = l.type;
-    }
-  });
-  
-  // Count current relax
   let offCount = 0, leaveCount = 0;
   Object.values(dayGrid).forEach(c=>{
     if(c === 'OFF') offCount++;
@@ -2112,60 +2268,34 @@ function processDay(date){
   
   const totalRelax = offCount + leaveCount;
   
-  // CHECK 1: Relax limit exceeded
-  if(totalRelax > relaxLimit){
-    const excess = totalRelax - relaxLimit;
-    let conflictType, suggestion;
-    
-    if(excess === 1){
-      conflictType = 'relax_exceeded_by_1';
-      suggestion = {
-        action: 'X_DUTY',
-        message: `If confirmed, 1 staff will be assigned to X (Extra) duty (11:00-19:00).`,
-        staffPick: 'auto'
-      };
-    } else if(excess === 2){
-      conflictType = 'relax_exceeded_by_2';
-      suggestion = {
-        action: 'DX_DUTY',
-        message: `If confirmed, 1 staff will be assigned to DX (Day Extra) duty (09:00-19:00).`,
-        staffPick: 'auto'
-      };
-    } else {
-      conflictType = 'relax_exceeded_major';
-      suggestion = {
-        action: 'MANUAL',
-        message: `Too many staff resting (excess: ${excess}). Admin must modify manually.`,
-        staffPick: 'manual'
-      };
-    }
-    
+  // Check if shift coverage is OK
+  const coverageOk = checkShiftCoverage(date, need, isOff);
+  
+  if(!coverageOk.ok){
     return {
       conflict: true,
-      type: conflictType,
+      type: 'shift_not_covered',
       date: date,
-      message: `${fmtDisplay(date)} (${dayShort(date)}) has ${totalRelax} staff on relax, but limit is ${relaxLimit}.`,
-      details: `${offCount} OFF + ${leaveCount} Leave = ${totalRelax}`,
-      excess: excess,
-      suggestion: suggestion
+      message: `${fmtDisplay(date)} (${dayShort(date)}): ${coverageOk.missing} staff short for shift ${coverageOk.code}.`,
+      details: `Need ${coverageOk.required}, have ${coverageOk.actual}.`,
+      excess: 0,
+      suggestion: {
+        action: 'X_DUTY',
+        message: `Assign 1 staff to X (Extra) duty or M+E double duty.`,
+        staffPick: 'auto'
+      }
     };
   }
   
-  // No conflict → assign shifts and remaining OFF
-  assignShiftsAndOff(date, need, isOff, relaxLimit, totalRelax);
   return { conflict: false };
 }
 
-function assignShiftsAndOff(date, need, isOff, relaxLimit, currentRelax){
+function fillDayShifts(date, need, isOff){
   const dayGrid = WIZ.grid[date];
   const freeStaff = WIZ.staffArr.filter(s => !dayGrid[s._id]);
   
-  // Sort by OFF count (fewest first, to balance)
-  freeStaff.sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
-  
-  // Assign shifts
-  const shiftCodes = Object.keys(need);
-  shiftCodes.forEach(code=>{
+  // Sort: prefer staff whose fixedShift matches (so rotating staff get flexibility)
+  Object.keys(need).forEach(code => {
     const req = need[code];
     if(!req) return;
     const shiftDef = STATE.shifts[code];
@@ -2173,22 +2303,20 @@ function assignShiftsAndOff(date, need, isOff, relaxLimit, currentRelax){
     const activeToday = isOff ? shiftDef.sun : shiftDef.monSat;
     if(!activeToday) return;
     
-    let assigned = Object.values(dayGrid).filter(c=>c===code).length;
+    let assigned = Object.values(dayGrid).filter(c => c === code).length;
     let remaining = req - assigned;
     
     while(remaining > 0){
-      const eligible = freeStaff.filter(s=>{
+      const eligible = freeStaff.filter(s => {
         if(dayGrid[s._id]) return false;
         if(shiftDef.gender !== 'Any' && s.gender !== shiftDef.gender) return false;
         return true;
       });
       
-      // Sort by preference (fixedShift, multiShifts, then fewer OFF)
-      eligible.sort((a,b)=>{
-        const aP = (a.fixedShift===code ? 0 : (a.multiShifts||[]).indexOf(code)>=0 ? (a.multiShifts.indexOf(code)+1) : 99);
-        const bP = (b.fixedShift===code ? 0 : (b.multiShifts||[]).indexOf(code)>=0 ? (b.multiShifts.indexOf(code)+1) : 99);
-        if(aP !== bP) return aP - bP;
-        return WIZ.offCount[a._id] - WIZ.offCount[b._id];
+      eligible.sort((a,b) => {
+        const aP = (a.fixedShift === code ? 0 : (a.multiShifts||[]).indexOf(code) >= 0 ? (a.multiShifts.indexOf(code)+1) : 99);
+        const bP = (b.fixedShift === code ? 0 : (b.multiShifts||[]).indexOf(code) >= 0 ? (b.multiShifts.indexOf(code)+1) : 99);
+        return aP - bP;
       });
       
       if(!eligible.length) break;
@@ -2198,26 +2326,30 @@ function assignShiftsAndOff(date, need, isOff, relaxLimit, currentRelax){
     }
   });
   
-  // Assign remaining staff
-  const remainingFree = WIZ.staffArr.filter(s => !dayGrid[s._id]);
-  remainingFree.sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
-  
-  let relaxSlotsLeft = relaxLimit - currentRelax;
-  
-  remainingFree.forEach(s=>{
-    // Give OFF if: still needs OFF to reach target AND slots available
-    if(relaxSlotsLeft > 0 && WIZ.offCount[s._id] < WIZ.offTarget){
-      dayGrid[s._id] = 'OFF';
-      WIZ.offCount[s._id]++;
-      relaxSlotsLeft--;
-    } else {
-      // Assign X (Extra) as fallback for extra staff who don't fit any shift
+  // Any free staff remaining? Give them X (Extra)
+  freeStaff.forEach(s => {
+    if(!dayGrid[s._id]){
       dayGrid[s._id] = 'X';
     }
   });
 }
 
-/* ==================== STEP 5: CONFLICT VIEW ==================== */
+function checkShiftCoverage(date, need, isOff){
+  const dayGrid = WIZ.grid[date];
+  for(const code of Object.keys(need)){
+    const req = need[code];
+    if(!req) continue;
+    const shiftDef = STATE.shifts[code];
+    if(!shiftDef) continue;
+    const activeToday = isOff ? shiftDef.sun : shiftDef.monSat;
+    if(!activeToday) continue;
+    const actual = Object.values(dayGrid).filter(c => c === code).length;
+    if(actual < req){
+      return { ok:false, code, required:req, actual, missing:req-actual };
+    }
+  }
+  return { ok:true };
+}/* ==================== STEP 5: CONFLICT VIEW ==================== */
 function tplConflictView(){
   if(!WIZ.currentConflictResult){
     return '<div class="empty-state">Processing...</div>';
