@@ -12,37 +12,20 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-/* ============ RESET & VARIABLES ============ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --red:#C8102E;
-  --blue:#1E5BA8;
-  --red-dark:#a30d25;
-  --blue-dark:#164683;
-  --red-light:#fde8eb;
-  --blue-light:#e8f0fa;
-  --bg:#f2f4f7;
-  --card:#ffffff;
-  --text:#1c2430;
-  --muted:#65707d;
-  --border:#e1e5ea;
-  --success:#1f9d55;
-  --warn:#e0a800;
-  --danger:#C8102E;
-  --radius:12px;
-  --shadow:0 2px 10px rgba(20,30,50,.08);
-  --shadow-lg:0 8px 24px rgba(20,30,50,.15);
+  --red:#C8102E;--blue:#1E5BA8;--red-dark:#a30d25;--blue-dark:#164683;
+  --red-light:#fde8eb;--blue-light:#e8f0fa;--bg:#f2f4f7;--card:#ffffff;
+  --text:#1c2430;--muted:#65707d;--border:#e1e5ea;--success:#1f9d55;
+  --warn:#e0a800;--danger:#C8102E;--radius:12px;
+  --shadow:0 2px 10px rgba(20,30,50,.08);--shadow-lg:0 8px 24px rgba(20,30,50,.15);
 }
 html,body{margin:0;padding:0;min-height:100%;overflow-x:hidden;}
 body{
   font-family:"Segoe UI",Roboto,Tahoma,Arial,sans-serif;
   background:linear-gradient(135deg,#fde8eb 0%,#e8f0fa 100%);
-  background-attachment:fixed;
-  color:var(--text);
-  font-size:14px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-  min-height:100vh;
+  background-attachment:fixed;color:var(--text);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;outline:none;}
 button{cursor:pointer;border:none;background:none;}
@@ -50,12 +33,9 @@ a{color:var(--blue);text-decoration:none;}
 .hidden{display:none!important;}
 .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
-/* ============ BUTTONS ============ */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600;
-  cursor:pointer;transition:.15s;white-space:nowrap;border:none;
-}
+  cursor:pointer;transition:.15s;white-space:nowrap;border:none;}
 .btn:active{transform:scale(.97);}
 .btn-primary{background:var(--blue);color:#fff;}
 .btn-primary:hover{background:var(--blue-dark);}
@@ -71,115 +51,72 @@ a{color:var(--blue);text-decoration:none;}
 .btn-danger:hover{background:var(--red-dark);}
 .btn-warn{background:var(--warn);color:#3a2c00;}
 .btn-sm{padding:5px 10px;font-size:12.5px;border-radius:6px;}
-.btn-lg{padding:12px 22px;font-size:15px;}
 .btn-block{width:100%;}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
-.icon-btn{
-  background:transparent;border:none;cursor:pointer;
-  width:38px;height:38px;border-radius:50%;
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:18px;color:var(--muted);padding:0;
-  transition:.15s;flex-shrink:0;
-}
+.icon-btn{background:transparent;border:none;cursor:pointer;width:38px;height:38px;
+  border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:18px;color:var(--muted);padding:0;transition:.15s;flex-shrink:0;}
 .icon-btn:hover{background:#eceff2;color:var(--text);}
 
-/* ============ LOGIN SCREEN ============ */
-#loginScreen{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--red) 0%,var(--red-dark) 40%,var(--blue) 100%);
-  padding:16px;
-}
-.login-card{
-  background:#fff;border-radius:20px;width:100%;max-width:420px;
-  box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;
-}
+  padding:16px;}
+.login-card{background:#fff;border-radius:20px;width:100%;max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;}
 .login-head{padding:34px 24px 20px;text-align:center;}
-.login-logo{
-  width:90px;height:90px;border-radius:22px;margin:0 auto 14px;
+.login-logo{width:90px;height:90px;border-radius:22px;margin:0 auto 14px;
   background:#fff;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 24px rgba(200,16,46,.25);
-  border:3px solid var(--red);
-  overflow:hidden;
-}
-.login-logo img{width:100%;height:100%;object-fit:contain;}
-.login-logo-fallback{
-  font-weight:900;font-size:28px;letter-spacing:1px;
+  box-shadow:0 8px 24px rgba(200,16,46,.25);border:3px solid var(--red);overflow:hidden;}
+.login-logo-fallback{font-weight:900;font-size:28px;letter-spacing:1px;
   background:linear-gradient(135deg,var(--red),var(--blue));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-}
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .login-head h1{font-size:21px;margin:8px 0 4px;color:var(--red);font-weight:800;}
 .login-head p{font-size:13px;color:var(--muted);margin:0;}
 .login-tabs{display:flex;border-bottom:1px solid var(--border);}
-.login-tab{
-  flex:1;text-align:center;padding:14px;cursor:pointer;
-  font-weight:700;color:var(--muted);border-bottom:3px solid transparent;
-  transition:.2s;font-size:14px;
-}
+.login-tab{flex:1;text-align:center;padding:14px;cursor:pointer;font-weight:700;
+  color:var(--muted);border-bottom:3px solid transparent;transition:.2s;font-size:14px;}
 .login-tab.active{color:var(--blue);border-color:var(--blue);}
 .login-body{padding:24px 24px 28px;}
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px;}
-.field input,.field select,.field textarea{
-  width:100%;padding:11px 14px;border:1.5px solid var(--border);
-  border-radius:9px;font-size:14px;background:#fbfcfd;
-  transition:.2s;
-}
-.field input:focus,.field select:focus,.field textarea:focus{
-  border-color:var(--blue);background:#fff;
-  box-shadow:0 0 0 3px rgba(30,91,168,.1);
-}
+.field input,.field select,.field textarea{width:100%;padding:11px 14px;
+  border:1.5px solid var(--border);border-radius:9px;font-size:14px;background:#fbfcfd;transition:.2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);
+  background:#fff;box-shadow:0 0 0 3px rgba(30,91,168,.1);}
 .login-err{color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;text-align:center;}
 
-/* ============ APP SHELL ============ */
 #app{display:none;min-height:100vh;padding-bottom:80px;}
 #app.show{display:block;}
-
-.topbar{
-  background:#fff;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:8px;
-  padding:10px 14px;position:sticky;top:0;z-index:40;
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
-}
-.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--red);font-size:14px;}
-.topbar .brand .kih-logo{
-  width:38px;height:38px;border-radius:10px;
-  background:linear-gradient(135deg,var(--red),var(--blue));
-  color:#fff;display:flex;align-items:center;justify-content:center;
-  font-weight:900;font-size:12px;letter-spacing:.5px;
-  overflow:hidden;
-}
-.topbar .brand .kih-logo img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.topbar{background:#fff;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;gap:8px;padding:10px 14px;position:sticky;top:0;z-index:40;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:800;
+  color:var(--red);font-size:14px;}
+.topbar .brand .kih-logo{width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--red),var(--blue));color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:900;
+  font-size:12px;letter-spacing:.5px;overflow:hidden;}
 .topbar-spacer{flex:1;}
 .topnav{display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;}
-.topnav button{
-  background:none;border:none;padding:8px 11px;border-radius:8px;
+.topnav button{background:none;border:none;padding:8px 11px;border-radius:8px;
   font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;
-  white-space:nowrap;transition:.15s;
-}
+  white-space:nowrap;transition:.15s;}
 .topnav button:hover{background:#f4f6f9;}
 .topnav button.active{background:#eaf1fb;color:var(--blue);}
 .badge-bell{position:relative;}
-.badge-bell .dot{
-  position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;
-  font-size:10px;font-weight:700;min-width:16px;height:16px;
+.badge-bell .dot{position:absolute;top:-2px;right:-2px;background:var(--red);
+  color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;
   border-radius:8px;display:flex;align-items:center;justify-content:center;
-  padding:0 4px;border:2px solid #fff;
-}
+  padding:0 4px;border:2px solid #fff;}
 .userchip{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;}
-.userchip .av{
-  width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
-}
-
+.userchip .av{width:32px;height:32px;border-radius:50%;background:var(--blue);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;}
 .main-wrap{max-width:1300px;margin:0 auto;padding:16px;}
 .section{display:none;}
 .section.active{display:block;}
-
-.card{
-  background:var(--card);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:18px;margin-bottom:16px;
-}
+.card{background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;margin-bottom:16px;}
 .card h2{font-size:16px;margin:0 0 14px;color:var(--text);font-weight:800;}
 .card h3{font-size:14px;margin:0 0 10px;font-weight:700;}
 
@@ -190,23 +127,20 @@ a{color:var(--blue);text-decoration:none;}
 @media(max-width:900px){.grid-3,.grid-4{grid-template-columns:1fr 1fr;}}
 @media(max-width:600px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
 
-.stat-card{
-  background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
-  padding:16px;border-left:4px solid var(--blue);
-}
+.stat-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;border-left:4px solid var(--blue);}
 .stat-card.red{border-color:var(--red);}
 .stat-card.green{border-color:var(--success);}
 .stat-card.amber{border-color:var(--warn);}
 .stat-card .num{font-size:26px;font-weight:900;color:var(--text);line-height:1;}
 .stat-card .lbl{font-size:12px;color:var(--muted);margin-top:4px;font-weight:700;}
 
-.mydata-banner{
-  background:linear-gradient(135deg,#eaf1fb,#fdeef0);
+.mydata-banner{background:linear-gradient(135deg,#eaf1fb,#fdeef0);
   border:1.5px solid var(--border);border-radius:var(--radius);
-  padding:16px;margin-bottom:16px;
-}
+  padding:16px;margin-bottom:16px;}
 .mydata-banner h3{margin:0 0 10px;color:var(--blue-dark);font-size:14px;font-weight:800;}
-.mydata-banner .my-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+.mydata-banner .my-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
 .mydata-banner .my-item{background:#fff;border-radius:8px;padding:10px;}
 .mydata-banner .my-item .lbl{font-size:11px;color:var(--muted);font-weight:700;}
 .mydata-banner .my-item .val{font-size:14px;font-weight:800;color:var(--text);margin-top:3px;}
@@ -230,102 +164,69 @@ td.cell-DX{background:#bfdbfe;}
 td.cell-OFF{background:#e5e7eb;color:#374151;font-weight:800;}
 td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,td.cell-AL,td.cell-ML{background:#fee2e2;color:#991b1b;font-weight:800;}
 td.cell-PH{background:#fecaca;color:#7f1d1d;font-weight:800;}
-td.cell-12HR,td.cell-16HR{background:#fde68a;color:#78350f;font-weight:800;}
 td.cell-warning{box-shadow:inset 0 0 0 2px var(--danger);}
 
-.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;color:#fff;}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;
+  font-size:11.5px;font-weight:700;color:#fff;}
 .pill-pending{background:var(--warn);color:#3a2c00;}
 .pill-approved{background:var(--success);}
 .pill-rejected{background:var(--danger);}
 .pill-off{background:#8a8a8a;}
-.pill-gh{background:#6b3fa0;}
-.chip{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:4px 10px;border-radius:20px;background:var(--blue-light);
-  font-size:11.5px;font-weight:700;color:var(--blue-dark);
-}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:20px;background:var(--blue-light);font-size:11.5px;
+  font-weight:700;color:var(--blue-dark);}
 
-.tabsbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--border);}
-.tabsbar button{
-  background:none;border:none;padding:9px 14px;font-weight:700;font-size:13px;
-  color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;
-  transition:.15s;
-}
+.tabsbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;
+  border-bottom:1px solid var(--border);}
+.tabsbar button{background:none;border:none;padding:9px 14px;font-weight:700;
+  font-size:13px;color:var(--muted);cursor:pointer;
+  border-bottom:3px solid transparent;transition:.15s;}
 .tabsbar button:hover{color:var(--text);}
 .tabsbar button.active{color:var(--blue);border-color:var(--blue);}
 
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
 .search-box{flex:1;min-width:180px;}
-.search-box input{
-  width:100%;padding:9px 14px;border:1.5px solid var(--border);
-  border-radius:9px;font-size:13.5px;background:#fbfcfd;
-}
+.search-box input{width:100%;padding:9px 14px;border:1.5px solid var(--border);
+  border-radius:9px;font-size:13.5px;background:#fbfcfd;}
 .search-box input:focus{border-color:var(--blue);background:#fff;}
 
-.list-row{
-  display:flex;align-items:center;gap:12px;padding:12px 14px;
+.list-row{display:flex;align-items:center;gap:12px;padding:12px 14px;
   border:1px solid var(--border);border-radius:10px;margin-bottom:8px;
-  background:#fff;flex-wrap:wrap;transition:.15s;
-}
+  background:#fff;flex-wrap:wrap;transition:.15s;}
 .list-row:hover{background:#fafbfc;}
 .list-row .grow{flex:1;min-width:150px;}
 .list-row .name{font-weight:800;font-size:13.5px;}
 .list-row .sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.list-row .av{
-  width:36px;height:36px;border-radius:50%;color:#fff;
+.list-row .av{width:36px;height:36px;border-radius:50%;color:#fff;
   display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:14px;flex-shrink:0;
-}
+  font-weight:800;font-size:14px;flex-shrink:0;}
 
-/* ============ MODAL with Close ============ */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(15,20,30,.6);
+.modal-overlay{position:fixed;inset:0;background:rgba(15,20,30,.6);
   display:flex;align-items:flex-start;justify-content:center;
-  z-index:200;overflow-y:auto;padding:24px 12px;
-  animation:fadeIn .15s ease;
-}
+  z-index:200;overflow-y:auto;padding:24px 12px;animation:fadeIn .15s ease;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal-box{
-  background:#fff;border-radius:14px;width:100%;max-width:640px;
-  box-shadow:0 20px 60px rgba(0,0,0,.35);
-  animation:slideUp .2s ease;
-  margin:auto;
-}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:640px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);animation:slideUp .2s ease;margin:auto;}
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-box.wide{max-width:1100px;}
-.modal-head{
-  display:flex;align-items:center;padding:16px 18px;
-  border-bottom:1px solid var(--border);
-  position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;z-index:2;
-}
+.modal-head{display:flex;align-items:center;padding:16px 18px;
+  border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;
+  border-radius:14px 14px 0 0;z-index:2;}
 .modal-head h3{margin:0;flex:1;font-size:16px;font-weight:800;color:var(--red);}
-.modal-close{
-  width:36px;height:36px;border-radius:50%;background:#f3f4f6;
-  color:var(--muted);font-size:20px;font-weight:600;
-  display:flex;align-items:center;justify-content:center;
-  transition:.15s;flex-shrink:0;
-}
+.modal-close{width:36px;height:36px;border-radius:50%;background:#f3f4f6;
+  color:var(--muted);font-size:20px;font-weight:600;display:flex;
+  align-items:center;justify-content:center;transition:.15s;flex-shrink:0;}
 .modal-close:hover{background:var(--red-light);color:var(--red);}
 .modal-body{padding:18px;max-height:70vh;overflow-y:auto;}
-.modal-foot{
-  display:flex;justify-content:flex-end;gap:8px;
-  padding:14px 18px;border-top:1px solid var(--border);
-  background:#fafbfc;border-radius:0 0 14px 14px;
-  flex-wrap:wrap;
-}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;
+  border-top:1px solid var(--border);background:#fafbfc;
+  border-radius:0 0 14px 14px;flex-wrap:wrap;}
 
-/* ============ TOAST ============ */
-.toast-wrap{
-  position:fixed;top:70px;right:14px;z-index:400;
-  display:flex;flex-direction:column;gap:8px;max-width:340px;
-  pointer-events:none;
-}
-.toast{
-  background:#fff;border-radius:10px;padding:12px 16px;
-  box-shadow:0 8px 24px rgba(0,0,0,.18);
-  border-left:4px solid var(--blue);font-size:13.5px;
-  animation:toastIn .3s ease;pointer-events:auto;
-}
+.toast-wrap{position:fixed;top:70px;right:14px;z-index:400;
+  display:flex;flex-direction:column;gap:8px;max-width:340px;pointer-events:none;}
+.toast{background:#fff;border-radius:10px;padding:12px 16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);border-left:4px solid var(--blue);
+  font-size:13.5px;animation:toastIn .3s ease;pointer-events:auto;}
 .toast.success{border-color:var(--success);}
 .toast.error{border-color:var(--red);background:var(--red-light);color:var(--red-dark);}
 .toast.warn{border-color:var(--warn);}
@@ -333,17 +234,11 @@ td.cell-warning{box-shadow:inset 0 0 0 2px var(--danger);}
 .toast .t-body{font-size:12px;color:var(--muted);}
 @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 
-/* ============ NOTIFICATION PANEL ============ */
-.notif-panel{
-  position:fixed;top:70px;right:14px;width:360px;max-width:92vw;
-  background:#fff;border-radius:12px;
-  box-shadow:0 12px 40px rgba(0,0,0,.25);z-index:150;
-  max-height:75vh;display:flex;flex-direction:column;
-}
-.notif-panel-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;border-bottom:1px solid var(--border);
-}
+.notif-panel{position:fixed;top:70px;right:14px;width:360px;max-width:92vw;
+  background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.25);
+  z-index:150;max-height:75vh;display:flex;flex-direction:column;}
+.notif-panel-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--border);}
 .notif-panel-head h4{margin:0;font-size:15px;font-weight:800;color:var(--red);}
 .notif-panel-body{overflow-y:auto;flex:1;}
 .notif-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;}
@@ -352,128 +247,78 @@ td.cell-warning{box-shadow:inset 0 0 0 2px var(--danger);}
 .notif-item .b{color:var(--muted);font-size:12px;}
 .notif-item .ts{color:#9aa4af;font-size:10.5px;margin-top:4px;}
 
-/* ============ BOTTOM NAV (Mobile) ============ */
-.bottomnav{
-  display:none;position:fixed;bottom:0;left:0;right:0;
-  background:#fff;border-top:1px solid var(--border);
-  z-index:60;padding:4px 0 max(4px,env(safe-area-inset-bottom));
-  box-shadow:0 -2px 10px rgba(0,0,0,.06);
-}
+.bottomnav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;
+  border-top:1px solid var(--border);z-index:60;
+  padding:4px 0 max(4px,env(safe-area-inset-bottom));
+  box-shadow:0 -2px 10px rgba(0,0,0,.06);}
 .bottomnav .bn-scroll{display:flex;overflow-x:auto;}
-.bottomnav button{
-  flex:1;min-width:64px;background:none;border:none;
+.bottomnav button{flex:1;min-width:64px;background:none;border:none;
   display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:7px 4px;font-size:10px;color:var(--muted);font-weight:700;
-  transition:.15s;cursor:pointer;
-}
+  transition:.15s;cursor:pointer;}
 .bottomnav button .ic{font-size:19px;}
 .bottomnav button.active{color:var(--red);}
 
-/* ============ CHAT ============ */
-.chat-wrap{
-  display:flex;height:72vh;border:1px solid var(--border);
-  border-radius:12px;overflow:hidden;background:#fff;
-}
-.chat-side{
-  width:220px;border-right:1px solid var(--border);
-  overflow-y:auto;background:#f8f9fb;flex-shrink:0;
-}
-.chat-side .cuser{
-  padding:12px 14px;cursor:pointer;font-size:13px;
-  border-bottom:1px solid var(--border);transition:.15s;
-  display:flex;align-items:center;gap:8px;
-}
+.chat-wrap{display:flex;height:72vh;border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;background:#fff;}
+.chat-side{width:220px;border-right:1px solid var(--border);overflow-y:auto;
+  background:#f8f9fb;flex-shrink:0;}
+.chat-side .cuser{padding:12px 14px;cursor:pointer;font-size:13px;
+  border-bottom:1px solid var(--border);transition:.15s;display:flex;
+  align-items:center;gap:8px;}
 .chat-side .cuser:hover{background:#eaf1fb;}
 .chat-side .cuser.active{background:#eaf1fb;font-weight:800;color:var(--blue);}
 .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
-.chat-msgs{
-  flex:1;overflow-y:auto;padding:14px;
-  background:#eef1f5;display:flex;flex-direction:column;gap:8px;
-}
-.msg{
-  max-width:75%;margin-bottom:4px;padding:9px 13px;
-  border-radius:14px;font-size:13px;background:#fff;
-  box-shadow:0 1px 3px rgba(0,0,0,.08);word-wrap:break-word;
-}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;background:#eef1f5;
+  display:flex;flex-direction:column;gap:8px;}
+.msg{max-width:75%;margin-bottom:4px;padding:9px 13px;border-radius:14px;
+  font-size:13px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);word-wrap:break-word;}
 .msg.mine{margin-left:auto;background:#dceafd;}
 .msg .sender{font-weight:800;font-size:11px;color:var(--blue);margin-bottom:2px;}
 .msg img{max-width:200px;border-radius:8px;display:block;margin-top:4px;cursor:pointer;}
 .msg .ts{font-size:9.5px;color:#8a95a2;margin-top:4px;text-align:right;}
-.chat-input{
-  display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);
-  background:#fff;align-items:center;
-}
-.chat-input input[type=text]{
-  flex:1;padding:10px 14px;border:1.5px solid var(--border);
-  border-radius:22px;font-size:13.5px;
-}
+.chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);
+  background:#fff;align-items:center;}
+.chat-input input[type=text]{flex:1;padding:10px 14px;border:1.5px solid var(--border);
+  border-radius:22px;font-size:13.5px;}
 .chat-input input[type=text]:focus{border-color:var(--blue);}
 
-/* ============ SETTINGS ============ */
 .settings-tab-content{margin-top:10px;}
-.color-swatch{
-  width:36px;height:36px;border-radius:8px;
-  border:1px solid var(--border);display:inline-block;
-  vertical-align:middle;margin-right:8px;
-}
+.color-swatch{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
+  display:inline-block;vertical-align:middle;margin-right:8px;}
 
-/* ============ WIZARD ============ */
 .wizard-steps{display:flex;justify-content:space-between;margin-bottom:18px;gap:4px;}
-.wizard-steps .ws{
-  flex:1;text-align:center;font-size:11.5px;color:var(--muted);
-  padding:8px 4px;border-bottom:3px solid var(--border);
-  font-weight:700;
-}
+.wizard-steps .ws{flex:1;text-align:center;font-size:11.5px;color:var(--muted);
+  padding:8px 4px;border-bottom:3px solid var(--border);font-weight:700;}
 .wizard-steps .ws.active{color:var(--blue);border-color:var(--blue);}
 .wizard-steps .ws.done{color:var(--success);border-color:var(--success);}
 
-/* ============ ALERTS ============ */
-.warn-box{
-  background:#fffbeb;border:1px solid var(--warn);
-  border-radius:8px;padding:11px 14px;font-size:13px;
-  margin-bottom:10px;color:#92400e;
-}
-.err-box{
-  background:var(--red-light);border:1px solid var(--red);
-  border-radius:8px;padding:11px 14px;font-size:13px;
-  margin-bottom:10px;color:var(--red-dark);
-}
-.ok-box{
-  background:#e9f9ee;border:1px solid var(--success);
-  border-radius:8px;padding:11px 14px;font-size:13px;
-  margin-bottom:10px;color:#12703a;
-}
-.info-box{
-  background:var(--blue-light);border:1px solid var(--blue);
-  border-radius:8px;padding:11px 14px;font-size:13px;
-  margin-bottom:10px;color:var(--blue-dark);
-}
+.warn-box{background:#fffbeb;border:1px solid var(--warn);border-radius:8px;
+  padding:11px 14px;font-size:13px;margin-bottom:10px;color:#92400e;}
+.err-box{background:var(--red-light);border:1px solid var(--red);border-radius:8px;
+  padding:11px 14px;font-size:13px;margin-bottom:10px;color:var(--red-dark);}
+.ok-box{background:#e9f9ee;border:1px solid var(--success);border-radius:8px;
+  padding:11px 14px;font-size:13px;margin-bottom:10px;color:#12703a;}
+.info-box{background:var(--blue-light);border:1px solid var(--blue);border-radius:8px;
+  padding:11px 14px;font-size:13px;margin-bottom:10px;color:var(--blue-dark);}
 .warn-box ul,.err-box ul,.ok-box ul,.info-box ul{margin:6px 0 0 20px;padding:0;}
 .warn-box li,.err-box li,.ok-box li,.info-box li{margin-bottom:4px;}
 
 .empty-state{text-align:center;padding:40px 10px;color:var(--muted);font-size:13.5px;}
 
-/* ============ CONFLICT DIALOG ============ */
-.conflict-box{
-  background:#fff;border:3px solid var(--warn);
-  border-radius:12px;padding:16px;margin-bottom:14px;
-}
+.conflict-box{background:#fff;border:3px solid var(--warn);border-radius:12px;
+  padding:16px;margin-bottom:14px;}
 .conflict-box h3{color:var(--warn);margin-bottom:8px;font-size:15px;}
-.conflict-box .problem{font-size:13px;margin-bottom:10px;padding:10px;background:#fffbeb;border-radius:8px;}
-.conflict-box .suggestion{
-  font-size:13px;margin-bottom:12px;padding:10px;
-  background:#e9f9ee;border-radius:8px;border-left:3px solid var(--success);
-}
+.conflict-box .problem{font-size:13px;margin-bottom:10px;padding:10px;
+  background:#fffbeb;border-radius:8px;}
+.conflict-box .suggestion{font-size:13px;margin-bottom:12px;padding:10px;
+  background:#e9f9ee;border-radius:8px;border-left:3px solid var(--success);}
 .conflict-box .actions{display:flex;gap:8px;flex-wrap:wrap;}
 
-/* ============ DYNAMIC ROWS ============ */
-.dyn-row{
-  display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;
-  margin-bottom:8px;padding:12px;background:#f8f9fb;border-radius:8px;
-}
+.dyn-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;
+  margin-bottom:8px;padding:12px;background:#f8f9fb;border-radius:8px;}
 .dyn-row .field{margin:0;flex:1;min-width:130px;}
 
-/* ============ PRINT ============ */
 @media print{
   .no-print,.topbar,.bottomnav,.tabsbar,.toolbar,.btn,.modal-overlay,.icon-btn{display:none !important;}
   body{background:#fff;}
@@ -481,21 +326,18 @@ td.cell-warning{box-shadow:inset 0 0 0 2px var(--danger);}
   .card{box-shadow:none;border:none;padding:0;margin:0;}
   table{font-size:10px;}
   th,td{border:1px solid #000 !important;color:#000 !important;padding:3px !important;}
-  td.cell-OFF,td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,td.cell-AL,td.cell-ML,td.cell-PH,td.cell-12HR,td.cell-16HR{background:#000 !important;color:#fff !important;}
+  td.cell-OFF,td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,td.cell-AL,td.cell-ML,td.cell-PH{background:#000 !important;color:#fff !important;}
   td.cell-M,td.cell-E,td.cell-E4,td.cell-N12,td.cell-N,td.cell-D,td.cell-X,td.cell-DX{background:#fff !important;color:#000 !important;}
 }
 .print-header{display:none;}
 @media print{.print-header{display:block;text-align:center;margin-bottom:12px;}}
 
-/* ============ RESPONSIVE ============ */
 @media(max-width:860px){
   .topnav{display:none;}
   .bottomnav{display:block;}
   .main-wrap{padding-bottom:80px;}
 }
-@media(max-width:700px){
-  .chat-side{width:130px;}
-}
+@media(max-width:700px){.chat-side{width:130px;}}
 </style>
 </head>
 <body>
@@ -770,7 +612,7 @@ td.cell-warning{box-shadow:inset 0 0 0 2px var(--danger);}
 <!-- PART 2 END -->
   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v4 — Core
+   PHLEBOTOMIST ROSTER v5 — Core
    Firebase + State + Utilities + Login + Staff + Settings
    ========================================================================= */
 
@@ -817,8 +659,8 @@ const DEFAULT_SHIFTS = {
   N12:{code:"N12",name:"Night 12",start:"00:00",end:"08:00",monSat:true,sun:false,station:"Basement",gender:"Male",color:"#c7d2fe"},
   N:{code:"N",name:"Night",start:"23:00",end:"07:00",monSat:false,sun:true,station:"Basement",gender:"Male",color:"#a5b4fc"},
   D:{code:"D",name:"Day (Gynee)",start:"09:00",end:"17:30",monSat:true,sun:false,station:"Gynee",gender:"Female",color:"#fce7f3"},
-  X:{code:"X",name:"Extra",start:"11:00",end:"19:30",monSat:true,sun:false,station:"Any",gender:"Any",color:"#d1fae5"},
-  DX:{code:"DX",name:"Day Extra",start:"09:00",end:"19:30",monSat:true,sun:false,station:"Any",gender:"Any",color:"#bfdbfe"}
+  X:{code:"X",name:"Extra",start:"11:00",end:"19:00",monSat:true,sun:false,station:"Any",gender:"Any",color:"#d1fae5"},
+  DX:{code:"DX",name:"Day Extra",start:"09:00",end:"19:00",monSat:true,sun:false,station:"Any",gender:"Any",color:"#bfdbfe"}
 };
 const DEFAULT_WEEKLY = {
   Monday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
@@ -842,14 +684,6 @@ const DEFAULT_STATIONS = {
   basement:{name:"Basement",weekday:{M:1,E:1,N12:1},sunday:{M:1,E:1,N:1}},
   diagnostic:{name:"Diagnostic",weekday:{M:1,E:1},sunday:{}},
   gynee:{name:"Gynee",weekday:{D:1},sunday:{}}
-};
-const DEFAULT_HOLIDAYS_2026 = {
-  "2026-02-05":"Kashmir Solidarity Day",
-  "2026-03-23":"Pakistan Day",
-  "2026-05-01":"Labour Day",
-  "2026-08-14":"Independence Day",
-  "2026-11-09":"Iqbal Day",
-  "2026-12-25":"Quaid-e-Azam Day"
 };
 const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Holiday'];
@@ -913,7 +747,7 @@ function toast(msg, type){
   setTimeout(()=>el.remove(), 4300);
 }
 
-/* ---------- MODAL (with Close) ---------- */
+/* ---------- MODAL ---------- */
 function openModal(title, bodyHtml, footHtml, wide){
   const root = $('modalRoot');
   root.innerHTML = `
@@ -1003,7 +837,6 @@ function doAdminLogin(){
     const users = snap.val() || {};
     const admins = Object.keys(users).filter(k=>users[k].role==='admin');
 
-    // Bootstrap default admin if none exists
     if(admins.length === 0 && u === 'admin' && p === 'admin123'){
       db.ref('users/'+uid()).set({
         name:'admin', mobile:'admin', password:'admin123', role:'admin'
@@ -1044,12 +877,12 @@ function doStaffLogin(){
     let found = null, fid = null;
     Object.keys(users).forEach(k=>{
       const usr = users[k];
-      if(usr.role==='staff' && normalizeMobile(usr.mobile)===m && usr.password===p){
+      if((usr.role==='staff'||usr.role==='supervisor') && normalizeMobile(usr.mobile)===m && usr.password===p){
         found = usr; fid = k;
       }
     });
     if(found){
-      CURRENT_USER = { uid:fid, name:found.name, mobile:found.mobile, role:'staff', staffId:found.staffId };
+      CURRENT_USER = { uid:fid, name:found.name, mobile:found.mobile, role:found.role, staffId:found.staffId };
       afterLoginSuccess();
     } else {
       $('loginErr').textContent = 'Invalid mobile or password';
@@ -1093,7 +926,6 @@ window.addEventListener('popstate', ()=>{
 
 /* ---------- DATA BOOTSTRAP ---------- */
 function bootDataListeners(){
-  // Seed default data if Firebase is empty
   db.ref('settings').once('value').then(s=>{
     if(!s.exists()){
       db.ref('settings').set({
@@ -1113,12 +945,10 @@ function bootDataListeners(){
   db.ref('leaveLimits').once('value').then(s=>{ if(!s.exists()) db.ref('leaveLimits').set(DEFAULT_LEAVE_LIMITS); });
   db.ref('leaveTypes').once('value').then(s=>{ if(!s.exists()) db.ref('leaveTypes').set(STATE.leaveTypes); });
   db.ref('stations').once('value').then(s=>{ if(!s.exists()) db.ref('stations').set(DEFAULT_STATIONS); });
-  db.ref('holidays').once('value').then(s=>{ if(!s.exists()) db.ref('holidays').set(DEFAULT_HOLIDAYS_2026); });
 
-  // Live listeners
   db.ref('staff').on('value',s=>{
     STATE.staff = s.val() || {};
-    if(CURRENT_USER && CURRENT_USER.role==='staff') CURRENT_STAFF = STATE.staff[CURRENT_USER.staffId];
+    if(CURRENT_USER && CURRENT_USER.role!=='admin') CURRENT_STAFF = STATE.staff[CURRENT_USER.staffId];
     renderCurrentSection();
   });
   db.ref('users').on('value',s=>{ STATE.users = s.val() || {}; });
@@ -1279,7 +1109,6 @@ function renderStaffList(){
   );
   arr.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
 
-  // My data first for staff
   if(!isAdmin() && CURRENT_USER.staffId){
     arr.sort((a,b) => (a._id===CURRENT_USER.staffId?-1:0) - (b._id===CURRENT_USER.staffId?-1:0));
   }
@@ -1610,13 +1439,13 @@ function tplLimits(){
     </div>
     <div class="scroll-x">
       <table>
-        <thead><tr><th>Day</th><th>Max OFF</th><th>Max Leave</th><th>Total Relax (OFF + Leave)</th></tr></thead>
+        <thead><tr><th>Day</th><th>Max OFF</th><th>Max Leave</th><th>Total Relax</th></tr></thead>
         <tbody>
           ${DAY_ORDER.map(d=>`<tr>
             <td><b>${d}</b></td>
             <td><input type="number" min="0" max="20" style="width:70px;text-align:center;padding:6px;border:1px solid var(--border);border-radius:6px;" id="ll_${d}_OFF" value="${(STATE.leaveLimits[d]&&STATE.leaveLimits[d].OFF)||0}"></td>
             <td><input type="number" min="0" max="20" style="width:70px;text-align:center;padding:6px;border:1px solid var(--border);border-radius:6px;" id="ll_${d}_Leave" value="${(STATE.leaveLimits[d]&&STATE.leaveLimits[d].Leave)||0}"></td>
-            <td id="ll_${d}_total" style="font-weight:800;color:var(--blue);"></td>
+            <td style="font-weight:800;color:var(--blue);">${((STATE.leaveLimits[d]&&STATE.leaveLimits[d].OFF)||0) + ((STATE.leaveLimits[d]&&STATE.leaveLimits[d].Leave)||0)}</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -1805,15 +1634,17 @@ function resetUserPass(id){
 <!-- ⬇⬇⬇ PART 4 STARTS HERE ⬇⬇⬇ -->
   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v4 — Auto Generate Wizard + Conflict Resolution
+   PHLEBOTOMIST ROSTER v5 — Auto Generate Wizard + Conflict Resolution
    
-   Rules:
-   - Every staff gets equal OFF = number of Sundays in period
-   - Mon-Fri: 1 relax | Saturday: 2 relax | Sunday/Holiday: 7 relax
-   - Leave + OFF = Relax limit
-   - If limit exceeded → PAUSE, ask Admin
-   - Admin can Accept/Modify/Reject
-   - After Admin decision → continue to next day
+   Key Rules:
+   - OFF per staff = Sundays count in period (equal for all)
+   - Relax Limit: Mon-Fri:1 | Sat:2 | Sun/Holiday:7
+   - If Relax = Limit + 1 → Admin Confirm → 1 X duty
+   - If Relax = Limit + 2 → Admin Confirm → 1 DX duty
+   - If Relax > Limit + 2 → Admin Modify manually
+   - Leave + OFF = Relax
+   - Gazetted Holidays: Admin confirms first
+   - Conflict → PAUSE → Admin → Resume
    ========================================================================= */
 
 let WIZ = null;
@@ -1840,11 +1671,12 @@ function freshWizard(){
       end: fmtDate(end),
       label: fmtDisplay(fmtDate(start)) + ' → ' + fmtDisplay(fmtDate(end))
     },
-    manual: { offs:[], leaves:[], gynee:[], shiftOverride:[], holidays:[] },
+    confirmedHolidays: [],  // [{date, name}]
+    manual: { offs:[], leaves:[], gynee:[], shiftOverride:[] },
     grid: null,
+    locked: null,
     offCount: null,
     warnings: [],
-    conflicts: [],
     conflictLog: [],
     currentDayIndex: 0,
     dates: null,
@@ -1863,53 +1695,34 @@ function renderWizard(){
   let body = '', foot = '';
   
   if(WIZ.step === 1){
-    body = wizStepsBar(1) + `
-      <div class="info-box">
-        Default period: <b>${escapeHtml(WIZ.period.label)}</b><br>
-        Number of Sundays + Holidays in this period will determine each staff's OFF target.
-      </div>
-      <div class="grid grid-2">
-        <div class="field"><label>Start Date</label><input type="date" id="wz_start" value="${WIZ.period.start}"></div>
-        <div class="field"><label>End Date</label><input type="date" id="wz_end" value="${WIZ.period.end}"></div>
-      </div>
-      <div class="field"><label>Label (Optional)</label><input id="wz_label" value="${escapeHtml(WIZ.period.label)}"></div>`;
+    body = wizStepsBar(1) + tplStep1();
     foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="wizNext1()">Next →</button>`;
+            <button class="btn btn-primary" onclick="wizNext1()">Next: Confirm Holidays →</button>`;
   }
   else if(WIZ.step === 2){
-    const autoMode = WIZ.mode === 'auto';
-    body = wizStepsBar(2) + `
-      <div class="info-box">
-        <b>Auto Mode:</b> App generates complete roster automatically.<br>
-        <b>Manual Mode:</b> You give special instructions, app fills the rest.
-      </div>
-      <div class="grid grid-2">
-        <div class="card" style="cursor:pointer;border:2px solid ${autoMode?'var(--blue)':'var(--border)'};" onclick="WIZ.mode='auto';renderWizard();">
-          <h3 style="margin-top:0;color:var(--blue);">🤖 Auto Mode (Recommended)</h3>
-          <p style="font-size:12.5px;color:var(--muted);margin:0;">App generates everything — equal OFF, gender rules, shift coverage.</p>
-        </div>
-        <div class="card" style="cursor:pointer;border:2px solid ${!autoMode?'var(--blue)':'var(--border)'};" onclick="WIZ.mode='manual';renderWizard();">
-          <h3 style="margin-top:0;color:var(--blue);">✏️ Manual Instructions</h3>
-          <p style="font-size:12.5px;color:var(--muted);margin:0;">You give specific instructions for special days.</p>
-        </div>
-      </div>`;
+    body = wizStepsBar(2) + tplStep2();
     foot = `<button class="btn btn-ghost" onclick="WIZ.step=1;renderWizard();">← Back</button>
-            <button class="btn btn-primary" onclick="wizNext2()">Next →</button>`;
+            <button class="btn btn-primary" onclick="wizNext2()">Next: Mode →</button>`;
   }
   else if(WIZ.step === 3){
-    body = wizStepsBar(3) + (WIZ.mode === 'auto' ? tplAutoSummary() : tplManualForm());
+    body = wizStepsBar(3) + tplStep3();
     foot = `<button class="btn btn-ghost" onclick="WIZ.step=2;renderWizard();">← Back</button>
-            <button class="btn btn-primary" onclick="wizStartGeneration()">Start Generation →</button>`;
+            <button class="btn btn-primary" onclick="wizNext3()">Next: Instructions →</button>`;
   }
   else if(WIZ.step === 4){
-    body = wizStepsBar(4) + tplConflictView();
-    // Footer in conflict view is dynamic (in body)
-    foot = '';
+    body = wizStepsBar(4) + (WIZ.mode === 'auto' ? tplStep4Auto() : tplStep4Manual());
+    foot = `<button class="btn btn-ghost" onclick="WIZ.step=3;renderWizard();">← Back</button>
+            <button class="btn btn-primary" onclick="wizStartGeneration()">🚀 Start Generation</button>`;
   }
   else if(WIZ.step === 5){
-    body = wizStepsBar(5) + tplFinalPreview();
+    body = wizStepsBar(5) + tplConflictView();
+    // Footer dynamic (in body)
+    foot = '';
+  }
+  else if(WIZ.step === 6){
+    body = wizStepsBar(6) + tplFinalPreview();
     const canSave = WIZ.warnings.length === 0;
-    foot = `<button class="btn btn-ghost" onclick="WIZ.step=3;renderWizard();">← Back</button>
+    foot = `<button class="btn btn-ghost" onclick="WIZ.step=4;renderWizard();">← Back</button>
             <button class="btn ${canSave?'btn-primary':'btn-ghost'}" ${canSave?'':'disabled'} onclick="wizSaveRoster()">💾 Save Roster</button>`;
   }
   
@@ -1917,7 +1730,7 @@ function renderWizard(){
 }
 
 function wizStepsBar(active){
-  const labels = ['1. Period','2. Mode','3. Instructions','4. Resolve','5. Preview'];
+  const labels = ['1. Period','2. Holidays','3. Mode','4. Instructions','5. Resolve','6. Preview'];
   return `<div class="wizard-steps">
     ${labels.map((l,i)=>{
       const n = i+1;
@@ -1925,6 +1738,28 @@ function wizStepsBar(active){
       return `<div class="ws ${cls}">${l}</div>`;
     }).join('')}
   </div>`;
+}
+
+/* ==================== STEP 1: PERIOD ==================== */
+function tplStep1(){
+  const sundayCount = countSundays(WIZ.period.start, WIZ.period.end);
+  const totalDays = dateRange(WIZ.period.start, WIZ.period.end).length;
+  return `
+    <div class="info-box">
+      Select the period for this roster. Default is <b>${escapeHtml(WIZ.period.label)}</b>.
+      The number of Sundays determines each staff's OFF target.
+    </div>
+    <div class="grid grid-2">
+      <div class="field"><label>Start Date</label><input type="date" id="wz_start" value="${WIZ.period.start}"></div>
+      <div class="field"><label>End Date</label><input type="date" id="wz_end" value="${WIZ.period.end}"></div>
+    </div>
+    <div class="field"><label>Label (Optional)</label><input id="wz_label" value="${escapeHtml(WIZ.period.label)}"></div>
+    <div class="ok-box">
+      📅 <b>Summary:</b><br>
+      • Total Days: <b>${totalDays}</b><br>
+      • Sundays: <b>${sundayCount}</b><br>
+      • Each staff will get exactly <b>${sundayCount} OFF</b>
+    </div>`;
 }
 
 function wizNext1(){
@@ -1938,35 +1773,149 @@ function wizNext1(){
   renderWizard();
 }
 
+function countSundays(start, end){
+  return dateRange(start, end).filter(d => isSunday(d)).length;
+}
+
+/* ==================== STEP 2: CONFIRM HOLIDAYS ==================== */
+function tplStep2(){
+  const existingHolidays = Object.keys(STATE.holidays||{})
+    .filter(d => d >= WIZ.period.start && d <= WIZ.period.end)
+    .sort();
+
+  return `
+    <div class="warn-box">
+      ⚠️ <b>Important:</b> The app will NOT assume any holiday by itself.
+      Confirm the Gazetted Holidays in this period (if any).
+    </div>
+    <div class="info-box">
+      <b>Step 1:</b> Are there any Gazetted Holidays in this period?
+    </div>
+    <div class="tabsbar" style="border:none;">
+      <button class="active" id="holidayChoiceNo" onclick="wizSetHolidayChoice('no')">❌ No Holidays</button>
+      <button id="holidayChoiceYes" onclick="wizSetHolidayChoice('yes')">✅ Yes, Add Holidays</button>
+    </div>
+    <div id="holidaySection" class="hidden">
+      <div class="dyn-row">
+        <div class="field"><label>Date</label><input type="date" id="h_confirm_date" min="${WIZ.period.start}" max="${WIZ.period.end}"></div>
+        <div class="field"><label>Name</label><input id="h_confirm_name" placeholder="e.g. Eid-ul-Fitr"></div>
+        <button class="btn btn-primary btn-sm" onclick="wizAddConfirmedHoliday()">+ Add</button>
+      </div>
+      <div id="confirmedHolidaysList"></div>
+    </div>
+    ${existingHolidays.length ? `
+      <div class="info-box" style="background:#fffbeb;border-color:var(--warn);color:#92400e;">
+        <b>ℹ️ From Settings:</b> These holidays are already in your global list for this period:<br>
+        ${existingHolidays.map(d=>`• ${fmtDisplay(d)} — ${escapeHtml(STATE.holidays[d])}`).join('<br>')}
+        <br><small>They will be treated as Sundays automatically.</small>
+      </div>` : ''}
+    <div id="holidaySummary"></div>`;
+}
+
+function wizSetHolidayChoice(choice){
+  $('holidayChoiceNo').classList.toggle('active', choice==='no');
+  $('holidayChoiceYes').classList.toggle('active', choice==='yes');
+  $('holidaySection').classList.toggle('hidden', choice!=='yes');
+  if(choice==='no'){
+    WIZ.confirmedHolidays = [];
+    renderConfirmedHolidays();
+  }
+}
+
+function wizAddConfirmedHoliday(){
+  const d = $('h_confirm_date').value;
+  const n = $('h_confirm_name').value.trim();
+  if(!d){ toast('Please select date','error'); return; }
+  if(WIZ.confirmedHolidays.find(h=>h.date===d)){ toast('Already added','error'); return; }
+  WIZ.confirmedHolidays.push({ date:d, name:n||'Holiday' });
+  $('h_confirm_date').value = '';
+  $('h_confirm_name').value = '';
+  renderConfirmedHolidays();
+}
+
+function wizRemoveConfirmedHoliday(idx){
+  WIZ.confirmedHolidays.splice(idx, 1);
+  renderConfirmedHolidays();
+}
+
+function renderConfirmedHolidays(){
+  const el = $('confirmedHolidaysList');
+  if(!el) return;
+  if(!WIZ.confirmedHolidays.length){
+    el.innerHTML = '<div class="empty-state">No holidays added yet</div>';
+    return;
+  }
+  el.innerHTML = WIZ.confirmedHolidays.map((h,i)=>`
+    <div class="list-row">
+      <div class="grow"><b>${fmtDisplay(h.date)}</b> — ${escapeHtml(h.name)}</div>
+      <button class="btn btn-danger btn-sm" onclick="wizRemoveConfirmedHoliday(${i})">Remove</button>
+    </div>`).join('');
+}
+
 function wizNext2(){
   WIZ.step = 3;
   renderWizard();
 }
 
-function countOffTarget(start, end){
-  const dates = dateRange(start, end);
-  let count = 0;
-  dates.forEach(d=>{ if(isSunday(d) || isHoliday(d)) count++; });
-  return count;
+/* ==================== STEP 3: MODE ==================== */
+function tplStep3(){
+  const autoMode = WIZ.mode === 'auto';
+  return `
+    <div class="info-box">
+      <b>Auto Mode:</b> App generates the complete roster automatically using all rules.<br>
+      <b>Manual Mode:</b> You give special instructions (e.g., specific staff OFF), app fills the rest.
+    </div>
+    <div class="grid grid-2">
+      <div class="card" style="cursor:pointer;border:2px solid ${autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('auto')">
+        <h3 style="margin-top:0;color:var(--blue);">🤖 Auto Mode (Recommended)</h3>
+        <p style="font-size:12.5px;color:var(--muted);margin:0;">
+          App generates everything — equal OFF, gender rules, shift coverage, relax limits.
+        </p>
+      </div>
+      <div class="card" style="cursor:pointer;border:2px solid ${!autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('manual')">
+        <h3 style="margin-top:0;color:var(--blue);">✏️ Manual Instructions</h3>
+        <p style="font-size:12.5px;color:var(--muted);margin:0;">
+          You give specific instructions for special days, app fills the rest.
+        </p>
+      </div>
+    </div>`;
 }
 
-function tplAutoSummary(){
-  const offTarget = countOffTarget(WIZ.period.start, WIZ.period.end);
+function wizSetMode(mode){
+  WIZ.mode = mode;
+  renderWizard();
+}
+
+function wizNext3(){
+  WIZ.step = 4;
+  renderWizard();
+}
+
+/* ==================== STEP 4: INSTRUCTIONS ==================== */
+function tplStep4Auto(){
+  const sundayCount = countSundays(WIZ.period.start, WIZ.period.end);
   const totalDays = dateRange(WIZ.period.start, WIZ.period.end).length;
+  const holidayCount = WIZ.confirmedHolidays.length;
   return `
     <div class="ok-box">
-      ✅ <b>Auto Mode</b> selected. The app will:
+      ✅ <b>Auto Mode Selected.</b> The app will generate a complete roster for <b>${totalDays}</b> days.
+    </div>
+    <div class="info-box">
+      <b>Rules that will be applied:</b>
       <ul>
-        <li>Generate complete roster for ${totalDays} days</li>
-        <li>Give each staff exactly <b>${offTarget} OFF</b></li>
-        <li>Respect Mon-Fri: 1 relax | Sat: 2 relax | Sun/Holiday: 7 relax</li>
-        <li>Follow gender rules (N12/N Male only, D Female only)</li>
-        <li>Pause and ask you when there's a conflict</li>
+        <li>Each staff gets <b>${sundayCount} OFF</b> (based on Sundays)</li>
+        <li>Relax Limits: Mon-Fri: <b>1</b> | Sat: <b>2</b> | Sun/Holiday: <b>7</b></li>
+        <li>Leave + OFF = Relax (total resting staff)</li>
+        <li>If Relax = Limit + 1 → 1 staff assigned to <b>X (Extra)</b> duty</li>
+        <li>If Relax = Limit + 2 → 1 staff assigned to <b>DX (Day Extra)</b> duty</li>
+        <li>Gender Rules: N12/N Male only, D Female only</li>
+        <li>${holidayCount ? holidayCount+' Gazetted Holiday(s) confirmed' : 'No Gazetted Holidays in this period'}</li>
+        <li>If any conflict → App will <b>PAUSE</b> and ask you</li>
       </ul>
     </div>`;
 }
 
-function tplManualForm(){
+function tplStep4Manual(){
   const staffArr = activeStaffArr();
   const staffOpts = staffArr.map(s=>`<option value="${s._id}">${escapeHtml(s.name)} (${s.gender})</option>`).join('');
   const femaleOpts = staffArr.filter(s=>s.gender==='Female').map(s=>`<option value="${s._id}">${escapeHtml(s.name)}</option>`).join('');
@@ -1974,10 +1923,10 @@ function tplManualForm(){
   const leaveOpts = (STATE.leaveTypes||[]).map(t=>`<option>${t}</option>`).join('');
   
   return `
-    <div class="info-box">All fields optional. App will fill the rest using Auto rules.</div>
+    <div class="info-box">All fields are optional. The app will fill the rest using Auto rules.</div>
     
     <div class="card">
-      <h3>1. OFF Days</h3>
+      <h3>1. Force OFF Days</h3>
       <div class="dyn-row">
         <div class="field"><label>Staff</label><select id="m_off_staff"><option value="">-- select --</option>${staffOpts}</select></div>
         <div class="field"><label>Start</label><input type="date" id="m_off_start"></div>
@@ -1988,7 +1937,7 @@ function tplManualForm(){
     </div>
     
     <div class="card">
-      <h3>2. Leave</h3>
+      <h3>2. Leave (Requires Approval)</h3>
       <div class="dyn-row">
         <div class="field"><label>Staff</label><select id="m_leave_staff"><option value="">-- select --</option>${staffOpts}</select></div>
         <div class="field"><label>Type</label><select id="m_leave_type">${leaveOpts}</select></div>
@@ -2000,7 +1949,7 @@ function tplManualForm(){
     </div>
     
     <div class="card">
-      <h3>3. Gynee Duty (Female only)</h3>
+      <h3>3. Gynee Duty (Female Only)</h3>
       <div class="dyn-row">
         <div class="field"><label>Female Staff</label><select id="m_gynee_staff"><option value="">-- select --</option>${femaleOpts}</select></div>
         <div class="field"><label>Start</label><input type="date" id="m_gynee_start"></div>
@@ -2020,16 +1969,6 @@ function tplManualForm(){
         <button class="btn btn-primary btn-sm" onclick="wizAddManual('shiftOverride')">+ Add</button>
       </div>
       <div id="m_shiftOverride_list"></div>
-    </div>
-    
-    <div class="card">
-      <h3>5. Gazetted Holiday</h3>
-      <div class="dyn-row">
-        <div class="field"><label>Date</label><input type="date" id="m_hol_date"></div>
-        <div class="field"><label>Name</label><input id="m_hol_name" placeholder="e.g. Eid"></div>
-        <button class="btn btn-primary btn-sm" onclick="wizAddManual('holidays')">+ Add</button>
-      </div>
-      <div id="m_holidays_list"></div>
     </div>`;
 }
 
@@ -2047,52 +1986,48 @@ function wizAddManual(key){
     mi.leaves.push({ staffId:s, type:t, start:a, end:b||a });
   } else if(key === 'gynee'){
     const s = get('m_gynee_staff'), a = get('m_gynee_start'), b = get('m_gynee_end');
-    if(!s || !a){ toast('Please select female staff and start date','error'); return; }
+    if(!s || !a){ toast('Please select female staff and date','error'); return; }
     mi.gynee.push({ staffId:s, start:a, end:b||a });
   } else if(key === 'shiftOverride'){
     const s = get('m_shift_staff'), v = get('m_shift_val'), a = get('m_shift_start'), b = get('m_shift_end');
-    if(!s || !a){ toast('Please select staff and start date','error'); return; }
+    if(!s || !a){ toast('Please select staff and date','error'); return; }
     mi.shiftOverride.push({ staffId:s, shift:v, start:a, end:b||a });
-  } else if(key === 'holidays'){
-    const d = get('m_hol_date'), n = get('m_hol_name').trim();
-    if(!d){ toast('Please select date','error'); return; }
-    mi.holidays.push({ date:d, name:n||'Holiday' });
   }
   renderWizard();
 }
 
-/* =========================================================================
-   GENERATION ENGINE — WITH CONFLICT RESOLUTION
-   ========================================================================= */
+/* ==================== GENERATION ENGINE ==================== */
 function wizStartGeneration(){
-  // Prepare data
   WIZ.dates = dateRange(WIZ.period.start, WIZ.period.end);
   WIZ.staffArr = activeStaffArr();
   
-  if(!WIZ.staffArr.length){ toast('No active staff. Please add staff first.','error'); return; }
+  if(!WIZ.staffArr.length){
+    toast('No active staff. Please add staff first.','error');
+    return;
+  }
   
-  WIZ.offTarget = countOffTarget(WIZ.period.start, WIZ.period.end);
+  WIZ.offTarget = countSundays(WIZ.period.start, WIZ.period.end);
+  
+  // Add confirmed holidays to STATE temporarily (for isHoliday checks)
+  WIZ.confirmedHolidays.forEach(h=>{ STATE.holidays[h.date] = h.name; });
+  
   WIZ.grid = {};
+  WIZ.locked = {};
   WIZ.offCount = {};
-  WIZ.dates.forEach(d => { WIZ.grid[d] = {}; });
+  WIZ.dates.forEach(d => { WIZ.grid[d] = {}; WIZ.locked[d] = {}; });
   WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
   
-  // Apply manual instructions first (locked)
-  WIZ.locked = {};
-  WIZ.dates.forEach(d => { WIZ.locked[d] = {}; });
-  
+  // Apply manual instructions first (locked, cannot be changed)
   if(WIZ.mode === 'manual'){
-    // Apply manual OFF
     WIZ.manual.offs.forEach(x=>{
       dateRange(x.start, x.end).forEach(d=>{
-        if(WIZ.grid[d] && WIZ.staffArr.some(s=>s._id===x.staffId)){
+        if(WIZ.grid[d]){
           WIZ.grid[d][x.staffId] = 'OFF';
           WIZ.locked[d][x.staffId] = true;
           WIZ.offCount[x.staffId]++;
         }
       });
     });
-    // Apply manual leaves
     WIZ.manual.leaves.forEach(x=>{
       dateRange(x.start, x.end).forEach(d=>{
         if(WIZ.grid[d]){
@@ -2101,40 +2036,31 @@ function wizStartGeneration(){
         }
       });
     });
-    // Apply Gynee
     WIZ.manual.gynee.forEach(x=>{
       dateRange(x.start, x.end).forEach(d=>{
         if(WIZ.grid[d]){ WIZ.grid[d][x.staffId] = 'D'; WIZ.locked[d][x.staffId] = true; }
       });
     });
-    // Apply shift overrides
     WIZ.manual.shiftOverride.forEach(x=>{
       dateRange(x.start, x.end).forEach(d=>{
         if(WIZ.grid[d]){ WIZ.grid[d][x.staffId] = x.shift; WIZ.locked[d][x.staffId] = true; }
       });
     });
-    // Apply holidays
-    WIZ.manual.holidays.forEach(h=>{
-      if(!STATE.holidays[h.date]) db.ref('holidays/'+h.date).set(h.name);
-    });
-    // Recalculate holidays after manual addition
-    WIZ.manual.holidays.forEach(h=>{ STATE.holidays[h.date] = h.name; });
   }
   
-  // Start generation loop
   WIZ.currentDayIndex = 0;
   WIZ.conflictLog = [];
   WIZ.warnings = [];
   
-  WIZ.step = 4;
+  WIZ.step = 5;
   processNextDay();
 }
 
 function processNextDay(){
-  // If all days processed → move to preview
+  // All days done?
   if(WIZ.currentDayIndex >= WIZ.dates.length){
     finalizeGeneration();
-    WIZ.step = 5;
+    WIZ.step = 6;
     renderWizard();
     return;
   }
@@ -2143,43 +2069,41 @@ function processNextDay(){
   const result = processDay(d);
   
   if(result.conflict){
-    // PAUSE and show conflict to Admin
-    showConflictDialog(d, result);
-    return; // Wait for Admin decision
+    // PAUSE - show conflict to Admin
+    WIZ.currentConflictDay = d;
+    WIZ.currentConflictResult = result;
+    renderWizard();
+    return;
   }
   
-  // No conflict → continue to next day
+  // No conflict → continue
   WIZ.currentDayIndex++;
-  processNextDay();
+  // Small delay to allow UI update
+  setTimeout(processNextDay, 10);
 }
 
 function processDay(date){
   const isOff = isHolidayOrSunday(date);
   const dayKey = isHoliday(date) ? 'Holiday' : dayNameFor(date);
-  const need = STATE.weeklySetup[dayKey] || STATE.weeklySetup[isSunday(date)?'Sunday':'Monday'] || {};
+  const need = STATE.weeklySetup[dayKey] || {};
   const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:1};
+  const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
   
-  // Count leaves/offs already assigned (from manual + earlier leaves from Firebase)
   const dayGrid = WIZ.grid[date];
   
-  // First, apply any existing PENDING leaves from Firebase for this date
-  const existingLeaves = objToArr(STATE.leaves).filter(l=>{
-    if(l.status === 'rejected') return false;
-    const s = l.startDate || l.date;
-    const e = l.endDate || l.date;
-    return date >= s && date <= e;
-  });
-  
-  existingLeaves.forEach(l=>{
-    // Only apply if this staff is active and not already assigned
-    if(!WIZ.staffArr.some(s=>s._id===l.staffId)) return;
-    if(dayGrid[l.staffId] && WIZ.locked[date][l.staffId]) return; // Manual override wins
-    if(!dayGrid[l.staffId]){
+  // Apply existing leaves from Firebase
+  objToArr(STATE.leaves).forEach(l=>{
+    if(l.status === 'rejected') return;
+    const ls = l.startDate || l.date;
+    const le = l.endDate || l.date;
+    if(date >= ls && date <= le){
+      if(!WIZ.staffArr.some(s=>s._id===l.staffId)) return;
+      if(dayGrid[l.staffId]) return; // Manual override wins
       dayGrid[l.staffId] = l.type;
     }
   });
   
-  // Count current relax (OFF + Leave) on this day
+  // Count current relax
   let offCount = 0, leaveCount = 0;
   Object.values(dayGrid).forEach(c=>{
     if(c === 'OFF') offCount++;
@@ -2187,29 +2111,60 @@ function processDay(date){
   });
   
   const totalRelax = offCount + leaveCount;
-  const relaxLimit = limits.OFF + limits.Leave; // Total relax limit for this day
   
   // CHECK 1: Relax limit exceeded
   if(totalRelax > relaxLimit){
+    const excess = totalRelax - relaxLimit;
+    let conflictType, suggestion;
+    
+    if(excess === 1){
+      conflictType = 'relax_exceeded_by_1';
+      suggestion = {
+        action: 'X_DUTY',
+        message: `If confirmed, 1 staff will be assigned to X (Extra) duty (11:00-19:00).`,
+        staffPick: 'auto'
+      };
+    } else if(excess === 2){
+      conflictType = 'relax_exceeded_by_2';
+      suggestion = {
+        action: 'DX_DUTY',
+        message: `If confirmed, 1 staff will be assigned to DX (Day Extra) duty (09:00-19:00).`,
+        staffPick: 'auto'
+      };
+    } else {
+      conflictType = 'relax_exceeded_major';
+      suggestion = {
+        action: 'MANUAL',
+        message: `Too many staff resting (excess: ${excess}). Admin must modify manually.`,
+        staffPick: 'manual'
+      };
+    }
+    
     return {
       conflict: true,
-      type: 'relax_limit_exceeded',
-      message: `On ${fmtDisplay(date)} (${dayShort(date)}), total relax is ${totalRelax} but the limit is ${relaxLimit}.`,
-      details: `${offCount} OFF + ${leaveCount} Leave = ${totalRelax} (limit: ${relaxLimit})`,
-      suggestion: generateRelaxSuggestion(date, offCount, leaveCount, relaxLimit)
+      type: conflictType,
+      date: date,
+      message: `${fmtDisplay(date)} (${dayShort(date)}) has ${totalRelax} staff on relax, but limit is ${relaxLimit}.`,
+      details: `${offCount} OFF + ${leaveCount} Leave = ${totalRelax}`,
+      excess: excess,
+      suggestion: suggestion
     };
   }
   
-  // Now assign shifts to remaining free staff
+  // No conflict → assign shifts and remaining OFF
+  assignShiftsAndOff(date, need, isOff, relaxLimit, totalRelax);
+  return { conflict: false };
+}
+
+function assignShiftsAndOff(date, need, isOff, relaxLimit, currentRelax){
+  const dayGrid = WIZ.grid[date];
   const freeStaff = WIZ.staffArr.filter(s => !dayGrid[s._id]);
   
-  // Sort free staff: those with fewer OFF first (to balance)
+  // Sort by OFF count (fewest first, to balance)
   freeStaff.sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
   
-  // Assign shifts per Weekly Setup
+  // Assign shifts
   const shiftCodes = Object.keys(need);
-  let unassignedShift = false;
-  
   shiftCodes.forEach(code=>{
     const req = need[code];
     if(!req) return;
@@ -2222,14 +2177,13 @@ function processDay(date){
     let remaining = req - assigned;
     
     while(remaining > 0){
-      // Find eligible staff
       const eligible = freeStaff.filter(s=>{
         if(dayGrid[s._id]) return false;
         if(shiftDef.gender !== 'Any' && s.gender !== shiftDef.gender) return false;
         return true;
       });
       
-      // Sort by preference
+      // Sort by preference (fixedShift, multiShifts, then fewer OFF)
       eligible.sort((a,b)=>{
         const aP = (a.fixedShift===code ? 0 : (a.multiShifts||[]).indexOf(code)>=0 ? (a.multiShifts.indexOf(code)+1) : 99);
         const bP = (b.fixedShift===code ? 0 : (b.multiShifts||[]).indexOf(code)>=0 ? (b.multiShifts.indexOf(code)+1) : 99);
@@ -2242,91 +2196,76 @@ function processDay(date){
       dayGrid[pick._id] = code;
       remaining--;
     }
-    
-    if(remaining > 0) unassignedShift = true;
   });
   
-  // CHECK 2: Shift couldn't be covered
-  if(unassignedShift){
-    return {
-      conflict: true,
-      type: 'shift_not_covered',
-      message: `On ${fmtDisplay(date)} (${dayShort(date)}), some shifts could not be fully covered.`,
-      details: `Not enough eligible staff (check gender rules and availability).`,
-      suggestion: `Allow 1 staff to cover 2 shifts (Double Duty)?`
-    };
-  }
-  
-  // Assign OFF to remaining staff (need to reach target)
+  // Assign remaining staff
   const remainingFree = WIZ.staffArr.filter(s => !dayGrid[s._id]);
-  
-  // Sort by OFF count (fewest OFF first)
   remainingFree.sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
   
-  // How many OFF should we give today?
-  // Target = offTarget / number of days
-  // We give OFF to those who need it most, up to the day's limit
-  
-  // Remaining relax slots today = relaxLimit - totalRelax
-  let relaxSlotsLeft = relaxLimit - totalRelax;
+  let relaxSlotsLeft = relaxLimit - currentRelax;
   
   remainingFree.forEach(s=>{
+    // Give OFF if: still needs OFF to reach target AND slots available
     if(relaxSlotsLeft > 0 && WIZ.offCount[s._id] < WIZ.offTarget){
       dayGrid[s._id] = 'OFF';
       WIZ.offCount[s._id]++;
       relaxSlotsLeft--;
     } else {
-      // This staff will work today — but we need to assign them a shift
-      // If no shift assigned and no OFF → assign X (Extra) as fallback
+      // Assign X (Extra) as fallback for extra staff who don't fit any shift
       dayGrid[s._id] = 'X';
     }
   });
+}
+
+/* ==================== STEP 5: CONFLICT VIEW ==================== */
+function tplConflictView(){
+  if(!WIZ.currentConflictResult){
+    return '<div class="empty-state">Processing...</div>';
+  }
+  const c = WIZ.currentConflictResult;
+  const staffArr = WIZ.staffArr;
+  const date = WIZ.currentConflictDay;
   
-  return { conflict: false };
-}
-
-function generateRelaxSuggestion(date, offCount, leaveCount, limit){
-  const excess = (offCount + leaveCount) - limit;
-  const femaleStaff = WIZ.staffArr.filter(s=>s.gender==='Female');
-  return {
-    type: 'allow_extra',
-    message: `Allow ${excess} extra staff to be on relax today, and assign one working staff to cover M+E (Double Duty).`,
-    excess: excess
-  };
-}
-
-function showConflictDialog(date, result){
-  const conflictBox = `
-    <div class="conflict-box">
-      <h3>⚠️ CONFLICT on ${fmtDisplay(date)} (${dayShort(date)})</h3>
-      <div class="problem">
-        <b>Problem:</b><br>
-        ${escapeHtml(result.message)}<br>
-        <small>${escapeHtml(result.details)}</small>
-      </div>
+  let suggestionHtml = '';
+  if(c.suggestion && c.suggestion.action === 'X_DUTY'){
+    suggestionHtml = `
       <div class="suggestion">
-        <b>💡 Suggestion:</b><br>
-        ${escapeHtml(typeof result.suggestion === 'string' ? result.suggestion : result.suggestion.message)}
+        <b>💡 Suggested Solution:</b><br>
+        Assign 1 staff to <b>X (Extra) duty</b> (11:00-19:00).<br>
+        <small>This will ensure shift coverage remains intact.</small>
       </div>
-      <div class="actions">
-        <button class="btn btn-success" onclick="resolveConflict('accept','${date}')">✅ Accept Suggestion</button>
-        <button class="btn btn-primary" onclick="resolveConflict('modify','${date}')">✏️ Modify Manually</button>
-        <button class="btn btn-danger" onclick="resolveConflict('skip','${date}')">❌ Skip Day</button>
+      <div class="form-row" style="margin-top:10px;">
+        <div class="field" style="flex:1;"><label>Select staff for X duty:</label>
+          <select id="conflict_staff_pick">
+            ${staffArr.map(s=>`<option value="${s._id}">${escapeHtml(s.name)} (${s.gender})</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+  } else if(c.suggestion && c.suggestion.action === 'DX_DUTY'){
+    suggestionHtml = `
+      <div class="suggestion">
+        <b>💡 Suggested Solution:</b><br>
+        Assign 1 staff to <b>DX (Day Extra) duty</b> (09:00-19:00).<br>
+        <small>This will ensure shift coverage remains intact.</small>
       </div>
-    </div>
-    
-    <div class="info-box">
-      <b>Progress:</b> Day ${WIZ.currentDayIndex + 1} of ${WIZ.dates.length}
-    </div>
-    
-    <div id="conflictLogDisplay"></div>`;
+      <div class="form-row" style="margin-top:10px;">
+        <div class="field" style="flex:1;"><label>Select staff for DX duty:</label>
+          <select id="conflict_staff_pick">
+            ${staffArr.map(s=>`<option value="${s._id}">${escapeHtml(s.name)} (${s.gender})</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+  } else {
+    suggestionHtml = `
+      <div class="suggestion">
+        <b>💡 Suggested Solution:</b><br>
+        This conflict is too complex for auto-resolution. Please modify manually.
+      </div>`;
+  }
   
-  const body = wizStepsBar(4) + conflictBox;
-  openModal('⚠ Resolve Conflict', body, '', true);
-  
-  // Show log
+  let logHtml = '';
   if(WIZ.conflictLog.length){
-    $('conflictLogDisplay').innerHTML = '<h3>Previous Resolutions</h3>' + WIZ.conflictLog.map(c=>`
+    logHtml = `<h3 style="margin-top:14px;">Previous Resolutions</h3>` + WIZ.conflictLog.map(c=>`
       <div class="list-row">
         <div class="grow">
           <div class="name">${fmtDisplay(c.date)} — ${escapeHtml(c.type)}</div>
@@ -2334,58 +2273,99 @@ function showConflictDialog(date, result){
         </div>
       </div>`).join('');
   }
+  
+  const progress = `Day ${WIZ.currentDayIndex + 1} of ${WIZ.dates.length}`;
+  
+  let actionsHtml = '';
+  if(c.suggestion && (c.suggestion.action === 'X_DUTY' || c.suggestion.action === 'DX_DUTY')){
+    actionsHtml = `
+      <div class="actions">
+        <button class="btn btn-success" onclick="resolveConflict('accept')">✅ Confirm Suggestion</button>
+        <button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify Manually</button>
+        <button class="btn btn-danger" onclick="resolveConflict('skip')">❌ Skip This Day</button>
+      </div>`;
+  } else {
+    actionsHtml = `
+      <div class="actions">
+        <button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify Manually</button>
+        <button class="btn btn-danger" onclick="resolveConflict('skip')">❌ Skip This Day</button>
+      </div>`;
+  }
+  
+  return `
+    <div class="info-box" style="background:#eaf1fb;">
+      <b>Progress:</b> ${progress}
+    </div>
+    <div class="conflict-box">
+      <h3>⚠️ CONFLICT on ${fmtDisplay(date)} (${dayShort(date)})</h3>
+      <div class="problem">
+        <b>Problem:</b><br>
+        ${escapeHtml(c.message)}<br>
+        <small>${escapeHtml(c.details)}</small>
+      </div>
+      ${suggestionHtml}
+      ${actionsHtml}
+    </div>
+    ${logHtml}`;
 }
 
-function resolveConflict(action, date){
+function resolveConflict(action){
+  const date = WIZ.currentConflictDay;
+  const c = WIZ.currentConflictResult;
   const dayGrid = WIZ.grid[date];
   
   if(action === 'accept'){
-    // Auto-resolve: allow extra relax; assign double duty to first available staff
-    const freeStaff = WIZ.staffArr.filter(s => !dayGrid[s._id]);
-    if(freeStaff.length){
-      // Assign M + E double duty to first free staff
-      const doubleDuty = freeStaff[0];
-      dayGrid[doubleDuty._id] = 'M+E'; // Custom code for double duty
+    const pickEl = $('conflict_staff_pick');
+    const pickId = pickEl ? pickEl.value : null;
+    
+    if(!pickId){
+      toast('Please select a staff member','error');
+      return;
     }
-    WIZ.conflictLog.push({ date, type:'relax_limit', action:'Accept Suggestion', note:'Extra relax allowed, double duty assigned' });
+    
+    if(c.suggestion.action === 'X_DUTY'){
+      dayGrid[pickId] = 'X';
+      WIZ.conflictLog.push({ date, type:'relax_exceeded', action:'Accepted', note:staffName(pickId)+' → X duty' });
+    } else if(c.suggestion.action === 'DX_DUTY'){
+      dayGrid[pickId] = 'DX';
+      WIZ.conflictLog.push({ date, type:'relax_exceeded', action:'Accepted', note:staffName(pickId)+' → DX duty' });
+    }
   }
   else if(action === 'modify'){
-    // Show manual resolution modal
     showManualResolution(date);
     return;
   }
   else if(action === 'skip'){
-    // Skip this day (leave blank or mark OFF everyone)
-    WIZ.conflictLog.push({ date, type:'relax_limit', action:'Skipped', note:'Day left unresolved' });
-    WIZ.warnings.push(`${fmtDisplay(date)}: Skipped by Admin`);
+    WIZ.conflictLog.push({ date, type:'skipped', action:'Skipped', note:'Admin skipped this day' });
+    WIZ.warnings.push(`${fmtDisplay(date)}: Skipped by Admin — needs manual editing`);
   }
   
   // Continue to next day
   WIZ.currentDayIndex++;
-  processNextDay();
+  setTimeout(processNextDay, 10);
 }
 
 function showManualResolution(date){
   const staffArr = WIZ.staffArr;
   const dayGrid = WIZ.grid[date];
-  const staffRows = staffArr.map(s=>{
+  const allCodes = ['', ...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'X', 'DX'];
+  
+  const rows = staffArr.map(s=>{
     const cur = dayGrid[s._id] || '';
-    const allCodes = [...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'X'];
     return `
       <div class="dyn-row">
-        <div style="flex:1;font-weight:700;">${escapeHtml(s.name)} (${s.gender})</div>
-        <div style="flex:1;">
-          <select onchange="setManualResolution('${date}','${s._id}',this.value)" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;">
-            <option value="">-- none --</option>
-            ${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('')}
+        <div style="flex:1;font-weight:700;min-width:120px;">${escapeHtml(s.name)} <small>(${s.gender})</small></div>
+        <div style="flex:2;min-width:150px;">
+          <select onchange="wizSetManual('${date}','${s._id}',this.value)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+            ${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c||'-- none --'}</option>`).join('')}
           </select>
         </div>
       </div>`;
   }).join('');
   
   const body = `
-    <div class="info-box">Manually assign each staff's code for <b>${fmtDisplay(date)}</b></div>
-    <div style="max-height:400px;overflow-y:auto;">${staffRows}</div>`;
+    <div class="info-box">Manually assign each staff's code for <b>${fmtDisplay(date)} (${dayShort(date)})</b></div>
+    <div style="max-height:400px;overflow-y:auto;">${rows}</div>`;
   
   const foot = `
     <button class="btn btn-ghost" onclick="renderWizard()">Cancel</button>
@@ -2394,7 +2374,7 @@ function showManualResolution(date){
   openModal('✏️ Manual Resolution — '+fmtDisplay(date), body, foot, true);
 }
 
-function setManualResolution(date, staffId, code){
+function wizSetManual(date, staffId, code){
   if(!WIZ.grid[date]) WIZ.grid[date] = {};
   if(code) WIZ.grid[date][staffId] = code;
   else delete WIZ.grid[date][staffId];
@@ -2403,14 +2383,12 @@ function setManualResolution(date, staffId, code){
 function confirmManualResolution(date){
   WIZ.conflictLog.push({ date, type:'manual', action:'Resolved Manually', note:'Admin assigned values' });
   WIZ.currentDayIndex++;
-  processNextDay();
+  setTimeout(processNextDay, 10);
 }
 
-/* =========================================================================
-   FINALIZE & PREVIEW
-   ========================================================================= */
+/* ==================== FINALIZE ==================== */
 function finalizeGeneration(){
-  // Recompute offCount
+  // Recalculate offCount
   WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
   WIZ.dates.forEach(d=>{
     WIZ.staffArr.forEach(s=>{
@@ -2418,17 +2396,17 @@ function finalizeGeneration(){
     });
   });
   
-  // Generate warnings
   WIZ.warnings = [];
   
   // 1. Check OFF balance
   WIZ.staffArr.forEach(s=>{
-    if(WIZ.offCount[s._id] !== WIZ.offTarget){
-      WIZ.warnings.push(`${s.name} has ${WIZ.offCount[s._id]} OFF (target: ${WIZ.offTarget})`);
+    const diff = WIZ.offCount[s._id] - WIZ.offTarget;
+    if(diff !== 0){
+      WIZ.warnings.push(`${s.name} has ${WIZ.offCount[s._id]} OFF (target: ${WIZ.offTarget}, diff: ${diff>0?'+':''}${diff})`);
     }
   });
   
-  // 2. Check gender rules
+  // 2. Gender rules
   WIZ.dates.forEach(d=>{
     Object.keys(WIZ.grid[d]).forEach(staffId=>{
       const code = WIZ.grid[d][staffId];
@@ -2441,7 +2419,7 @@ function finalizeGeneration(){
     });
   });
   
-  // 3. Check shift coverage
+  // 3. Shift coverage
   WIZ.dates.forEach(d=>{
     const isOff = isHolidayOrSunday(d);
     const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
@@ -2459,27 +2437,24 @@ function finalizeGeneration(){
   });
 }
 
-function tplConflictView(){
-  return '<div class="empty-state">Loading conflict...</div>';
-}
-
+/* ==================== STEP 6: FINAL PREVIEW ==================== */
 function tplFinalPreview(){
   const staffArr = WIZ.staffArr;
   const dates = WIZ.dates;
   
   let html = '';
   
-  // Conflict log
   if(WIZ.conflictLog.length){
     html += `<div class="info-box"><b>📋 Resolved Conflicts (${WIZ.conflictLog.length}):</b>
-      <ul>${WIZ.conflictLog.map(c=>`<li>${fmtDisplay(c.date)}: ${escapeHtml(c.action)} — ${escapeHtml(c.note||'')}</li>`).join('')}</ul>
+      <ul>${WIZ.conflictLog.slice(0,10).map(c=>`<li>${fmtDisplay(c.date)}: ${escapeHtml(c.action)} — ${escapeHtml(c.note||'')}</li>`).join('')}</ul>
     </div>`;
   }
   
-  // Warnings
   if(WIZ.warnings.length){
     html += `<div class="err-box"><b>⚠ ${WIZ.warnings.length} Warning(s) — Please fix before saving:</b>
-      <ul>${WIZ.warnings.slice(0,15).map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul></div>`;
+      <ul>${WIZ.warnings.slice(0,15).map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul>
+      ${WIZ.warnings.length>15?`<small>... and ${WIZ.warnings.length-15} more</small>`:''}
+    </div>`;
   } else {
     html += `<div class="ok-box">✅ No warnings — Roster is ready to save</div>`;
   }
@@ -2526,6 +2501,11 @@ function wizSaveRoster(){
   };
   WIZ.dates.forEach(d=>{ updates['roster/'+pid+'/'+d] = WIZ.grid[d]; });
   
+  // Save confirmed holidays
+  WIZ.confirmedHolidays.forEach(h=>{
+    updates['holidays/'+h.date] = h.name;
+  });
+  
   db.ref().update(updates).then(()=>{
     STATE.currentPeriodId = pid;
     logAudit('Roster Generated', 'Period: '+WIZ.period.label);
@@ -2541,12 +2521,10 @@ function wizSaveRoster(){
 <!-- ⬇⬇⬇ PART 5 STARTS HERE ⬇⬇⬇ -->
   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v4 — Roster Display + Leave + Exchange
+   PHLEBOTOMIST ROSTER v5 — Roster Display + Leave + Exchange
    ========================================================================= */
 
-/* =========================================================================
-   ROSTER DISPLAY
-   ========================================================================= */
+/* ==================== ROSTER DISPLAY ==================== */
 function renderRosterSection(){
   const sel = $('periodSelect');
   const arr = objToArr(STATE.periods).sort((a,b)=>(b.start||'').localeCompare(a.start||''));
@@ -2596,8 +2574,6 @@ function cellClass(code){
   if(code === 'OFF') return 'cell-OFF';
   if(code === 'GH') return 'cell-GH';
   if(code === 'PH') return 'cell-PH';
-  if(code === '12HR') return 'cell-12HR';
-  if(code === '16HR') return 'cell-16HR';
   if(['M','E','E4','N12','N','D','X','DX'].includes(code)) return 'cell-'+code;
   if((STATE.leaveTypes||[]).includes(code)) return 'cell-'+code;
   return '';
@@ -2635,7 +2611,7 @@ function renderRosterTable(pid){
 function editRosterCell(pid, date, staffId){
   if(!isAdmin()) return;
   const cur = (STATE.roster[pid] && STATE.roster[pid][date] && STATE.roster[pid][date][staffId]) || '';
-  const allCodes = [...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'PH', 'GH'];
+  const allCodes = [...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'PH', 'GH', 'X', 'DX'];
   const body = `
     <div class="info-box"><b>${escapeHtml(staffName(staffId))}</b> — ${fmtDisplay(date)} (${dayShort(date)})</div>
     <div class="field"><label>New Code</label>
@@ -2673,7 +2649,7 @@ function renderRosterSummary(pid){
   if(!pid || !STATE.periods[pid]){ w.innerHTML=''; return; }
   const dates = getPeriodDates(pid);
   const staffArr = activeStaffArr();
-  const offTarget = countOffTarget(STATE.periods[pid].start, STATE.periods[pid].end);
+  const offTarget = countSundays(STATE.periods[pid].start, STATE.periods[pid].end);
 
   let html = '<h2>Summary</h2><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Leave</th><th>GH</th><th>Duties</th><th>Target</th><th>Balance</th></tr></thead><tbody>';
 
@@ -2744,9 +2720,7 @@ function exportRosterExcel(){
   toast('Excel exported','success');
 }
 
-/* =========================================================================
-   LEAVE MANAGEMENT
-   ========================================================================= */
+/* ==================== LEAVE MANAGEMENT ==================== */
 function switchLeaveTab(tab, btn){
   leaveTabView = tab;
   document.querySelectorAll('#sec-leave .tabsbar button').forEach(b=>b.classList.remove('active'));
@@ -2782,7 +2756,7 @@ function renderLeaveSection(){
             <span class="pill pill-${l.status}">${l.status}</span>
           </div>
           <div class="sub">${fmtDisplay(l.startDate||l.date)} to ${fmtDisplay(l.endDate||l.date)}${l.reason?(' — '+escapeHtml(l.reason)):''}</div>
-          ${l.rejectReason?`<div class="sub" style="color:var(--red);">Rejection reason: ${escapeHtml(l.rejectReason)}</div>`:''}
+          ${l.rejectReason?`<div class="sub" style="color:var(--red);">Rejection: ${escapeHtml(l.rejectReason)}</div>`:''}
         </div>
         ${canApprove ? `
           <button class="btn btn-success btn-sm" onclick="approveLeave('${l._id}')">✅ Approve</button>
@@ -3032,9 +3006,7 @@ function deleteLeave(id){
   });
 }
 
-/* =========================================================================
-   EXCHANGE + DUTY CHANGE
-   ========================================================================= */
+/* ==================== EXCHANGE + DUTY CHANGE ==================== */
 function switchExchTab(tab, btn){
   exchTabView = tab;
   document.querySelectorAll('#sec-exchange .tabsbar button').forEach(b=>b.classList.remove('active'));
@@ -3288,12 +3260,10 @@ function rejectDutyChange(id){
 <!-- ⬇⬇⬇ PART 6 STARTS HERE ⬇⬇⬇ -->
   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v4 — Chat + Reports + Print + Init
+   PHLEBOTOMIST ROSTER v5 — Chat + Reports + Print + Init
    ========================================================================= */
 
-/* =========================================================================
-   CHAT
-   ========================================================================= */
+/* ==================== CHAT ==================== */
 function renderChat(){
   const side = $('chatSide');
   const others = activeStaffArr().filter(s=>s._id !== CURRENT_USER.staffId);
@@ -3392,9 +3362,7 @@ function sendChatImage(){
     .catch(err => { toast('Upload failed: '+err.message,'error'); });
 }
 
-/* =========================================================================
-   REPORTS
-   ========================================================================= */
+/* ==================== REPORTS ==================== */
 function switchReportTab(tab, btn){
   reportTabView = tab;
   document.querySelectorAll('#sec-reports .tabsbar button').forEach(b=>b.classList.remove('active'));
@@ -3439,6 +3407,7 @@ function reportMonthly(){
   if(!pid) return '<div class="empty-state">No period selected</div>';
   const dates = getPeriodDates(pid);
   const staffArr = activeStaffArr();
+  const offTarget = countSundays(STATE.periods[pid].start, STATE.periods[pid].end);
   const rows = staffArr.map(s=>{
     let off=0, leave=0, gh=0, duties=0;
     dates.forEach(d=>{
@@ -3453,6 +3422,7 @@ function reportMonthly(){
     </tr>`;
   }).join('');
   return `<h3>Monthly Summary — ${escapeHtml(STATE.periods[pid].label||'')}</h3>
+    <div class="info-box">OFF Target per staff: <b>${offTarget}</b> (based on Sundays)</div>
     <div class="scroll-x"><table>
       <thead><tr><th>Staff</th><th>Total Days</th><th>OFF</th><th>Leave</th><th>GH</th><th>Duties</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -3557,16 +3527,106 @@ function exportReportExcel(){
   toast('Report exported to Excel','success');
 }
 
-/* =========================================================================
-   INIT
-   ========================================================================= */
+/* ==================== DASHBOARD ==================== */
+function renderDashboard(){
+  const pid = STATE.currentPeriodId;
+  const today = todayStr();
+  const staffArr = activeStaffArr();
+  const pendingLeaves = objToArr(STATE.leaves).filter(l=>l.status==='pending').length;
+  const pendingExch = objToArr(STATE.exchanges).filter(e=>e.status==='pending'||e.status==='accepted_by_b').length;
+  const pendingDCR = objToArr(STATE.dutyChangeRequests).filter(d=>d.status==='pending').length;
+  const totalPeriods = Object.keys(STATE.periods).length;
+
+  $('dashStats').innerHTML = `
+    <div class="stat-card"><div class="num">${staffArr.length}</div><div class="lbl">Active Staff</div></div>
+    <div class="stat-card red"><div class="num">${totalPeriods}</div><div class="lbl">Roster Periods</div></div>
+    <div class="stat-card amber"><div class="num">${pendingLeaves}</div><div class="lbl">Pending Leaves</div></div>
+    <div class="stat-card green"><div class="num">${pendingExch + pendingDCR}</div><div class="lbl">Pending Requests</div></div>`;
+
+  // My Data Card
+  const w = $('myDataDashboard');
+  if(CURRENT_STAFF){
+    let myCode = '—';
+    if(pid && STATE.roster[pid] && STATE.roster[pid][today]){
+      myCode = STATE.roster[pid][today][CURRENT_USER.staffId] || '—';
+    }
+    let offCount = 0, ghCount = 0, leaveCount = 0, cplEarned = 0, cplUsed = 0;
+    if(pid && STATE.roster[pid]){
+      const dates = getPeriodDates(pid);
+      dates.forEach(d=>{
+        const c = STATE.roster[pid][d] && STATE.roster[pid][d][CURRENT_USER.staffId];
+        if(c==='OFF') offCount++;
+        else if(c==='GH') ghCount++;
+        else if(c && STATE.leaveTypes.includes(c) && c!=='OFF' && c!=='GH') leaveCount++;
+        if((isSunday(d)||isHoliday(d)) && c && c!=='OFF' && !STATE.leaveTypes.includes(c)) cplEarned++;
+        if(c==='CPL') cplUsed++;
+      });
+    }
+    w.style.display = 'block';
+    w.innerHTML = `
+      <h3>👤 My Data — ${escapeHtml(CURRENT_STAFF.name)}</h3>
+      <div class="my-grid">
+        <div class="my-item"><div class="lbl">Today's Duty</div><div class="val">${escapeHtml(myCode)}</div></div>
+        <div class="my-item"><div class="lbl">OFF (This Period)</div><div class="val">${offCount}</div></div>
+        <div class="my-item"><div class="lbl">Leave (This Period)</div><div class="val">${leaveCount}</div></div>
+        <div class="my-item"><div class="lbl">GH (This Period)</div><div class="val">${ghCount}</div></div>
+        <div class="my-item"><div class="lbl">CPL Balance</div><div class="val">${cplEarned - cplUsed}</div></div>
+      </div>`;
+  } else {
+    w.style.display = 'none';
+    w.innerHTML = '';
+  }
+
+  // Pending Approvals
+  const pc = $('pendingApprovalsCard');
+  if(isSupervisor()){
+    const items = [];
+    objToArr(STATE.leaves).filter(l=>l.status==='pending').forEach(l=>{
+      items.push(`<div class="list-row"><div class="grow"><div class="name">🏖️ Leave: ${escapeHtml(staffName(l.staffId))}</div><div class="sub">${l.type} — ${fmtDisplay(l.startDate||l.date)} to ${fmtDisplay(l.endDate||l.date)}</div></div><button class="btn btn-success btn-sm" onclick="approveLeave('${l._id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectLeaveModal('${l._id}')">Reject</button></div>`);
+    });
+    objToArr(STATE.exchanges).filter(e=>e.status==='accepted_by_b').forEach(e=>{
+      items.push(`<div class="list-row"><div class="grow"><div class="name">🔄 Exchange: ${escapeHtml(staffName(e.fromStaffId))} ↔ ${escapeHtml(staffName(e.toStaffId))}</div><div class="sub">${fmtDisplay(e.date)} — ${e.fromShift} → ${e.toShift}</div></div><button class="btn btn-success btn-sm" onclick="supervisorApproveExchange('${e._id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="supervisorRejectExchange('${e._id}')">Reject</button></div>`);
+    });
+    objToArr(STATE.dutyChangeRequests).filter(d=>d.status==='pending').forEach(d=>{
+      items.push(`<div class="list-row"><div class="grow"><div class="name">🔄 Duty Change: ${escapeHtml(staffName(d.staffId))}</div><div class="sub">${fmtDisplay(d.date)} — ${d.oldShift} → ${d.newShift}</div></div><button class="btn btn-success btn-sm" onclick="approveDutyChange('${d._id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectDutyChange('${d._id}')">Reject</button></div>`);
+    });
+    if(items.length){
+      pc.style.display = 'block';
+      pc.innerHTML = '<h2>⏳ Pending Approvals</h2>' + items.join('');
+    } else {
+      pc.style.display = 'none';
+    }
+  } else {
+    pc.style.display = 'none';
+  }
+
+  // Today's duty table
+  const tbody = document.querySelector('#todayDutyTable tbody');
+  if(tbody){
+    const rows = staffArr.map(s=>{
+      const code = pid && STATE.roster[pid] && STATE.roster[pid][today] ? STATE.roster[pid][today][s._id] : null;
+      if(!code) return null;
+      const sh = STATE.shifts[code] || {};
+      return `<tr class="${s._id===(CURRENT_USER.staffId)?'mine':''}">
+        <td>${escapeHtml(s.name)}</td>
+        <td>${escapeHtml(s.designation||'—')}</td>
+        <td><b>${escapeHtml(code)}</b></td>
+        <td>${sh.start||'—'} - ${sh.end||'—'}</td>
+        <td>${escapeHtml(sh.station||'—')}</td>
+      </tr>`;
+    }).filter(Boolean);
+    tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5" class="empty-state">No roster entry for today</td></tr>';
+  }
+}
+
+/* ==================== INIT ==================== */
 window.addEventListener('DOMContentLoaded', ()=>{
   setTimeout(()=>{
     if($('staffLoginMobile')) $('staffLoginMobile').focus();
   }, 300);
 });
 
-/* Expose all functions to window for onclick */
+// Expose all functions to window
 window.switchLoginTab = switchLoginTab;
 window.doStaffLogin = doStaffLogin;
 window.doAdminLogin = doAdminLogin;
@@ -3603,10 +3663,15 @@ window.saveGeneralSettings = saveGeneralSettings;
 window.openAutoGenWizard = openAutoGenWizard;
 window.wizNext1 = wizNext1;
 window.wizNext2 = wizNext2;
+window.wizNext3 = wizNext3;
+window.wizSetHolidayChoice = wizSetHolidayChoice;
+window.wizAddConfirmedHoliday = wizAddConfirmedHoliday;
+window.wizRemoveConfirmedHoliday = wizRemoveConfirmedHoliday;
+window.wizSetMode = wizSetMode;
 window.wizAddManual = wizAddManual;
 window.wizStartGeneration = wizStartGeneration;
 window.resolveConflict = resolveConflict;
-window.setManualResolution = setManualResolution;
+window.wizSetManual = wizSetManual;
 window.confirmManualResolution = confirmManualResolution;
 window.wizSaveRoster = wizSaveRoster;
 window.onPeriodChange = onPeriodChange;
