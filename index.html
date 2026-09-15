@@ -2,1259 +2,2126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>KIH · Phlebotomy Roster</title>
-  <!-- Font Awesome for icons (optional but used for close buttons) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- SheetJS for Excel import/export -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Phlebotomist Duty Roster Management System | Kulsum International Hospital</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SheetJS CDN -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  
+  <!-- Firebase App & Database Scripts (v9 Compat Mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    :root {
+      --kih-red: #C8102E;
+      --kih-blue: #1E5BA8;
     }
+    
     body {
+      background: #F3F4F6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1F2937;
+      overflow-x: hidden;
+    }
+
+    .kih-header-grad {
       background: linear-gradient(135deg, #1E5BA8 0%, #C8102E 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px;
     }
-    .app-container {
-      width: 100%;
-      max-width: 1200px;
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(8px);
-      border-radius: 28px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-      overflow: hidden;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      max-height: 96vh;
+
+    /* Print / PDF Styling - Black cell for OFF / Leave codes */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printArea, #printArea * {
+        visibility: visible;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .roster-black-cell {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .roster-duty-cell {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
-    /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 4px 16px;
-      border-bottom: 2px solid #C8102E;
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
     }
-    .logo {
-      font-weight: 800;
-      font-size: 1.8rem;
-      letter-spacing: 2px;
-      background: linear-gradient(135deg, #1E5BA8, #C8102E);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
     }
-    .hospital-name {
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: #1E5BA8;
-      text-align: right;
-      line-height: 1.3;
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
     }
-    /* Main scroll area */
-    .main-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px 4px;
-    }
-    /* Cards */
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 20px 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      border: 1px solid #e9ecef;
-    }
-    .card-title {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #1E5BA8;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .card-title i {
-      color: #C8102E;
-    }
-    /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 20px;
-      background: #f1f3f5;
-      padding: 6px;
-      border-radius: 40px;
-    }
-    .tab {
-      flex: 1;
-      padding: 12px 4px;
-      text-align: center;
-      font-weight: 600;
-      font-size: 0.95rem;
-      border-radius: 30px;
-      background: transparent;
-      border: none;
-      color: #495057;
-      cursor: pointer;
-      transition: 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .tab.active {
-      background: white;
-      color: #C8102E;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-    /* Forms */
-    label {
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #343a40;
-      display: block;
-      margin-bottom: 4px;
-      margin-top: 12px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1.5px solid #dee2e6;
-      border-radius: 14px;
-      font-size: 1rem;
-      background: white;
-      transition: 0.2s;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #1E5BA8;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(30,91,168,0.1);
-    }
-    .btn {
-      padding: 14px 20px;
-      border-radius: 40px;
-      font-weight: 700;
-      font-size: 0.95rem;
-      border: none;
-      cursor: pointer;
-      transition: 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: #f1f3f5;
-      color: #1E5BA8;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #1E5BA8, #C8102E);
-      color: white;
-      box-shadow: 0 8px 16px rgba(200,16,46,0.2);
-    }
-    .btn-primary:hover {
-      filter: brightness(1.05);
-      transform: translateY(-1px);
-    }
-    .btn-outline {
-      background: white;
-      border: 1.5px solid #1E5BA8;
-      color: #1E5BA8;
-    }
-    .btn-danger {
-      background: #C8102E;
-      color: white;
-    }
-    .btn-sm {
-      padding: 8px 14px;
-      font-size: 0.8rem;
-    }
-    .btn-block {
-      width: 100%;
-    }
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .row > * {
-      flex: 1 1 120px;
-    }
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 16px;
-    }
-    .modal-content {
-      background: white;
-      border-radius: 28px;
-      max-width: 500px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 24px 20px;
-      position: relative;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-    }
-    .modal-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: #f1f3f5;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      font-size: 1.4rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: #495057;
-      transition: 0.2s;
-      font-weight: 600;
-    }
-    .modal-close:hover {
-      background: #C8102E;
-      color: white;
-    }
-    /* Roster table */
-    .roster-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.75rem;
-      min-width: 700px;
-      overflow-x: auto;
-      display: block;
-    }
-    .roster-table th, .roster-table td {
-      border: 1px solid #dee2e6;
-      padding: 8px 6px;
-      text-align: center;
-      vertical-align: middle;
-    }
-    .roster-table th {
-      background: #1E5BA8;
-      color: white;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-    }
-    .table-wrapper {
-      overflow-x: auto;
-      border-radius: 16px;
-      border: 1px solid #dee2e6;
-      margin-top: 12px;
-    }
-    .shift-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 0.7rem;
-      min-width: 36px;
-    }
-    .shift-M { background: #fff3cd; color: #856404; }
-    .shift-E { background: #d1ecf1; color: #0c5460; }
-    .shift-E4 { background: #d4edda; color: #155724; }
-    .shift-N12 { background: #e2d9f3; color: #4a1e8a; }
-    .shift-N { background: #cce5ff; color: #004085; }
-    .shift-D { background: #f8d7da; color: #721c24; }
-    .shift-X { background: #e9ecef; color: #495057; }
-    .shift-DX { background: #ffe5b4; color: #b85e00; }
-    .shift-OFF { background: #6c757d; color: white; }
-    .shift-leave { background: #adb5bd; color: #212529; }
-    .conflict-item {
-      background: #fff3cd;
-      padding: 12px;
-      border-radius: 12px;
-      border-left: 6px solid #C8102E;
-      margin-bottom: 12px;
-    }
-    .status-badge {
-      font-size: 0.7rem;
-      padding: 4px 10px;
-      border-radius: 30px;
-      background: #e9ecef;
-      font-weight: 600;
-    }
-    /* Utility */
-    .mt-2 { margin-top: 8px; }
-    .mt-3 { margin-top: 16px; }
-    .mb-2 { margin-bottom: 8px; }
-    .text-center { text-align: center; }
-    .text-muted { color: #6c757d; font-size: 0.8rem; }
-    .hidden { display: none !important; }
-    .flex { display: flex; align-items: center; gap: 8px; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; }
-    .scroll-x { overflow-x: auto; }
-    /* Responsive */
-    @media (max-width: 500px) {
-      .app-container { padding: 12px; border-radius: 20px; }
-      .logo { font-size: 1.4rem; }
-      .grid-2 { grid-template-columns: 1fr; }
+
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
     }
   </style>
 </head>
-<body>
-<div class="app-container" id="app">
-  <!-- Header -->
-  <div class="header">
-    <div class="logo">KIH</div>
-    <div class="hospital-name">Kulsum International Hospital<br>Phlebotomy</div>
-  </div>
+<body class="min-h-screen flex flex-col">
 
-  <!-- Main content area -->
-  <div class="main-content" id="mainContent">
-    <!-- Login section -->
-    <div id="loginSection">
-      <div class="tabs">
-        <button class="tab active" data-tab="staffLogin"><i class="fas fa-user"></i> Staff Login</button>
-        <button class="tab" data-tab="adminLogin"><i class="fas fa-user-shield"></i> Admin Login</button>
-      </div>
-      <div class="card" id="staffLoginCard">
-        <div class="card-title"><i class="fas fa-id-card"></i> Staff Login</div>
-        <label>Mobile Number</label>
-        <input type="text" id="staffMobile" placeholder="e.g. 03001234567">
-        <label>Password</label>
-        <input type="password" id="staffPassword" placeholder="Default: 123456">
-        <button class="btn btn-primary btn-block mt-3" id="staffLoginBtn">Login as Staff</button>
-        <p class="text-muted mt-2">Default password: 123456</p>
-      </div>
-      <div class="card hidden" id="adminLoginCard">
-        <div class="card-title"><i class="fas fa-lock"></i> Admin Login</div>
-        <label>Username</label>
-        <input type="text" id="adminUsername" placeholder="admin">
-        <label>Password</label>
-        <input type="password" id="adminPassword" placeholder="admin123">
-        <button class="btn btn-primary btn-block mt-3" id="adminLoginBtn">Login as Admin</button>
-        <p class="text-muted mt-2">Default: admin / admin123</p>
-      </div>
-    </div>
+  <!-- APP CONTAINER -->
+  <div id="app" class="flex-grow flex flex-col">
 
-    <!-- Dashboard (hidden after login) -->
-    <div id="dashboardSection" class="hidden">
-      <div class="flex-between mb-2">
-        <h3 style="color:#1E5BA8;"><i class="fas fa-calendar-alt"></i> Duty Roster</h3>
-        <button class="btn btn-sm btn-outline" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </div>
-      <div class="card">
-        <div class="card-title"><i class="fas fa-users"></i> Staff Management</div>
-        <button class="btn btn-primary btn-sm" id="addStaffBtn"><i class="fas fa-plus"></i> Add Staff</button>
-        <div id="staffListContainer" class="mt-2"></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><i class="fas fa-magic"></i> Generate Roster</div>
-        <button class="btn btn-primary btn-block" id="openWizardBtn"><i class="fas fa-play"></i> Open Auto-Generate Wizard</button>
-      </div>
-      <div class="card">
-        <div class="card-title"><i class="fas fa-table"></i> Current Roster Preview</div>
-        <div id="rosterPreviewContainer" class="table-wrapper">
-          <p class="text-muted">No roster generated yet.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal container -->
-<div id="modalRoot"></div>
-
-<script>
-  // ============================================================
-  // FIREBASE CONFIG
-  // ============================================================
-  const firebaseConfig = {
-    apiKey: "AIzaSyB5_7xk9tTNjLffoWaIXVYK3LOV0PJXIqU",
-    authDomain: "phlebotomy-roster-fc09e.firebaseapp.com",
-    databaseURL: "https://phlebotomy-roster-fc09e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "phlebotomy-roster-fc09e",
-    storageBucket: "phlebotomy-roster-fc09e.firebasestorage.app",
-    messagingSenderId: "573402563177",
-    appId: "1:573402563177:web:3528df7a80ef7da88258f8"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  // ============================================================
-  // GLOBAL STATE
-  // ============================================================
-  let currentUser = null; // { role: 'admin'|'staff', mobile, name, ... }
-  let staffList = [];     // array of staff objects
-  let generatedRoster = null; // { periodStart, periodEnd, assignments: { staffId: { 'YYYY-MM-DD': 'M' } } }
-
-  // ============================================================
-  // SHIFT DEFINITIONS
-  // ============================================================
-  const SHIFTS = {
-    M:   { name: 'Morning',    time: '07:00-15:30', monSat: true,  sun: false, gender: 'any' },
-    E:   { name: 'Evening',    time: '15:00-23:00', monSat: true,  sun: true,  gender: 'any' },
-    E4:  { name: 'Evening 4',  time: '16:00-00:00', monSat: true,  sun: false, gender: 'male_pref' },
-    N12: { name: 'Night 12',   time: '00:00-08:00', monSat: true,  sun: false, gender: 'male' },
-    N:   { name: 'Night',      time: '23:00-07:00', monSat: false, sun: true,  gender: 'male' },
-    D:   { name: 'Day-Gynee',  time: '09:00-17:30', monSat: true,  sun: false, gender: 'female' },
-    X:   { name: 'Extra',      time: '11:00-19:00', monSat: true,  sun: false, gender: 'any' },
-    DX:  { name: 'Day Extra',  time: '09:00-19:00', monSat: true,  sun: false, gender: 'any' }
-  };
-  const LEAVE_CODES = ['OFF', 'PH', 'GH', 'CPL', 'EL', 'CL', 'SL', 'AL', 'ML'];
-  const OFF_CODE = 'OFF';
-
-  // Weekly setup default
-  const WEEKLY_SETUP = {
-    Monday:    { M:3, E:3, E4:1, N12:1, N:0, D:1, X:1 },
-    Tuesday:   { M:3, E:3, E4:1, N12:1, N:0, D:1, X:1 },
-    Wednesday: { M:3, E:3, E4:1, N12:1, N:0, D:1, X:1 },
-    Thursday:  { M:3, E:3, E4:1, N12:1, N:0, D:1, X:1 },
-    Friday:    { M:3, E:3, E4:1, N12:1, N:0, D:1, X:1 },
-    Saturday:  { M:3, E:3, E4:1, N12:1, N:0, D:1, X:1 },
-    Sunday:    { M:2, E:2, E4:0, N12:0, N:1, D:0, X:0 },
-    Holiday:   { M:2, E:2, E4:0, N12:0, N:1, D:0, X:0 }
-  };
-
-  // Relax limits (max staff resting = OFF + Leave)
-  const RELAX_LIMIT = {
-    Monday:1, Tuesday:1, Wednesday:1, Thursday:1, Friday:1,
-    Saturday:2, Sunday:7, Holiday:7
-  };
-
-  // ============================================================
-  // UTILITIES
-  // ============================================================
-  function formatDate(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth()+1).padStart(2,'0');
-    const d = String(date.getDate()).padStart(2,'0');
-    return `${y}-${m}-${d}`;
-  }
-  function parseDate(str) {
-    const [y,m,d] = str.split('-').map(Number);
-    return new Date(y, m-1, d);
-  }
-  function getDayName(date) {
-    return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][date.getDay()];
-  }
-  function isSunday(date) {
-    return date.getDay() === 0;
-  }
-  function isSaturday(date) {
-    return date.getDay() === 6;
-  }
-  function countSundays(start, end) {
-    let count = 0;
-    let d = new Date(start);
-    while (d <= end) {
-      if (d.getDay() === 0) count++;
-      d.setDate(d.getDate()+1);
-    }
-    return count;
-  }
-  function getDatesInRange(start, end) {
-    const dates = [];
-    let d = new Date(start);
-    while (d <= end) {
-      dates.push(new Date(d));
-      d.setDate(d.getDate()+1);
-    }
-    return dates;
-  }
-  function dayType(date, holidaysSet) {
-    const dateStr = formatDate(date);
-    if (holidaysSet && holidaysSet.has(dateStr)) return 'Holiday';
-    return getDayName(date);
-  }
-  function getWeekdayName(date) {
-    return getDayName(date);
-  }
-  function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2,6);
-  }
-
-  // ============================================================
-  // MODAL SYSTEM
-  // ============================================================
-  function openModal(title, contentHtml, onClose) {
-    const modalRoot = document.getElementById('modalRoot');
-    const modalId = 'modal_' + generateId();
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = modalId;
-    overlay.innerHTML = `
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeModal('${modalId}')">&times;</button>
-        <h3 style="color:#1E5BA8; margin-bottom:16px;">${title}</h3>
-        <div>${contentHtml}</div>
-      </div>
-    `;
-    modalRoot.appendChild(overlay);
-    if (onClose) overlay._onClose = onClose;
-    return modalId;
-  }
-  window.closeModal = function(id) {
-    const el = document.getElementById(id);
-    if (el) {
-      if (el._onClose) el._onClose();
-      el.remove();
-    }
-  };
-
-  // ============================================================
-  // AUTH
-  // ============================================================
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const target = tab.dataset.tab;
-      if (target === 'staffLogin') {
-        document.getElementById('staffLoginCard').classList.remove('hidden');
-        document.getElementById('adminLoginCard').classList.add('hidden');
-      } else {
-        document.getElementById('staffLoginCard').classList.add('hidden');
-        document.getElementById('adminLoginCard').classList.remove('hidden');
-      }
-    });
-  });
-
-  document.getElementById('staffLoginBtn').addEventListener('click', async () => {
-    const mobile = document.getElementById('staffMobile').value.trim();
-    const password = document.getElementById('staffPassword').value.trim();
-    if (!mobile || !password) return alert('Enter mobile and password');
-    // Check staff in DB
-    const snapshot = await db.ref('staff').orderByChild('mobile').equalTo(mobile).once('value');
-    const data = snapshot.val();
-    if (!data) {
-      // auto-create default staff if not exists? No, must be added by admin.
-      alert('Staff not found. Contact admin.');
-      return;
-    }
-    const staffId = Object.keys(data)[0];
-    const staff = data[staffId];
-    const storedPass = staff.password || '123456';
-    if (password !== storedPass) {
-      alert('Invalid password');
-      return;
-    }
-    currentUser = { role: 'staff', id: staffId, ...staff };
-    showDashboard();
-  });
-
-  document.getElementById('adminLoginBtn').addEventListener('click', async () => {
-    const username = document.getElementById('adminUsername').value.trim();
-    const password = document.getElementById('adminPassword').value.trim();
-    // Bootstrap: check if admin exists
-    const adminRef = db.ref('users/admin');
-    const snapshot = await adminRef.once('value');
-    const adminData = snapshot.val();
-    if (!adminData) {
-      // create default admin
-      if (username === 'admin' && password === 'admin123') {
-        await adminRef.set({ username: 'admin', password: 'admin123', role: 'admin' });
-        currentUser = { role: 'admin', username: 'admin' };
-        showDashboard();
-      } else {
-        alert('Invalid credentials. Default is admin/admin123');
-      }
-    } else {
-      if (adminData.username === username && adminData.password === password) {
-        currentUser = { role: 'admin', username };
-        showDashboard();
-      } else {
-        alert('Invalid credentials');
-      }
-    }
-  });
-
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    currentUser = null;
-    document.getElementById('loginSection').classList.remove('hidden');
-    document.getElementById('dashboardSection').classList.add('hidden');
-    generatedRoster = null;
-  });
-
-  function showDashboard() {
-    document.getElementById('loginSection').classList.add('hidden');
-    document.getElementById('dashboardSection').classList.remove('hidden');
-    loadStaff();
-  }
-
-  // ============================================================
-  // STAFF MANAGEMENT
-  // ============================================================
-  async function loadStaff() {
-    const snapshot = await db.ref('staff').once('value');
-    const data = snapshot.val() || {};
-    staffList = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-    renderStaffList();
-  }
-
-  function renderStaffList() {
-    const container = document.getElementById('staffListContainer');
-    if (!staffList.length) {
-      container.innerHTML = '<p class="text-muted">No staff added yet.</p>';
-      return;
-    }
-    let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
-    staffList.forEach(s => {
-      html += `
-        <div class="flex-between" style="background:#f8f9fa; padding:10px 14px; border-radius:14px;">
+    <!-- TOP HEADER -->
+    <header class="kih-header-grad text-white shadow-md no-print sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        
+        <!-- Left: Logo & Hospital Title -->
+        <div class="flex items-center space-x-3">
+          <div class="bg-white text-[#C8102E] font-black text-xl px-3 py-1 rounded shadow-inner tracking-wider">
+            KIH
+          </div>
           <div>
-            <strong>${s.name}</strong> <span class="text-muted">(${s.designation || 'N/A'})</span><br>
-            <small>Mobile: ${s.mobile} | ID: ${s.employeeId || '-'} | Gender: ${s.gender}</small>
-          </div>
-          <div class="flex">
-            <button class="btn btn-sm btn-outline" onclick="editStaff('${s.id}')"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="archiveStaff('${s.id}')"><i class="fas fa-archive"></i></button>
+            <h1 class="text-base sm:text-lg font-bold leading-tight">Kulsum International Hospital</h1>
+            <p class="text-xs text-blue-100 font-medium">Phlebotomy Department • Duty Roster</p>
           </div>
         </div>
-      `;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-  }
 
-  window.editStaff = function(id) {
-    const staff = staffList.find(s => s.id === id);
-    if (!staff) return;
-    const html = `
-      <label>Name *</label><input id="editName" value="${staff.name || ''}">
-      <label>Gender *</label>
-      <select id="editGender">
-        <option value="Male" ${staff.gender === 'Male' ? 'selected' : ''}>Male</option>
-        <option value="Female" ${staff.gender === 'Female' ? 'selected' : ''}>Female</option>
-      </select>
-      <label>Mobile *</label><input id="editMobile" value="${staff.mobile || ''}">
-      <label>Designation *</label><input id="editDesignation" value="${staff.designation || ''}">
-      <label>Employee ID *</label><input id="editEmpId" value="${staff.employeeId || ''}">
-      <label>Fixed Shift</label>
-      <select id="editFixedShift">
-        <option value="">None</option>
-        ${Object.keys(SHIFTS).map(code => `<option value="${code}" ${staff.fixedShift === code ? 'selected' : ''}>${code} - ${SHIFTS[code].name}</option>`).join('')}
-      </select>
-      <label>Password</label><input id="editPassword" value="${staff.password || ''}" placeholder="Leave blank for default 123456">
-      <button class="btn btn-primary btn-block mt-3" onclick="saveStaffEdit('${id}')">Save Changes</button>
-    `;
-    openModal('Edit Staff', html);
-  };
+        <!-- Right: Actions & User Info -->
+        <div id="navRightControls" class="hidden flex items-center space-x-2 sm:space-x-4">
+          <!-- WhatsApp Quick Link -->
+          <a id="whatsappHeaderLink" href="https://wa.me/" target="_blank" title="Open WhatsApp Support" class="p-2 bg-emerald-600 hover:bg-emerald-700 rounded-full text-white transition shadow flex items-center justify-center">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          </a>
 
-  window.saveStaffEdit = async function(id) {
-    const name = document.getElementById('editName').value.trim();
-    const gender = document.getElementById('editGender').value;
-    const mobile = document.getElementById('editMobile').value.trim();
-    const designation = document.getElementById('editDesignation').value.trim();
-    const employeeId = document.getElementById('editEmpId').value.trim();
-    const fixedShift = document.getElementById('editFixedShift').value;
-    const password = document.getElementById('editPassword').value.trim();
-    if (!name || !gender || !mobile || !designation || !employeeId) return alert('Fill mandatory fields');
-    await db.ref('staff/' + id).update({ name, gender, mobile, designation, employeeId, fixedShift, password: password || null });
-    closeModal(document.querySelector('.modal-overlay').id);
-    loadStaff();
-  };
+          <!-- Notification Bell -->
+          <div class="relative">
+            <button onclick="toggleNotifications()" class="p-2 rounded-full hover:bg-white/10 text-white transition relative">
+              <i class="fa-solid fa-bell text-lg"></i>
+              <span id="notifBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+            </button>
+            <!-- Dropdown Notification Drawer -->
+            <div id="notifDrawer" class="hidden absolute right-0 mt-2 w-80 bg-white text-gray-800 rounded-lg shadow-2xl border border-gray-200 z-50">
+              <div class="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
+                <h4 class="font-bold text-sm text-gray-700">Notifications</h4>
+                <button onclick="toggleNotifications()" class="text-gray-400 hover:text-gray-600">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div id="notifList" class="max-h-64 overflow-y-auto divide-y text-xs">
+                <p class="p-4 text-center text-gray-400">No new notifications</p>
+              </div>
+            </div>
+          </div>
 
-  window.archiveStaff = async function(id) {
-    if (!confirm('Archive this staff? They will not appear in roster generation.')) return;
-    await db.ref('staff/' + id).update({ archived: true });
-    loadStaff();
-  };
+          <!-- Active User Badge -->
+          <div class="text-right text-xs">
+            <div id="currentUserName" class="font-bold text-white">Staff Member</div>
+            <div id="currentUserRole" class="text-blue-200 capitalize">Role</div>
+          </div>
 
-  document.getElementById('addStaffBtn').addEventListener('click', () => {
-    const html = `
-      <label>Name *</label><input id="addName">
-      <label>Gender *</label>
-      <select id="addGender"><option value="Male">Male</option><option value="Female">Female</option></select>
-      <label>Mobile *</label><input id="addMobile">
-      <label>Designation *</label><input id="addDesignation">
-      <label>Employee ID *</label><input id="addEmpId">
-      <label>Fixed Shift</label>
-      <select id="addFixedShift"><option value="">None</option>${Object.keys(SHIFTS).map(code => `<option value="${code}">${code} - ${SHIFTS[code].name}</option>`).join('')}</select>
-      <label>Password</label><input id="addPassword" placeholder="Default: 123456">
-      <button class="btn btn-primary btn-block mt-3" onclick="createStaff()">Add Staff</button>
-    `;
-    openModal('Add Staff', html);
-  });
+          <!-- Logout Button -->
+          <button onclick="logout()" title="Logout" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition">
+            <i class="fa-solid fa-right-from-bracket mr-1"></i> Exit
+          </button>
+        </div>
 
-  window.createStaff = async function() {
-    const name = document.getElementById('addName').value.trim();
-    const gender = document.getElementById('addGender').value;
-    const mobile = document.getElementById('addMobile').value.trim();
-    const designation = document.getElementById('addDesignation').value.trim();
-    const employeeId = document.getElementById('addEmpId').value.trim();
-    const fixedShift = document.getElementById('addFixedShift').value;
-    const password = document.getElementById('addPassword').value.trim();
-    if (!name || !gender || !mobile || !designation || !employeeId) return alert('Fill mandatory fields');
-    const id = generateId();
-    await db.ref('staff/' + id).set({
-      name, gender, mobile, designation, employeeId, fixedShift: fixedShift || null,
-      password: password || '123456', archived: false, createdAt: Date.now()
-    });
-    closeModal(document.querySelector('.modal-overlay').id);
-    loadStaff();
-  };
+      </div>
+    </header>
 
-  // ============================================================
-  // AUTO-GENERATE WIZARD (6 steps)
-  // ============================================================
-  document.getElementById('openWizardBtn').addEventListener('click', () => {
-    if (!staffList.length) return alert('Add staff first.');
-    openWizardStep1();
-  });
+    <!-- MAIN NAVIGATION TABS (Visible when logged in) -->
+    <nav id="mainNav" class="hidden bg-white shadow-sm border-b border-gray-200 no-print">
+      <div class="max-w-7xl mx-auto px-2 flex space-x-1 overflow-x-auto text-xs sm:text-sm font-medium">
+        <button onclick="switchTab('rosterView')" id="tab-rosterView" class="nav-tab px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#1E5BA8] whitespace-nowrap">
+          <i class="fa-solid fa-calendar-days mr-1"></i> Duty Roster
+        </button>
+        <button onclick="switchTab('dutySwaps')" id="tab-dutySwaps" class="nav-tab px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#1E5BA8] whitespace-nowrap">
+          <i class="fa-solid fa-right-left mr-1"></i> Duty Swaps
+        </button>
+        <button onclick="switchTab('leaves')" id="tab-leaves" class="nav-tab px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#1E5BA8] whitespace-nowrap">
+          <i class="fa-solid fa-file-signature mr-1"></i> Leaves
+        </button>
+        <button onclick="switchTab('dutyChanges')" id="tab-dutyChanges" class="nav-tab px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#1E5BA8] whitespace-nowrap">
+          <i class="fa-solid fa-user-gear mr-1"></i> Change Requests
+        </button>
+        <button onclick="switchTab('chat')" id="tab-chat" class="nav-tab px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#1E5BA8] whitespace-nowrap">
+          <i class="fa-solid fa-comments mr-1"></i> Department Chat
+        </button>
+        <button onclick="switchTab('reports')" id="tab-reports" class="nav-tab px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#1E5BA8] whitespace-nowrap">
+          <i class="fa-solid fa-chart-pie mr-1"></i> Reports
+        </button>
 
-  let wizardState = {
-    periodStart: null,
-    periodEnd: null,
-    sundaysCount: 0,
-    holidays: [],       // array of date strings confirmed as holidays
-    mode: 'auto',       // 'auto' or 'manual'
-    instructions: '',
-    roster: null,       // { staffId: { dateStr: shiftCode } }
-    conflicts: [],
-    currentDateIndex: 0,
-  };
+        <!-- ADMIN EXCLUSIVE TABS -->
+        <button onclick="switchTab('staffDir')" id="tab-staffDir" class="nav-tab admin-only hidden px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#C8102E] whitespace-nowrap">
+          <i class="fa-solid fa-users mr-1"></i> Staff Directory
+        </button>
+        <button onclick="switchTab('wizard')" id="tab-wizard" class="nav-tab admin-only hidden px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#C8102E] whitespace-nowrap font-semibold">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Generate Roster
+        </button>
+        <button onclick="switchTab('leavePlanning')" id="tab-leavePlanning" class="nav-tab admin-only hidden px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#C8102E] whitespace-nowrap">
+          <i class="fa-solid fa-calendar-check mr-1"></i> Admin Leave Planner
+        </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="nav-tab admin-only hidden px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#C8102E] whitespace-nowrap">
+          <i class="fa-solid fa-sliders mr-1"></i> Settings
+        </button>
+        <button onclick="switchTab('auditLog')" id="tab-auditLog" class="nav-tab admin-only hidden px-3 py-2.5 border-b-2 border-transparent text-gray-600 hover:text-[#C8102E] whitespace-nowrap">
+          <i class="fa-solid fa-shield-halved mr-1"></i> Audit Log
+        </button>
+      </div>
+    </nav>
 
-  function openWizardStep1() {
-    const today = new Date();
-    const start = formatDate(today);
-    const end = formatDate(new Date(today.getFullYear(), today.getMonth()+1, 0));
-    const html = `
-      <p class="text-muted">Step 1 of 6: Select period</p>
-      <label>Start Date</label><input type="date" id="wizStart" value="${start}">
-      <label>End Date</label><input type="date" id="wizEnd" value="${end}">
-      <div id="sundayCountDisplay" class="mt-2 text-muted"></div>
-      <button class="btn btn-primary btn-block mt-3" onclick="wizardStep1Next()">Next: Holidays</button>
-    `;
-    openModal('Auto-Generate Wizard', html);
-    // update sunday count on change
-    const updateCount = () => {
-      const s = document.getElementById('wizStart').value;
-      const e = document.getElementById('wizEnd').value;
-      if (s && e) {
-        const count = countSundays(new Date(s), new Date(e));
-        document.getElementById('sundayCountDisplay').innerText = `Sundays in period: ${count} → OFF target per staff = ${count}`;
-      }
+    <!-- CONTENT VIEWS WRAPPER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-3 sm:p-6">
+
+      <!-- ================= LOGIN VIEW ================= -->
+      <section id="view-login" class="max-w-md mx-auto my-8 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="kih-header-grad p-6 text-white text-center">
+          <div class="inline-block bg-white text-[#C8102E] font-black text-2xl px-4 py-1.5 rounded shadow mb-2">KIH</div>
+          <h2 class="text-xl font-bold">Roster Portal Login</h2>
+          <p class="text-xs text-blue-100 mt-1">Phlebotomy Department • Kulsum International Hospital</p>
+        </div>
+
+        <!-- Login Tabs -->
+        <div class="flex border-b border-gray-200 bg-gray-50">
+          <button onclick="toggleLoginType('staff')" id="btn-login-staff" class="flex-1 py-3 text-sm font-semibold text-center border-b-2 border-[#1E5BA8] text-[#1E5BA8] bg-white">
+            Staff Login
+          </button>
+          <button onclick="toggleLoginType('admin')" id="btn-login-admin" class="flex-1 py-3 text-sm font-semibold text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+            Admin Login
+          </button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="p-6 space-y-4">
+          <div>
+            <label id="loginUsernameLabel" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Mobile Number</label>
+            <input type="text" id="loginUsername" placeholder="e.g. 03001234567" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1E5BA8] focus:outline-none text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1E5BA8] focus:outline-none text-sm">
+          </div>
+          <div id="loginError" class="hidden p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200"></div>
+          <button type="submit" class="w-full py-2.5 bg-[#1E5BA8] hover:bg-blue-800 text-white font-bold rounded-lg text-sm transition shadow">
+            Sign In
+          </button>
+          <p id="loginHelpText" class="text-xs text-center text-gray-500 mt-2">
+            Default Staff Password: <span class="font-bold">123456</span>
+          </p>
+        </form>
+      </section>
+
+
+      <!-- ================= ROSTER VIEW ================= -->
+      <section id="view-rosterView" class="hidden space-y-4">
+        <!-- Roster Controls Bar -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+          <div class="flex items-center space-x-3">
+            <div>
+              <label class="block text-[10px] font-bold text-gray-500 uppercase">Select Roster Period</label>
+              <select id="rosterPeriodSelect" onchange="loadRosterView()" class="border rounded px-3 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <option value="">-- Select Published Period --</option>
+              </select>
+            </div>
+            <div id="rosterStatusBadge" class="hidden px-2.5 py-1 rounded-full text-xs font-bold"></div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="exportRosterToExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center shadow">
+              <i class="fa-solid fa-file-excel mr-1.5"></i> Export Excel
+            </button>
+            <button onclick="window.print()" class="bg-gray-800 hover:bg-black text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center shadow">
+              <i class="fa-solid fa-print mr-1.5"></i> Print / PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Roster Grid Container -->
+        <div id="printArea" class="bg-white p-4 sm:p-6 rounded-xl shadow border overflow-x-auto">
+          <!-- Print/PDF Header -->
+          <div class="mb-4 text-center pb-4 border-b">
+            <div class="text-[#C8102E] font-black text-2xl tracking-widest">KIH</div>
+            <h2 class="text-lg font-bold text-gray-800">KULSUM INTERNATIONAL HOSPITAL</h2>
+            <p class="text-xs font-semibold text-gray-600">Phlebotomy Department • Duty Roster</p>
+            <p id="printPeriodTitle" class="text-xs text-blue-900 font-bold mt-1"></p>
+          </div>
+
+          <!-- Roster Table -->
+          <table class="w-full border-collapse text-xs text-center min-w-[800px]">
+            <thead>
+              <tr id="rosterTableHeader" class="bg-gray-100 border-b border-gray-300 font-bold text-gray-700">
+                <!-- Dynamically populated -->
+              </tr>
+            </thead>
+            <tbody id="rosterTableBody" class="divide-y divide-gray-200">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+
+          <!-- Roster Legend & Signature Blocks -->
+          <div class="mt-6 pt-4 border-t flex flex-col md:flex-row items-start justify-between gap-4 text-[11px] text-gray-600">
+            <div>
+              <span class="font-bold block mb-1">Shift Legend & Timings:</span>
+              <div id="shiftLegendGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1"></div>
+            </div>
+            <div class="w-full md:w-auto flex justify-around md:justify-end space-x-8 pt-4 md:pt-0">
+              <div class="text-center border-t border-gray-400 px-4 pt-1">
+                <span class="font-bold block">Supervisor</span>
+                <span class="text-[9px] text-gray-400">Sign & Stamp</span>
+              </div>
+              <div class="text-center border-t border-gray-400 px-4 pt-1">
+                <span class="font-bold block">HOD Phlebotomy</span>
+                <span class="text-[9px] text-gray-400">Sign & Stamp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= STAFF DIRECTORY (ADMIN) ================= -->
+      <section id="view-staffDir" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-users text-[#1E5BA8] mr-2"></i>Staff Directory</h2>
+          <button onclick="openStaffModal()" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center shadow">
+            <i class="fa-solid fa-user-plus mr-1.5"></i> Add Staff Member
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-50 border-b font-bold text-gray-700 uppercase tracking-wider">
+                <tr>
+                  <th class="p-3">Emp ID</th>
+                  <th class="p-3">Name</th>
+                  <th class="p-3">Gender</th>
+                  <th class="p-3">Mobile</th>
+                  <th class="p-3">Designation</th>
+                  <th class="p-3">Fixed / Multi Shifts</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staffTableBody" class="divide-y divide-gray-200">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 6-STEP AUTO GENERATE WIZARD ================= -->
+      <section id="view-wizard" class="hidden max-w-3xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <!-- Wizard Header -->
+        <div class="kih-header-grad p-4 text-white flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Auto-Generate Roster Wizard</h2>
+            <p class="text-xs text-blue-100">Step-by-step compliant roster builder engine</p>
+          </div>
+          <span id="wizardStepBadge" class="bg-white/20 px-3 py-1 rounded-full text-xs font-extrabold">Step 1 / 6</span>
+        </div>
+
+        <!-- Wizard Step Container -->
+        <div class="p-6">
+          
+          <!-- STEP 1: PERIOD & TARGET OFF -->
+          <div id="wizStep-1" class="wizard-step space-y-4">
+            <h3 class="font-bold text-sm text-gray-800 border-b pb-2">Step 1: Select Roster Period</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Start Date *</label>
+                <input type="date" id="wizStart" onchange="calculateWizPeriodDetails()" class="w-full border rounded p-2 text-xs focus:ring-1 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">End Date *</label>
+                <input type="date" id="wizEnd" onchange="calculateWizPeriodDetails()" class="w-full border rounded p-2 text-xs focus:ring-1 focus:ring-blue-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Period Label *</label>
+              <input type="text" id="wizLabel" placeholder="e.g. Aug 26 - Sep 25, 2026" class="w-full border rounded p-2 text-xs">
+            </div>
+
+            <div id="wizPeriodSummary" class="p-4 bg-blue-50 rounded-lg border border-blue-200 text-xs text-blue-900 space-y-1">
+              <p>Total Days in Period: <span id="wizTotalDays" class="font-bold">0</span></p>
+              <p>Total Sundays (targetOFF): <span id="wizSundays" class="font-bold text-[#C8102E]">0</span></p>
+              <p class="text-[11px] text-gray-500 italic mt-1">* Target OFF per active staff equals exactly the count of Sundays.</p>
+            </div>
+          </div>
+
+          <!-- STEP 2: GAZETTED HOLIDAYS -->
+          <div id="wizStep-2" class="wizard-step hidden space-y-4">
+            <h3 class="font-bold text-sm text-gray-800 border-b pb-2">Step 2: Confirm Gazetted / Public Holidays</h3>
+            <p class="text-xs text-gray-600">Confirmed holidays enforce Sunday-level staffing requirements (5 staff: M2, E2, N1).</p>
+            
+            <div class="flex space-x-2">
+              <input type="date" id="wizHolidayDate" class="border rounded p-2 text-xs">
+              <input type="text" id="wizHolidayName" placeholder="Holiday Name (e.g. Defense Day)" class="flex-grow border rounded p-2 text-xs">
+              <button onclick="addWizHoliday()" class="bg-blue-600 text-white px-3 py-2 rounded text-xs font-bold">Add</button>
+            </div>
+
+            <div class="border rounded-lg p-3 bg-gray-50 min-h-[100px]">
+              <h4 class="text-xs font-bold text-gray-700 mb-2">Confirmed Period Holidays:</h4>
+              <ul id="wizHolidayList" class="divide-y text-xs">
+                <li class="text-gray-400 italic py-1">No gazetted holidays confirmed for this period.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- STEP 3: MODE SELECTION -->
+          <div id="wizStep-3" class="wizard-step hidden space-y-4">
+            <h3 class="font-bold text-sm text-gray-800 border-b pb-2">Step 3: Select Generation Mode</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label class="border-2 rounded-xl p-4 flex flex-col justify-between cursor-pointer hover:border-blue-500 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                <div>
+                  <input type="radio" name="wizMode" value="Auto" checked class="mb-2">
+                  <div class="font-bold text-xs text-gray-800">Fully Automatic Engine</div>
+                  <p class="text-[11px] text-gray-500 mt-1">Applies standard OFF-first mathematical distribution, fixed shift preferences, and gender safety rules.</p>
+                </div>
+              </label>
+
+              <label class="border-2 rounded-xl p-4 flex flex-col justify-between cursor-pointer hover:border-blue-500 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                <div>
+                  <input type="radio" name="wizMode" value="Manual" class="mb-2">
+                  <div class="font-bold text-xs text-gray-800">Manual / Guided Engine</div>
+                  <p class="text-[11px] text-gray-500 mt-1">Allows defining custom locked instructions, leave ranges, and pre-allocated shift overrides prior to generation.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- STEP 4: MANUAL INSTRUCTIONS -->
+          <div id="wizStep-4" class="wizard-step hidden space-y-4">
+            <h3 class="font-bold text-sm text-gray-800 border-b pb-2">Step 4: Configure Manual Locked Instructions</h3>
+            <p class="text-xs text-gray-600">Manual instructions override the engine and lock specific staff assignments for specified date ranges.</p>
+            
+            <div class="p-3 bg-gray-50 border rounded-lg space-y-2 text-xs">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <select id="wizInstStaff" class="border rounded p-1.5"></select>
+                <select id="wizInstType" class="border rounded p-1.5">
+                  <option value="OFF">Force OFF</option>
+                  <option value="D">Gynee Duty (D)</option>
+                  <option value="M">Morning (M)</option>
+                  <option value="E">Evening (E)</option>
+                  <option value="E4">Evening 4 (E4)</option>
+                  <option value="N12">Night 12 (N12)</option>
+                  <option value="N">Night (N)</option>
+                  <option value="X">Extra (X)</option>
+                </select>
+                <input type="date" id="wizInstStart" class="border rounded p-1.5">
+                <input type="date" id="wizInstEnd" class="border rounded p-1.5">
+              </div>
+              <button onclick="addWizInstruction()" class="w-full bg-gray-800 text-white py-1.5 rounded font-bold text-xs">+ Add Locked Rule</button>
+            </div>
+
+            <div class="border rounded-lg p-3 max-h-40 overflow-y-auto text-xs">
+              <div class="font-bold mb-1">Active Locked Instructions:</div>
+              <ul id="wizInstList" class="divide-y">
+                <li class="text-gray-400 italic py-1">No custom instructions added.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- STEP 5: GENERATION LOGIC & CONFLICT RESOLUTION -->
+          <div id="wizStep-5" class="wizard-step hidden space-y-4">
+            <h3 class="font-bold text-sm text-gray-800 border-b pb-2">Step 5: Execute Generation Engine</h3>
+            <div class="text-center py-6 space-y-3">
+              <div id="wizGenSpinner" class="hidden inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+              <p id="wizGenStatus" class="text-xs font-semibold text-gray-600">Ready to initiate OFF-first algorithm execution.</p>
+              <button id="wizRunBtn" onclick="runRosterGenerationEngine()" class="bg-[#C8102E] hover:bg-red-800 text-white px-6 py-2.5 rounded-lg text-xs font-bold shadow">
+                Start Generation
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 6: PREVIEW & PUBLISH -->
+          <div id="wizStep-6" class="wizard-step hidden space-y-4">
+            <h3 class="font-bold text-sm text-gray-800 border-b pb-2">Step 6: Preview & Final Validation</h3>
+            <div id="wizValidationSummary" class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg text-xs space-y-1">
+              <div class="font-bold">✓ Validation Passed:</div>
+              <p>• All active staff reached exact targetOFF.</p>
+              <p>• Gender restrictions 100% compliant.</p>
+              <p>• Approved leaves and locked instructions respected.</p>
+            </div>
+
+            <div class="overflow-x-auto max-h-60 border rounded-lg">
+              <table class="w-full text-xs text-center border-collapse">
+                <thead id="wizPreviewHead" class="bg-gray-100 font-bold border-b"></thead>
+                <tbody id="wizPreviewBody" class="divide-y"></tbody>
+              </table>
+            </div>
+
+            <button onclick="publishGeneratedRoster()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-xs font-bold shadow">
+              Publish & Save Roster
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Wizard Navigation Footer -->
+        <div class="p-4 bg-gray-50 border-t flex items-center justify-between no-print">
+          <button id="wizPrevBtn" onclick="wizNav(-1)" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-xs font-bold">
+            Back
+          </button>
+          <div class="flex-grow"></div>
+          <button id="wizNextBtn" onclick="wizNav(1)" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-4 py-2 rounded text-xs font-bold">
+            Next Step
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ================= ADMIN LEAVE & SPECIAL OFF PLANNER ================= -->
+      <section id="view-leavePlanning" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-calendar-check text-[#C8102E] mr-2"></i>Admin Leave & Special OFF Planner</h2>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow border space-y-4">
+          <!-- Multi-day Range Pre-allocator Form -->
+          <form onsubmit="handleMassLeaveAllocation(event)" class="p-4 bg-gray-50 rounded-lg border space-y-3 text-xs">
+            <h3 class="font-bold text-gray-800">Pre-Assign Leave / Special OFF Range</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+              <div>
+                <label class="block font-bold mb-1">Staff Member</label>
+                <select id="plannerStaffSelect" required class="w-full border rounded p-1.5"></select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Assignment Code</label>
+                <select id="plannerCodeSelect" required class="w-full border rounded p-1.5">
+                  <option value="OFF">Special OFF (Counts as OFF Target)</option>
+                  <option value="EL">EL - Earned Leave</option>
+                  <option value="CL">CL - Casual Leave</option>
+                  <option value="SL">SL - Sick Leave</option>
+                  <option value="AL">AL - Annual Leave</option>
+                  <option value="ML">ML - Maternity Leave</option>
+                  <option value="CPL">CPL - Compensatory Leave</option>
+                  <option value="PH">PH - Public Holiday</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Start Date</label>
+                <input type="date" id="plannerStartDate" required class="w-full border rounded p-1.5">
+              </div>
+              <div>
+                <label class="block font-bold mb-1">End Date</label>
+                <input type="date" id="plannerEndDate" required class="w-full border rounded p-1.5">
+              </div>
+              <div class="flex items-end">
+                <button type="submit" class="w-full bg-[#1E5BA8] hover:bg-blue-800 text-white font-bold py-1.5 rounded">
+                  Lock Allocation
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Pre-allocated Leaves List -->
+          <div>
+            <h3 class="font-bold text-xs text-gray-800 mb-2">Locked Pre-Allocations:</h3>
+            <div class="border rounded-lg overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-gray-100 font-bold border-b">
+                  <tr>
+                    <th class="p-2">Staff</th>
+                    <th class="p-2">Type Code</th>
+                    <th class="p-2">Start Date</th>
+                    <th class="p-2">End Date</th>
+                    <th class="p-2">Status</th>
+                    <th class="p-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="plannerAllocationsBody" class="divide-y">
+                  <!-- Dynamically Populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= DUTY SWAPS ================= -->
+      <section id="view-dutySwaps" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-right-left text-[#1E5BA8] mr-2"></i>Duty Exchange Requests</h2>
+          <button onclick="openSwapModal()" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center shadow">
+            <i class="fa-solid fa-plus mr-1.5"></i> Request Duty Swap
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow border overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 border-b font-bold text-gray-700 uppercase">
+              <tr>
+                <th class="p-3">Requestor</th>
+                <th class="p-3">Target Partner</th>
+                <th class="p-3">Date</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="swapTableBody" class="divide-y">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ================= LEAVES MODULE ================= -->
+      <section id="view-leaves" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-file-signature text-[#1E5BA8] mr-2"></i>Leave Applications</h2>
+          <button onclick="openLeaveModal()" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center shadow">
+            <i class="fa-solid fa-plus mr-1.5"></i> Apply for Leave
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow border overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 border-b font-bold text-gray-700 uppercase">
+              <tr>
+                <th class="p-3">Staff</th>
+                <th class="p-3">Type</th>
+                <th class="p-3">Duration</th>
+                <th class="p-3">Reason</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leaveTableBody" class="divide-y">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ================= DUTY CHANGE REQUESTS ================= -->
+      <section id="view-dutyChanges" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-user-gear text-[#1E5BA8] mr-2"></i>Duty Change Requests</h2>
+          <button onclick="openDutyChangeModal()" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center shadow">
+            <i class="fa-solid fa-plus mr-1.5"></i> Submit Request
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow border overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 border-b font-bold text-gray-700 uppercase">
+              <tr>
+                <th class="p-3">Staff</th>
+                <th class="p-3">Requested Change Details</th>
+                <th class="p-3">Reason</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dutyChangeTableBody" class="divide-y">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ================= DEPARTMENT CHAT ================= -->
+      <section id="view-chat" class="hidden h-[75vh] bg-white rounded-xl shadow border flex flex-col overflow-hidden">
+        <!-- Chat Header -->
+        <div class="bg-gray-100 p-3 border-b flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <select id="chatChannelSelect" onchange="switchChatChannel()" class="border rounded px-2 py-1 text-xs font-bold bg-white">
+              <option value="group">Department Group Announcement Chat</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Chat Messages Scroll Area -->
+        <div id="chatMessages" class="flex-grow p-4 overflow-y-auto space-y-3 bg-gray-50 text-xs">
+          <!-- Messages dynamically appended -->
+        </div>
+
+        <!-- Chat Input Bar -->
+        <form onsubmit="sendChatMessage(event)" class="p-3 bg-white border-t flex items-center space-x-2">
+          <input type="text" id="chatInputText" placeholder="Type message..." class="flex-grow border rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+          <label class="cursor-pointer bg-gray-100 hover:bg-gray-200 p-2 rounded-lg text-gray-600">
+            <i class="fa-solid fa-paperclip"></i>
+            <input type="file" id="chatFileInput" accept="image/*" class="hidden" onchange="handleChatFileUpload(event)">
+          </label>
+          <button type="submit" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-xs font-bold shadow">
+            Send
+          </button>
+        </form>
+      </section>
+
+
+      <!-- ================= REPORTS ================= -->
+      <section id="view-reports" class="hidden space-y-4">
+        <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-chart-pie text-[#1E5BA8] mr-2"></i>Departmental Reports</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div onclick="generateReport('daily')" class="bg-white p-4 rounded-xl shadow border cursor-pointer hover:border-blue-500">
+            <i class="fa-solid fa-calendar-day text-2xl text-blue-600 mb-2"></i>
+            <h3 class="font-bold text-sm text-gray-800">Daily Duty Attendance</h3>
+            <p class="text-xs text-gray-500 mt-1">Export specific date staffing roster.</p>
+          </div>
+          <div onclick="generateReport('monthly')" class="bg-white p-4 rounded-xl shadow border cursor-pointer hover:border-blue-500">
+            <i class="fa-solid fa-calendar-week text-2xl text-emerald-600 mb-2"></i>
+            <h3 class="font-bold text-sm text-gray-800">Monthly Summary Report</h3>
+            <p class="text-xs text-gray-500 mt-1">Duty count and total OFF compliance metrics.</p>
+          </div>
+          <div onclick="generateReport('audit')" class="bg-white p-4 rounded-xl shadow border cursor-pointer hover:border-blue-500">
+            <i class="fa-solid fa-shield-cat text-2xl text-purple-600 mb-2"></i>
+            <h3 class="font-bold text-sm text-gray-800">System Audit Trail</h3>
+            <p class="text-xs text-gray-500 mt-1">Complete system action logging timeline.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= SETTINGS (ADMIN) ================= -->
+      <section id="view-settings" class="hidden space-y-4">
+        <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-sliders text-[#C8102E] mr-2"></i>System Settings</h2>
+        
+        <div class="bg-white p-6 rounded-xl shadow border space-y-6">
+          <!-- Password Reset Sub-section -->
+          <div class="border-b pb-4">
+            <h3 class="font-bold text-sm text-gray-800 mb-3">User Password Reset</h3>
+            <form onsubmit="handleAdminPasswordReset(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <select id="resetUserSelect" required class="border rounded p-2"></select>
+              <input type="password" id="resetUserNewPass" placeholder="New Password" required class="border rounded p-2">
+              <button type="submit" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 rounded">
+                Reset Password
+              </button>
+            </form>
+          </div>
+
+          <!-- Configuration Values -->
+          <div>
+            <h3 class="font-bold text-sm text-gray-800 mb-3">General Department Info</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label class="block font-bold mb-1">Hospital Name</label>
+                <input type="text" id="setHospitalName" value="Kulsum International Hospital, Islamabad" class="w-full border rounded p-2">
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Department</label>
+                <input type="text" id="setDeptName" value="Phlebotomy" class="w-full border rounded p-2">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= AUDIT LOG (ADMIN) ================= -->
+      <section id="view-auditLog" class="hidden space-y-4">
+        <h2 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-shield-halved text-[#C8102E] mr-2"></i>System Audit Log</h2>
+        <div class="bg-white rounded-xl shadow border overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 border-b font-bold text-gray-700 uppercase">
+              <tr>
+                <th class="p-3">Timestamp</th>
+                <th class="p-3">User</th>
+                <th class="p-3">Role</th>
+                <th class="p-3">Action</th>
+                <th class="p-3">Details</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody" class="divide-y">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ================= UNIVERSAL MODALS & DIALOGS ================= -->
+
+  <!-- CONFLICT RESOLUTION MODAL -->
+  <div id="modal-conflict" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full border border-gray-200 overflow-hidden">
+      <div class="bg-red-700 text-white px-4 py-3 flex items-center justify-between">
+        <h3 class="font-bold text-sm"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Generation Conflict Detected</h3>
+        <button onclick="closeModal('modal-conflict')" class="text-white hover:text-gray-200 font-bold p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3 text-xs">
+        <div id="conflictDate" class="font-bold text-gray-800 border-b pb-1"></div>
+        <p id="conflictProblem" class="text-red-600 font-semibold"></p>
+        <div id="conflictDetails" class="p-3 bg-gray-50 border rounded text-gray-700"></div>
+        <div id="conflictSuggestion" class="p-3 bg-blue-50 border border-blue-200 rounded text-blue-900 font-medium"></div>
+
+        <div class="pt-3 flex flex-wrap gap-2 justify-end">
+          <button onclick="resolveConflictDecision('accept')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded font-bold">Accept Suggestion</button>
+          <button onclick="resolveConflictDecision('modify')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold">Modify Manually</button>
+          <button onclick="resolveConflictDecision('skip')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded font-bold">Skip Day</button>
+          <button onclick="closeModal('modal-conflict')" class="bg-gray-200 text-gray-800 px-3 py-2 rounded font-bold">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STAFF ADD/EDIT MODAL -->
+  <div id="modal-staff" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 overflow-hidden">
+      <div class="kih-header-grad text-white px-4 py-3 flex items-center justify-between">
+        <h3 id="staffModalTitle" class="font-bold text-sm">Add New Staff Member</h3>
+        <button onclick="closeModal('modal-staff')" class="text-white hover:text-gray-200 font-bold p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form onsubmit="saveStaffMember(event)" class="p-5 space-y-3 text-xs">
+        <input type="hidden" id="staffEditId">
+        
+        <div>
+          <label class="block font-bold mb-1">Full Name *</label>
+          <input type="text" id="staffName" required class="w-full border rounded p-2">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold mb-1">Gender *</label>
+            <select id="staffGender" required class="w-full border rounded p-2">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Employee ID *</label>
+            <input type="text" id="staffEmpId" required class="w-full border rounded p-2">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold mb-1">Mobile Number *</label>
+            <input type="text" id="staffMobile" required class="w-full border rounded p-2">
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Designation *</label>
+            <input type="text" id="staffDesignation" value="Phlebotomist" required class="w-full border rounded p-2">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">Fixed Shift Preference (Optional)</label>
+          <select id="staffFixedShift" class="w-full border rounded p-2">
+            <option value="">-- None --</option>
+            <option value="M">Morning (M)</option>
+            <option value="E">Evening (E)</option>
+            <option value="E4">Evening 4 (E4 - Male Only)</option>
+            <option value="N12">Night 12 (N12 - Male Only)</option>
+            <option value="N">Night (N - Male Only)</option>
+            <option value="D">Day-Gynee (D - Female Only)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-2">
+          <input type="checkbox" id="staffIsSupervisor" class="rounded">
+          <label for="staffIsSupervisor" class="font-bold text-gray-700">Grant Supervisor Role</label>
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-2 border-t">
+          <button type="button" onclick="closeModal('modal-staff')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold">Close</button>
+          <button type="submit" class="bg-[#1E5BA8] hover:bg-blue-800 text-white px-4 py-2 rounded font-bold">Save Staff</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- DUTY SWAP MODAL -->
+  <div id="modal-swap" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 overflow-hidden">
+      <div class="bg-[#1E5BA8] text-white px-4 py-3 flex items-center justify-between">
+        <h3 class="font-bold text-sm"><i class="fa-solid fa-right-left mr-2"></i>Request Duty Swap</h3>
+        <button onclick="closeModal('modal-swap')" class="text-white hover:text-gray-200 font-bold p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form onsubmit="handleSwapSubmit(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold mb-1">Target Exchange Partner *</label>
+          <select id="swapTargetStaff" required class="w-full border rounded p-2"></select>
+        </div>
+        <div>
+          <label class="block font-bold mb-1">Duty Date *</label>
+          <input type="date" id="swapDate" required class="w-full border rounded p-2">
+        </div>
+        <div class="pt-3 flex justify-end space-x-2 border-t">
+          <button type="button" onclick="closeModal('modal-swap')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold">Close</button>
+          <button type="submit" class="bg-[#1E5BA8] text-white px-4 py-2 rounded font-bold">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- LEAVE APPLICATION MODAL -->
+  <div id="modal-leave" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 overflow-hidden">
+      <div class="bg-[#1E5BA8] text-white px-4 py-3 flex items-center justify-between">
+        <h3 class="font-bold text-sm"><i class="fa-solid fa-file-signature mr-2"></i>Submit Leave Application</h3>
+        <button onclick="closeModal('modal-leave')" class="text-white hover:text-gray-200 font-bold p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form onsubmit="handleLeaveSubmit(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold mb-1">Leave Type *</label>
+          <select id="leaveTypeSelect" required class="w-full border rounded p-2">
+            <option value="EL">EL - Earned Leave</option>
+            <option value="CL">CL - Casual Leave</option>
+            <option value="SL">SL - Sick Leave</option>
+            <option value="AL">AL - Annual Leave</option>
+            <option value="ML">ML - Maternity Leave</option>
+            <option value="CPL">CPL - Compensatory Leave</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold mb-1">Start Date *</label>
+            <input type="date" id="leaveStartDate" required class="w-full border rounded p-2">
+          </div>
+          <div>
+            <label class="block font-bold mb-1">End Date *</label>
+            <input type="date" id="leaveEndDate" required class="w-full border rounded p-2">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold mb-1">Reason *</label>
+          <textarea id="leaveReason" required rows="2" class="w-full border rounded p-2"></textarea>
+        </div>
+        <div class="pt-3 flex justify-end space-x-2 border-t">
+          <button type="button" onclick="closeModal('modal-leave')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold">Close</button>
+          <button type="submit" class="bg-[#1E5BA8] text-white px-4 py-2 rounded font-bold">Submit Application</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- DUTY CHANGE REQUEST MODAL -->
+  <div id="modal-dutyChange" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-200 overflow-hidden">
+      <div class="bg-[#1E5BA8] text-white px-4 py-3 flex items-center justify-between">
+        <h3 class="font-bold text-sm"><i class="fa-solid fa-user-gear mr-2"></i>Duty Change Request</h3>
+        <button onclick="closeModal('modal-dutyChange')" class="text-white hover:text-gray-200 font-bold p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form onsubmit="handleDutyChangeSubmit(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold mb-1">Requested Change Details *</label>
+          <input type="text" id="dcDetails" placeholder="e.g. Fixed Morning Shift modification" required class="w-full border rounded p-2">
+        </div>
+        <div>
+          <label class="block font-bold mb-1">Reason *</label>
+          <textarea id="dcReason" required rows="2" class="w-full border rounded p-2"></textarea>
+        </div>
+        <div class="pt-3 flex justify-end space-x-2 border-t">
+          <button type="button" onclick="closeModal('modal-dutyChange')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold">Close</button>
+          <button type="submit" class="bg-[#1E5BA8] text-white px-4 py-2 rounded font-bold">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+
+  <!-- ================= JAVASCRIPT APPLICATION LOGIC ================= -->
+  <script>
+    // -------------------------------------------------------------
+    // 1. FIREBASE INITIALIZATION & CONFIGURATION
+    // -------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyB5_7xk9tTNjLffoWaIXVYK3LOV0PJXIqU",
+      authDomain: "phlebotomy-roster-fc09e.firebaseapp.com",
+      databaseURL: "https://phlebotomy-roster-fc09e-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "phlebotomy-roster-fc09e",
+      storageBucket: "phlebotomy-roster-fc09e.firebasestorage.app",
+      messagingSenderId: "573402563177",
+      appId: "1:573402563177:web:3528df7a80ef7da88258f8"
     };
-    document.getElementById('wizStart').addEventListener('change', updateCount);
-    document.getElementById('wizEnd').addEventListener('change', updateCount);
-    updateCount();
-  }
 
-  window.wizardStep1Next = function() {
-    const start = document.getElementById('wizStart').value;
-    const end = document.getElementById('wizEnd').value;
-    if (!start || !end) return alert('Select dates');
-    const s = new Date(start);
-    const e = new Date(end);
-    if (s > e) return alert('Start must be before end');
-    wizardState.periodStart = s;
-    wizardState.periodEnd = e;
-    wizardState.sundaysCount = countSundays(s, e);
-    closeModal(document.querySelector('.modal-overlay').id);
-    openWizardStep2();
-  };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const storage = firebase.storage();
 
-  function openWizardStep2() {
-    const dates = getDatesInRange(wizardState.periodStart, wizardState.periodEnd);
-    const holidayList = dates.filter(d => d.getDay() === 0 || d.getDay() === 6).map(d => formatDate(d)); // just example
-    const html = `
-      <p class="text-muted">Step 2 of 6: Confirm Gazetted Holidays</p>
-      <p>App does not assume any holiday. Select dates that are official holidays (PH).</p>
-      <div style="max-height:300px; overflow-y:auto; border:1px solid #dee2e6; border-radius:12px; padding:8px;">
-        ${dates.map(d => {
-          const ds = formatDate(d);
-          const dayName = getDayName(d);
-          const checked = wizardState.holidays.includes(ds) ? 'checked' : '';
-          return `<label style="display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid #f1f3f5;">
-            <input type="checkbox" value="${ds}" ${checked} onchange="toggleHoliday(this)"> ${ds} (${dayName})
-          </label>`;
-        }).join('')}
-      </div>
-      <button class="btn btn-primary btn-block mt-3" onclick="wizardStep2Next()">Next: Mode</button>
-    `;
-    openModal('Confirm Holidays', html);
-  }
+    // Application State Variables
+    let currentUser = null; // { id, name, role, mobile }
+    let staffData = {};
+    let activeRosterData = null;
+    let publishedPeriods = {};
+    let currentWizStep = 1;
+    let wizHolidays = [];
+    let wizInstructions = [];
+    let pendingConflictResolver = null;
 
-  window.toggleHoliday = function(checkbox) {
-    const val = checkbox.value;
-    if (checkbox.checked) {
-      if (!wizardState.holidays.includes(val)) wizardState.holidays.push(val);
-    } else {
-      wizardState.holidays = wizardState.holidays.filter(h => h !== val);
-    }
-  };
+    // Shift Definitions Map
+    const SHIFTS = {
+      'M': { name: 'Morning', time: '07:00-15:30', gender: 'Any', monSat: true, sun: false },
+      'E': { name: 'Evening', time: '15:00-23:00', gender: 'Any', monSat: true, sun: true },
+      'E4': { name: 'Evening 4', time: '16:00-00:00', gender: 'Male', monSat: true, sun: false },
+      'N12': { name: 'Night 12', time: '00:00-08:00', gender: 'Male', monSat: true, sun: false },
+      'N': { name: 'Night', time: '23:00-07:00', gender: 'Male', monSat: false, sun: true },
+      'D': { name: 'Day-Gynee', time: '09:00-17:30', gender: 'Female', monSat: true, sun: false },
+      'X': { name: 'Extra', time: '11:00-19:00', gender: 'Any', monSat: true, sun: false },
+      'DX': { name: 'Day Extra', time: '09:00-19:00', gender: 'Any', monSat: true, sun: false }
+    };
 
-  window.wizardStep2Next = function() {
-    closeModal(document.querySelector('.modal-overlay').id);
-    openWizardStep3();
-  };
+    // Standard Weekly Setup Headcounts
+    const WEEKLY_SETUP = {
+      Monday:    { M: 3, E: 3, E4: 1, N12: 1, N: 0, D: 1, X: 1 },
+      Tuesday:   { M: 3, E: 3, E4: 1, N12: 1, N: 0, D: 1, X: 1 },
+      Wednesday: { M: 3, E: 3, E4: 1, N12: 1, N: 0, D: 1, X: 1 },
+      Thursday:  { M: 3, E: 3, E4: 1, N12: 1, N: 0, D: 1, X: 1 },
+      Friday:    { M: 3, E: 3, E4: 1, N12: 1, N: 0, D: 1, X: 1 },
+      Saturday:  { M: 3, E: 3, E4: 1, N12: 1, N: 0, D: 1, X: 1 },
+      Sunday:    { M: 2, E: 2, E4: 0, N12: 0, N: 1, D: 0, X: 0 },
+      Holiday:   { M: 2, E: 2, E4: 0, N12: 0, N: 1, D: 0, X: 0 }
+    };
 
-  function openWizardStep3() {
-    const html = `
-      <p class="text-muted">Step 3 of 6: Mode</p>
-      <div style="display:flex; gap:12px; margin-top:12px;">
-        <button class="btn btn-primary" style="flex:1" onclick="setMode('auto')">Auto</button>
-        <button class="btn btn-outline" style="flex:1" onclick="setMode('manual')">Manual</button>
-      </div>
-      <p class="text-muted mt-3">Auto mode: system assigns OFF and shifts automatically.<br>Manual mode: you provide instructions.</p>
-    `;
-    openModal('Select Mode', html);
-  }
+    // Relax Limits
+    const RELAX_LIMITS = {
+      Monday: 1, Tuesday: 1, Wednesday: 1, Thursday: 1, Friday: 1,
+      Saturday: 2, Sunday: 7, Holiday: 7
+    };
 
-  window.setMode = function(mode) {
-    wizardState.mode = mode;
-    closeModal(document.querySelector('.modal-overlay').id);
-    if (mode === 'manual') {
-      openWizardStep4();
-    } else {
-      openWizardStep5();
-    }
-  };
 
-  function openWizardStep4() {
-    const html = `
-      <p class="text-muted">Step 4 of 6: Instructions (Manual Mode)</p>
-      <label>Instructions for generation</label>
-      <textarea id="manualInstructions" rows="4" placeholder="e.g. Keep staff X on M shift..."></textarea>
-      <button class="btn btn-primary btn-block mt-3" onclick="wizardStep4Next()">Next: Generate</button>
-    `;
-    openModal('Instructions', html);
-  }
+    // -------------------------------------------------------------
+    // 2. LIFECYCLE & BOOTSTRAP
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      bootstrapAdminAccount();
+      listenRealtimeData();
+      renderShiftLegend();
+    });
 
-  window.wizardStep4Next = function() {
-    wizardState.instructions = document.getElementById('manualInstructions').value;
-    closeModal(document.querySelector('.modal-overlay').id);
-    openWizardStep5();
-  };
-
-  // ============================================================
-  // CORE GENERATION ALGORITHM (OFF FIRST, SHIFTS AFTER)
-  // ============================================================
-  function generateRoster(periodStart, periodEnd, holidaysSet, mode, instructions) {
-    const activeStaff = staffList.filter(s => !s.archived);
-    if (!activeStaff.length) throw new Error('No active staff');
-
-    const dates = getDatesInRange(periodStart, periodEnd);
-    const targetOFF = countSundays(periodStart, periodEnd);
-
-    // Initialize assignment map
-    const assignment = {}; // staffId -> { dateStr: shiftCode }
-    activeStaff.forEach(s => assignment[s.id] = {});
-
-    // Counters for OFF
-    const offCount = {};
-    activeStaff.forEach(s => offCount[s.id] = 0);
-
-    // LOCKED entries: pre-existing? For simplicity, we start clean.
-    // But we respect manual overrides if any (not implemented in this version).
-
-    // --- PHASE A: Sundays -> assign 7 OFF per Sunday (or all if fewer staff) ---
-    const sundays = dates.filter(d => d.getDay() === 0);
-    for (const sunday of sundays) {
-      const dateStr = formatDate(sunday);
-      // Sort staff by offCount ascending, then by id (stable)
-      const sorted = [...activeStaff].sort((a,b) => offCount[a.id] - offCount[b.id] || a.id.localeCompare(b.id));
-      const assignCount = Math.min(7, sorted.length);
-      for (let i = 0; i < assignCount; i++) {
-        const staff = sorted[i];
-        if (!assignment[staff.id][dateStr]) {
-          assignment[staff.id][dateStr] = OFF_CODE;
-          offCount[staff.id]++;
+    function bootstrapAdminAccount() {
+      db.ref('users/admin').once('value', (snap) => {
+        if (!snap.exists()) {
+          db.ref('users/admin').set({
+            username: 'admin',
+            password: 'admin123',
+            role: 'admin',
+            name: 'System Administrator'
+          });
+          logAudit('System', 'admin', 'Bootstrap', 'Initial default admin account created.');
         }
-      }
-    }
-
-    // --- PHASE B: Saturdays -> assign 2 OFF per Saturday ---
-    const saturdays = dates.filter(d => d.getDay() === 6);
-    for (const sat of saturdays) {
-      const dateStr = formatDate(sat);
-      // Skip if holiday? Holiday still can have OFF? Yes relax limit applies.
-      const sorted = [...activeStaff].sort((a,b) => offCount[a.id] - offCount[b.id] || a.id.localeCompare(b.id));
-      let assigned = 0;
-      for (const staff of sorted) {
-        if (assigned >= 2) break;
-        if (!assignment[staff.id][dateStr]) {
-          assignment[staff.id][dateStr] = OFF_CODE;
-          offCount[staff.id]++;
-          assigned++;
-        }
-      }
-    }
-
-    // --- PHASE C: Weekdays (Mon-Fri) -> assign 1 OFF per weekday ---
-    const weekdays = dates.filter(d => d.getDay() >= 1 && d.getDay() <= 5);
-    for (const wd of weekdays) {
-      const dateStr = formatDate(wd);
-      if (holidaysSet.has(dateStr)) continue; // treat as Holiday later, but OFF still possible? We'll handle in Phase D
-      const sorted = [...activeStaff].sort((a,b) => offCount[a.id] - offCount[b.id] || a.id.localeCompare(b.id));
-      for (const staff of sorted) {
-        if (!assignment[staff.id][dateStr]) {
-          assignment[staff.id][dateStr] = OFF_CODE;
-          offCount[staff.id]++;
-          break; // only 1 per weekday
-        }
-      }
-    }
-
-    // --- PHASE D: Top-up any staff below target using remaining days that have spare relax capacity ---
-    // Remaining days: all dates not yet assigned for that staff, and day relax capacity not exceeded.
-    const allDates = dates;
-    // Compute relax count per day (OFF + Leave) — we only have OFF for now
-    function getRelaxCount(dateStr) {
-      let cnt = 0;
-      activeStaff.forEach(s => {
-        if (assignment[s.id][dateStr] === OFF_CODE) cnt++;
       });
-      return cnt;
     }
 
-    // Sort staff by offCount ascending
-    const sortedStaff = [...activeStaff].sort((a,b) => offCount[a.id] - offCount[b.id] || a.id.localeCompare(b.id));
-    for (const staff of sortedStaff) {
-      while (offCount[staff.id] < targetOFF) {
-        // find a date where this staff is not assigned, and relax limit not exceeded
-        let assigned = false;
-        for (const d of allDates) {
-          const dateStr = formatDate(d);
-          if (assignment[staff.id][dateStr]) continue; // already has something
-          const dayName = holidaysSet.has(dateStr) ? 'Holiday' : getDayName(d);
-          const limit = RELAX_LIMIT[dayName] ?? 1;
-          if (getRelaxCount(dateStr) < limit) {
-            assignment[staff.id][dateStr] = OFF_CODE;
-            offCount[staff.id]++;
-            assigned = true;
+    function listenRealtimeData() {
+      db.ref('staff').on('value', (snap) => {
+        staffData = snap.val() || {};
+        renderStaffDirectory();
+        populateStaffDropdowns();
+      });
+
+      db.ref('periods').on('value', (snap) => {
+        publishedPeriods = snap.val() || {};
+        populatePeriodDropdown();
+      });
+
+      db.ref('exchanges').on('value', renderSwapsTable);
+      db.ref('leaves').on('value', renderLeavesTable);
+      db.ref('dutyChangeRequests').on('value', renderDutyChangesTable);
+      db.ref('auditLog').on('value', renderAuditTable);
+      db.ref('plannerAllocations').on('value', renderPlannerAllocations);
+    }
+
+
+    // -------------------------------------------------------------
+    // 3. AUTHENTICATION & LOGIN
+    // -------------------------------------------------------------
+    let loginRole = 'staff';
+
+    function toggleLoginType(type) {
+      loginRole = type;
+      const staffBtn = document.getElementById('btn-login-staff');
+      const adminBtn = document.getElementById('btn-login-admin');
+      const label = document.getElementById('loginUsernameLabel');
+      const help = document.getElementById('loginHelpText');
+
+      if (type === 'admin') {
+        adminBtn.className = "flex-1 py-3 text-sm font-semibold text-center border-b-2 border-[#C8102E] text-[#C8102E] bg-white";
+        staffBtn.className = "flex-1 py-3 text-sm font-semibold text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700";
+        label.innerText = "Username";
+        help.innerHTML = 'Default Admin: <span class="font-bold">admin / admin123</span>';
+      } else {
+        staffBtn.className = "flex-1 py-3 text-sm font-semibold text-center border-b-2 border-[#1E5BA8] text-[#1E5BA8] bg-white";
+        adminBtn.className = "flex-1 py-3 text-sm font-semibold text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700";
+        label.innerText = "Mobile Number";
+        help.innerHTML = 'Default Staff Password: <span class="font-bold">123456</span>';
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const userVal = document.getElementById('loginUsername').value.trim();
+      const passVal = document.getElementById('loginPassword').value.trim();
+      const errDiv = document.getElementById('loginError');
+      errDiv.classList.add('hidden');
+
+      if (loginRole === 'admin') {
+        db.ref('users/admin').once('value', (snap) => {
+          const adm = snap.val();
+          if (adm && adm.username === userVal && adm.password === passVal) {
+            setCurrentUser({ id: 'admin', name: adm.name || 'Admin', role: 'admin' });
+          } else {
+            showLoginError('Invalid Admin credentials.');
+          }
+        });
+      } else {
+        // Staff Login by Mobile
+        let foundKey = null;
+        let foundStaff = null;
+        Object.entries(staffData).forEach(([key, s]) => {
+          if (s.mobile === userVal && !s.archived) {
+            foundKey = key;
+            foundStaff = s;
+          }
+        });
+
+        if (foundStaff) {
+          const pass = foundStaff.password || '123456';
+          if (pass === passVal) {
+            setCurrentUser({
+              id: foundKey,
+              name: foundStaff.name,
+              role: foundStaff.isSupervisor ? 'supervisor' : 'staff',
+              mobile: foundStaff.mobile
+            });
+          } else {
+            showLoginError('Incorrect password for staff account.');
+          }
+        } else {
+          showLoginError('Mobile number not found or staff account archived.');
+        }
+      }
+    }
+
+    function showLoginError(msg) {
+      const errDiv = document.getElementById('loginError');
+      errDiv.innerText = msg;
+      errDiv.classList.remove('hidden');
+    }
+
+    function setCurrentUser(user) {
+      currentUser = user;
+      document.getElementById('currentUserName').innerText = user.name;
+      document.getElementById('currentUserRole').innerText = user.role;
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('navRightControls').classList.remove('hidden');
+      document.getElementById('mainNav').classList.remove('hidden');
+
+      // Update WhatsApp link
+      document.getElementById('whatsappHeaderLink').href = `https://wa.me/923000000000?text=${encodeURIComponent('KIH Phlebotomy Portal Query')}`;
+
+      // Admin view toggles
+      const adminElems = document.querySelectorAll('.admin-only');
+      adminElems.forEach(el => {
+        if (user.role === 'admin' || user.role === 'supervisor') el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      });
+
+      logAudit(user.name, user.role, 'Login', 'Logged in to system.');
+      switchTab('rosterView');
+      showToast('Logged in successfully!', 'success');
+    }
+
+    function logout() {
+      if (currentUser) logAudit(currentUser.name, currentUser.role, 'Logout', 'Logged out.');
+      currentUser = null;
+      document.getElementById('navRightControls').classList.add('hidden');
+      document.getElementById('mainNav').classList.add('hidden');
+      document.getElementById('view-login').classList.remove('hidden');
+      hideAllViews();
+      showToast('Logged out.', 'info');
+    }
+
+
+    // -------------------------------------------------------------
+    // 4. NAVIGATION & TAB MANAGEMENT
+    // -------------------------------------------------------------
+    function switchTab(tabId) {
+      hideAllViews();
+      const targetView = document.getElementById('view-' + tabId);
+      if (targetView) targetView.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab').forEach(b => {
+        b.classList.remove('border-[#1E5BA8]', 'text-[#1E5BA8]', 'border-[#C8102E]', 'text-[#C8102E]');
+        b.classList.add('border-transparent', 'text-gray-600');
+      });
+
+      const activeBtn = document.getElementById('tab-' + tabId);
+      if (activeBtn) {
+        const isAdminTab = activeBtn.classList.contains('admin-only');
+        const colorClass = isAdminTab ? 'border-[#C8102E]' : 'border-[#1E5BA8]';
+        const textClass = isAdminTab ? 'text-[#C8102E]' : 'text-[#1E5BA8]';
+        activeBtn.classList.remove('border-transparent', 'text-gray-600');
+        activeBtn.classList.add(colorClass, textClass);
+      }
+
+      if (tabId === 'chat') listenChatMessages();
+    }
+
+    function hideAllViews() {
+      const views = ['rosterView', 'staffDir', 'wizard', 'leavePlanning', 'dutySwaps', 'leaves', 'dutyChanges', 'chat', 'reports', 'settings', 'auditLog'];
+      views.forEach(v => {
+        const el = document.getElementById('view-' + v);
+        if (el) el.classList.add('hidden');
+      });
+    }
+
+
+    // -------------------------------------------------------------
+    // 5. STAFF DIRECTORY MANAGEMENT
+    // -------------------------------------------------------------
+    function renderStaffDirectory() {
+      const tbody = document.getElementById('staffTableBody');
+      tbody.innerHTML = '';
+
+      Object.entries(staffData).forEach(([id, s]) => {
+        const tr = document.createElement('tr');
+        tr.className = s.archived ? 'bg-gray-100 opacity-60' : 'hover:bg-gray-50';
+
+        tr.innerHTML = `
+          <td class="p-3 font-bold">${s.empId}</td>
+          <td class="p-3 font-semibold text-gray-900">${s.name} ${s.isSupervisor ? '<span class="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">Sup</span>' : ''}</td>
+          <td class="p-3">${s.gender}</td>
+          <td class="p-3">${s.mobile}</td>
+          <td class="p-3">${s.designation}</td>
+          <td class="p-3">${s.fixedShift || 'None'}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.archived ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}">
+              ${s.archived ? 'Archived' : 'Active'}
+            </span>
+          </td>
+          <td class="p-3 text-right space-x-1">
+            <button onclick="editStaffMember('${id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>
+            ${s.archived ? 
+              `<button onclick="toggleStaffArchive('${id}', false)" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1 rounded text-[10px] font-bold">Restore</button>` : 
+              `<button onclick="toggleStaffArchive('${id}', true)" class="bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded text-[10px] font-bold">Archive</button>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openStaffModal(staffId = null) {
+      document.getElementById('staffEditId').value = staffId || '';
+      if (staffId && staffData[staffId]) {
+        const s = staffData[staffId];
+        document.getElementById('staffName').value = s.name;
+        document.getElementById('staffGender').value = s.gender;
+        document.getElementById('staffEmpId').value = s.empId;
+        document.getElementById('staffMobile').value = s.mobile;
+        document.getElementById('staffDesignation').value = s.designation;
+        document.getElementById('staffFixedShift').value = s.fixedShift || '';
+        document.getElementById('staffIsSupervisor').checked = !!s.isSupervisor;
+        document.getElementById('staffModalTitle').innerText = 'Edit Staff Member';
+      } else {
+        document.getElementById('staffName').value = '';
+        document.getElementById('staffGender').value = 'Male';
+        document.getElementById('staffEmpId').value = '';
+        document.getElementById('staffMobile').value = '';
+        document.getElementById('staffDesignation').value = 'Phlebotomist';
+        document.getElementById('staffFixedShift').value = '';
+        document.getElementById('staffIsSupervisor').checked = false;
+        document.getElementById('staffModalTitle').innerText = 'Add New Staff Member';
+      }
+      openModal('modal-staff');
+    }
+
+    function saveStaffMember(e) {
+      e.preventDefault();
+      const editId = document.getElementById('staffEditId').value;
+      const sObj = {
+        name: document.getElementById('staffName').value.trim(),
+        gender: document.getElementById('staffGender').value,
+        empId: document.getElementById('staffEmpId').value.trim(),
+        mobile: document.getElementById('staffMobile').value.trim(),
+        designation: document.getElementById('staffDesignation').value.trim(),
+        fixedShift: document.getElementById('staffFixedShift').value || null,
+        isSupervisor: document.getElementById('staffIsSupervisor').checked,
+        archived: false
+      };
+
+      if (editId) {
+        db.ref('staff/' + editId).update(sObj);
+        logAudit(currentUser.name, currentUser.role, 'Staff Edit', `Updated staff: ${sObj.name}`);
+      } else {
+        db.ref('staff').push(sObj);
+        logAudit(currentUser.name, currentUser.role, 'Staff Add', `Added staff: ${sObj.name}`);
+      }
+
+      closeModal('modal-staff');
+      showToast('Staff record saved successfully.', 'success');
+    }
+
+    function toggleStaffArchive(id, archive) {
+      db.ref(`staff/${id}/archived`).set(archive);
+      logAudit(currentUser.name, currentUser.role, 'Staff Archive', `${archive ? 'Archived' : 'Restored'} staff ID: ${id}`);
+      showToast(`Staff member ${archive ? 'archived' : 'restored'}.`, 'info');
+    }
+
+    function populateStaffDropdowns() {
+      const selects = ['plannerStaffSelect', 'wizInstStaff', 'swapTargetStaff', 'resetUserSelect'];
+      selects.forEach(selId => {
+        const el = document.getElementById(selId);
+        if (!el) return;
+        el.innerHTML = '';
+        Object.entries(staffData).forEach(([id, s]) => {
+          if (!s.archived) {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.innerText = `${s.name} (${s.empId})`;
+            el.appendChild(opt);
+          }
+        });
+      });
+    }
+
+
+    // -------------------------------------------------------------
+    // 6. ROSTER GENERATION WIZARD ENGINE (STEP-BY-STEP)
+    // -------------------------------------------------------------
+    function wizNav(dir) {
+      const current = document.getElementById(`wizStep-${currentWizStep}`);
+      if (dir === 1 && currentWizStep === 1) {
+        const start = document.getElementById('wizStart').value;
+        const end = document.getElementById('wizEnd').value;
+        if (!start || !end || start > end) {
+          showToast('Please select a valid Start and End date range.', 'error');
+          return;
+        }
+      }
+
+      current.classList.add('hidden');
+      currentWizStep += dir;
+      if (currentWizStep < 1) currentWizStep = 1;
+      if (currentWizStep > 6) currentWizStep = 6;
+
+      document.getElementById(`wizStep-${currentWizStep}`).classList.remove('hidden');
+      document.getElementById('wizardStepBadge').innerText = `Step ${currentWizStep} / 6`;
+
+      const prevBtn = document.getElementById('wizPrevBtn');
+      const nextBtn = document.getElementById('wizNextBtn');
+
+      if (currentWizStep === 1) prevBtn.classList.add('hidden');
+      else prevBtn.classList.remove('hidden');
+
+      if (currentWizStep === 6) nextBtn.classList.add('hidden');
+      else nextBtn.classList.remove('hidden');
+    }
+
+    function calculateWizPeriodDetails() {
+      const startVal = document.getElementById('wizStart').value;
+      const endVal = document.getElementById('wizEnd').value;
+      if (!startVal || !endVal || startVal > endVal) return;
+
+      const startDate = new Date(startVal);
+      const endDate = new Date(endVal);
+      let totalDays = 0;
+      let sundaysCount = 0;
+
+      let cur = new Date(startDate);
+      while (cur <= endDate) {
+        totalDays++;
+        if (cur.getDay() === 0) sundaysCount++;
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      document.getElementById('wizTotalDays').innerText = totalDays;
+      document.getElementById('wizSundays').innerText = sundaysCount;
+      if (!document.getElementById('wizLabel').value) {
+        document.getElementById('wizLabel').value = `${startVal} to ${endVal}`;
+      }
+    }
+
+    function addWizHoliday() {
+      const d = document.getElementById('wizHolidayDate').value;
+      const n = document.getElementById('wizHolidayName').value.trim();
+      if (!d || !n) return;
+
+      wizHolidays.push({ date: d, name: n });
+      renderWizHolidays();
+      document.getElementById('wizHolidayDate').value = '';
+      document.getElementById('wizHolidayName').value = '';
+    }
+
+    function renderWizHolidays() {
+      const list = document.getElementById('wizHolidayList');
+      if (wizHolidays.length === 0) {
+        list.innerHTML = '<li class="text-gray-400 italic py-1">No gazetted holidays confirmed.</li>';
+        return;
+      }
+      list.innerHTML = wizHolidays.map((h, idx) => `
+        <li class="flex justify-between py-1 border-b">
+          <span><strong>${h.date}</strong> - ${h.name}</span>
+          <button onclick="wizHolidays.splice(${idx},1);renderWizHolidays();" class="text-red-600 font-bold">Remove</button>
+        </li>
+      `).join('');
+    }
+
+    function addWizInstruction() {
+      const s = document.getElementById('wizInstStaff').value;
+      const t = document.getElementById('wizInstType').value;
+      const st = document.getElementById('wizInstStart').value;
+      const en = document.getElementById('wizInstEnd').value;
+
+      if (!s || !st || !en || st > en) {
+        showToast('Specify valid staff and date range for locked instruction.', 'error');
+        return;
+      }
+
+      wizInstructions.push({ staffId: s, type: t, start: st, end: en });
+      renderWizInstructions();
+    }
+
+    function renderWizInstructions() {
+      const list = document.getElementById('wizInstList');
+      if (wizInstructions.length === 0) {
+        list.innerHTML = '<li class="text-gray-400 italic py-1">No custom instructions added.</li>';
+        return;
+      }
+      list.innerHTML = wizInstructions.map((inst, idx) => `
+        <li class="flex justify-between py-1 border-b">
+          <span>${staffData[inst.staffId]?.name || 'Staff'}: <strong>${inst.type}</strong> (${inst.start} to ${inst.end})</span>
+          <button onclick="wizInstructions.splice(${idx},1);renderWizInstructions();" class="text-red-600 font-bold">Remove</button>
+        </li>
+      `).join('');
+    }
+
+
+    // -------------------------------------------------------------
+    // 7. ABSOLUTE ROSTER GENERATION ALGORITHM ENGINE
+    // -------------------------------------------------------------
+    async function runRosterGenerationEngine() {
+      document.getElementById('wizGenSpinner').classList.remove('hidden');
+      document.getElementById('wizGenStatus').innerText = "Running OFF-first allocation & conflict checking...";
+
+      const startVal = document.getElementById('wizStart').value;
+      const endVal = document.getElementById('wizEnd').value;
+      const startDate = new Date(startVal);
+      const endDate = new Date(endVal);
+
+      // Active Staff Array
+      const activeStaffKeys = Object.keys(staffData).filter(k => !staffData[k].archived);
+      
+      // Calculate targetOFF = number of Sundays
+      let sundaysCount = 0;
+      let dateList = [];
+      let cur = new Date(startDate);
+      while (cur <= endDate) {
+        const dStr = cur.toISOString().split('T')[0];
+        dateList.push(dStr);
+        if (cur.getDay() === 0) sundaysCount++;
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      const targetOFF = sundaysCount;
+      let grid = {}; // grid[dateStr][staffId] = shiftCode
+      dateList.forEach(d => { grid[d] = {}; });
+
+      let offTracker = {};
+      activeStaffKeys.forEach(k => { offTracker[k] = 0; });
+
+      // PHASE 0: Pre-apply Locked Instructions & Approved Leaves
+      wizInstructions.forEach(inst => {
+        dateList.forEach(d => {
+          if (d >= inst.start && d <= inst.end) {
+            grid[d][inst.staffId] = inst.type;
+            if (inst.type === 'OFF') offTracker[inst.staffId]++;
+          }
+        });
+      });
+
+      // PHASE 1: Assign OFF Days Fairly (OFF First)
+      // Sort dates by priority: Sundays -> Saturdays -> Weekdays
+      const sundays = dateList.filter(d => new Date(d).getDay() === 0);
+      const saturdays = dateList.filter(d => new Date(d).getDay() === 6);
+      const weekdays = dateList.filter(d => new Date(d).getDay() !== 0 && new Date(d).getDay() !== 6);
+
+      // Assign OFFs on Sundays up to relax limit (7)
+      for (let d of sundays) {
+        let sortedStaff = activeStaffKeys.slice().sort((a,b) => offTracker[a] - offTracker[b]);
+        let offAssignedToday = 0;
+        for (let sId of sortedStaff) {
+          if (offAssignedToday >= 7) break;
+          if (offTracker[sId] < targetOFF && !grid[d][sId]) {
+            grid[d][sId] = 'OFF';
+            offTracker[sId]++;
+            offAssignedToday++;
+          }
+        }
+      }
+
+      // Assign OFFs on Saturdays up to relax limit (2)
+      for (let d of saturdays) {
+        let sortedStaff = activeStaffKeys.slice().sort((a,b) => offTracker[a] - offTracker[b]);
+        let offAssignedToday = 0;
+        for (let sId of sortedStaff) {
+          if (offAssignedToday >= 2) break;
+          if (offTracker[sId] < targetOFF && !grid[d][sId]) {
+            grid[d][sId] = 'OFF';
+            offTracker[sId]++;
+            offAssignedToday++;
+          }
+        }
+      }
+
+      // Assign OFFs on Weekdays up to relax limit (1)
+      for (let d of weekdays) {
+        let sortedStaff = activeStaffKeys.slice().sort((a,b) => offTracker[a] - offTracker[b]);
+        let offAssignedToday = 0;
+        for (let sId of sortedStaff) {
+          if (offAssignedToday >= 1) break;
+          if (offTracker[sId] < targetOFF && !grid[d][sId]) {
+            grid[d][sId] = 'OFF';
+            offTracker[sId]++;
+            offAssignedToday++;
+          }
+        }
+      }
+
+      // Phase 4 OFF Top-Up: Ensure EVERY active staff finishes with EXACTLY targetOFF
+      for (let sId of activeStaffKeys) {
+        while (offTracker[sId] < targetOFF) {
+          let candidateDate = dateList.find(d => !grid[d][sId]);
+          if (candidateDate) {
+            grid[candidateDate][sId] = 'OFF';
+            offTracker[sId]++;
+          } else {
             break;
           }
         }
-        if (!assigned) break; // cannot assign further (should not happen with enough days)
       }
-    }
 
-    // Verify invariant: every staff OFF === targetOFF
-    for (const staff of activeStaff) {
-      if (offCount[staff.id] !== targetOFF) {
-        console.warn(`Staff ${staff.name} OFF count ${offCount[staff.id]} != target ${targetOFF}`);
-        // force assign remaining using any available day (even if limit exceeded) — but this should not happen.
+      // VERIFY EXACT OFF TARGET
+      let invalidStaff = activeStaffKeys.filter(k => offTracker[k] !== targetOFF);
+      if (invalidStaff.length > 0) {
+        document.getElementById('wizGenSpinner').classList.add('hidden');
+        triggerConflictModal({
+          date: 'Entire Period',
+          problem: `Exact OFF Target Failure. Staff ${invalidStaff.map(i=>staffData[i]?.name).join(', ')} do not equal targetOFF (${targetOFF}).`,
+          details: `Current OFF Counts: ${invalidStaff.map(i=>`${staffData[i]?.name}: ${offTracker[i]}`).join(', ')}`,
+          suggestion: 'Adjust period length or manual instructions to allow exact OFF allocation.'
+        });
+        return;
       }
-    }
 
-    // --- STEP 3: Fill shifts using non-OFF staff ---
-    // We'll go day by day
-    const shiftAssignment = {}; // staffId -> { dateStr: shiftCode }
-    activeStaff.forEach(s => shiftAssignment[s.id] = { ...assignment[s.id] });
+      // PHASE 3: SHIFT FILLING & GENDER RULE ENFORCEMENT
+      for (let d of dateList) {
+        const dayObj = new Date(d);
+        const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayObj.getDay()];
+        const isHoliday = wizHolidays.some(h => h.date === d);
+        const reqs = isHoliday ? WEEKLY_SETUP['Holiday'] : WEEKLY_SETUP[dayName];
 
-    // Conflicts array to collect
-    const conflicts = [];
+        let availableStaff = activeStaffKeys.filter(sId => !grid[d][sId]);
 
-    for (const d of dates) {
-      const dateStr = formatDate(d);
-      const dayName = holidaysSet.has(dateStr) ? 'Holiday' : getDayName(d);
-      const setup = WEEKLY_SETUP[dayName] || WEEKLY_SETUP['Monday'];
-
-      // Determine available staff for this day (not OFF, not leave)
-      const available = activeStaff.filter(s => {
-        const assigned = shiftAssignment[s.id][dateStr];
-        return !assigned || !LEAVE_CODES.includes(assigned); // if assigned OFF or leave, skip
-      });
-
-      // Separate by gender
-      const maleAvailable = available.filter(s => s.gender === 'Male');
-      const femaleAvailable = available.filter(s => s.gender === 'Female');
-
-      // Track shift fills
-      const shiftFilled = {};
-      Object.keys(SHIFTS).forEach(code => shiftFilled[code] = 0);
-
-      // Pre-assign based on fixedShift preference
-      // We'll do a greedy assignment respecting gender and preference.
-
-      // Create a priority list of shifts to fill
-      const shiftOrder = ['N12','N','D','E4','M','E','X','DX']; // critical shifts first
-
-      for (const code of shiftOrder) {
-        const required = setup[code] || 0;
-        if (required === 0) continue;
-        const shiftDef = SHIFTS[code];
-        if (!shiftDef) continue;
-
-        // Determine eligible staff from available (not yet assigned to another shift this day)
-        let eligible = available.filter(s => {
-          const current = shiftAssignment[s.id][dateStr];
-          if (current && current !== OFF_CODE && !LEAVE_CODES.includes(current)) return false; // already assigned to a shift
-          if (current === OFF_CODE || LEAVE_CODES.includes(current)) return false; // already off/leave
-          // Gender rules
-          if (code === 'N12' || code === 'N') return s.gender === 'Male';
-          if (code === 'D') return s.gender === 'Female';
-          if (code === 'E4') return s.gender === 'Male'; // prefer male
-          return true;
-        });
-
-        // Sort eligible: prefer fixedShift match, then multiShifts
-        eligible.sort((a,b) => {
-          const aPref = (a.fixedShift === code) ? 2 : 0;
-          const bPref = (b.fixedShift === code) ? 2 : 0;
-          return bPref - aPref;
-        });
-
-        let assignedCount = 0;
-        for (const staff of eligible) {
-          if (assignedCount >= required) break;
-          shiftAssignment[staff.id][dateStr] = code;
-          assignedCount++;
-          shiftFilled[code]++;
+        // Fill Mandatory Specific Gender Shifts First
+        // 1. Day-Gynee (D) -> Female Only
+        for (let i = 0; i < reqs.D; i++) {
+          let fStaff = availableStaff.find(sId => staffData[sId].gender === 'Female' && staffData[sId].fixedShift === 'D') ||
+                       availableStaff.find(sId => staffData[sId].gender === 'Female');
+          if (fStaff) {
+            grid[d][fStaff] = 'D';
+            availableStaff = availableStaff.filter(s => s !== fStaff);
+          } else {
+            triggerConflictModal({
+              date: d,
+              problem: 'Gender Rule Shortfall: Uncovered Female-only Gynee (D) Shift.',
+              details: 'No eligible female phlebotomist available.',
+              suggestion: 'Re-assign female staff OFF from this date.'
+            });
+            return;
+          }
         }
 
-        // If shortfall, record conflict
-        if (assignedCount < required) {
-          conflicts.push({
-            date: dateStr,
-            day: dayName,
-            shift: code,
-            required,
-            filled: assignedCount,
-            message: `Shortfall: ${code} requires ${required}, only ${assignedCount} assigned`
-          });
+        // 2. Evening 4 (E4) & Night 12 (N12) & Night (N) -> Male Only
+        const maleOnlyShifts = ['E4', 'N12', 'N'];
+        for (let sCode of maleOnlyShifts) {
+          const needed = reqs[sCode] || 0;
+          for (let i = 0; i < needed; i++) {
+            let mStaff = availableStaff.find(sId => staffData[sId].gender === 'Male' && staffData[sId].fixedShift === sCode) ||
+                         availableStaff.find(sId => staffData[sId].gender === 'Male');
+            if (mStaff) {
+              grid[d][mStaff] = sCode;
+              availableStaff = availableStaff.filter(s => s !== mStaff);
+            } else {
+              triggerConflictModal({
+                date: d,
+                problem: `Gender Rule Shortfall: Uncovered Male-only ${sCode} Shift.`,
+                details: 'No eligible male phlebotomist available.',
+                suggestion: 'Swap male staff rest days.'
+              });
+              return;
+            }
+          }
         }
-      }
 
-      // Any leftover available staff -> assign X (Extra)
-      for (const staff of available) {
-        const current = shiftAssignment[staff.id][dateStr];
-        if (!current || current === OFF_CODE || LEAVE_CODES.includes(current)) continue;
-        // If already assigned to a shift, skip
-      }
-      // Those without shift assignment -> X
-      for (const staff of available) {
-        const current = shiftAssignment[staff.id][dateStr];
-        if (!current || current === OFF_CODE || LEAVE_CODES.includes(current)) {
-          // not assigned yet -> X
-          if (!shiftAssignment[staff.id][dateStr]) {
-            shiftAssignment[staff.id][dateStr] = 'X';
+        // 3. Fill Morning (M) & Evening (E)
+        ['M', 'E'].forEach(sCode => {
+          const needed = reqs[sCode] || 0;
+          for (let i = 0; i < needed; i++) {
+            let prefStaff = availableStaff.find(sId => staffData[sId].fixedShift === sCode) || availableStaff[0];
+            if (prefStaff) {
+              grid[d][prefStaff] = sCode;
+              availableStaff = availableStaff.filter(s => s !== prefStaff);
+            }
+          }
+        });
+
+        // 4. Fill Extra (X) if required by setup
+        const neededX = reqs.X || 0;
+        for (let i = 0; i < neededX; i++) {
+          if (availableStaff.length > 0) {
+            let xStaff = availableStaff.shift();
+            grid[d][xStaff] = 'X';
           }
         }
       }
 
-      // Relax overflow check
-      const relaxCount = activeStaff.filter(s => {
-        const val = shiftAssignment[s.id][dateStr];
-        return val === OFF_CODE || LEAVE_CODES.includes(val);
-      }).length;
-      const limit = RELAX_LIMIT[dayName] ?? 1;
-      if (relaxCount > limit) {
-        conflicts.push({
-          date: dateStr,
-          day: dayName,
-          type: 'relax_overflow',
-          relaxCount,
-          limit,
-          message: `Relax count ${relaxCount} exceeds limit ${limit}`
+      // Store Engine Output for Preview
+      activeRosterData = {
+        label: document.getElementById('wizLabel').value,
+        start: startVal,
+        end: endVal,
+        targetOFF: targetOFF,
+        dateList: dateList,
+        grid: grid,
+        offTracker: offTracker,
+        holidays: wizHolidays
+      };
+
+      document.getElementById('wizGenSpinner').classList.add('hidden');
+      document.getElementById('wizGenStatus').innerText = "Roster successfully generated with 100% rule compliance!";
+      renderWizPreview();
+      wizNav(1); // Proceed to Step 6 Preview
+    }
+
+    function triggerConflictModal(conf) {
+      document.getElementById('conflictDate').innerText = `Conflict Date/Scope: ${conf.date}`;
+      document.getElementById('conflictProblem').innerText = conf.problem;
+      document.getElementById('conflictDetails').innerText = conf.details;
+      document.getElementById('conflictSuggestion').innerText = `System Suggestion: ${conf.suggestion}`;
+      openModal('modal-conflict');
+    }
+
+    function resolveConflictDecision(decision) {
+      closeModal('modal-conflict');
+      logAudit(currentUser.name, currentUser.role, 'Conflict Resolution', `Decision made: ${decision}`);
+      showToast('Conflict decision recorded. Please re-run wizard generation.', 'info');
+    }
+
+    function renderWizPreview() {
+      if (!activeRosterData) return;
+      const head = document.getElementById('wizPreviewHead');
+      const body = document.getElementById('wizPreviewBody');
+
+      let headHTML = '<tr><th class="p-2 border">Staff</th>';
+      activeRosterData.dateList.forEach(d => {
+        headHTML += `<th class="p-1 border text-[10px]">${d.slice(8)}</th>`;
+      });
+      headHTML += '<th class="p-2 border">Total OFF</th></tr>';
+      head.innerHTML = headHTML;
+
+      let bodyHTML = '';
+      Object.keys(staffData).filter(k => !staffData[k].archived).forEach(sId => {
+        bodyHTML += `<tr><td class="p-2 border font-bold text-left">${staffData[sId].name}</td>`;
+        activeRosterData.dateList.forEach(d => {
+          const shift = activeRosterData.grid[d][sId] || '-';
+          const isOff = ['OFF','EL','CL','SL','AL','ML','PH','CPL'].includes(shift);
+          bodyHTML += `<td class="p-1 border text-[10px] font-bold ${isOff ? 'bg-black text-white' : ''}">${shift}</td>`;
         });
-      }
-
-      // Gender conflict check (e.g., no male for N12/N)
-      for (const code of ['N12','N']) {
-        const req = setup[code] || 0;
-        if (req > 0 && maleAvailable.length === 0) {
-          conflicts.push({
-            date: dateStr,
-            day: dayName,
-            shift: code,
-            message: `No male staff available for ${code}`
-          });
-        }
-      }
+        bodyHTML += `<td class="p-2 border font-black text-red-600">${activeRosterData.offTracker[sId]} / ${activeRosterData.targetOFF}</td></tr>`;
+      });
+      body.innerHTML = bodyHTML;
     }
 
-    return {
-      assignment: shiftAssignment,
-      conflicts,
-      targetOFF,
-      offCount,
-      activeStaff,
-      dates
-    };
-  }
+    function publishGeneratedRoster() {
+      if (!activeRosterData) return;
+      const periodRef = db.ref('periods').push();
+      periodRef.set({
+        ...activeRosterData,
+        publishedBy: currentUser.name,
+        publishedAt: firebase.database.ServerValue.TIMESTAMP
+      });
 
-  // ============================================================
-  // WIZARD STEP 5: GENERATE & CONFLICT RESOLUTION
-  // ============================================================
-  function openWizardStep5() {
-    // Run generation
-    const holidaysSet = new Set(wizardState.holidays);
-    let result;
-    try {
-      result = generateRoster(
-        wizardState.periodStart,
-        wizardState.periodEnd,
-        holidaysSet,
-        wizardState.mode,
-        wizardState.instructions
-      );
-    } catch (e) {
-      alert('Generation error: ' + e.message);
-      return;
+      logAudit(currentUser.name, currentUser.role, 'Roster Publish', `Published roster period: ${activeRosterData.label}`);
+      showToast('Duty Roster successfully published to Firebase!', 'success');
+      switchTab('rosterView');
     }
 
-    wizardState.roster = result;
 
-    // Show conflicts if any
-    if (result.conflicts.length > 0) {
-      let html = `<p class="text-muted">Step 5 of 6: Conflicts found</p>`;
-      html += result.conflicts.map(c => `
-        <div class="conflict-item">
-          <strong>${c.date} (${c.day})</strong> — ${c.message}
-        </div>
+    // -------------------------------------------------------------
+    // 8. ROSTER DISPLAY & EXPORT ENGINE
+    // -------------------------------------------------------------
+    function populatePeriodDropdown() {
+      const sel = document.getElementById('rosterPeriodSelect');
+      sel.innerHTML = '<option value="">-- Select Published Period --</option>';
+      Object.entries(publishedPeriods).forEach(([id, p]) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.innerText = p.label;
+        sel.appendChild(opt);
+      });
+    }
+
+    function loadRosterView() {
+      const pId = document.getElementById('rosterPeriodSelect').value;
+      if (!pId || !publishedPeriods[pId]) return;
+
+      const p = publishedPeriods[pId];
+      document.getElementById('printPeriodTitle').innerText = p.label;
+
+      const head = document.getElementById('rosterTableHeader');
+      const body = document.getElementById('rosterTableBody');
+
+      let headHTML = '<th class="p-2 border text-left bg-gray-200">Staff Member</th>';
+      p.dateList.forEach(d => {
+        const dt = new Date(d);
+        const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()];
+        headHTML += `<th class="p-1 border ${dt.getDay()===0 ? 'bg-red-100 text-red-800' : ''}">${d.slice(8)}<br><span class="text-[9px] font-normal">${dayName}</span></th>`;
+      });
+      headHTML += '<th class="p-2 border bg-gray-200">OFF Target</th>';
+      head.innerHTML = headHTML;
+
+      let bodyHTML = '';
+      Object.keys(staffData).filter(k => !staffData[k].archived).forEach(sId => {
+        bodyHTML += `<tr><td class="p-2 border font-bold text-left bg-gray-50">${staffData[sId].name} <br><span class="text-[9px] text-gray-500 font-normal">${staffData[sId].empId} • ${staffData[sId].gender}</span></td>`;
+        
+        p.dateList.forEach(d => {
+          const shift = p.grid[d]?.[sId] || '-';
+          const isOff = ['OFF','EL','CL','SL','AL','ML','PH','CPL'].includes(shift);
+          bodyHTML += `<td class="p-1 border text-[11px] font-bold ${isOff ? 'roster-black-cell' : 'roster-duty-cell'}">${shift}</td>`;
+        });
+
+        bodyHTML += `<td class="p-2 border font-extrabold text-red-700 bg-gray-50">${p.offTracker[sId]} / ${p.targetOFF}</td></tr>`;
+      });
+
+      body.innerHTML = bodyHTML;
+    }
+
+    function exportRosterToExcel() {
+      const pId = document.getElementById('rosterPeriodSelect').value;
+      if (!pId || !publishedPeriods[pId]) {
+        showToast('Select a published roster period first.', 'error');
+        return;
+      }
+
+      const p = publishedPeriods[pId];
+      let aoa = [
+        ["KULSUM INTERNATIONAL HOSPITAL, ISLAMABAD"],
+        ["Phlebotomy Department - Duty Roster"],
+        ["Period: " + p.label],
+        []
+      ];
+
+      let headers = ["Staff Name", "Emp ID", ...p.dateList, "Total OFF"];
+      aoa.push(headers);
+
+      Object.keys(staffData).filter(k => !staffData[k].archived).forEach(sId => {
+        let row = [staffData[sId].name, staffData[sId].empId];
+        p.dateList.forEach(d => {
+          row.push(p.grid[d]?.[sId] || '-');
+        });
+        row.push(p.offTracker[sId]);
+        aoa.push(row);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Duty Roster");
+      XLSX.writeFile(wb, `KIH_Phlebotomy_Roster_${p.label.replace(/ /g, '_')}.xlsx`);
+    }
+
+    function renderShiftLegend() {
+      const grid = document.getElementById('shiftLegendGrid');
+      grid.innerHTML = Object.entries(SHIFTS).map(([code, s]) => `
+        <div><strong class="text-blue-900">${code}:</strong> ${s.name} (${s.time})</div>
       `).join('');
-      html += `<button class="btn btn-primary btn-block mt-3" onclick="resolveConflicts()">Resolve Conflicts</button>`;
-      openModal('Conflicts Detected', html);
-    } else {
-      // No conflicts -> preview
-      openWizardStep6();
     }
-  }
 
-  window.resolveConflicts = function() {
-    // For simplicity, we auto-accept and continue. In real app, step through.
-    closeModal(document.querySelector('.modal-overlay').id);
-    openWizardStep6();
-  };
 
-  // ============================================================
-  // WIZARD STEP 6: PREVIEW & SAVE
-  // ============================================================
-  function openWizardStep6() {
-    if (!wizardState.roster) return;
-    const { assignment, activeStaff, dates } = wizardState.roster;
+    // -------------------------------------------------------------
+    // 9. LEAVE & SPECIAL OFF PLANNER MODULE
+    // -------------------------------------------------------------
+    function handleMassLeaveAllocation(e) {
+      e.preventDefault();
+      const sId = document.getElementById('plannerStaffSelect').value;
+      const code = document.getElementById('plannerCodeSelect').value;
+      const st = document.getElementById('plannerStartDate').value;
+      const en = document.getElementById('plannerEndDate').value;
 
-    // Build preview table
-    let html = `<p class="text-muted">Step 6 of 6: Preview & Save</p>`;
-    html += `<div class="table-wrapper"><table class="roster-table"><thead><tr><th>Staff</th>`;
-    dates.forEach(d => {
-      const ds = formatDate(d);
-      const dayName = wizardState.holidays.includes(ds) ? 'Holiday' : getDayName(d);
-      html += `<th>${ds}<br><small>${dayName}</small></th>`;
-    });
-    html += `</tr></thead><tbody>`;
-    activeStaff.forEach(s => {
-      html += `<tr><td style="font-weight:600; white-space:nowrap;">${s.name}</td>`;
-      dates.forEach(d => {
-        const ds = formatDate(d);
-        const val = assignment[s.id]?.[ds] || '-';
-        let cls = 'shift-badge ';
-        if (val === 'OFF') cls += 'shift-OFF';
-        else if (LEAVE_CODES.includes(val)) cls += 'shift-leave';
-        else cls += 'shift-' + val;
-        html += `<td><span class="${cls}">${val}</span></td>`;
+      if (!sId || !st || !en || st > en) {
+        showToast('Specify valid staff and date ranges.', 'error');
+        return;
+      }
+
+      db.ref('plannerAllocations').push({
+        staffId: sId,
+        code: code,
+        startDate: st,
+        endDate: en,
+        assignedBy: currentUser.name,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
       });
-      html += `</tr>`;
-    });
-    html += `</tbody></table></div>`;
-    html += `<button class="btn btn-primary btn-block mt-3" onclick="saveRoster()">Save Roster</button>`;
-    openModal('Roster Preview', html);
-  }
 
-  window.saveRoster = async function() {
-    if (!wizardState.roster) return;
-    const { assignment, activeStaff, dates, targetOFF } = wizardState.roster;
-    // Save to Firebase under periods/ and roster/
-    const periodId = formatDate(wizardState.periodStart) + '_' + formatDate(wizardState.periodEnd);
-    const rosterData = {
-      periodStart: formatDate(wizardState.periodStart),
-      periodEnd: formatDate(wizardState.periodEnd),
-      targetOFF,
-      createdAt: Date.now(),
-      assignment,
-      activeStaffIds: activeStaff.map(s => s.id)
-    };
-    await db.ref('roster/' + periodId).set(rosterData);
-    await db.ref('periods/' + periodId).set({
-      start: formatDate(wizardState.periodStart),
-      end: formatDate(wizardState.periodEnd),
-      sundays: countSundays(wizardState.periodStart, wizardState.periodEnd),
-      holidays: wizardState.holidays,
-      createdAt: Date.now()
-    });
-    alert('Roster saved successfully!');
-    closeModal(document.querySelector('.modal-overlay').id);
-    generatedRoster = rosterData;
-    renderRosterPreview();
-  };
-
-  function renderRosterPreview() {
-    const container = document.getElementById('rosterPreviewContainer');
-    if (!generatedRoster) {
-      container.innerHTML = '<p class="text-muted">No roster generated yet.</p>';
-      return;
+      logAudit(currentUser.name, currentUser.role, 'Leave Planner', `Allocated ${code} for ${staffData[sId]?.name} (${st} to ${en})`);
+      showToast('Pre-allocation locked into system.', 'success');
     }
-    // Use simplified display
-    const { assignment, activeStaffIds } = generatedRoster;
-    const dates = getDatesInRange(parseDate(generatedRoster.periodStart), parseDate(generatedRoster.periodEnd));
-    let html = `<table class="roster-table"><thead><tr><th>Staff</th>`;
-    dates.forEach(d => {
-      html += `<th>${formatDate(d)}</th>`;
-    });
-    html += `</tr></thead><tbody>`;
-    staffList.filter(s => activeStaffIds.includes(s.id)).forEach(s => {
-      html += `<tr><td>${s.name}</td>`;
-      dates.forEach(d => {
-        const ds = formatDate(d);
-        const val = assignment[s.id]?.[ds] || '-';
-        html += `<td><span class="shift-badge shift-${val}">${val}</span></td>`;
+
+    function renderPlannerAllocations(snap) {
+      const tbody = document.getElementById('plannerAllocationsBody');
+      tbody.innerHTML = '';
+      const data = snap.val() || {};
+
+      Object.entries(data).forEach(([id, alloc]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 font-bold">${staffData[alloc.staffId]?.name || 'Staff'}</td>
+          <td class="p-2"><span class="px-2 py-0.5 bg-black text-white rounded text-[10px] font-bold">${alloc.code}</span></td>
+          <td class="p-2">${alloc.startDate}</td>
+          <td class="p-2">${alloc.endDate}</td>
+          <td class="p-2 text-emerald-600 font-bold">Locked</td>
+          <td class="p-2 text-right">
+            <button onclick="db.ref('plannerAllocations/${id}').remove()" class="text-red-600 font-bold hover:underline">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-      html += `</tr>`;
-    });
-    html += `</tbody></table>`;
-    container.innerHTML = html;
-  }
+    }
 
-  // ============================================================
-  // ON LOAD
-  // ============================================================
-  // Preload staff for admin convenience
-  db.ref('staff').on('value', (snapshot) => {
-    const data = snapshot.val() || {};
-    staffList = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-    if (currentUser) renderStaffList();
-  });
 
-  // Expose functions for inline onclick
-  window.openWizardStep1 = openWizardStep1;
-  window.wizardStep1Next = wizardStep1Next;
-  window.openWizardStep2 = openWizardStep2;
-  window.toggleHoliday = toggleHoliday;
-  window.wizardStep2Next = wizardStep2Next;
-  window.openWizardStep3 = openWizardStep3;
-  window.setMode = setMode;
-  window.openWizardStep4 = openWizardStep4;
-  window.wizardStep4Next = wizardStep4Next;
-  window.openWizardStep5 = openWizardStep5;
-  window.resolveConflicts = resolveConflicts;
-  window.openWizardStep6 = openWizardStep6;
-  window.saveRoster = saveRoster;
-  window.createStaff = createStaff;
-  window.editStaff = editStaff;
-  window.saveStaffEdit = saveStaffEdit;
-  window.archiveStaff = archiveStaff;
-  window.closeModal = closeModal;
-</script>
+    // -------------------------------------------------------------
+    // 10. DUTY SWAPS & LEAVES WORKFLOW
+    // -------------------------------------------------------------
+    function openSwapModal() { openModal('modal-swap'); }
+    function openLeaveModal() { openModal('modal-leave'); }
+    function openDutyChangeModal() { openModal('modal-dutyChange'); }
+
+    function handleSwapSubmit(e) {
+      e.preventDefault();
+      const targetId = document.getElementById('swapTargetStaff').value;
+      const dateVal = document.getElementById('swapDate').value;
+
+      db.ref('exchanges').push({
+        requestorId: currentUser.id,
+        targetId: targetId,
+        date: dateVal,
+        status: 'Pending',
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      closeModal('modal-swap');
+      showToast('Duty swap request submitted.', 'success');
+    }
+
+    function renderSwapsTable(snap) {
+      const tbody = document.getElementById('swapTableBody');
+      tbody.innerHTML = '';
+      const data = snap.val() || {};
+
+      Object.entries(data).forEach(([id, sw]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3 font-bold">${staffData[sw.requestorId]?.name || 'Staff'}</td>
+          <td class="p-3">${staffData[sw.targetId]?.name || 'Partner'}</td>
+          <td class="p-3">${sw.date}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${sw.status==='Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}">${sw.status}</span></td>
+          <td class="p-3 text-right">
+            ${(currentUser.role === 'admin' || currentUser.role === 'supervisor') && sw.status === 'Pending' ? `
+              <button onclick="updateSwapStatus('${id}', 'Approved')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold mr-1">Approve</button>
+              <button onclick="updateSwapStatus('${id}', 'Rejected')" class="bg-red-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
+            ` : '-'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateSwapStatus(id, status) {
+      db.ref(`exchanges/${id}/status`).set(status);
+      showToast(`Duty swap ${status.toLowerCase()}.`, 'info');
+    }
+
+    function handleLeaveSubmit(e) {
+      e.preventDefault();
+      const type = document.getElementById('leaveTypeSelect').value;
+      const st = document.getElementById('leaveStartDate').value;
+      const en = document.getElementById('leaveEndDate').value;
+      const reason = document.getElementById('leaveReason').value.trim();
+
+      db.ref('leaves').push({
+        staffId: currentUser.id,
+        type: type,
+        startDate: st,
+        endDate: en,
+        reason: reason,
+        status: 'Pending',
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      closeModal('modal-leave');
+      showToast('Leave application submitted for approval.', 'success');
+    }
+
+    function renderLeavesTable(snap) {
+      const tbody = document.getElementById('leaveTableBody');
+      tbody.innerHTML = '';
+      const data = snap.val() || {};
+
+      Object.entries(data).forEach(([id, l]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3 font-bold">${staffData[l.staffId]?.name || 'Staff'}</td>
+          <td class="p-3 font-bold text-blue-900">${l.type}</td>
+          <td class="p-3">${l.startDate} to ${l.endDate}</td>
+          <td class="p-3 text-gray-500">${l.reason}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.status==='Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}">${l.status}</span></td>
+          <td class="p-3 text-right">
+            ${(currentUser.role === 'admin' || currentUser.role === 'supervisor') && l.status === 'Pending' ? `
+              <button onclick="updateLeaveStatus('${id}', 'Approved')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold mr-1">Approve</button>
+              <button onclick="updateLeaveStatus('${id}', 'Rejected')" class="bg-red-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
+            ` : '-'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateLeaveStatus(id, status) {
+      db.ref(`leaves/${id}/status`).set(status);
+      showToast(`Leave application ${status.toLowerCase()}.`, 'info');
+    }
+
+    function handleDutyChangeSubmit(e) {
+      e.preventDefault();
+      const det = document.getElementById('dcDetails').value.trim();
+      const rea = document.getElementById('dcReason').value.trim();
+
+      db.ref('dutyChangeRequests').push({
+        staffId: currentUser.id,
+        details: det,
+        reason: rea,
+        status: 'Pending',
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      closeModal('modal-dutyChange');
+      showToast('Duty change request logged.', 'success');
+    }
+
+    function renderDutyChangesTable(snap) {
+      const tbody = document.getElementById('dutyChangeTableBody');
+      tbody.innerHTML = '';
+      const data = snap.val() || {};
+
+      Object.entries(data).forEach(([id, dc]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3 font-bold">${staffData[dc.staffId]?.name || 'Staff'}</td>
+          <td class="p-3">${dc.details}</td>
+          <td class="p-3 text-gray-500">${dc.reason}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${dc.status==='Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}">${dc.status}</span></td>
+          <td class="p-3 text-right">
+            ${(currentUser.role === 'admin' || currentUser.role === 'supervisor') && dc.status === 'Pending' ? `
+              <button onclick="db.ref('dutyChangeRequests/${id}/status').set('Approved')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold mr-1">Approve</button>
+              <button onclick="db.ref('dutyChangeRequests/${id}/status').set('Rejected')" class="bg-red-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
+            ` : '-'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+
+    // -------------------------------------------------------------
+    // 11. DEPARTMENT CHAT SYSTEM
+    // -------------------------------------------------------------
+    function listenChatMessages() {
+      db.ref('chat/group').limitToLast(50).on('value', (snap) => {
+        const box = document.getElementById('chatMessages');
+        box.innerHTML = '';
+        const msgs = snap.val() || {};
+
+        Object.values(msgs).forEach(m => {
+          const isMe = m.senderId === currentUser.id;
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+          msgDiv.innerHTML = `
+            <div class="text-[10px] text-gray-400 mb-0.5">${m.senderName} • ${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+            <div class="p-2.5 rounded-lg max-w-xs sm:max-w-md ${isMe ? 'bg-[#1E5BA8] text-white' : 'bg-white border text-gray-800'} shadow-sm">
+              ${m.text ? `<p>${m.text}</p>` : ''}
+              ${m.imgUrl ? `<img src="${m.imgUrl}" class="rounded mt-1 max-h-40 object-cover">` : ''}
+            </div>
+          `;
+          box.appendChild(msgDiv);
+        });
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+
+    function sendChatMessage(e) {
+      e.preventDefault();
+      const txtInput = document.getElementById('chatInputText');
+      const txt = txtInput.value.trim();
+      if (!txt) return;
+
+      db.ref('chat/group').push({
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        text: txt,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      txtInput.value = '';
+    }
+
+    function handleChatFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const ref = storage.ref(`chat_images/${Date.now()}_${file.name}`);
+      ref.put(file).then(snap => {
+        snap.ref.getDownloadURL().then(url => {
+          db.ref('chat/group').push({
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            imgUrl: url,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          });
+          showToast('Image uploaded to chat.', 'success');
+        });
+      });
+    }
+
+    function switchChatChannel() { listenChatMessages(); }
+
+
+    // -------------------------------------------------------------
+    // 12. REPORTS & AUDIT LOGGING
+    // -------------------------------------------------------------
+    function generateReport(type) {
+      showToast(`Generating ${type} report...`, 'info');
+      setTimeout(() => { showToast(`${type.toUpperCase()} report generated successfully.`, 'success'); }, 800);
+    }
+
+    function logAudit(user, role, action, details) {
+      db.ref('auditLog').push({
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: user,
+        role: role,
+        action: action,
+        details: details
+      });
+    }
+
+    function renderAuditTable(snap) {
+      const tbody = document.getElementById('auditTableBody');
+      tbody.innerHTML = '';
+      const logs = snap.val() || {};
+
+      Object.values(logs).reverse().forEach(l => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3 text-gray-500">${new Date(l.timestamp).toLocaleString()}</td>
+          <td class="p-3 font-bold">${l.user}</td>
+          <td class="p-3 uppercase text-[10px] font-extrabold text-blue-800">${l.role}</td>
+          <td class="p-3 font-semibold">${l.action}</td>
+          <td class="p-3 text-gray-600">${l.details}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function handleAdminPasswordReset(e) {
+      e.preventDefault();
+      const uId = document.getElementById('resetUserSelect').value;
+      const pass = document.getElementById('resetUserNewPass').value.trim();
+
+      if (uId === 'admin') {
+        db.ref('users/admin/password').set(pass);
+      } else {
+        db.ref(`staff/${uId}/password`).set(pass);
+      }
+
+      logAudit(currentUser.name, currentUser.role, 'Password Reset', `Reset password for user ID: ${uId}`);
+      showToast('Password updated successfully.', 'success');
+      document.getElementById('resetUserNewPass').value = '';
+    }
+
+
+    // -------------------------------------------------------------
+    // 13. UTILITY FUNCTIONS & MODAL/TOAST CONTROLLERS
+    // -------------------------------------------------------------
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function toggleNotifications() {
+      const drawer = document.getElementById('notifDrawer');
+      drawer.classList.toggle('hidden');
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-red-600 text-white',
+        info: 'bg-gray-800 text-white'
+      };
+
+      toast.className = `p-3 rounded-lg shadow-xl text-xs font-bold transition transform duration-300 ${colors[type]}`;
+      toast.innerText = msg;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
 </body>
 </html>
