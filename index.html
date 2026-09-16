@@ -4,15 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <meta name="theme-color" content="#C8102E">
-<meta name="description" content="Phlebotomist Duty Roster — Kulsum International Hospital, Islamabad">
+<meta name="description" content="Phlebotomist Duty Roster — KIH">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="KIH Roster">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Phlebotomist Roster — KIH</title>
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23C8102E'/><text x='50' y='65' font-size='48' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'>KIH</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23C8102E'/><text x='50' y='65' font-size='48' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'>KIH</text></svg>">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -20,964 +17,561 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-/* ============================================================
-   CSS VARIABLES — LIGHT + DARK MODE
-   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --red:#C8102E;
-  --red-dark:#a30d25;
-  --red-light:#fde8eb;
-  --blue:#1E5BA8;
-  --blue-dark:#164683;
-  --blue-light:#e8f0fa;
-  --bg:#f2f4f7;
-  --bg-2:#e8f0fa;
-  --card:#ffffff;
-  --card-hover:#fafbfc;
-  --text:#1c2430;
-  --text-2:#65707d;
-  --text-3:#9aa4af;
-  --border:#e1e5ea;
-  --border-2:#eef1f5;
-  --success:#1f9d55;
-  --success-light:#e9f9ee;
-  --warn:#e0a800;
-  --warn-light:#fffbeb;
+  --red:#C8102E;--red-dark:#a30d25;--red-light:#fde8eb;
+  --blue:#1E5BA8;--blue-dark:#164683;--blue-light:#e8f0fa;
+  --bg:#f2f4f7;--card:#ffffff;--card-hover:#fafbfc;
+  --text:#1c2430;--text-2:#65707d;--text-3:#9aa4af;
+  --border:#e1e5ea;--border-2:#eef1f5;
+  --success:#1f9d55;--success-light:#e9f9ee;
+  --warn:#e0a800;--warn-light:#fffbeb;
   --danger:#C8102E;
-  --radius:14px;
-  --radius-sm:10px;
-  --radius-lg:20px;
-  --shadow-sm:0 1px 3px rgba(20,30,50,.06);
+  --radius:14px;--radius-sm:10px;
   --shadow:0 2px 10px rgba(20,30,50,.08);
   --shadow-lg:0 8px 24px rgba(20,30,50,.15);
   --shadow-xl:0 20px 60px rgba(20,30,50,.25);
   --transition:all .2s cubic-bezier(.4,0,.2,1);
-  --transition-slow:all .3s cubic-bezier(.4,0,.2,1);
 }
-
 body.dark-mode{
-  --bg:#0f1419;
-  --bg-2:#1a2027;
-  --card:#1c2430;
-  --card-hover:#232c38;
-  --text:#e5e9ef;
-  --text-2:#9aa4af;
-  --text-3:#6b7580;
-  --border:#2a333e;
-  --border-2:#222b36;
-  --red-light:#3d1520;
-  --blue-light:#1a2a44;
-  --success-light:#0d2f1e;
-  --warn-light:#3d3016;
+  --bg:#0f1419;--card:#1c2430;--card-hover:#232c38;
+  --text:#e5e9ef;--text-2:#9aa4af;--text-3:#6b7580;
+  --border:#2a333e;--border-2:#222b36;
+  --red-light:#3d1520;--blue-light:#1a2a44;
+  --success-light:#0d2f1e;--warn-light:#3d3016;
 }
-
-/* ============================================================
-   RESET
-   ============================================================ */
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overflow-x:hidden;}
+*{box-sizing:border-box}
+html,body{height:100%;overflow-x:hidden}
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   background:linear-gradient(135deg,var(--red-light) 0%,var(--blue-light) 100%);
-  background-attachment:fixed;
-  color:var(--text);
-  font-size:15px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  min-height:100vh;
+  background-attachment:fixed;color:var(--text);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
   transition:background .3s,color .3s;
 }
-button,input,select,textarea{font-family:inherit;font-size:inherit;outline:none;border:none;background:none;color:inherit;}
-button{cursor:pointer;}
-a{color:var(--blue);text-decoration:none;}
-.hidden{display:none!important;}
-.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.scroll-x::-webkit-scrollbar{height:6px;}
-.scroll-x::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+button,input,select,textarea{font-family:inherit;font-size:inherit;outline:none;border:none;background:none;color:inherit}
+button{cursor:pointer}
+a{color:var(--blue);text-decoration:none}
+.hidden{display:none!important}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
-/* ============================================================
-   BUTTONS — FRIENDLY & LARGE
-   ============================================================ */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
   padding:12px 20px;border-radius:10px;font-size:15px;font-weight:600;
   cursor:pointer;transition:var(--transition);white-space:nowrap;
-  border:none;min-height:44px;user-select:none;
-  font-family:inherit;
-}
-.btn:hover{transform:translateY(-1px);}
-.btn:active{transform:scale(.97);}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(30,91,168,.25);}
-.btn-primary:hover{background:var(--blue-dark);box-shadow:0 4px 12px rgba(30,91,168,.35);}
-.btn-red{background:var(--red);color:#fff;box-shadow:0 2px 8px rgba(200,16,46,.25);}
-.btn-red:hover{background:var(--red-dark);box-shadow:0 4px 12px rgba(200,16,46,.35);}
-.btn-outline{background:var(--card);color:var(--blue);border:1.5px solid var(--blue);}
-.btn-outline:hover{background:var(--blue-light);}
-.btn-ghost{background:transparent;color:var(--text-2);}
-.btn-ghost:hover{background:var(--border-2);color:var(--text);}
-.btn-success{background:var(--success);color:#fff;}
-.btn-success:hover{background:#157a40;}
-.btn-danger{background:var(--danger);color:#fff;}
-.btn-danger:hover{background:var(--red-dark);}
-.btn-warn{background:var(--warn);color:#3a2c00;}
-.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px;min-height:36px;}
-.btn-lg{padding:16px 28px;font-size:16px;border-radius:12px;min-height:52px;}
-.btn-block{width:100%;}
-.btn-icon{width:44px;height:44px;padding:0;border-radius:50%;}
-
-.icon-btn{
-  background:transparent;border:none;cursor:pointer;
+  border:none;min-height:44px;user-select:none}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(30,91,168,.25)}
+.btn-primary:hover{background:var(--blue-dark)}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 2px 8px rgba(200,16,46,.25)}
+.btn-red:hover{background:var(--red-dark)}
+.btn-outline{background:var(--card);color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-light)}
+.btn-ghost{background:transparent;color:var(--text-2)}
+.btn-ghost:hover{background:var(--border-2)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#157a40}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:var(--red-dark)}
+.btn-warn{background:var(--warn);color:#3a2c00}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px;min-height:36px}
+.btn-lg{padding:16px 28px;font-size:16px;min-height:52px}
+.btn-block{width:100%}
+.icon-btn{background:transparent;border:none;cursor:pointer;
   width:42px;height:42px;border-radius:50%;
   display:inline-flex;align-items:center;justify-content:center;
-  font-size:20px;color:var(--text-2);padding:0;
-  transition:var(--transition);flex-shrink:0;position:relative;
-}
-.icon-btn:hover{background:var(--border-2);color:var(--text);transform:scale(1.05);}
-.icon-btn:active{transform:scale(.95);}
+  font-size:20px;color:var(--text-2);padding:0;transition:var(--transition);
+  flex-shrink:0;position:relative}
+.icon-btn:hover{background:var(--border-2);color:var(--text)}
 
-/* ============================================================
-   LOGIN SCREEN
-   ============================================================ */
-#loginScreen{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--red) 0%,var(--red-dark) 40%,var(--blue) 100%);
-  padding:20px;position:relative;overflow:hidden;
-}
-#loginScreen::before{
-  content:'';position:absolute;inset:0;
-  background:
-    radial-gradient(circle at 20% 30%,rgba(255,255,255,.1) 0%,transparent 50%),
-    radial-gradient(circle at 80% 70%,rgba(255,255,255,.08) 0%,transparent 50%);
-  animation:floatBg 20s ease-in-out infinite;
-}
-@keyframes floatBg{
-  0%,100%{transform:translate(0,0) scale(1);}
-  50%{transform:translate(30px,-30px) scale(1.1);}
-}
-.login-card{
-  background:var(--card);border-radius:24px;
-  width:100%;max-width:440px;
-  box-shadow:0 30px 80px rgba(0,0,0,.35);
-  overflow:hidden;position:relative;z-index:2;
-  animation:loginIn .5s cubic-bezier(.4,0,.2,1);
-}
-@keyframes loginIn{from{opacity:0;transform:translateY(30px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
-.login-head{padding:40px 28px 24px;text-align:center;background:linear-gradient(180deg,var(--card) 0%,var(--card-hover) 100%);}
-.login-logo{
-  width:100px;height:100px;border-radius:24px;margin:0 auto 18px;
+  padding:20px;position:relative;overflow:hidden}
+.login-card{background:var(--card);border-radius:24px;width:100%;max-width:440px;
+  box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden;position:relative;z-index:2;
+  animation:loginIn .5s cubic-bezier(.4,0,.2,1)}
+@keyframes loginIn{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.login-head{padding:40px 28px 24px;text-align:center;background:linear-gradient(180deg,var(--card) 0%,var(--card-hover) 100%)}
+.login-logo{width:100px;height:100px;border-radius:24px;margin:0 auto 18px;
   background:linear-gradient(135deg,var(--red),var(--blue));
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 12px 30px rgba(200,16,46,.3);
-  position:relative;
-}
-.login-logo::after{
-  content:'';position:absolute;inset:-3px;border-radius:26px;
-  background:linear-gradient(135deg,var(--red),var(--blue));
-  z-index:-1;opacity:.3;filter:blur(8px);
-}
-.login-logo span{
-  color:#fff;font-weight:900;font-size:32px;letter-spacing:1px;
-  text-shadow:0 2px 8px rgba(0,0,0,.2);
-}
-.login-head h1{font-size:24px;font-weight:800;color:var(--red);margin:0 0 6px;}
-.login-head p{font-size:14px;color:var(--text-2);margin:0;}
-.login-head p.small{font-size:12px;color:var(--text-3);margin-top:4px;}
-.login-tabs{
-  display:flex;background:var(--border-2);padding:6px;margin:0 24px 20px;border-radius:12px;
-}
-.login-tab{
-  flex:1;text-align:center;padding:12px;border-radius:8px;
-  font-weight:700;color:var(--text-2);cursor:pointer;
-  transition:var(--transition);font-size:14px;
-}
-.login-tab.active{background:var(--card);color:var(--blue);box-shadow:var(--shadow-sm);}
-.login-body{padding:0 28px 32px;}
-.field{margin-bottom:18px;}
-.field label{display:block;font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:8px;}
-.field input,.field select,.field textarea{
-  width:100%;padding:14px 16px;border:2px solid var(--border);
-  border-radius:12px;font-size:15px;background:var(--bg);
-  color:var(--text);transition:var(--transition);
-  font-family:inherit;
-}
+  box-shadow:0 12px 30px rgba(200,16,46,.3)}
+.login-logo span{color:#fff;font-weight:900;font-size:32px;letter-spacing:1px}
+.login-head h1{font-size:24px;font-weight:800;color:var(--red);margin:0 0 6px}
+.login-head p{font-size:14px;color:var(--text-2);margin:0}
+.login-head p.small{font-size:12px;color:var(--text-3);margin-top:4px}
+.login-tabs{display:flex;background:var(--border-2);padding:6px;margin:0 24px 20px;border-radius:12px}
+.login-tab{flex:1;text-align:center;padding:12px;border-radius:8px;
+  font-weight:700;color:var(--text-2);cursor:pointer;transition:var(--transition);font-size:14px}
+.login-tab.active{background:var(--card);color:var(--blue);box-shadow:var(--shadow)}
+.login-body{padding:0 28px 32px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:8px}
+.field input,.field select,.field textarea{width:100%;padding:14px 16px;
+  border:2px solid var(--border);border-radius:12px;font-size:15px;
+  background:var(--bg);color:var(--text);transition:var(--transition);font-family:inherit}
 .field input:focus,.field select:focus,.field textarea:focus{
-  border-color:var(--blue);background:var(--card);
-  box-shadow:0 0 0 4px rgba(30,91,168,.12);
-}
-.login-err{
-  color:var(--danger);font-size:13.5px;font-weight:600;
+  border-color:var(--blue);background:var(--card);box-shadow:0 0 0 4px rgba(30,91,168,.12)}
+.login-err{color:var(--danger);font-size:13.5px;font-weight:600;
   padding:12px 16px;background:var(--red-light);border-radius:10px;
-  margin-top:14px;display:none;border-left:4px solid var(--red);
-}
-.login-err.show{display:block;animation:shake .3s;}
-@keyframes shake{
-  0%,100%{transform:translateX(0);}
-  25%{transform:translateX(-6px);}
-  75%{transform:translateX(6px);}
-}
+  margin-top:14px;display:none;border-left:4px solid var(--red)}
+.login-err.show{display:block;animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-/* ============================================================
-   APP SHELL
-   ============================================================ */
-#app{display:none;min-height:100vh;padding-bottom:90px;}
-#app.show{display:block;animation:fadeIn .3s;}
-@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-
-/* Top Header */
-.topbar{
-  background:var(--card);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;
-  padding:12px 16px;position:sticky;top:0;z-index:40;
-  box-shadow:var(--shadow-sm);
-  backdrop-filter:blur(10px);
-}
-.topbar .brand{
-  display:flex;align-items:center;gap:12px;
-  font-weight:800;color:var(--red);font-size:15px;
-}
-.topbar .brand .kih-logo{
-  width:44px;height:44px;border-radius:12px;
+/* APP SHELL */
+#app{display:none;min-height:100vh;padding-bottom:90px}
+#app.show{display:block;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  position:sticky;top:0;z-index:40;box-shadow:var(--shadow)}
+.topbar .brand{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--red);font-size:15px}
+.topbar .brand .kih-logo{width:44px;height:44px;border-radius:12px;
   background:linear-gradient(135deg,var(--red),var(--blue));
   color:#fff;display:flex;align-items:center;justify-content:center;
-  font-weight:900;font-size:14px;letter-spacing:.5px;
-  box-shadow:0 4px 12px rgba(200,16,46,.25);
-  flex-shrink:0;
-}
-.topbar-spacer{flex:1;}
-.topnav{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;}
-.topnav button{
-  background:transparent;border:none;padding:10px 16px;border-radius:10px;
-  font-size:14px;font-weight:700;color:var(--text-2);cursor:pointer;
-  white-space:nowrap;transition:var(--transition);
-  min-height:40px;
-}
-.topnav button:hover{background:var(--border-2);color:var(--text);}
-.topnav button.active{background:var(--blue-light);color:var(--blue);}
-
-.badge-bell{position:relative;}
-.badge-bell .dot{
-  position:absolute;top:2px;right:2px;
-  background:var(--red);color:#fff;
-  font-size:10px;font-weight:800;
-  min-width:20px;height:20px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  padding:0 5px;border:2.5px solid var(--card);
-  animation:pulse 2s infinite;
-}
-@keyframes pulse{
-  0%,100%{transform:scale(1);}
-  50%{transform:scale(1.1);}
-}
-.userchip{
-  display:flex;align-items:center;gap:10px;
-  font-size:14px;font-weight:600;
-  padding:6px 12px;border-radius:24px;
-  background:var(--border-2);transition:var(--transition);
-}
-.userchip:hover{background:var(--blue-light);}
-.userchip .av{
-  width:34px;height:34px;border-radius:50%;
+  font-weight:900;font-size:14px;flex-shrink:0;
+  box-shadow:0 4px 12px rgba(200,16,46,.25)}
+.topbar-spacer{flex:1}
+.topnav{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto}
+.topnav button{background:transparent;border:none;padding:10px 16px;
+  border-radius:10px;font-size:14px;font-weight:700;color:var(--text-2);
+  cursor:pointer;white-space:nowrap;transition:var(--transition);min-height:40px}
+.topnav button:hover{background:var(--border-2);color:var(--text)}
+.topnav button.active{background:var(--blue-light);color:var(--blue)}
+.badge-bell{position:relative}
+.badge-bell .dot{position:absolute;top:2px;right:2px;background:var(--red);
+  color:#fff;font-size:10px;font-weight:800;min-width:20px;height:20px;
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  padding:0 5px;border:2.5px solid var(--card);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.userchip{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;
+  padding:6px 12px;border-radius:24px;background:var(--border-2);transition:var(--transition)}
+.userchip:hover{background:var(--blue-light)}
+.userchip .av{width:34px;height:34px;border-radius:50%;
   background:linear-gradient(135deg,var(--blue),var(--blue-dark));
   color:#fff;display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:14px;flex-shrink:0;
-}
+  font-weight:800;font-size:14px;flex-shrink:0}
+.dark-toggle{background:var(--border-2);border:none;width:44px;height:24px;
+  border-radius:12px;position:relative;cursor:pointer;transition:var(--transition)}
+.dark-toggle::after{content:'☀️';position:absolute;top:2px;left:2px;
+  width:20px;height:20px;border-radius:50%;background:var(--card);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  transition:var(--transition)}
+body.dark-mode .dark-toggle{background:var(--blue)}
+body.dark-mode .dark-toggle::after{content:'🌙';left:22px}
 
-/* ============================================================
-   MAIN LAYOUT
-   ============================================================ */
-.main-wrap{max-width:1400px;margin:0 auto;padding:16px;}
-.section{display:none;}
-.section.active{display:block;animation:fadeIn .2s;}
-
-/* Cards */
-.card{
-  background:var(--card);border-radius:var(--radius);
+/* MAIN */
+.main-wrap{max-width:1400px;margin:0 auto;padding:16px}
+.section{display:none}
+.section.active{display:block;animation:fadeIn .2s}
+.card{background:var(--card);border-radius:var(--radius);
   box-shadow:var(--shadow);padding:20px;margin-bottom:16px;
-  border:1px solid var(--border-2);transition:var(--transition);
-}
-.card:hover{box-shadow:var(--shadow-lg);}
-.card h2{
-  font-size:17px;margin:0 0 16px;color:var(--text);
-  font-weight:800;display:flex;align-items:center;gap:10px;
-}
-.card h3{font-size:15px;margin:0 0 12px;font-weight:700;color:var(--text);}
+  border:1px solid var(--border-2);transition:var(--transition)}
+.card:hover{box-shadow:var(--shadow-lg)}
+.card h2{font-size:17px;margin:0 0 16px;color:var(--text);font-weight:800;
+  display:flex;align-items:center;gap:10px}
+.card h3{font-size:15px;margin:0 0 12px;font-weight:700;color:var(--text)}
+.grid{display:grid;gap:14px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:960px){.grid-3,.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;border-left:5px solid var(--blue);
+  transition:var(--transition);cursor:pointer}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-card.red{border-color:var(--red)}
+.stat-card.green{border-color:var(--success)}
+.stat-card.amber{border-color:var(--warn)}
+.stat-card .num{font-size:30px;font-weight:900;color:var(--text);line-height:1}
+.stat-card .lbl{font-size:13px;color:var(--text-2);margin-top:6px;font-weight:700}
 
-/* Grid */
-.grid{display:grid;gap:14px;}
-.grid-2{grid-template-columns:repeat(2,1fr);}
-.grid-3{grid-template-columns:repeat(3,1fr);}
-.grid-4{grid-template-columns:repeat(4,1fr);}
-@media(max-width:960px){.grid-3,.grid-4{grid-template-columns:1fr 1fr;}}
-@media(max-width:640px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
-
-/* Stat Cards */
-.stat-card{
-  background:var(--card);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:18px;
-  border-left:5px solid var(--blue);
-  transition:var(--transition);cursor:pointer;
-}
-.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
-.stat-card.red{border-color:var(--red);}
-.stat-card.green{border-color:var(--success);}
-.stat-card.amber{border-color:var(--warn);}
-.stat-card .num{font-size:30px;font-weight:900;color:var(--text);line-height:1;letter-spacing:-.5px;}
-.stat-card .lbl{font-size:13px;color:var(--text-2);margin-top:6px;font-weight:700;}
-
-/* My Data Banner */
-.mydata-banner{
-  background:linear-gradient(135deg,var(--blue-light),var(--red-light));
+.mydata-banner{background:linear-gradient(135deg,var(--blue-light),var(--red-light));
   border:2px solid var(--border);border-radius:var(--radius);
-  padding:20px;margin-bottom:18px;
-  position:relative;overflow:hidden;
-}
-.mydata-banner::before{
-  content:'';position:absolute;top:0;right:0;
-  width:100px;height:100px;border-radius:50%;
-  background:var(--blue);opacity:.05;
-}
-.mydata-banner h3{
-  margin:0 0 14px;color:var(--blue-dark);
-  font-size:15px;font-weight:800;
-  display:flex;align-items:center;gap:8px;
-}
-.mydata-banner .my-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
-  gap:12px;position:relative;z-index:1;
-}
-.mydata-banner .my-item{
-  background:var(--card);border-radius:12px;padding:12px;
-  border:1px solid var(--border);transition:var(--transition);
-}
-.mydata-banner .my-item:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
-.mydata-banner .my-item .lbl{font-size:11.5px;color:var(--text-2);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
-.mydata-banner .my-item .val{font-size:17px;font-weight:800;color:var(--text);margin-top:4px;}
+  padding:20px;margin-bottom:18px;position:relative;overflow:hidden}
+.mydata-banner h3{margin:0 0 14px;color:var(--blue-dark);font-size:15px;
+  font-weight:800;display:flex;align-items:center;gap:8px}
+.mydata-banner .my-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;position:relative;z-index:1}
+.mydata-banner .my-item{background:var(--card);border-radius:12px;padding:12px;
+  border:1px solid var(--border);transition:var(--transition)}
+.mydata-banner .my-item:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.mydata-banner .my-item .lbl{font-size:11.5px;color:var(--text-2);font-weight:700;
+  text-transform:uppercase;letter-spacing:.3px}
+.mydata-banner .my-item .val{font-size:17px;font-weight:800;color:var(--text);margin-top:4px}
 
-/* ============================================================
-   TABLES
-   ============================================================ */
-table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);}
-th,td{padding:12px 10px;border:1px solid var(--border);text-align:center;white-space:nowrap;}
-th{
-  background:var(--border-2);font-weight:800;font-size:12.5px;
-  color:var(--text);position:sticky;top:0;z-index:2;
-}
-tbody tr{transition:var(--transition);}
-tbody tr:hover{background:var(--card-hover);}
-tr.mine td{background:var(--warn-light)!important;}
-tr.mine td:first-child{border-left:4px solid var(--red);}
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card)}
+th,td{padding:12px 10px;border:1px solid var(--border);text-align:center;white-space:nowrap}
+th{background:var(--border-2);font-weight:800;font-size:12.5px;color:var(--text);
+  position:sticky;top:0;z-index:2}
+tbody tr{transition:var(--transition)}
+tbody tr:hover{background:var(--card-hover)}
+tr.mine td{background:var(--warn-light)!important}
+tr.mine td:first-child{border-left:4px solid var(--red)}
+.roster-table{font-size:12.5px}
+.roster-table td.cellcode{cursor:pointer;font-weight:700;transition:var(--transition)}
+.roster-table td.cellcode:hover{outline:2px solid var(--blue);outline-offset:-2px}
+td.cell-M{background:#fef3c7;color:#78350f}
+td.cell-E{background:#dbeafe;color:#1e3a8a}
+td.cell-E4{background:#e0e7ff;color:#3730a3}
+td.cell-N12{background:#c7d2fe;color:#312e81}
+td.cell-N{background:#a5b4fc;color:#1e1b4b}
+td.cell-D{background:#fce7f3;color:#831843}
+td.cell-X{background:#d1fae5;color:#065f46}
+td.cell-DX{background:#bfdbfe;color:#1e40af}
+td.cell-OFF{background:#e5e7eb;color:#374151;font-weight:800}
+td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,td.cell-AL,td.cell-ML{background:#fee2e2;color:#991b1b;font-weight:800}
+td.cell-PH{background:#fecaca;color:#7f1d1d;font-weight:800}
+td.cell-warning{box-shadow:inset 0 0 0 3px var(--danger)}
 
-.roster-table{font-size:12.5px;}
-.roster-table td.cellcode{cursor:pointer;font-weight:700;transition:var(--transition);}
-.roster-table td.cellcode:hover{outline:2px solid var(--blue);outline-offset:-2px;transform:scale(1.05);}
-td.cell-M{background:#fef3c7;color:#78350f;}
-td.cell-E{background:#dbeafe;color:#1e3a8a;}
-td.cell-E4{background:#e0e7ff;color:#3730a3;}
-td.cell-N12{background:#c7d2fe;color:#312e81;}
-td.cell-N{background:#a5b4fc;color:#1e1b4b;}
-td.cell-D{background:#fce7f3;color:#831843;}
-td.cell-X{background:#d1fae5;color:#065f46;}
-td.cell-DX{background:#bfdbfe;color:#1e40af;}
-td.cell-OFF{background:#e5e7eb;color:#374151;font-weight:800;}
-td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,td.cell-AL,td.cell-ML{background:#fee2e2;color:#991b1b;font-weight:800;}
-td.cell-PH{background:#fecaca;color:#7f1d1d;font-weight:800;}
-td.cell-warning{box-shadow:inset 0 0 0 3px var(--danger);}
+.pill{display:inline-block;padding:5px 12px;border-radius:20px;
+  font-size:11.5px;font-weight:800;color:#fff;letter-spacing:.2px}
+.pill-pending{background:var(--warn);color:#3a2c00}
+.pill-approved{background:var(--success)}
+.pill-rejected{background:var(--danger)}
+.pill-supervisor{background:#6b3fa0}
+.pill-you{background:var(--red)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;
+  border-radius:20px;background:var(--blue-light);font-size:12px;
+  font-weight:700;color:var(--blue-dark)}
 
-/* Pills */
-.pill{
-  display:inline-block;padding:5px 12px;border-radius:20px;
-  font-size:11.5px;font-weight:800;color:#fff;
-  letter-spacing:.2px;
-}
-.pill-pending{background:var(--warn);color:#3a2c00;}
-.pill-approved{background:var(--success);}
-.pill-rejected{background:var(--danger);}
-.pill-supervisor{background:#6b3fa0;}
-.pill-you{background:var(--red);}
+.tabsbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;
+  border-bottom:2px solid var(--border);padding-bottom:0}
+.tabsbar button{background:none;border:none;padding:12px 18px;
+  font-weight:700;font-size:14px;color:var(--text-2);cursor:pointer;
+  border-bottom:3px solid transparent;transition:var(--transition);
+  margin-bottom:-2px;border-radius:8px 8px 0 0}
+.tabsbar button:hover{color:var(--text);background:var(--border-2)}
+.tabsbar button.active{color:var(--blue);border-color:var(--blue)}
 
-.chip{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:6px 12px;border-radius:20px;
-  background:var(--blue-light);font-size:12px;
-  font-weight:700;color:var(--blue-dark);
-}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search-box{flex:1;min-width:220px;position:relative}
+.search-box input{width:100%;padding:12px 16px 12px 44px;border:2px solid var(--border);
+  border-radius:12px;font-size:14.5px;background:var(--bg);color:var(--text);
+  transition:var(--transition)}
+.search-box input:focus{border-color:var(--blue);background:var(--card);
+  box-shadow:0 0 0 4px rgba(30,91,168,.1)}
+.search-box::before{content:'🔍';position:absolute;left:16px;top:50%;
+  transform:translateY(-50%);font-size:16px;pointer-events:none;opacity:.6}
 
-/* ============================================================
-   TABS
-   ============================================================ */
-.tabsbar{
-  display:flex;gap:6px;flex-wrap:wrap;
-  margin-bottom:16px;border-bottom:2px solid var(--border);
-  padding-bottom:0;
-}
-.tabsbar button{
-  background:none;border:none;padding:12px 18px;
-  font-weight:700;font-size:14px;color:var(--text-2);
-  cursor:pointer;border-bottom:3px solid transparent;
-  transition:var(--transition);margin-bottom:-2px;
-  border-radius:8px 8px 0 0;
-}
-.tabsbar button:hover{color:var(--text);background:var(--border-2);}
-.tabsbar button.active{color:var(--blue);border-color:var(--blue);}
-
-/* Toolbar */
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
-.search-box{flex:1;min-width:220px;position:relative;}
-.search-box input{
-  width:100%;padding:12px 16px 12px 44px;
-  border:2px solid var(--border);border-radius:12px;
-  font-size:14.5px;background:var(--bg);
-  color:var(--text);transition:var(--transition);
-}
-.search-box input:focus{border-color:var(--blue);background:var(--card);box-shadow:0 0 0 4px rgba(30,91,168,.1);}
-.search-box::before{
-  content:'🔍';position:absolute;left:16px;top:50%;transform:translateY(-50%);
-  font-size:16px;pointer-events:none;opacity:.6;
-}
-
-/* List Rows */
-.list-row{
-  display:flex;align-items:center;gap:14px;
-  padding:16px;border:1.5px solid var(--border);
-  border-radius:14px;margin-bottom:10px;
-  background:var(--card);flex-wrap:wrap;
-  transition:var(--transition);cursor:default;
-}
-.list-row:hover{background:var(--card-hover);border-color:var(--blue);transform:translateX(3px);}
-.list-row.mine{background:var(--warn-light);border-color:var(--warn);}
-.list-row .grow{flex:1;min-width:180px;}
-.list-row .name{font-weight:800;font-size:14.5px;color:var(--text);}
-.list-row .sub{font-size:12.5px;color:var(--text-2);margin-top:4px;}
-.list-row .av{
-  width:44px;height:44px;border-radius:50%;color:#fff;
+.list-row{display:flex;align-items:center;gap:14px;padding:16px;
+  border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;
+  background:var(--card);flex-wrap:wrap;transition:var(--transition)}
+.list-row:hover{background:var(--card-hover);border-color:var(--blue)}
+.list-row.mine{background:var(--warn-light);border-color:var(--warn)}
+.list-row .grow{flex:1;min-width:180px}
+.list-row .name{font-weight:800;font-size:14.5px;color:var(--text)}
+.list-row .sub{font-size:12.5px;color:var(--text-2);margin-top:4px}
+.list-row .av{width:44px;height:44px;border-radius:50%;color:#fff;
   display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:16px;flex-shrink:0;
-  box-shadow:var(--shadow-sm);
-}
+  font-weight:800;font-size:16px;flex-shrink:0;box-shadow:var(--shadow)}
 
-/* ============================================================
-   MODAL
-   ============================================================ */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(15,20,30,.65);
-  backdrop-filter:blur(4px);
-  display:flex;align-items:flex-end;justify-content:center;
-  z-index:200;overflow-y:auto;padding:0;
-  animation:fadeIn .15s ease;
-}
-@media(min-width:640px){.modal-overlay{align-items:center;padding:20px;}}
-.modal-box{
-  background:var(--card);border-radius:20px 20px 0 0;
-  width:100%;max-width:680px;
-  box-shadow:var(--shadow-xl);
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,20,30,.65);
+  backdrop-filter:blur(4px);display:flex;align-items:flex-end;
+  justify-content:center;z-index:200;overflow-y:auto;padding:0;
+  animation:fadeIn .15s ease}
+@media(min-width:640px){.modal-overlay{align-items:center;padding:20px}}
+.modal-box{background:var(--card);border-radius:20px 20px 0 0;
+  width:100%;max-width:680px;box-shadow:var(--shadow-xl);
   animation:slideUp .25s cubic-bezier(.4,0,.2,1);
-  max-height:92vh;display:flex;flex-direction:column;
-}
-@media(min-width:640px){.modal-box{border-radius:18px;max-height:88vh;}}
-@keyframes slideUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.modal-box.wide{max-width:1200px;}
-.modal-head{
-  display:flex;align-items:center;padding:20px 22px;
-  border-bottom:1.5px solid var(--border);
-  background:var(--card);
-  border-radius:20px 20px 0 0;
-  flex-shrink:0;
-}
-@media(min-width:640px){.modal-head{border-radius:18px 18px 0 0;}}
-.modal-head h3{
-  margin:0;flex:1;font-size:17px;font-weight:800;
-  color:var(--red);display:flex;align-items:center;gap:8px;
-}
-.modal-close{
-  width:40px;height:40px;border-radius:50%;
-  background:var(--border-2);color:var(--text-2);
-  font-size:22px;font-weight:600;
+  max-height:92vh;display:flex;flex-direction:column}
+@media(min-width:640px){.modal-box{border-radius:18px;max-height:88vh}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-box.wide{max-width:1200px}
+.modal-head{display:flex;align-items:center;padding:20px 22px;
+  border-bottom:1.5px solid var(--border);background:var(--card);
+  border-radius:20px 20px 0 0;flex-shrink:0}
+@media(min-width:640px){.modal-head{border-radius:18px 18px 0 0}}
+.modal-head h3{margin:0;flex:1;font-size:17px;font-weight:800;
+  color:var(--red);display:flex;align-items:center;gap:8px}
+.modal-close{width:40px;height:40px;border-radius:50%;background:var(--border-2);
+  color:var(--text-2);font-size:22px;font-weight:600;
   display:flex;align-items:center;justify-content:center;
-  transition:var(--transition);flex-shrink:0;
-}
-.modal-close:hover{background:var(--red-light);color:var(--red);transform:rotate(90deg);}
-.modal-body{padding:22px;overflow-y:auto;flex:1;}
-.modal-foot{
-  display:flex;justify-content:flex-end;gap:10px;
+  transition:var(--transition);flex-shrink:0}
+.modal-close:hover{background:var(--red-light);color:var(--red);transform:rotate(90deg)}
+.modal-body{padding:22px;overflow-y:auto;flex:1}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;
   padding:16px 22px;border-top:1.5px solid var(--border);
-  background:var(--card-hover);
-  border-radius:0 0 20px 20px;flex-wrap:wrap;
-  flex-shrink:0;
-}
-@media(min-width:640px){.modal-foot{border-radius:0 0 18px 18px;}}
+  background:var(--card-hover);border-radius:0 0 20px 20px;
+  flex-wrap:wrap;flex-shrink:0}
+@media(min-width:640px){.modal-foot{border-radius:0 0 18px 18px}}
 
-/* ============================================================
-   TOAST NOTIFICATIONS
-   ============================================================ */
-.toast-wrap{
-  position:fixed;top:80px;right:16px;z-index:400;
-  display:flex;flex-direction:column;gap:10px;
-  max-width:360px;pointer-events:none;
-}
-.toast{
-  background:var(--card);border-radius:14px;
-  padding:16px 18px;box-shadow:var(--shadow-xl);
-  border-left:5px solid var(--blue);
+/* TOAST */
+.toast-wrap{position:fixed;top:80px;right:16px;z-index:400;
+  display:flex;flex-direction:column;gap:10px;max-width:360px;pointer-events:none}
+.toast{background:var(--card);border-radius:14px;padding:16px 18px;
+  box-shadow:var(--shadow-xl);border-left:5px solid var(--blue);
   font-size:14px;animation:toastIn .3s cubic-bezier(.4,0,.2,1);
-  pointer-events:auto;position:relative;
-  border:1px solid var(--border);
-}
-.toast.success{border-left-color:var(--success);}
-.toast.error{border-left-color:var(--red);background:var(--red-light);}
-.toast.warn{border-left-color:var(--warn);background:var(--warn-light);}
-.toast.info{border-left-color:var(--blue);}
-.toast .t-title{font-weight:800;font-size:14px;margin-bottom:4px;color:var(--text);}
-.toast .t-body{font-size:13px;color:var(--text-2);}
-@keyframes toastIn{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+  pointer-events:auto;position:relative;border:1px solid var(--border)}
+.toast.success{border-left-color:var(--success)}
+.toast.error{border-left-color:var(--red);background:var(--red-light)}
+.toast.warn{border-left-color:var(--warn);background:var(--warn-light)}
+.toast .t-title{font-weight:800;font-size:14px;margin-bottom:4px;color:var(--text)}
+.toast .t-body{font-size:13px;color:var(--text-2)}
+@keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 
-/* ============================================================
-   NOTIFICATION PANEL
-   ============================================================ */
-.notif-panel{
-  position:fixed;top:80px;right:16px;
-  width:380px;max-width:calc(100vw - 32px);
-  background:var(--card);border-radius:16px;
-  box-shadow:var(--shadow-xl);z-index:150;
-  max-height:80vh;display:flex;flex-direction:column;
-  border:1px solid var(--border);
-  animation:slideUp .2s;
-}
-.notif-panel-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 18px;border-bottom:1.5px solid var(--border);
-}
-.notif-panel-head h4{margin:0;font-size:16px;font-weight:800;color:var(--red);}
-.notif-panel-body{overflow-y:auto;flex:1;}
-.notif-item{
-  padding:14px 18px;border-bottom:1px solid var(--border);
-  font-size:13.5px;cursor:pointer;transition:var(--transition);
-}
-.notif-item:hover{background:var(--card-hover);}
-.notif-item.unread{background:var(--blue-light);}
-.notif-item.unread::before{
-  content:'';display:inline-block;width:8px;height:8px;
-  background:var(--blue);border-radius:50%;margin-right:8px;
-}
-.notif-item .t{font-weight:800;margin-bottom:3px;font-size:13.5px;color:var(--text);}
-.notif-item .b{color:var(--text-2);font-size:12.5px;}
-.notif-item .ts{color:var(--text-3);font-size:11px;margin-top:5px;}
+/* NOTIFICATIONS */
+.notif-panel{position:fixed;top:80px;right:16px;width:380px;
+  max-width:calc(100vw - 32px);background:var(--card);border-radius:16px;
+  box-shadow:var(--shadow-xl);z-index:150;max-height:80vh;
+  display:flex;flex-direction:column;border:1px solid var(--border);
+  animation:slideUp .2s}
+.notif-panel-head{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;border-bottom:1.5px solid var(--border)}
+.notif-panel-head h4{margin:0;font-size:16px;font-weight:800;color:var(--red)}
+.notif-panel-body{overflow-y:auto;flex:1}
+.notif-item{padding:14px 18px;border-bottom:1px solid var(--border);
+  font-size:13.5px;cursor:pointer;transition:var(--transition)}
+.notif-item:hover{background:var(--card-hover)}
+.notif-item.unread{background:var(--blue-light)}
+.notif-item .t{font-weight:800;margin-bottom:3px;font-size:13.5px;color:var(--text)}
+.notif-item .b{color:var(--text-2);font-size:12.5px}
+.notif-item .ts{color:var(--text-3);font-size:11px;margin-top:5px}
 
-/* ============================================================
-   BOTTOM NAV (MOBILE)
-   ============================================================ */
-.bottomnav{
-  display:none;position:fixed;bottom:0;left:0;right:0;
+/* BOTTOM NAV */
+.bottomnav{display:none;position:fixed;bottom:0;left:0;right:0;
   background:var(--card);border-top:1.5px solid var(--border);
   z-index:60;padding:6px 0 max(6px,env(safe-area-inset-bottom));
-  box-shadow:0 -4px 16px rgba(0,0,0,.08);
-  backdrop-filter:blur(10px);
-}
-.bottomnav .bn-scroll{display:flex;overflow-x:auto;}
-.bottomnav button{
-  flex:1;min-width:70px;background:none;border:none;
+  box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+.bottomnav .bn-scroll{display:flex;overflow-x:auto}
+.bottomnav button{flex:1;min-width:70px;background:none;border:none;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:8px 6px;font-size:10.5px;color:var(--text-2);
-  font-weight:700;transition:var(--transition);cursor:pointer;
-  position:relative;
-}
-.bottomnav button .ic{font-size:22px;}
-.bottomnav button.active{color:var(--red);}
-.bottomnav button.active::before{
-  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:30px;height:3px;background:var(--red);border-radius:0 0 3px 3px;
-}
+  padding:8px 6px;font-size:10.5px;color:var(--text-2);font-weight:700;
+  transition:var(--transition);cursor:pointer;position:relative}
+.bottomnav button .ic{font-size:22px}
+.bottomnav button.active{color:var(--red)}
+.bottomnav button.active::before{content:'';position:absolute;top:0;
+  left:50%;transform:translateX(-50%);width:30px;height:3px;
+  background:var(--red);border-radius:0 0 3px 3px}
 
-/* ============================================================
-   CHAT
-   ============================================================ */
-.chat-wrap{
-  display:flex;height:70vh;border:1.5px solid var(--border);
-  border-radius:16px;overflow:hidden;background:var(--card);
-}
-.chat-side{
-  width:240px;border-right:1.5px solid var(--border);
-  overflow-y:auto;background:var(--card-hover);flex-shrink:0;
-}
-.chat-side .cuser{
-  padding:14px 16px;cursor:pointer;font-size:13.5px;
-  border-bottom:1px solid var(--border);
-  transition:var(--transition);display:flex;align-items:center;gap:10px;
-}
-.chat-side .cuser:hover{background:var(--blue-light);}
-.chat-side .cuser.active{background:var(--blue-light);font-weight:800;color:var(--blue);}
-.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
-.chat-msgs{
-  flex:1;overflow-y:auto;padding:16px;
-  background:var(--bg);display:flex;flex-direction:column;gap:10px;
-}
-.msg{
-  max-width:75%;margin-bottom:4px;padding:12px 16px;
-  border-radius:18px;font-size:14px;background:var(--card);
-  box-shadow:var(--shadow-sm);word-wrap:break-word;
-  animation:msgIn .2s;
-}
-@keyframes msgIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-.msg.mine{margin-left:auto;background:var(--blue);color:#fff;}
-.msg .sender{font-weight:800;font-size:11.5px;color:var(--blue);margin-bottom:4px;}
-.msg.mine .sender{color:rgba(255,255,255,.85);}
-.msg img{max-width:220px;border-radius:12px;display:block;margin-top:6px;cursor:pointer;}
-.msg .ts{font-size:10.5px;color:var(--text-3);margin-top:6px;text-align:right;}
-.msg.mine .ts{color:rgba(255,255,255,.7);}
-.chat-input{
-  display:flex;gap:10px;padding:12px;
-  border-top:1.5px solid var(--border);
-  background:var(--card);align-items:center;
-}
-.chat-input input[type=text]{
-  flex:1;padding:12px 18px;border:2px solid var(--border);
-  border-radius:24px;font-size:14px;background:var(--bg);
-  color:var(--text);
-}
-.chat-input input[type=text]:focus{border-color:var(--blue);background:var(--card);}
+/* CHAT */
+.chat-wrap{display:flex;height:70vh;border:1.5px solid var(--border);
+  border-radius:16px;overflow:hidden;background:var(--card)}
+.chat-side{width:240px;border-right:1.5px solid var(--border);
+  overflow-y:auto;background:var(--card-hover);flex-shrink:0}
+.chat-side .cuser{padding:14px 16px;cursor:pointer;font-size:13.5px;
+  border-bottom:1px solid var(--border);transition:var(--transition);
+  display:flex;align-items:center;gap:10px}
+.chat-side .cuser:hover{background:var(--blue-light)}
+.chat-side .cuser.active{background:var(--blue-light);font-weight:800;color:var(--blue)}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;background:var(--bg);
+  display:flex;flex-direction:column;gap:10px}
+.msg{max-width:75%;margin-bottom:4px;padding:12px 16px;border-radius:18px;
+  font-size:14px;background:var(--card);box-shadow:var(--shadow);
+  word-wrap:break-word;animation:msgIn .2s}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.mine{margin-left:auto;background:var(--blue);color:#fff}
+.msg .sender{font-weight:800;font-size:11.5px;color:var(--blue);margin-bottom:4px}
+.msg.mine .sender{color:rgba(255,255,255,.85)}
+.msg img{max-width:220px;border-radius:12px;display:block;margin-top:6px;cursor:pointer}
+.msg .ts{font-size:10.5px;color:var(--text-3);margin-top:6px;text-align:right}
+.msg.mine .ts{color:rgba(255,255,255,.7)}
+.chat-input{display:flex;gap:10px;padding:12px;border-top:1.5px solid var(--border);
+  background:var(--card);align-items:center}
+.chat-input input[type=text]{flex:1;padding:12px 18px;border:2px solid var(--border);
+  border-radius:24px;font-size:14px;background:var(--bg);color:var(--text)}
+.chat-input input[type=text]:focus{border-color:var(--blue);background:var(--card)}
 
-/* ============================================================
-   ALERTS / BOXES
-   ============================================================ */
-.warn-box{
-  background:var(--warn-light);border:1.5px solid var(--warn);
-  border-radius:12px;padding:14px 16px;font-size:13.5px;
-  margin-bottom:12px;color:#92400e;
-  border-left:5px solid var(--warn);
-}
-.err-box{
-  background:var(--red-light);border:1.5px solid var(--red);
-  border-radius:12px;padding:14px 16px;font-size:13.5px;
-  margin-bottom:12px;color:var(--red-dark);
-  border-left:5px solid var(--red);
-}
-.ok-box{
-  background:var(--success-light);border:1.5px solid var(--success);
-  border-radius:12px;padding:14px 16px;font-size:13.5px;
-  margin-bottom:12px;color:#12703a;
-  border-left:5px solid var(--success);
-}
-.info-box{
-  background:var(--blue-light);border:1.5px solid var(--blue);
-  border-radius:12px;padding:14px 16px;font-size:13.5px;
-  margin-bottom:12px;color:var(--blue-dark);
-  border-left:5px solid var(--blue);
-}
-.warn-box ul,.err-box ul,.ok-box ul,.info-box ul{margin:8px 0 0 20px;padding:0;}
-.warn-box li,.err-box li,.ok-box li,.info-box li{margin-bottom:5px;}
+/* ALERTS */
+.warn-box{background:var(--warn-light);border:1.5px solid var(--warn);
+  border-radius:12px;padding:14px 16px;font-size:13.5px;margin-bottom:12px;
+  color:#92400e;border-left:5px solid var(--warn)}
+.err-box{background:var(--red-light);border:1.5px solid var(--red);
+  border-radius:12px;padding:14px 16px;font-size:13.5px;margin-bottom:12px;
+  color:var(--red-dark);border-left:5px solid var(--red)}
+.ok-box{background:var(--success-light);border:1.5px solid var(--success);
+  border-radius:12px;padding:14px 16px;font-size:13.5px;margin-bottom:12px;
+  color:#12703a;border-left:5px solid var(--success)}
+.info-box{background:var(--blue-light);border:1.5px solid var(--blue);
+  border-radius:12px;padding:14px 16px;font-size:13.5px;margin-bottom:12px;
+  color:var(--blue-dark);border-left:5px solid var(--blue)}
+.warn-box ul,.err-box ul,.ok-box ul,.info-box ul{margin:8px 0 0 20px;padding:0}
+.warn-box li,.err-box li,.ok-box li,.info-box li{margin-bottom:5px}
 
-/* Empty State */
-.empty-state{text-align:center;padding:60px 20px;color:var(--text-3);font-size:14px;}
-.empty-state::before{
-  content:'📋';display:block;font-size:48px;margin-bottom:12px;opacity:.4;
-}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-3);font-size:14px}
+.empty-state::before{content:'📋';display:block;font-size:48px;margin-bottom:12px;opacity:.4}
 
-/* ============================================================
-   CONFLICT BOX
-   ============================================================ */
-.conflict-box{
-  background:var(--card);border:3px solid var(--warn);
-  border-radius:16px;padding:20px;margin-bottom:16px;
-  animation:shake .4s;
-}
-.conflict-box h3{color:var(--warn);margin-bottom:12px;font-size:16px;font-weight:800;}
-.conflict-box .problem{
-  font-size:14px;margin-bottom:12px;padding:14px;
-  background:var(--warn-light);border-radius:10px;
-}
-.conflict-box .suggestion{
-  font-size:14px;margin-bottom:14px;padding:14px;
-  background:var(--success-light);border-radius:10px;
-  border-left:4px solid var(--success);
-}
-.conflict-box .actions{display:flex;gap:10px;flex-wrap:wrap;}
+/* CONFLICT */
+.conflict-box{background:var(--card);border:3px solid var(--warn);
+  border-radius:16px;padding:20px;margin-bottom:16px;animation:shake .4s}
+.conflict-box h3{color:var(--warn);margin-bottom:12px;font-size:16px;font-weight:800}
+.conflict-box .problem{font-size:14px;margin-bottom:12px;padding:14px;
+  background:var(--warn-light);border-radius:10px}
+.conflict-box .suggestion{font-size:14px;margin-bottom:14px;padding:14px;
+  background:var(--success-light);border-radius:10px;border-left:4px solid var(--success)}
+.conflict-box .actions{display:flex;gap:10px;flex-wrap:wrap}
 
-/* ============================================================
-   WIZARD
-   ============================================================ */
-.wizard-steps{
-  display:flex;justify-content:space-between;
-  margin-bottom:22px;gap:6px;
-}
-.wizard-steps .ws{
-  flex:1;text-align:center;font-size:12px;
-  color:var(--text-2);padding:12px 6px;
-  border-bottom:3px solid var(--border);
-  font-weight:700;transition:var(--transition);
-}
-.wizard-steps .ws.active{color:var(--blue);border-color:var(--blue);}
-.wizard-steps .ws.done{color:var(--success);border-color:var(--success);}
+/* WIZARD */
+.wizard-steps{display:flex;justify-content:space-between;margin-bottom:22px;gap:6px}
+.wizard-steps .ws{flex:1;text-align:center;font-size:12px;color:var(--text-2);
+  padding:12px 6px;border-bottom:3px solid var(--border);font-weight:700;
+  transition:var(--transition)}
+.wizard-steps .ws.active{color:var(--blue);border-color:var(--blue)}
+.wizard-steps .ws.done{color:var(--success);border-color:var(--success)}
+.progress-bar{background:var(--border);height:8px;border-radius:4px;
+  overflow:hidden;margin-bottom:16px}
+.progress-bar .fill{background:linear-gradient(90deg,var(--red),var(--blue));
+  height:100%;transition:width .4s ease}
 
-/* Progress Bar */
-.progress-bar{
-  background:var(--border);height:8px;border-radius:4px;
-  overflow:hidden;margin-bottom:16px;
-}
-.progress-bar .fill{
-  background:linear-gradient(90deg,var(--red),var(--blue));
-  height:100%;transition:width .4s ease;
-}
+/* OFFLINE */
+#offlineBanner{position:fixed;top:0;left:0;right:0;background:var(--warn);
+  color:#3a2c00;padding:12px;text-align:center;font-weight:700;font-size:13.5px;
+  z-index:500;transform:translateY(-100%);transition:transform .3s}
+#offlineBanner.show{transform:translateY(0)}
 
-/* ============================================================
-   DYNAMIC ROWS
-   ============================================================ */
-.dyn-row{
-  display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
-  margin-bottom:12px;padding:14px;
-  background:var(--bg);border-radius:12px;
-  border:1px solid var(--border);
-}
-.dyn-row .field{margin:0;flex:1;min-width:140px;}
+/* DYNAMIC ROWS */
+.dyn-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
+  margin-bottom:12px;padding:14px;background:var(--bg);border-radius:12px;
+  border:1px solid var(--border)}
+.dyn-row .field{margin:0;flex:1;min-width:140px}
 
-/* ============================================================
-   OFFLINE BANNER
-   ============================================================ */
-#offlineBanner{
-  position:fixed;top:0;left:0;right:0;
-  background:var(--warn);color:#3a2c00;
-  padding:12px;text-align:center;font-weight:700;
-  font-size:13.5px;z-index:500;
-  transform:translateY(-100%);
-  transition:transform .3s;
-}
-#offlineBanner.show{transform:translateY(0);}
-
-/* ============================================================
-   SKELETON LOADING
-   ============================================================ */
-.skeleton{
-  background:linear-gradient(90deg,var(--border) 25%,var(--border-2) 50%,var(--border) 75%);
-  background-size:200% 100%;
-  animation:skeleton 1.5s infinite;
-  border-radius:8px;
-  height:20px;
-  margin-bottom:10px;
-}
-@keyframes skeleton{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-
-/* ============================================================
-   DARK MODE TOGGLE
-   ============================================================ */
-.dark-toggle{
-  background:var(--border-2);border:none;
-  width:44px;height:24px;border-radius:12px;
-  position:relative;cursor:pointer;transition:var(--transition);
-}
-.dark-toggle::after{
-  content:'☀️';position:absolute;
-  top:2px;left:2px;width:20px;height:20px;
-  border-radius:50%;background:var(--card);
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;transition:var(--transition);
-}
-body.dark-mode .dark-toggle{background:var(--blue);}
-body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
-
-/* ============================================================
-   FRIENDLY BADGES
-   ============================================================ */
-.badge-new{
-  background:var(--red);color:#fff;
-  font-size:9px;font-weight:800;
-  padding:2px 6px;border-radius:6px;
-  position:absolute;top:-6px;right:-6px;
-  text-transform:uppercase;letter-spacing:.5px;
-}
-
-/* ============================================================
-   PRINT
-   ============================================================ */
+/* PRINT */
 @media print{
-  .no-print,.topbar,.bottomnav,.tabsbar,.toolbar,.btn,.modal-overlay,.icon-btn,#toastContainer,#offlineBanner{display:none!important;}
-  body{background:#fff;color:#000;}
-  .main-wrap{padding:0;max-width:100%;}
-  .card{box-shadow:none;border:none;padding:0;margin:0;}
-  table{font-size:10px;}
-  th,td{border:1px solid #000!important;color:#000!important;padding:3px!important;}
-  td.cell-OFF,td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,td.cell-AL,td.cell-ML,td.cell-PH{background:#000!important;color:#fff!important;}
-  td.cell-M,td.cell-E,td.cell-E4,td.cell-N12,td.cell-N,td.cell-D,td.cell-X,td.cell-DX{background:#fff!important;color:#000!important;}
+  .no-print,.topbar,.bottomnav,.tabsbar,.toolbar,.btn,.modal-overlay,
+  .icon-btn,.toast-wrap,#offlineBanner{display:none!important}
+  body{background:#fff;color:#000}
+  .main-wrap{padding:0;max-width:100%}
+  .card{box-shadow:none;border:none;padding:0;margin:0}
+  table{font-size:10px}
+  th,td{border:1px solid #000!important;color:#000!important;padding:3px!important}
+  td.cell-OFF,td.cell-EL,td.cell-CPL,td.cell-CL,td.cell-GH,td.cell-SL,
+  td.cell-AL,td.cell-ML,td.cell-PH{background:#000!important;color:#fff!important}
+  td.cell-M,td.cell-E,td.cell-E4,td.cell-N12,td.cell-N,td.cell-D,td.cell-X,td.cell-DX{
+    background:#fff!important;color:#000!important}
+  .print-header{display:block;text-align:center;margin-bottom:12px}
 }
+.print-header{display:none}
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* RESPONSIVE */
 @media(max-width:860px){
-  .topnav{display:none;}
-  .bottomnav{display:block;}
-  .main-wrap{padding-bottom:90px;}
-  .userchip span{display:none;}
-  .userchip{padding:4px;}
+  .topnav{display:none}
+  .bottomnav{display:block}
+  .main-wrap{padding-bottom:90px}
+  .userchip span{display:none}
+  .userchip{padding:4px}
 }
 @media(max-width:700px){
-  .chat-side{width:120px;}
-  .modal-box{max-height:95vh;}
-  .card{padding:16px;}
+  .chat-side{width:120px}
+  .card{padding:16px}
 }
 @media(max-width:480px){
-  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
-  .stat-card .num{font-size:24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .stat-card .num{font-size:24px}
 }
 </style>
 </head>
 <body>
 <!-- ⬇⬇⬇ PART 1B STARTS HERE ⬇⬇⬇ -->
-  <!-- ============================================================
-     OFFLINE BANNER
-     ============================================================ -->
+   <!-- OFFLINE BANNER -->
 <div id="offlineBanner">📡 You are offline — Changes will sync when back online</div>
 
-<!-- ============================================================
-     TOAST NOTIFICATIONS
-     ============================================================ -->
+<!-- TOAST -->
 <div class="toast-wrap" id="toastWrap"></div>
 
-<!-- ============================================================
-     LOGIN SCREEN
-     ============================================================ -->
+<!-- LOGIN SCREEN -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-head">
-      <div class="login-logo">
-        <span>KIH</span>
-      </div>
+      <div class="login-logo"><span>KIH</span></div>
       <h1>Phlebotomist Roster</h1>
       <p>Kulsum International Hospital, Islamabad</p>
       <p class="small">Department: Phlebotomy</p>
     </div>
-    
     <div class="login-tabs">
       <div class="login-tab active" id="tabStaffBtn" onclick="switchLoginTab('staff')">👤 Staff Login</div>
       <div class="login-tab" id="tabAdminBtn" onclick="switchLoginTab('admin')">🔐 Admin Login</div>
     </div>
-    
     <div class="login-body">
-      <!-- Staff Login -->
       <div id="staffLoginForm">
         <div class="field">
           <label>📱 Mobile Number</label>
-          <input type="tel" id="staffLoginMobile" placeholder="03XXXXXXXXX" inputmode="numeric" autocomplete="tel">
+          <input type="tel" id="staffLoginMobile" placeholder="03XXXXXXXXX" inputmode="numeric">
         </div>
         <div class="field">
           <label>🔑 Password</label>
-          <input type="password" id="staffLoginPass" placeholder="Default: 123456" autocomplete="current-password">
+          <input type="password" id="staffLoginPass" placeholder="Default: 123456">
         </div>
-        <button class="btn btn-primary btn-lg btn-block" onclick="doStaffLogin()">
-          Login as Staff →
-        </button>
+        <button class="btn btn-primary btn-lg btn-block" onclick="doStaffLogin()">Login as Staff →</button>
       </div>
-      
-      <!-- Admin Login -->
       <div id="adminLoginForm" class="hidden">
         <div class="field">
           <label>👤 Username / Mobile</label>
-          <input type="text" id="adminLoginUser" placeholder="admin" autocomplete="username">
+          <input type="text" id="adminLoginUser" placeholder="admin">
         </div>
         <div class="field">
           <label>🔑 Password</label>
-          <input type="password" id="adminLoginPass" placeholder="admin123" autocomplete="current-password">
+          <input type="password" id="adminLoginPass" placeholder="admin123">
         </div>
-        <button class="btn btn-red btn-lg btn-block" onclick="doAdminLogin()">
-          Login as Admin →
-        </button>
+        <button class="btn btn-red btn-lg btn-block" onclick="doAdminLogin()">Login as Admin →</button>
       </div>
-      
       <div class="login-err" id="loginErr"></div>
     </div>
   </div>
 </div>
 
-<!-- ============================================================
-     MAIN APP
-     ============================================================ -->
+<!-- MAIN APP -->
 <div id="app">
 
-  <!-- ==========================================================
-       TOP HEADER
-       ========================================================== -->
+  <!-- TOP HEADER -->
   <div class="topbar no-print">
     <div class="brand">
       <div class="kih-logo">KIH</div>
       <span>Phlebotomist Roster</span>
     </div>
-
     <div class="topnav" id="topNav"></div>
-
     <div class="topbar-spacer"></div>
-
-    <!-- Dark Mode Toggle -->
-    <button class="dark-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode"></button>
-
-    <!-- WhatsApp Button -->
-    <button class="icon-btn" onclick="openWhatsAppPanel()" title="Send WhatsApp Message">
+    <button class="dark-toggle" onclick="toggleDarkMode()" title="Dark Mode"></button>
+    <button class="icon-btn" onclick="openWhatsAppPanel()" title="WhatsApp">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
       </svg>
     </button>
-
-    <!-- Notifications -->
     <button class="icon-btn badge-bell" onclick="toggleNotifPanel()" title="Notifications">
       🔔<span class="dot hidden" id="bellDot">0</span>
     </button>
-
-    <!-- Chat -->
-    <button class="icon-btn" onclick="showSection('chat')" title="Chat">
-      💬
-    </button>
-
-    <!-- User Chip -->
+    <button class="icon-btn" onclick="showSection('chat')" title="Chat">💬</button>
     <div class="userchip">
       <div class="av" id="userAv">?</div>
       <span id="userNameChip"></span>
     </div>
-
-    <!-- Logout -->
     <button class="icon-btn" onclick="logout()" title="Logout">⎋</button>
   </div>
 
-  <!-- ==========================================================
-       NOTIFICATION PANEL
-       ========================================================== -->
+  <!-- NOTIFICATION PANEL -->
   <div class="notif-panel hidden no-print" id="notifPanel">
     <div class="notif-panel-head">
       <h4>🔔 Notifications</h4>
-      <button class="modal-close" onclick="closeNotifPanel()" title="Close">✕</button>
+      <button class="modal-close" onclick="closeNotifPanel()">✕</button>
     </div>
     <div class="notif-panel-body" id="notifPanelBody">
       <div class="empty-state" style="padding:30px 10px;">No notifications yet</div>
     </div>
   </div>
 
-  <!-- ==========================================================
-       MAIN CONTENT
-       ========================================================== -->
+  <!-- MAIN CONTENT -->
   <div class="main-wrap">
 
-    <!-- ==================== DASHBOARD ==================== -->
+    <!-- DASHBOARD -->
     <div class="section" id="sec-dashboard">
       <div class="print-header">
         <h2>Kulsum International Hospital</h2>
         <p>Department: Phlebotomy</p>
       </div>
-      
       <div class="mydata-banner" id="myDataDashboard"></div>
-      
       <div class="grid grid-4" id="dashStats"></div>
-      
       <div class="card" id="pendingApprovalsCard" style="display:none"></div>
-      
       <div class="card">
         <h2>📅 Today's Duty — All Staff</h2>
         <div class="scroll-x">
           <table id="todayDutyTable">
             <thead>
-              <tr>
-                <th>Name</th>
-                <th>Designation</th>
-                <th>Shift</th>
-                <th>Time</th>
-                <th>Station</th>
-              </tr>
+              <tr><th>Name</th><th>Designation</th><th>Shift</th><th>Time</th><th>Station</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -985,14 +579,12 @@ body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
       </div>
     </div>
 
-    <!-- ==================== STAFF MANAGEMENT ==================== -->
+    <!-- STAFF -->
     <div class="section" id="sec-staff">
       <div class="card">
         <div class="toolbar">
           <h2 style="margin:0;flex:1;">👥 Staff Management</h2>
-          <button class="btn btn-primary" onclick="openStaffModal()">
-            ➕ Add Staff
-          </button>
+          <button class="btn btn-primary" onclick="openStaffModal()">➕ Add Staff</button>
         </div>
         <div class="tabsbar">
           <button class="active" onclick="switchStaffTab('active',this)">✅ Active</button>
@@ -1007,56 +599,38 @@ body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
       </div>
     </div>
 
-    <!-- ==================== ROSTER ==================== -->
+    <!-- ROSTER -->
     <div class="section" id="sec-roster">
       <div class="print-header">
-        <h2>Kulsum International Hospital — Phlebotomy Department</h2>
+        <h2>Kulsum International Hospital — Phlebotomy</h2>
         <p id="rosterPrintPeriod"></p>
       </div>
-      
       <div class="card no-print">
         <div class="toolbar">
           <h2 style="margin:0;flex:1;">📅 Duty Roster</h2>
           <select id="periodSelect" onchange="onPeriodChange()" style="padding:10px 14px;border:2px solid var(--border);border-radius:10px;background:var(--card);font-weight:700;color:var(--text);">
             <option>Select Period</option>
           </select>
-          <button class="btn btn-primary" onclick="openAutoGenWizard()">
-            ⚙ Auto Generate
-          </button>
-          <button class="btn btn-outline" onclick="exportRosterExcel()">
-            📊 Excel
-          </button>
-          <button class="btn btn-outline" onclick="window.print()">
-            🖨 Print / PDF
-          </button>
-          <button class="btn btn-success" onclick="shareRosterWhatsApp()">
-            📱 Share on WhatsApp
-          </button>
+          <button class="btn btn-primary" onclick="openAutoGenWizard()">⚙ Auto Generate</button>
+          <button class="btn btn-success" onclick="openShareRosterModal()">📱 Share on WhatsApp</button>
+          <button class="btn btn-outline" onclick="window.print()">🖨 Print / PDF</button>
         </div>
       </div>
-      
       <div class="card" id="myDataRosterWrap"></div>
-      
       <div class="card">
         <h2>📋 Roster Grid</h2>
-        <div class="scroll-x">
-          <table class="roster-table" id="rosterTable"></table>
-        </div>
+        <div class="scroll-x"><table class="roster-table" id="rosterTable"></table></div>
       </div>
-      
       <div class="card no-print" id="rosterSummaryCard"></div>
     </div>
 
-    <!-- ==================== LEAVE ==================== -->
+    <!-- LEAVE -->
     <div class="section" id="sec-leave">
       <div class="mydata-banner" id="myDataLeave"></div>
-      
       <div class="card">
         <div class="toolbar">
           <h2 style="margin:0;flex:1;">🏖️ Leave Management</h2>
-          <button class="btn btn-primary" onclick="openLeaveModal()">
-            ➕ Add Leave / OFF
-          </button>
+          <button class="btn btn-primary" onclick="openLeaveModal()">➕ Add Leave / OFF</button>
         </div>
         <div class="tabsbar">
           <button class="active" onclick="switchLeaveTab('pending',this)">⏳ Pending</button>
@@ -1067,27 +641,24 @@ body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
       </div>
     </div>
 
-    <!-- ==================== EXCHANGE ==================== -->
+    <!-- EXCHANGE -->
     <div class="section" id="sec-exchange">
       <div class="mydata-banner" id="myDataExchange"></div>
-      
       <div class="card">
         <div class="toolbar">
           <h2 style="margin:0;flex:1;">🔄 Shift Exchange & Duty Change</h2>
-          <button class="btn btn-primary" onclick="openExchangeModal()">
-            ➕ New Request
-          </button>
+          <button class="btn btn-primary" onclick="openExchangeModal()">➕ New Request</button>
         </div>
         <div class="tabsbar">
           <button class="active" onclick="switchExchTab('pending',this)">⏳ Pending</button>
-          <button onclick="switchExchTab('duty',this)">🔄 Duty Change</button>
+          <button onclick="switchExchTab('duty',this)">📝 Duty Change</button>
           <button onclick="switchExchTab('all',this)">📋 All</button>
         </div>
         <div id="exchangeListWrap"></div>
       </div>
     </div>
 
-    <!-- ==================== CHAT ==================== -->
+    <!-- CHAT -->
     <div class="section" id="sec-chat">
       <div class="card">
         <h2>💬 Chat</h2>
@@ -1097,7 +668,7 @@ body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
             <div class="chat-msgs" id="chatMsgs"></div>
             <div class="chat-input">
               <input type="file" id="chatImgInput" accept="image/*" class="hidden" onchange="sendChatImage()">
-              <button class="icon-btn" onclick="document.getElementById('chatImgInput').click()" title="Attach Image">📎</button>
+              <button class="icon-btn" onclick="document.getElementById('chatImgInput').click()">📎</button>
               <input type="text" id="chatTextInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChatText();">
               <button class="btn btn-primary btn-sm" onclick="sendChatText()">Send</button>
             </div>
@@ -1106,31 +677,27 @@ body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
       </div>
     </div>
 
-    <!-- ==================== REPORTS ==================== -->
+    <!-- REPORTS -->
     <div class="section" id="sec-reports">
       <div class="card">
         <h2>📊 Reports</h2>
         <div class="tabsbar">
-          <button class="active" onclick="switchReportTab('daily',this)">☀️ Daily Duty</button>
-          <button onclick="switchReportTab('monthly',this)">📆 Monthly Summary</button>
-          <button onclick="switchReportTab('cpl',this)">💎 CPL / Overtime</button>
+          <button class="active" onclick="switchReportTab('daily',this)">☀️ Daily</button>
+          <button onclick="switchReportTab('monthly',this)">📆 Monthly</button>
+          <button onclick="switchReportTab('cpl',this)">💎 CPL/Overtime</button>
           <button onclick="switchReportTab('leave',this)">🏖️ Leave</button>
           <button onclick="switchReportTab('seen',this)">👁 Roster Seen</button>
-          <button onclick="switchReportTab('audit',this)">📝 Audit Log</button>
+          <button onclick="switchReportTab('audit',this)">📝 Audit</button>
         </div>
         <div class="toolbar no-print">
-          <button class="btn btn-outline btn-sm" onclick="exportReportExcel()">
-            📊 Excel
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="window.print()">
-            🖨 Print
-          </button>
+          <button class="btn btn-outline btn-sm" onclick="exportReportExcel()">📊 Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
         </div>
         <div id="reportContentWrap"></div>
       </div>
     </div>
 
-    <!-- ==================== SETTINGS ==================== -->
+    <!-- SETTINGS -->
     <div class="section" id="sec-settings">
       <div class="card">
         <h2>⚙️ Settings</h2>
@@ -1145,41 +712,33 @@ body.dark-mode .dark-toggle::after{content:'🌙';left:22px;}
           <button onclick="switchSettingsTab('colors',this)">🎨 Colors</button>
           <button onclick="switchSettingsTab('users',this)">🔑 Login Users</button>
         </div>
-        <div class="settings-tab-content" id="settingsContentWrap"></div>
+        <div id="settingsContentWrap"></div>
       </div>
     </div>
 
   </div>
 
-  <!-- ==========================================================
-       BOTTOM NAV (Mobile)
-       ========================================================== -->
+  <!-- BOTTOM NAV -->
   <div class="bottomnav no-print">
     <div class="bn-scroll" id="bottomNav"></div>
   </div>
-
 </div>
 
-<!-- ============================================================
-     MODAL ROOT
-     ============================================================ -->
+<!-- MODAL ROOT -->
 <div id="modalRoot"></div>
 
-<!-- ============================================================
-     AUDIO ELEMENT (for notification sound)
-     ============================================================ -->
+<!-- NOTIF SOUND -->
 <audio id="notifSound" preload="auto">
   <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
 </audio>
 
 <!-- ⬇⬇⬇ PART 2A STARTS HERE ⬇⬇⬇ -->
-  <script>
+   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v7 — Part 2A
+   PHLEBOTOMIST ROSTER v8 — Part 2A
    Firebase + State + Utilities + Login + Dark Mode + Keyboard Shortcuts
    ========================================================================= */
 
-/* ============ FIREBASE CONFIG ============ */
 const firebaseConfig = {
   apiKey: "AIzaSyB5_7xk9tTNjLffoWaIXVYK3LOV0PJXIqU",
   authDomain: "phlebotomy-roster-fc09e.firebaseapp.com",
@@ -1193,7 +752,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
 
-/* ============ GLOBAL STATE ============ */
+/* ============ STATE ============ */
 let CURRENT_USER = null;
 let CURRENT_STAFF = null;
 let STATE = {
@@ -1203,9 +762,7 @@ let STATE = {
   stations:{}, holidays:{}, periods:{}, roster:{},
   leaves:{}, exchanges:{}, dutyChangeRequests:{},
   chatGroup:{}, chatIndividual:{}, notifications:{}, auditLog:{},
-  currentPeriodId:null,
-  pendingSearchQuery:'',
-  drafts:{}
+  currentPeriodId:null
 };
 let activeSection = 'dashboard';
 let chatActivePeer = 'group';
@@ -1252,21 +809,21 @@ const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
 
 /* ============ UTILITIES ============ */
 function $(id){ return document.getElementById(id); }
-function $$(sel){ return document.querySelectorAll(sel); }
+function $$(s){ return document.querySelectorAll(s); }
 function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function nowTs(){ return Date.now(); }
 function pad(n){ return n<10?'0'+n:''+n; }
 function fmtDate(d){ if(typeof d==='string') return d; return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-function fmtDisplay(dateStr){
-  if(!dateStr) return '';
-  const p = String(dateStr).split('-');
-  if(p.length!==3) return dateStr;
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return p[2]+' '+months[parseInt(p[1])-1]+' '+p[0];
+function fmtDisplay(s){
+  if(!s) return '';
+  const p = String(s).split('-');
+  if(p.length!==3) return s;
+  const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return p[2]+' '+m[parseInt(p[1])-1]+' '+p[0];
 }
 function todayStr(){ return fmtDate(new Date()); }
 function addDays(ds,n){ const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
-function dateRange(s,e){ const arr=[]; let c=s; let g=0; while(c<=e && g<400){ arr.push(c); c=addDays(c,1); g++; } return arr; }
+function dateRange(s,e){ const a=[]; let c=s; let g=0; while(c<=e && g<400){ a.push(c); c=addDays(c,1); g++; } return a; }
 function dayNameFor(d){ if(STATE.holidays && STATE.holidays[d]) return 'Holiday'; const x=new Date(d+'T00:00:00'); return WEEKDAY_NAMES[x.getDay()]; }
 function dayShort(d){ const x=new Date(d+'T00:00:00'); return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][x.getDay()]; }
 function isSunday(d){ return new Date(d+'T00:00:00').getDay()===0; }
@@ -1285,24 +842,16 @@ function isSupervisor(){ return CURRENT_USER && (CURRENT_USER.role==='admin' || 
 function normalizeMobile(m){ return (m||'').replace(/[\s-]/g,''); }
 function validMobile(m){ return /^03\d{9}$/.test(normalizeMobile(m)); }
 
-/* Fuzzy Search */
 function fuzzyMatch(text, query){
   if(!query) return true;
   const t = (text||'').toLowerCase();
   const q = query.toLowerCase();
-  let ti = 0, qi = 0;
-  while(ti < t.length && qi < q.length){
+  let ti=0, qi=0;
+  while(ti<t.length && qi<q.length){
     if(t[ti] === q[qi]) qi++;
     ti++;
   }
   return qi === q.length;
-}
-function debounce(fn, ms){
-  let t;
-  return function(...args){
-    clearTimeout(t);
-    t = setTimeout(()=>fn.apply(this,args), ms);
-  };
 }
 
 /* ============ TOAST ============ */
@@ -1317,16 +866,10 @@ function toast(msg, type){
   setTimeout(()=>el.remove(), 4300);
 }
 
-/* Sound Alert */
 function playNotifSound(){
-  try {
-    const audio = $('notifSound');
-    if(audio && audio.play) audio.play().catch(()=>{});
-  } catch(e){}
+  try { const a=$('notifSound'); if(a && a.play) a.play().catch(()=>{}); } catch(e){}
 }
-function vibrate(pattern){
-  try { if(navigator.vibrate) navigator.vibrate(pattern || [50,30,50]); } catch(e){}
-}
+function vibrate(p){ try { if(navigator.vibrate) navigator.vibrate(p || [50,30,50]); } catch(e){} }
 
 /* ============ MODAL ============ */
 function openModal(title, bodyHtml, footHtml, wide){
@@ -1344,8 +887,8 @@ function openModal(title, bodyHtml, footHtml, wide){
   document.body.style.overflow = 'hidden';
 }
 function closeModal(){
-  $('modalRoot').innerHTML='';
-  document.body.style.overflow='';
+  $('modalRoot').innerHTML = '';
+  document.body.style.overflow = '';
 }
 
 /* ============ AUDIT ============ */
@@ -1358,7 +901,6 @@ function logAudit(action, details){
   });
 }
 
-/* ============ NOTIFICATIONS ============ */
 function pushNotification(target, title, body){
   db.ref('notifications/'+uid()).set({ts:nowTs(), title, body, target:target||'all', read:false});
 }
@@ -1370,8 +912,7 @@ function toggleDarkMode(){
   localStorage.setItem('kih_dark', isDark ? '1' : '0');
 }
 function loadDarkMode(){
-  const isDark = localStorage.getItem('kih_dark') === '1';
-  if(isDark) document.body.classList.add('dark-mode');
+  if(localStorage.getItem('kih_dark') === '1') document.body.classList.add('dark-mode');
 }
 
 /* ============ WHATSAPP PANEL ============ */
@@ -1390,8 +931,7 @@ function openWhatsAppPanel(){
       <label>Message</label>
       <textarea id="wa_msg" rows="5">Assalam-o-Alaikum,\n\nThis is a message from Phlebotomist Roster — Kulsum International Hospital.\n\n— Phlebotomy Department</textarea>
     </div>`;
-  const foot = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+  const foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
     <button class="btn btn-success" onclick="sendWhatsAppMessage()">📱 Open WhatsApp</button>`;
   openModal('WhatsApp Message', body, foot);
 }
@@ -1408,74 +948,12 @@ function sendWhatsAppMessage(){
   logAudit('WhatsApp','Message opened for '+opt.textContent);
 }
 
-/* ============ SHARE ROSTER WHATSAPP ============ */
-function shareRosterWhatsApp(){
-  const pid = STATE.currentPeriodId;
-  if(!pid || !STATE.periods[pid]){ toast('No roster to share','error'); return; }
-  const period = STATE.periods[pid];
-  const body = `
-    <div class="info-box">
-      <b>Period:</b> ${escapeHtml(period.label)}<br>
-      <b>Staff count:</b> ${activeStaffArr().length}
-    </div>
-    <div class="field">
-      <label>Send to</label>
-      <select id="roster_share_type" onchange="toggleRosterShareTarget()">
-        <option value="all">📢 All Staff</option>
-        <option value="specific">👤 Specific Staff</option>
-      </select>
-    </div>
-    <div class="field hidden" id="roster_share_specific_wrap">
-      <label>Select Staff</label>
-      <select id="roster_share_staff">
-        ${activeStaffArr().map(s=>`<option value="${s._id}" data-mobile="${escapeHtml(s.mobile||'')}">${escapeHtml(s.name)}</option>`).join('')}
-      </select>
-    </div>
-    <div class="field">
-      <label>Message</label>
-      <textarea id="roster_share_msg" rows="6">Dear Team,\n\nThe new duty roster for ${escapeHtml(period.label)} has been published.\n\nPlease check your duty schedule.\n\nLogin: https://jolly-dolphin-eed8f8.netlify.app\n\n— Phlebotomist Roster\nKulsum International Hospital</textarea>
-    </div>`;
-  const foot = `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-success" onclick="sendRosterWhatsApp()">📱 Open WhatsApp</button>`;
-  openModal('Share Roster on WhatsApp', body, foot);
-}
-function toggleRosterShareTarget(){
-  const t = $('roster_share_type').value;
-  $('roster_share_specific_wrap').classList.toggle('hidden', t !== 'specific');
-}
-function sendRosterWhatsApp(){
-  const t = $('roster_share_type').value;
-  const msg = $('roster_share_msg').value;
-  if(t === 'specific'){
-    const sel = $('roster_share_staff');
-    const opt = sel.options[sel.selectedIndex];
-    const mobile = (opt.getAttribute('data-mobile')||'').replace(/[^0-9]/g,'');
-    if(!mobile){ toast('No mobile for this staff','error'); return; }
-    let wa = mobile; if(wa.startsWith('0')) wa='92'+wa.slice(1);
-    window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-    closeModal();
-  } else {
-    // Open WhatsApp for first staff (broadcast suggestion)
-    toast('WhatsApp opens for one staff at a time. Use WhatsApp Broadcast for all.','warn');
-    const arr = activeStaffArr().filter(s=>s.mobile);
-    if(!arr.length){ toast('No staff with mobile','error'); return; }
-    const first = arr[0];
-    let wa = normalizeMobile(first.mobile); if(wa.startsWith('0')) wa='92'+wa.slice(1);
-    window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-    closeModal();
-  }
-}
-
-/* ============ DUTY CHANGE WHATSAPP ============ */
-function notifyDutyChangeWhatsApp(staffId, date, oldShift, newShift){
-  const s = findStaff(staffId);
-  if(!s || !s.mobile){ return; }
-  const msg = `Dear ${s.name},\n\nYour duty on ${fmtDisplay(date)} has been changed.\n\nOld: ${oldShift}\nNew: ${newShift}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
-  if(confirm('📱 Send WhatsApp notification to '+s.name+'?')){
-    let wa = normalizeMobile(s.mobile); if(wa.startsWith('0')) wa='92'+wa.slice(1);
-    window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-  }
+function sendWhatsAppToStaff(mobile, message){
+  if(!mobile) return;
+  let wa = normalizeMobile(mobile);
+  if(wa.startsWith('0')) wa = '92'+wa.slice(1);
+  if(!wa) return;
+  window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(message),'_blank');
 }
 
 /* ============ LOGIN ============ */
@@ -1493,11 +971,11 @@ function doAdminLogin(){
   const p = $('adminLoginPass').value;
   $('loginErr').classList.remove('show');
   if(!u||!p){ $('loginErr').textContent='Please enter username and password'; $('loginErr').classList.add('show'); return; }
-  
+
   db.ref('users').once('value').then(snap=>{
     const users = snap.val()||{};
     const admins = Object.keys(users).filter(k=>users[k].role==='admin');
-    
+
     if(admins.length===0 && u==='admin' && p==='admin123'){
       db.ref('users/'+uid()).set({name:'admin',mobile:'admin',password:'admin123',role:'admin'})
         .then(()=>{
@@ -1509,7 +987,7 @@ function doAdminLogin(){
         });
       return;
     }
-    
+
     let found=null, fid=null;
     Object.keys(users).forEach(k=>{
       const usr = users[k];
@@ -1537,7 +1015,7 @@ function doStaffLogin(){
   $('loginErr').classList.remove('show');
   if(!m||!p){ $('loginErr').textContent='Please enter mobile and password'; $('loginErr').classList.add('show'); return; }
   if(!validMobile(m)){ $('loginErr').textContent='Enter valid mobile (03XXXXXXXXX)'; $('loginErr').classList.add('show'); return; }
-  
+
   db.ref('users').once('value').then(snap=>{
     const users = snap.val()||{};
     let found=null, fid=null;
@@ -1582,7 +1060,6 @@ function logout(){
   switchLoginTab('staff');
 }
 
-/* ============ BACK BUTTON ============ */
 window.addEventListener('popstate', ()=>{
   if($('modalRoot').innerHTML.trim()){ closeModal(); history.pushState({view:activeSection},''); return; }
   if(!$('notifPanel').classList.contains('hidden')){ closeNotifPanel(); history.pushState({view:activeSection},''); return; }
@@ -1590,27 +1067,13 @@ window.addEventListener('popstate', ()=>{
   history.pushState({view:'dashboard'},'');
 });
 
-/* ============ OFFLINE DETECTION ============ */
 window.addEventListener('online', ()=>{ $('offlineBanner').classList.remove('show'); toast('🌐 Back online','success'); });
 window.addEventListener('offline', ()=>{ $('offlineBanner').classList.add('show'); toast('📡 You are offline','warn'); });
 
-/* ============ KEYBOARD SHORTCUTS ============ */
 window.addEventListener('keydown', (e)=>{
-  // ESC → close modal
   if(e.key === 'Escape'){
     if($('modalRoot').innerHTML.trim()) closeModal();
     else if(!$('notifPanel').classList.contains('hidden')) closeNotifPanel();
-  }
-  // Ctrl+F → focus search
-  if((e.ctrlKey || e.metaKey) && e.key === 'f'){
-    e.preventDefault();
-    if(activeSection === 'staff' && $('staffSearch')) $('staffSearch').focus();
-  }
-  // Ctrl+S → save (if modal open)
-  if((e.ctrlKey || e.metaKey) && e.key === 's'){
-    e.preventDefault();
-    const saveBtn = $('modalRoot').querySelector('.btn-primary');
-    if(saveBtn && !saveBtn.disabled) saveBtn.click();
   }
 });
 
@@ -1629,7 +1092,7 @@ function bootDataListeners(){
   db.ref('leaveLimits').once('value').then(s=>{ if(!s.exists()) db.ref('leaveLimits').set(DEFAULT_LIMITS); });
   db.ref('leaveTypes').once('value').then(s=>{ if(!s.exists()) db.ref('leaveTypes').set(STATE.leaveTypes); });
   db.ref('stations').once('value').then(s=>{ if(!s.exists()) db.ref('stations').set(DEFAULT_STATIONS); });
-  
+
   db.ref('staff').on('value',s=>{
     STATE.staff = s.val()||{};
     if(CURRENT_USER && CURRENT_USER.role!=='admin') CURRENT_STAFF = STATE.staff[CURRENT_USER.staffId];
@@ -1659,7 +1122,7 @@ function bootDataListeners(){
     renderNotifBell();
     if(!$('notifPanel').classList.contains('hidden')) renderNotifPanel();
   });
-  
+
   buildNav();
   showSection('dashboard');
 }
@@ -1755,7 +1218,6 @@ function renderNotifBell(){
   else dot.classList.add('hidden');
 }
 
-/* ============ INIT ============ */
 window.addEventListener('DOMContentLoaded', ()=>{
   loadDarkMode();
   if(!navigator.onLine) $('offlineBanner').classList.add('show');
@@ -1765,602 +1227,500 @@ window.addEventListener('DOMContentLoaded', ()=>{
 /* PART 2A END */
 </script>
 <!-- ⬇⬇⬇ PART 2B STARTS HERE ⬇⬇⬇ -->
-  <script>
+   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v7 — Part 2A
-   Firebase + State + Utilities + Login + Dark Mode + Keyboard Shortcuts
+   PHLEBOTOMIST ROSTER v8 — Part 2B
+   Staff Management + Settings (9 tabs)
    ========================================================================= */
 
-/* ============ FIREBASE CONFIG ============ */
-const firebaseConfig = {
-  apiKey: "AIzaSyB5_7xk9tTNjLffoWaIXVYK3LOV0PJXIqU",
-  authDomain: "phlebotomy-roster-fc09e.firebaseapp.com",
-  databaseURL: "https://phlebotomy-roster-fc09e-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "phlebotomy-roster-fc09e",
-  storageBucket: "phlebotomy-roster-fc09e.firebasestorage.app",
-  messagingSenderId: "573402563177",
-  appId: "1:573402563177:web:3528df7a80ef7da88258f8"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const storage = firebase.storage();
-
-/* ============ GLOBAL STATE ============ */
-let CURRENT_USER = null;
-let CURRENT_STAFF = null;
-let STATE = {
-  staff:{}, users:{}, settings:{}, shifts:{},
-  weeklySetup:{}, leaveLimits:{},
-  leaveTypes:["OFF","EL","CPL","CL","GH","SL","AL","ML"],
-  stations:{}, holidays:{}, periods:{}, roster:{},
-  leaves:{}, exchanges:{}, dutyChangeRequests:{},
-  chatGroup:{}, chatIndividual:{}, notifications:{}, auditLog:{},
-  currentPeriodId:null,
-  pendingSearchQuery:'',
-  drafts:{}
-};
-let activeSection = 'dashboard';
-let chatActivePeer = 'group';
-let staffTabView = 'active';
-let settingsTab = 'general';
-let leaveTabView = 'pending';
-let exchTabView = 'pending';
-let reportTabView = 'daily';
-
-/* ============ DEFAULTS ============ */
-const DEFAULT_SHIFTS = {
-  M:{code:"M",name:"Morning",start:"07:00",end:"15:30",monSat:true,sun:false,station:"First Floor",gender:"Any",color:"#fef3c7"},
-  E:{code:"E",name:"Evening",start:"15:00",end:"23:00",monSat:true,sun:true,station:"First Floor",gender:"Any",color:"#dbeafe"},
-  E4:{code:"E4",name:"Evening 4",start:"16:00",end:"00:00",monSat:true,sun:false,station:"Basement",gender:"Male",color:"#e0e7ff"},
-  N12:{code:"N12",name:"Night 12",start:"00:00",end:"08:00",monSat:true,sun:false,station:"Basement",gender:"Male",color:"#c7d2fe"},
-  N:{code:"N",name:"Night",start:"23:00",end:"07:00",monSat:false,sun:true,station:"Basement",gender:"Male",color:"#a5b4fc"},
-  D:{code:"D",name:"Day (Gynee)",start:"09:00",end:"17:30",monSat:true,sun:false,station:"Gynee",gender:"Female",color:"#fce7f3"},
-  X:{code:"X",name:"Extra",start:"11:00",end:"19:00",monSat:true,sun:false,station:"Any",gender:"Any",color:"#d1fae5"},
-  DX:{code:"DX",name:"Day Extra",start:"09:00",end:"19:00",monSat:true,sun:false,station:"Any",gender:"Any",color:"#bfdbfe"}
-};
-const DEFAULT_WEEKLY = {
-  Monday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
-  Tuesday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
-  Wednesday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
-  Thursday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
-  Friday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
-  Saturday:{M:3,E:3,E4:1,N12:1,N:0,D:1,X:1},
-  Sunday:{M:2,E:2,E4:0,N12:0,N:1,D:0,X:0},
-  Holiday:{M:2,E:2,E4:0,N12:0,N:1,D:0,X:0}
-};
-const DEFAULT_LIMITS = {
-  Monday:{OFF:1,Leave:0}, Tuesday:{OFF:1,Leave:0}, Wednesday:{OFF:1,Leave:0},
-  Thursday:{OFF:1,Leave:0}, Friday:{OFF:1,Leave:0},
-  Saturday:{OFF:2,Leave:0}, Sunday:{OFF:7,Leave:0}, Holiday:{OFF:7,Leave:0}
-};
-const DEFAULT_STATIONS = {
-  firstfloor:{name:"First Floor",weekday:{M:2,E:2},sunday:{M:1,E:1}},
-  basement:{name:"Basement",weekday:{M:1,E:1,N12:1},sunday:{M:1,E:1,N:1}},
-  diagnostic:{name:"Diagnostic",weekday:{M:1,E:1},sunday:{}},
-  gynee:{name:"Gynee",weekday:{D:1},sunday:{}}
-};
-const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Holiday'];
-
-/* ============ UTILITIES ============ */
-function $(id){ return document.getElementById(id); }
-function $$(sel){ return document.querySelectorAll(sel); }
-function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-function nowTs(){ return Date.now(); }
-function pad(n){ return n<10?'0'+n:''+n; }
-function fmtDate(d){ if(typeof d==='string') return d; return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-function fmtDisplay(dateStr){
-  if(!dateStr) return '';
-  const p = String(dateStr).split('-');
-  if(p.length!==3) return dateStr;
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return p[2]+' '+months[parseInt(p[1])-1]+' '+p[0];
+/* ============ STAFF MANAGEMENT ============ */
+function switchStaffTab(tab, btn){
+  staffTabView = tab;
+  document.querySelectorAll('#sec-staff .tabsbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStaffList();
 }
-function todayStr(){ return fmtDate(new Date()); }
-function addDays(ds,n){ const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
-function dateRange(s,e){ const arr=[]; let c=s; let g=0; while(c<=e && g<400){ arr.push(c); c=addDays(c,1); g++; } return arr; }
-function dayNameFor(d){ if(STATE.holidays && STATE.holidays[d]) return 'Holiday'; const x=new Date(d+'T00:00:00'); return WEEKDAY_NAMES[x.getDay()]; }
-function dayShort(d){ const x=new Date(d+'T00:00:00'); return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][x.getDay()]; }
-function isSunday(d){ return new Date(d+'T00:00:00').getDay()===0; }
-function isHoliday(d){ return !!(STATE.holidays && STATE.holidays[d]); }
-function isHolidayOrSunday(d){ return isSunday(d) || isHoliday(d); }
-function escapeHtml(s){
-  if(s===undefined||s===null) return '';
-  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function objToArr(o){ if(!o) return []; return Object.keys(o).map(k=>Object.assign({_id:k}, o[k])); }
-function findStaff(id){ return STATE.staff[id] || null; }
-function staffName(id){ const s=findStaff(id); return s ? s.name : '(deleted)'; }
-function activeStaffArr(){ return objToArr(STATE.staff).filter(s=>!s.archived); }
-function isAdmin(){ return CURRENT_USER && CURRENT_USER.role==='admin'; }
-function isSupervisor(){ return CURRENT_USER && (CURRENT_USER.role==='admin' || (CURRENT_STAFF && CURRENT_STAFF.isSupervisor)); }
-function normalizeMobile(m){ return (m||'').replace(/[\s-]/g,''); }
-function validMobile(m){ return /^03\d{9}$/.test(normalizeMobile(m)); }
 
-/* Fuzzy Search */
-function fuzzyMatch(text, query){
-  if(!query) return true;
-  const t = (text||'').toLowerCase();
-  const q = query.toLowerCase();
-  let ti = 0, qi = 0;
-  while(ti < t.length && qi < q.length){
-    if(t[ti] === q[qi]) qi++;
-    ti++;
+function renderStaffList(){
+  const q = ($('staffSearch') ? $('staffSearch').value : '').trim().toLowerCase();
+  let arr = objToArr(STATE.staff).filter(s => staffTabView==='active' ? !s.archived : !!s.archived);
+
+  if(q) arr = arr.filter(s =>
+    fuzzyMatch(s.name, q) ||
+    (s.mobile||'').includes(q) ||
+    fuzzyMatch(s.empId, q) ||
+    fuzzyMatch(s.designation, q)
+  );
+
+  arr.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+
+  if(!isAdmin() && CURRENT_USER.staffId){
+    arr.sort((a,b) => (a._id===CURRENT_USER.staffId?-1:0) - (b._id===CURRENT_USER.staffId?-1:0));
   }
-  return qi === q.length;
-}
-function debounce(fn, ms){
-  let t;
-  return function(...args){
-    clearTimeout(t);
-    t = setTimeout(()=>fn.apply(this,args), ms);
-  };
-}
 
-/* ============ TOAST ============ */
-function toast(msg, type){
-  const wrap = $('toastWrap'); if(!wrap) return;
-  const el = document.createElement('div');
-  el.className = 'toast ' + (type||'info');
-  const parts = String(msg).split('\n');
-  el.innerHTML = '<div class="t-title">'+escapeHtml(parts[0])+'</div>' + (parts[1]?'<div class="t-body">'+escapeHtml(parts.slice(1).join(' '))+'</div>':'');
-  wrap.appendChild(el);
-  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(120%)'; el.style.transition='.3s'; }, 3800);
-  setTimeout(()=>el.remove(), 4300);
-}
+  const wrap = $('staffListWrap');
+  if(!arr.length){
+    wrap.innerHTML = '<div class="empty-state">No staff found</div>';
+    return;
+  }
 
-/* Sound Alert */
-function playNotifSound(){
-  try {
-    const audio = $('notifSound');
-    if(audio && audio.play) audio.play().catch(()=>{});
-  } catch(e){}
-}
-function vibrate(pattern){
-  try { if(navigator.vibrate) navigator.vibrate(pattern || [50,30,50]); } catch(e){}
-}
-
-/* ============ MODAL ============ */
-function openModal(title, bodyHtml, footHtml, wide){
-  $('modalRoot').innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal-box ${wide?'wide':''}">
-        <div class="modal-head">
-          <h3>${escapeHtml(title)}</h3>
-          <button class="modal-close" onclick="closeModal()" title="Close">✕</button>
+  wrap.innerHTML = arr.map(s=>{
+    const isMe = s._id === CURRENT_USER.staffId;
+    const gColor = s.gender === 'Female' ? '#8a3fa0' : '#1E5BA8';
+    const shiftTxt = s.fixedShift ? s.fixedShift : (s.multiShifts && s.multiShifts.length ? s.multiShifts.join(' → ') : '—');
+    return `
+      <div class="list-row ${isMe?'mine':''}">
+        <div class="av" style="background:${gColor}">${escapeHtml((s.name||'?').slice(0,1).toUpperCase())}</div>
+        <div class="grow">
+          <div class="name">
+            ${escapeHtml(s.name)}
+            ${s.isSupervisor ? '<span class="pill pill-supervisor">SUPERVISOR</span>' : ''}
+            ${isMe ? '<span class="pill pill-you">YOU</span>' : ''}
+          </div>
+          <div class="sub">
+            📱 ${escapeHtml(s.mobile||'')} • 🆔 ${escapeHtml(s.empId||'')} • ${escapeHtml(s.designation||'')}
+            <br>${s.gender==='Female'?'👩':'👨'} ${escapeHtml(s.gender||'')} • Shift: ${escapeHtml(shiftTxt)}
+          </div>
         </div>
-        <div class="modal-body">${bodyHtml}</div>
-        ${footHtml?'<div class="modal-foot">'+footHtml+'</div>':''}
+        ${isAdmin() ? `
+          <button class="btn btn-outline btn-sm" onclick='openStaffModal(${JSON.stringify(s._id)})'>✏️ Edit</button>
+          ${s.archived
+            ? `<button class="btn btn-success btn-sm" onclick="restoreStaff('${s._id}')">♻️ Restore</button>`
+            : `<button class="btn btn-danger btn-sm" onclick="archiveStaff('${s._id}')">📦 Archive</button>`}
+        ` : ''}
+      </div>`;
+  }).join('');
+}
+
+function openStaffModal(staffId){
+  const s = staffId ? STATE.staff[staffId] : {
+    name:'', gender:'Male', mobile:'', designation:'Phlebotomist',
+    empId:'', fixedShift:'', multiShifts:[], specialOffDates:[], password:'123456', isSupervisor:false
+  };
+  const codes = Object.keys(STATE.shifts||DEFAULT_SHIFTS);
+  const body = `
+    <div class="grid grid-2">
+      <div class="field"><label>👤 Name *</label><input id="stf_name" value="${escapeHtml(s.name)}" placeholder="Full name"></div>
+      <div class="field"><label>👫 Gender *</label>
+        <select id="stf_gender">
+          <option value="Male" ${s.gender==='Male'?'selected':''}>👨 Male</option>
+          <option value="Female" ${s.gender==='Female'?'selected':''}>👩 Female</option>
+        </select>
       </div>
-    </div>`;
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(){
-  $('modalRoot').innerHTML='';
-  document.body.style.overflow='';
+      <div class="field"><label>📱 Mobile *</label><input id="stf_mobile" value="${escapeHtml(s.mobile)}" placeholder="03XXXXXXXXX" inputmode="numeric"></div>
+      <div class="field"><label>💼 Designation *</label><input id="stf_desig" value="${escapeHtml(s.designation)}" placeholder="Phlebotomist"></div>
+      <div class="field"><label>🆔 Employee ID *</label><input id="stf_empid" value="${escapeHtml(s.empId)}" placeholder="EMP001"></div>
+      <div class="field"><label>🔑 Password</label><input id="stf_pass" value="${escapeHtml(s.password||'123456')}"></div>
+    </div>
+    <div class="field"><label>⭐ Fixed Shift (Optional)</label>
+      <select id="stf_fixed">
+        <option value="">-- None --</option>
+        ${codes.map(c => `<option value="${c}" ${s.fixedShift===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>🔀 Multiple Shifts (comma, priority order)</label>
+      <input id="stf_multi" value="${(s.multiShifts||[]).join(',')}" placeholder="M,E,X">
+    </div>
+    <div class="field"><label>📅 Special Off Dates (comma, yyyy-mm-dd)</label>
+      <input id="stf_specialoff" value="${(s.specialOffDates||[]).join(',')}" placeholder="2026-09-20,2026-09-21">
+    </div>
+    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <input type="checkbox" id="stf_super" ${s.isSupervisor?'checked':''} style="width:20px;height:20px;">
+      👑 Make Supervisor (can approve leaves & exchanges)
+    </label></div>`;
+  const foot = `
+    <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveStaff(${staffId?`'${staffId}'`:'null'})">💾 Save Staff</button>`;
+  openModal(staffId ? '✏️ Edit Staff' : '➕ Add Staff', body, foot);
 }
 
-/* ============ AUDIT ============ */
-function logAudit(action, details){
-  db.ref('auditLog/'+uid()).set({
-    ts:nowTs(),
-    user:CURRENT_USER?(CURRENT_USER.name||'unknown'):'system',
-    role:CURRENT_USER?CURRENT_USER.role:'system',
-    action, details:details||''
+function saveStaff(staffId){
+  const name = $('stf_name').value.trim();
+  const gender = $('stf_gender').value;
+  const mobile = normalizeMobile($('stf_mobile').value.trim());
+  const desig = $('stf_desig').value.trim();
+  const empId = $('stf_empid').value.trim();
+  const password = $('stf_pass').value || '123456';
+
+  if(!name){ toast('Please enter name','error'); return; }
+  if(!validMobile(mobile)){ toast('Please enter valid mobile (03XXXXXXXXX)','error'); return; }
+  if(!desig){ toast('Please enter designation','error'); return; }
+  if(!empId){ toast('Please enter employee ID','error'); return; }
+
+  const rec = {
+    name, gender, mobile, designation:desig, empId, password,
+    fixedShift: $('stf_fixed').value || null,
+    multiShifts: $('stf_multi').value.split(',').map(x=>x.trim()).filter(Boolean),
+    specialOffDates: $('stf_specialoff').value.split(',').map(x=>x.trim()).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)),
+    isSupervisor: $('stf_super').checked,
+    archived: false,
+    updatedAt: nowTs()
+  };
+
+  const id = staffId || uid();
+  rec.createdAt = staffId ? (STATE.staff[staffId].createdAt||nowTs()) : nowTs();
+
+  db.ref('staff/'+id).update(rec).then(()=>{
+    let userKey = null;
+    Object.keys(STATE.users||{}).forEach(k => {
+      if(STATE.users[k].staffId === id) userKey = k;
+    });
+    db.ref('users/' + (userKey || uid())).set({
+      name: rec.name, mobile: rec.mobile, password: rec.password,
+      role: rec.isSupervisor ? 'supervisor' : 'staff',
+      staffId: id
+    });
+    logAudit(staffId?'Staff Edit':'Staff Add', 'Staff: '+rec.name);
+    toast(staffId ? '✅ Staff updated' : '✅ Staff added', 'success');
+    vibrate(50);
+    closeModal();
+  }).catch(err=>toast('Error: '+err.message,'error'));
+}
+
+function archiveStaff(id){
+  if(!confirm('📦 Archive this staff member?\n\nThey will be hidden from active list but records preserved.')) return;
+  db.ref('staff/'+id+'/archived').set(true).then(()=>{
+    logAudit('Staff Archive', 'Staff: '+(STATE.staff[id]?.name || id));
+    toast('📦 Staff archived','success');
   });
 }
 
-/* ============ NOTIFICATIONS ============ */
-function pushNotification(target, title, body){
-  db.ref('notifications/'+uid()).set({ts:nowTs(), title, body, target:target||'all', read:false});
+function restoreStaff(id){
+  db.ref('staff/'+id+'/archived').set(false).then(()=>{
+    logAudit('Staff Restore', 'Staff: '+(STATE.staff[id]?.name || id));
+    toast('♻️ Staff restored','success');
+  });
 }
 
-/* ============ DARK MODE ============ */
-function toggleDarkMode(){
-  document.body.classList.toggle('dark-mode');
-  const isDark = document.body.classList.contains('dark-mode');
-  localStorage.setItem('kih_dark', isDark ? '1' : '0');
-}
-function loadDarkMode(){
-  const isDark = localStorage.getItem('kih_dark') === '1';
-  if(isDark) document.body.classList.add('dark-mode');
+/* ============ SETTINGS ============ */
+function switchSettingsTab(tab, btn){
+  settingsTab = tab;
+  document.querySelectorAll('#settingsTabsBar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSettingsSection();
 }
 
-/* ============ WHATSAPP PANEL ============ */
-function openWhatsAppPanel(){
-  const arr = activeStaffArr();
-  const body = `
-    <div class="info-box">📱 Select a staff member to open WhatsApp with a pre-filled message.</div>
-    <div class="field">
-      <label>Select Staff</label>
-      <select id="wa_staff_select">
-        <option value="">-- Choose --</option>
-        ${arr.map(s=>`<option value="${s._id}" data-mobile="${escapeHtml(s.mobile||'')}">${escapeHtml(s.name)} (${escapeHtml(s.mobile||'')})</option>`).join('')}
-      </select>
+function renderSettingsSection(){
+  if(!isAdmin()){
+    $('settingsContentWrap').innerHTML = '<div class="empty-state">🔒 Only Admin can access Settings</div>';
+    return;
+  }
+  const w = $('settingsContentWrap');
+  if(settingsTab === 'general') w.innerHTML = tplGeneral();
+  else if(settingsTab === 'shifts') w.innerHTML = tplShifts();
+  else if(settingsTab === 'weekly') w.innerHTML = tplWeekly();
+  else if(settingsTab === 'limits') w.innerHTML = tplLimits();
+  else if(settingsTab === 'stations') w.innerHTML = tplStations();
+  else if(settingsTab === 'holidays') w.innerHTML = tplHolidays();
+  else if(settingsTab === 'leavetypes') w.innerHTML = tplLeaveTypes();
+  else if(settingsTab === 'colors') w.innerHTML = tplColors();
+  else if(settingsTab === 'users') w.innerHTML = tplUsers();
+}
+
+/* ---- General ---- */
+function tplGeneral(){
+  const s = STATE.settings || {};
+  return `
+    <div class="grid grid-2">
+      <div class="field"><label>🏥 Hospital Name</label><input id="gs_hosp" value="${escapeHtml(s.hospital||'Kulsum International Hospital')}"></div>
+      <div class="field"><label>🏢 Department</label><input id="gs_dept" value="${escapeHtml(s.department||'Phlebotomy')}"></div>
+      <div class="field"><label>📍 Address</label><input id="gs_addr" value="${escapeHtml(s.address||'Islamabad')}"></div>
+      <div class="field"><label>📱 WhatsApp Number</label><input id="gs_wa" value="${escapeHtml(s.whatsapp||'')}" placeholder="03XXXXXXXXX"></div>
+      <div class="field"><label>📅 Period Start Day</label><input type="number" id="gs_pstart" value="${s.periodStartDay||26}" min="1" max="31"></div>
+      <div class="field"><label>📅 Period End Day</label><input type="number" id="gs_pend" value="${s.periodEndDay||25}" min="1" max="31"></div>
     </div>
-    <div class="field">
-      <label>Message</label>
-      <textarea id="wa_msg" rows="5">Assalam-o-Alaikum,\n\nThis is a message from Phlebotomist Roster — Kulsum International Hospital.\n\n— Phlebotomy Department</textarea>
+    <button class="btn btn-primary btn-block" onclick="saveGeneralSettings()">💾 Save General Settings</button>`;
+}
+function saveGeneralSettings(){
+  db.ref('settings').update({
+    hospital: $('gs_hosp').value,
+    department: $('gs_dept').value,
+    address: $('gs_addr').value,
+    whatsapp: $('gs_wa').value,
+    periodStartDay: parseInt($('gs_pstart').value)||26,
+    periodEndDay: parseInt($('gs_pend').value)||25
+  }).then(()=>{ logAudit('Settings Change','General'); toast('✅ Saved','success'); });
+}
+
+/* ---- Shifts ---- */
+function tplShifts(){
+  const arr = objToArr(STATE.shifts || DEFAULT_SHIFTS);
+  return `
+    <div class="toolbar">
+      <button class="btn btn-primary btn-sm" onclick="openShiftEditModal()">➕ Add Shift</button>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr>
+          <th>Code</th><th>Name</th><th>Start</th><th>End</th>
+          <th>Mon-Sat</th><th>Sunday</th><th>Gender</th><th>Color</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${arr.map(s=>`<tr>
+            <td><b>${escapeHtml(s.code)}</b></td>
+            <td>${escapeHtml(s.name)}</td>
+            <td>${escapeHtml(s.start)}</td>
+            <td>${escapeHtml(s.end)}</td>
+            <td>${s.monSat?'✅':'❌'}</td>
+            <td>${s.sun?'✅':'❌'}</td>
+            <td>${escapeHtml(s.gender||'Any')}</td>
+            <td><span style="display:inline-block;width:30px;height:30px;border-radius:8px;background:${s.color||'#eee'};border:1px solid var(--border);vertical-align:middle;"></span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick='openShiftEditModal(${JSON.stringify(s.code)})'>Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteShift('${s.code}')">Del</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+function openShiftEditModal(code){
+  const s = code ? STATE.shifts[code] : {
+    code:'', name:'', start:'07:00', end:'15:00',
+    monSat:true, sun:false, station:'Any', gender:'Any', color:'#1E5BA8'
+  };
+  const body = `
+    <div class="grid grid-2">
+      <div class="field"><label>Code *</label><input id="sh_code" value="${escapeHtml(s.code)}" ${code?'readonly':''} placeholder="e.g. M, E, N12"></div>
+      <div class="field"><label>Name *</label><input id="sh_name" value="${escapeHtml(s.name)}" placeholder="Morning"></div>
+      <div class="field"><label>Start</label><input type="time" id="sh_start" value="${s.start||''}"></div>
+      <div class="field"><label>End</label><input type="time" id="sh_end" value="${s.end||''}"></div>
+      <div class="field"><label>Mon-Sat</label><select id="sh_monsat"><option value="true" ${s.monSat?'selected':''}>Yes</option><option value="false" ${!s.monSat?'selected':''}>No</option></select></div>
+      <div class="field"><label>Sunday</label><select id="sh_sun"><option value="true" ${s.sun?'selected':''}>Yes</option><option value="false" ${!s.sun?'selected':''}>No</option></select></div>
+      <div class="field"><label>Gender</label>
+        <select id="sh_gender">
+          <option ${s.gender==='Any'?'selected':''}>Any</option>
+          <option ${s.gender==='Male'?'selected':''}>Male</option>
+          <option ${s.gender==='Female'?'selected':''}>Female</option>
+        </select>
+      </div>
+      <div class="field"><label>Color</label><input type="color" id="sh_color" value="${s.color||'#1E5BA8'}"></div>
     </div>`;
   const foot = `
     <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-success" onclick="sendWhatsAppMessage()">📱 Open WhatsApp</button>`;
-  openModal('WhatsApp Message', body, foot);
+    <button class="btn btn-primary" onclick="saveShift(${code?`'${code}'`:'null'})">💾 Save Shift</button>`;
+  openModal(code?'✏️ Edit Shift':'➕ Add Shift', body, foot);
+}
+function saveShift(code){
+  const newCode = $('sh_code').value.trim().toUpperCase();
+  if(!newCode || !$('sh_name').value.trim()){ toast('Enter code and name','error'); return; }
+  db.ref('shifts/'+newCode).set({
+    code:newCode, name:$('sh_name').value, start:$('sh_start').value, end:$('sh_end').value,
+    monSat:$('sh_monsat').value==='true', sun:$('sh_sun').value==='true',
+    station:'Any', gender:$('sh_gender').value, color:$('sh_color').value
+  }).then(()=>{ logAudit('Settings Change','Shift '+newCode); toast('✅ Saved','success'); closeModal(); });
+}
+function deleteShift(code){
+  if(!confirm('Delete shift "'+code+'"?')) return;
+  db.ref('shifts/'+code).remove().then(()=>toast('🗑 Deleted','success'));
 }
 
-function sendWhatsAppMessage(){
-  const sel = $('wa_staff_select');
-  const opt = sel.options[sel.selectedIndex];
-  const mobile = (opt.getAttribute('data-mobile')||'').replace(/[^0-9]/g,'');
-  if(!mobile){ toast('Please select a staff member with valid mobile','error'); return; }
-  let wa = mobile; if(wa.startsWith('0')) wa='92'+wa.slice(1);
-  const msg = $('wa_msg').value || '';
-  window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-  closeModal();
-  logAudit('WhatsApp','Message opened for '+opt.textContent);
+/* ---- Weekly Setup ---- */
+function tplWeekly(){
+  const codes = Object.keys(STATE.shifts||DEFAULT_SHIFTS);
+  return `
+    <div class="info-box">📊 How many staff needed per shift on each day.</div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Day</th>${codes.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${DAY_ORDER.map(day=>`<tr>
+            <td><b>${day}</b></td>
+            ${codes.map(c=>`<td><input type="number" min="0" style="width:60px;text-align:center;padding:8px;border:2px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:700;" id="ws_${day}_${c}" value="${(STATE.weeklySetup[day]&&STATE.weeklySetup[day][c])||0}"></td>`).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="saveWeeklySettings()">💾 Save Weekly Setup</button>`;
+}
+function saveWeeklySettings(){
+  const codes = Object.keys(STATE.shifts||DEFAULT_SHIFTS);
+  const rec = {};
+  DAY_ORDER.forEach(d=>{ rec[d]={}; codes.forEach(c=>{ rec[d][c] = parseInt($('ws_'+d+'_'+c).value)||0; }); });
+  db.ref('weeklySetup').set(rec).then(()=>{ logAudit('Settings Change','Weekly'); toast('✅ Saved','success'); });
 }
 
-/* ============ SHARE ROSTER WHATSAPP ============ */
-function shareRosterWhatsApp(){
-  const pid = STATE.currentPeriodId;
-  if(!pid || !STATE.periods[pid]){ toast('No roster to share','error'); return; }
-  const period = STATE.periods[pid];
+/* ---- Limits ---- */
+function tplLimits(){
+  return `
+    <div class="info-box">⚖️ Maximum OFF per day (Relax limit). Mon-Fri: 1 | Sat: 2 | Sun: 7</div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Day</th><th>Max OFF</th></tr></thead>
+        <tbody>
+          ${DAY_ORDER.map(d=>`<tr>
+            <td><b>${d}</b></td>
+            <td><input type="number" min="0" style="width:90px;text-align:center;padding:8px;border:2px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:700;" id="ll_${d}_OFF" value="${(STATE.leaveLimits[d]&&STATE.leaveLimits[d].OFF)||0}"></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="saveLeaveLimitsSettings()">💾 Save Limits</button>`;
+}
+function saveLeaveLimitsSettings(){
+  const rec = {};
+  DAY_ORDER.forEach(d=>{ rec[d]={OFF:parseInt($('ll_'+d+'_OFF').value)||0, Leave:0}; });
+  db.ref('leaveLimits').set(rec).then(()=>{ logAudit('Settings Change','Limits'); toast('✅ Saved','success'); });
+}
+
+/* ---- Stations ---- */
+function tplStations(){
+  const arr = objToArr(STATE.stations||DEFAULT_STATIONS);
+  return `
+    <div class="toolbar"><button class="btn btn-primary btn-sm" onclick="openStationModal()">➕ Add Station</button></div>
+    ${arr.map(st=>`
+      <div class="list-row">
+        <div class="grow">
+          <div class="name">🏢 ${escapeHtml(st.name)}</div>
+          <div class="sub">Weekday: ${JSON.stringify(st.weekday||{})} • Sunday: ${JSON.stringify(st.sunday||{})}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick='openStationModal(${JSON.stringify(st._id)})'>Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStation('${st._id}')">Del</button>
+      </div>`).join('')}`;
+}
+function openStationModal(id){
+  const st = id ? STATE.stations[id] : {name:'', weekday:{}, sunday:{}};
   const body = `
-    <div class="info-box">
-      <b>Period:</b> ${escapeHtml(period.label)}<br>
-      <b>Staff count:</b> ${activeStaffArr().length}
-    </div>
-    <div class="field">
-      <label>Send to</label>
-      <select id="roster_share_type" onchange="toggleRosterShareTarget()">
-        <option value="all">📢 All Staff</option>
-        <option value="specific">👤 Specific Staff</option>
-      </select>
-    </div>
-    <div class="field hidden" id="roster_share_specific_wrap">
-      <label>Select Staff</label>
-      <select id="roster_share_staff">
-        ${activeStaffArr().map(s=>`<option value="${s._id}" data-mobile="${escapeHtml(s.mobile||'')}">${escapeHtml(s.name)}</option>`).join('')}
-      </select>
-    </div>
-    <div class="field">
-      <label>Message</label>
-      <textarea id="roster_share_msg" rows="6">Dear Team,\n\nThe new duty roster for ${escapeHtml(period.label)} has been published.\n\nPlease check your duty schedule.\n\nLogin: https://jolly-dolphin-eed8f8.netlify.app\n\n— Phlebotomist Roster\nKulsum International Hospital</textarea>
-    </div>`;
+    <div class="field"><label>Station Name</label><input id="st_name" value="${escapeHtml(st.name||'')}"></div>
+    <div class="field"><label>Weekday JSON</label><textarea id="st_weekday" rows="2">${escapeHtml(JSON.stringify(st.weekday||{}))}</textarea></div>
+    <div class="field"><label>Sunday JSON</label><textarea id="st_sunday" rows="2">${escapeHtml(JSON.stringify(st.sunday||{}))}</textarea></div>`;
   const foot = `
     <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-success" onclick="sendRosterWhatsApp()">📱 Open WhatsApp</button>`;
-  openModal('Share Roster on WhatsApp', body, foot);
+    <button class="btn btn-primary" onclick="saveStation(${id?`'${id}'`:'null'})">💾 Save</button>`;
+  openModal(id?'✏️ Edit Station':'➕ Add Station', body, foot);
 }
-function toggleRosterShareTarget(){
-  const t = $('roster_share_type').value;
-  $('roster_share_specific_wrap').classList.toggle('hidden', t !== 'specific');
+function saveStation(id){
+  let wd={}, sd={};
+  try{ wd=JSON.parse($('st_weekday').value||'{}'); sd=JSON.parse($('st_sunday').value||'{}'); }
+  catch(e){ toast('Invalid JSON','error'); return; }
+  db.ref('stations/'+(id||uid())).set({name:$('st_name').value, weekday:wd, sunday:sd})
+    .then(()=>{ toast('✅ Saved','success'); closeModal(); });
 }
-function sendRosterWhatsApp(){
-  const t = $('roster_share_type').value;
-  const msg = $('roster_share_msg').value;
-  if(t === 'specific'){
-    const sel = $('roster_share_staff');
-    const opt = sel.options[sel.selectedIndex];
-    const mobile = (opt.getAttribute('data-mobile')||'').replace(/[^0-9]/g,'');
-    if(!mobile){ toast('No mobile for this staff','error'); return; }
-    let wa = mobile; if(wa.startsWith('0')) wa='92'+wa.slice(1);
-    window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-    closeModal();
-  } else {
-    // Open WhatsApp for first staff (broadcast suggestion)
-    toast('WhatsApp opens for one staff at a time. Use WhatsApp Broadcast for all.','warn');
-    const arr = activeStaffArr().filter(s=>s.mobile);
-    if(!arr.length){ toast('No staff with mobile','error'); return; }
-    const first = arr[0];
-    let wa = normalizeMobile(first.mobile); if(wa.startsWith('0')) wa='92'+wa.slice(1);
-    window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-    closeModal();
-  }
+function deleteStation(id){ if(!confirm('Delete station?')) return; db.ref('stations/'+id).remove().then(()=>toast('🗑 Deleted','success')); }
+
+/* ---- Holidays ---- */
+function tplHolidays(){
+  const arr = Object.keys(STATE.holidays||{}).sort().map(d=>({date:d,name:STATE.holidays[d]}));
+  return `
+    <div class="dyn-row">
+      <div class="field"><label>📅 Date</label><input type="date" id="hol_date"></div>
+      <div class="field"><label>🎉 Name</label><input id="hol_name" placeholder="e.g. Eid-ul-Fitr"></div>
+      <button class="btn btn-primary btn-sm" onclick="addHoliday()">➕ Add</button>
+    </div>
+    ${arr.map(h=>`
+      <div class="list-row">
+        <div class="grow"><b>${fmtDisplay(h.date)}</b> — ${escapeHtml(h.name)}</div>
+        <button class="btn btn-danger btn-sm" onclick="delHoliday('${h.date}')">🗑 Del</button>
+      </div>`).join('') || '<div class="empty-state">No holidays added</div>'}`;
+}
+function addHoliday(){
+  const d = $('hol_date').value, n = $('hol_name').value.trim();
+  if(!d || !n){ toast('Enter date and name','error'); return; }
+  db.ref('holidays/'+d).set(n).then(()=>{
+    logAudit('Settings Change','Holiday: '+n);
+    toast('✅ Holiday added','success');
+    renderSettingsSection();
+  });
+}
+function delHoliday(d){ if(!confirm('Delete holiday?')) return; db.ref('holidays/'+d).remove().then(()=>toast('🗑 Deleted','success')); }
+
+/* ---- Leave Types ---- */
+function tplLeaveTypes(){
+  return `
+    <div class="dyn-row">
+      <div class="field"><label>New Leave Type Code</label><input id="lt_new" placeholder="HAJJ" maxlength="6"></div>
+      <button class="btn btn-primary btn-sm" onclick="addLeaveType()">➕ Add</button>
+    </div>
+    <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;">
+      ${(STATE.leaveTypes||[]).map(t=>`<span class="chip" style="background:var(--blue);color:#fff;padding:10px 16px;font-size:13px;">
+        ${escapeHtml(t)}
+        ${t!=='OFF'&&t!=='GH'?`<a href="#" onclick="delLeaveType('${t}');return false;" style="color:#fff;margin-left:8px;font-weight:800;text-decoration:none;">✕</a>`:''}
+      </span>`).join('')}
+    </div>
+    <div class="info-box" style="margin-top:16px;">ℹ️ OFF and GH are auto-approved. Other types need supervisor approval.</div>`;
+}
+function addLeaveType(){
+  const v = $('lt_new').value.trim().toUpperCase();
+  if(!v){ toast('Enter code','error'); return; }
+  const arr = [...(STATE.leaveTypes||[])];
+  if(arr.includes(v)){ toast('Already exists','error'); return; }
+  arr.push(v);
+  db.ref('leaveTypes').set(arr).then(()=>{ toast('✅ Added','success'); renderSettingsSection(); });
+}
+function delLeaveType(t){
+  if(t==='OFF'||t==='GH'){ toast('Cannot delete','error'); return; }
+  if(!confirm('Delete leave type "'+t+'"?')) return;
+  const arr = (STATE.leaveTypes||[]).filter(x=>x!==t);
+  db.ref('leaveTypes').set(arr).then(()=>{ toast('🗑 Deleted','success'); renderSettingsSection(); });
 }
 
-/* ============ DUTY CHANGE WHATSAPP ============ */
-function notifyDutyChangeWhatsApp(staffId, date, oldShift, newShift){
-  const s = findStaff(staffId);
-  if(!s || !s.mobile){ return; }
-  const msg = `Dear ${s.name},\n\nYour duty on ${fmtDisplay(date)} has been changed.\n\nOld: ${oldShift}\nNew: ${newShift}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
-  if(confirm('📱 Send WhatsApp notification to '+s.name+'?')){
-    let wa = normalizeMobile(s.mobile); if(wa.startsWith('0')) wa='92'+wa.slice(1);
-    window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(msg),'_blank');
-  }
+/* ---- Colors ---- */
+function tplColors(){
+  const s = STATE.settings || {};
+  return `
+    <div class="info-box">🎨 Customize the app colors</div>
+    <div class="grid grid-2">
+      <div class="field"><label>🔴 Primary Red</label><input type="color" id="cs_red" value="${s.redColor||'#C8102E'}" style="height:60px;cursor:pointer;"></div>
+      <div class="field"><label>🔵 Primary Blue</label><input type="color" id="cs_blue" value="${s.blueColor||'#1E5BA8'}" style="height:60px;cursor:pointer;"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="saveColors()">💾 Save Colors</button>`;
+}
+function saveColors(){
+  db.ref('settings').update({
+    redColor: $('cs_red').value,
+    blueColor: $('cs_blue').value
+  }).then(()=>{ logAudit('Settings Change','Colors'); toast('✅ Saved','success'); });
 }
 
-/* ============ LOGIN ============ */
-function switchLoginTab(tab){
-  $('tabStaffBtn').classList.toggle('active', tab==='staff');
-  $('tabAdminBtn').classList.toggle('active', tab==='admin');
-  $('staffLoginForm').classList.toggle('hidden', tab!=='staff');
-  $('adminLoginForm').classList.toggle('hidden', tab!=='admin');
-  $('loginErr').classList.remove('show');
-  $('loginErr').textContent='';
+/* ---- Users ---- */
+function tplUsers(){
+  const arr = objToArr(STATE.users||{});
+  return `
+    <div class="info-box">🔑 Manage login credentials. Reset passwords here.</div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Name</th><th>Mobile</th><th>Role</th><th>Reset Password</th></tr></thead>
+        <tbody>
+          ${arr.map(u=>`<tr>
+            <td>${escapeHtml(u.name)}</td>
+            <td>${escapeHtml(u.mobile)}</td>
+            <td><span class="chip">${escapeHtml(u.role)}</span></td>
+            <td>
+              <input type="text" id="pw_${u._id}" placeholder="New password" style="width:130px;padding:8px;border:2px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);">
+              <button class="btn btn-outline btn-sm" onclick="resetUserPass('${u._id}')">Reset</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
-
-function doAdminLogin(){
-  const u = normalizeMobile($('adminLoginUser').value.trim());
-  const p = $('adminLoginPass').value;
-  $('loginErr').classList.remove('show');
-  if(!u||!p){ $('loginErr').textContent='Please enter username and password'; $('loginErr').classList.add('show'); return; }
-  
-  db.ref('users').once('value').then(snap=>{
-    const users = snap.val()||{};
-    const admins = Object.keys(users).filter(k=>users[k].role==='admin');
-    
-    if(admins.length===0 && u==='admin' && p==='admin123'){
-      db.ref('users/'+uid()).set({name:'admin',mobile:'admin',password:'admin123',role:'admin'})
-        .then(()=>{
-          CURRENT_USER={uid:'admin_boot',name:'Administrator',mobile:'admin',role:'admin',staffId:null};
-          afterLoginSuccess();
-        }).catch(err=>{
-          $('loginErr').textContent='Error: '+err.message;
-          $('loginErr').classList.add('show');
-        });
-      return;
-    }
-    
-    let found=null, fid=null;
-    Object.keys(users).forEach(k=>{
-      const usr = users[k];
-      if(usr.role==='admin' && (usr.name===u || normalizeMobile(usr.mobile)===u) && usr.password===p){
-        found=usr; fid=k;
-      }
-    });
-    if(found){
-      CURRENT_USER={uid:fid,name:found.name,mobile:found.mobile,role:'admin',staffId:found.staffId||null};
-      afterLoginSuccess();
-    } else {
-      $('loginErr').textContent='Invalid admin credentials';
-      $('loginErr').classList.add('show');
-      vibrate(100);
-    }
-  }).catch(err=>{
-    $('loginErr').textContent='Firebase error: '+err.message;
-    $('loginErr').classList.add('show');
+function resetUserPass(id){
+  const val = $('pw_'+id).value.trim();
+  if(!val){ toast('Enter new password','error'); return; }
+  const u = STATE.users[id];
+  db.ref('users/'+id+'/password').set(val).then(()=>{
+    if(u.staffId) db.ref('staff/'+u.staffId+'/password').set(val);
+    logAudit('Settings Change','Password reset: '+u.name);
+    toast('✅ Password reset','success');
+    $('pw_'+id).value='';
   });
 }
 
-function doStaffLogin(){
-  const m = normalizeMobile($('staffLoginMobile').value.trim());
-  const p = $('staffLoginPass').value;
-  $('loginErr').classList.remove('show');
-  if(!m||!p){ $('loginErr').textContent='Please enter mobile and password'; $('loginErr').classList.add('show'); return; }
-  if(!validMobile(m)){ $('loginErr').textContent='Enter valid mobile (03XXXXXXXXX)'; $('loginErr').classList.add('show'); return; }
-  
-  db.ref('users').once('value').then(snap=>{
-    const users = snap.val()||{};
-    let found=null, fid=null;
-    Object.keys(users).forEach(k=>{
-      const usr = users[k];
-      if((usr.role==='staff'||usr.role==='supervisor') && normalizeMobile(usr.mobile)===m && usr.password===p){
-        found=usr; fid=k;
-      }
-    });
-    if(found){
-      CURRENT_USER={uid:fid,name:found.name,mobile:found.mobile,role:found.role,staffId:found.staffId};
-      afterLoginSuccess();
-    } else {
-      $('loginErr').textContent='Invalid mobile or password';
-      $('loginErr').classList.add('show');
-      vibrate(100);
-    }
-  }).catch(err=>{
-    $('loginErr').textContent='Firebase error: '+err.message;
-    $('loginErr').classList.add('show');
-  });
-}
-
-function afterLoginSuccess(){
-  logAudit('Login', CURRENT_USER.name+' logged in as '+CURRENT_USER.role);
-  $('loginScreen').style.display='none';
-  $('app').classList.add('show');
-  $('userNameChip').textContent=CURRENT_USER.name;
-  $('userAv').textContent=(CURRENT_USER.name||'?').slice(0,1).toUpperCase();
-  history.pushState({view:'dashboard'},'','');
-  bootDataListeners();
-}
-
-function logout(){
-  if(!confirm('Logout?\n\nAre you sure you want to logout?')) return;
-  logAudit('Logout',(CURRENT_USER?CURRENT_USER.name:'')+' logged out');
-  CURRENT_USER=null; CURRENT_STAFF=null;
-  $('app').classList.remove('show');
-  $('loginScreen').style.display='flex';
-  $('staffLoginMobile').value=''; $('staffLoginPass').value='';
-  $('adminLoginUser').value=''; $('adminLoginPass').value='';
-  switchLoginTab('staff');
-}
-
-/* ============ BACK BUTTON ============ */
-window.addEventListener('popstate', ()=>{
-  if($('modalRoot').innerHTML.trim()){ closeModal(); history.pushState({view:activeSection},''); return; }
-  if(!$('notifPanel').classList.contains('hidden')){ closeNotifPanel(); history.pushState({view:activeSection},''); return; }
-  if(activeSection!=='dashboard'){ showSection('dashboard',false); history.pushState({view:'dashboard'},''); return; }
-  history.pushState({view:'dashboard'},'');
-});
-
-/* ============ OFFLINE DETECTION ============ */
-window.addEventListener('online', ()=>{ $('offlineBanner').classList.remove('show'); toast('🌐 Back online','success'); });
-window.addEventListener('offline', ()=>{ $('offlineBanner').classList.add('show'); toast('📡 You are offline','warn'); });
-
-/* ============ KEYBOARD SHORTCUTS ============ */
-window.addEventListener('keydown', (e)=>{
-  // ESC → close modal
-  if(e.key === 'Escape'){
-    if($('modalRoot').innerHTML.trim()) closeModal();
-    else if(!$('notifPanel').classList.contains('hidden')) closeNotifPanel();
-  }
-  // Ctrl+F → focus search
-  if((e.ctrlKey || e.metaKey) && e.key === 'f'){
-    e.preventDefault();
-    if(activeSection === 'staff' && $('staffSearch')) $('staffSearch').focus();
-  }
-  // Ctrl+S → save (if modal open)
-  if((e.ctrlKey || e.metaKey) && e.key === 's'){
-    e.preventDefault();
-    const saveBtn = $('modalRoot').querySelector('.btn-primary');
-    if(saveBtn && !saveBtn.disabled) saveBtn.click();
-  }
-});
-
-/* ============ DATA BOOTSTRAP ============ */
-function bootDataListeners(){
-  db.ref('settings').once('value').then(s=>{
-    if(!s.exists()) db.ref('settings').set({
-      hospital:"Kulsum International Hospital", department:"Phlebotomy",
-      address:"Islamabad", whatsapp:"",
-      periodStartDay:26, periodEndDay:25,
-      redColor:"#C8102E", blueColor:"#1E5BA8"
-    });
-  });
-  db.ref('shifts').once('value').then(s=>{ if(!s.exists()) db.ref('shifts').set(DEFAULT_SHIFTS); });
-  db.ref('weeklySetup').once('value').then(s=>{ if(!s.exists()) db.ref('weeklySetup').set(DEFAULT_WEEKLY); });
-  db.ref('leaveLimits').once('value').then(s=>{ if(!s.exists()) db.ref('leaveLimits').set(DEFAULT_LIMITS); });
-  db.ref('leaveTypes').once('value').then(s=>{ if(!s.exists()) db.ref('leaveTypes').set(STATE.leaveTypes); });
-  db.ref('stations').once('value').then(s=>{ if(!s.exists()) db.ref('stations').set(DEFAULT_STATIONS); });
-  
-  db.ref('staff').on('value',s=>{
-    STATE.staff = s.val()||{};
-    if(CURRENT_USER && CURRENT_USER.role!=='admin') CURRENT_STAFF = STATE.staff[CURRENT_USER.staffId];
-    renderCurrentSection();
-  });
-  db.ref('users').on('value',s=>{ STATE.users=s.val()||{}; });
-  db.ref('settings').on('value',s=>{ STATE.settings=s.val()||{}; applyBrandSettings(); renderCurrentSection(); });
-  db.ref('shifts').on('value',s=>{ STATE.shifts=s.val()||DEFAULT_SHIFTS; renderCurrentSection(); });
-  db.ref('weeklySetup').on('value',s=>{ STATE.weeklySetup=s.val()||DEFAULT_WEEKLY; renderCurrentSection(); });
-  db.ref('leaveLimits').on('value',s=>{ STATE.leaveLimits=s.val()||DEFAULT_LIMITS; renderCurrentSection(); });
-  db.ref('leaveTypes').on('value',s=>{ STATE.leaveTypes=s.val()||STATE.leaveTypes; renderCurrentSection(); });
-  db.ref('stations').on('value',s=>{ STATE.stations=s.val()||DEFAULT_STATIONS; renderCurrentSection(); });
-  db.ref('holidays').on('value',s=>{ STATE.holidays=s.val()||{}; renderCurrentSection(); });
-  db.ref('periods').on('value',s=>{ STATE.periods=s.val()||{}; ensureCurrentPeriod(); renderCurrentSection(); });
-  db.ref('roster').on('value',s=>{ STATE.roster=s.val()||{}; renderCurrentSection(); });
-  db.ref('leaves').on('value',s=>{ STATE.leaves=s.val()||{}; renderCurrentSection(); });
-  db.ref('exchanges').on('value',s=>{ STATE.exchanges=s.val()||{}; renderCurrentSection(); });
-  db.ref('dutyChangeRequests').on('value',s=>{ STATE.dutyChangeRequests=s.val()||{}; renderCurrentSection(); });
-  db.ref('chat/group').on('value',s=>{ STATE.chatGroup=s.val()||{}; if(activeSection==='chat') renderChatMsgs(); });
-  db.ref('chat/individual').on('value',s=>{ STATE.chatIndividual=s.val()||{}; if(activeSection==='chat') renderChatMsgs(); });
-  db.ref('auditLog').on('value',s=>{ STATE.auditLog=s.val()||{}; });
-  db.ref('notifications').on('value',s=>{
-    const oldCount = Object.keys(STATE.notifications||{}).length;
-    STATE.notifications = s.val()||{};
-    const newCount = Object.keys(STATE.notifications).length;
-    if(newCount > oldCount && oldCount > 0){ playNotifSound(); vibrate(); }
-    renderNotifBell();
-    if(!$('notifPanel').classList.contains('hidden')) renderNotifPanel();
-  });
-  
-  buildNav();
-  showSection('dashboard');
-}
-
-function applyBrandSettings(){
-  if(!STATE.settings) return;
-  document.documentElement.style.setProperty('--red', STATE.settings.redColor||'#C8102E');
-  document.documentElement.style.setProperty('--blue', STATE.settings.blueColor||'#1E5BA8');
-}
-function ensureCurrentPeriod(){
-  const arr = objToArr(STATE.periods).sort((a,b)=>(b.start||'').localeCompare(a.start||''));
-  if(arr.length && !STATE.currentPeriodId) STATE.currentPeriodId = arr[0]._id;
-}
-
-/* ============ NAVIGATION ============ */
-const NAV_ITEMS = [
-  {id:'dashboard',label:'Dashboard',ic:'🏠'},
-  {id:'roster',label:'Roster',ic:'📅'},
-  {id:'staff',label:'Staff',adminOnly:true,ic:'👥'},
-  {id:'leave',label:'Leave',ic:'🏖️'},
-  {id:'exchange',label:'Exchange',ic:'🔄'},
-  {id:'chat',label:'Chat',ic:'💬'},
-  {id:'reports',label:'Reports',ic:'📊'},
-  {id:'settings',label:'Settings',adminOnly:true,ic:'⚙️'}
-];
-
-function buildNav(){
-  const items = NAV_ITEMS.filter(n=>!n.adminOnly || isAdmin());
-  $('topNav').innerHTML = items.map(n=>`<button data-sec="${n.id}" onclick="showSection('${n.id}')">${n.label}</button>`).join('');
-  $('bottomNav').innerHTML = items.map(n=>`<button data-sec="${n.id}" onclick="showSection('${n.id}')"><span class="ic">${n.ic}</span>${n.label}</button>`).join('');
-}
-
-function showSection(sec, pushHist){
-  activeSection = sec;
-  $$('.section').forEach(s=>s.classList.remove('active'));
-  const el = $('sec-'+sec); if(el) el.classList.add('active');
-  $$('#topNav button, #bottomNav button').forEach(b=>b.classList.toggle('active', b.dataset.sec===sec));
-  if(pushHist!==false) history.pushState({view:sec},'','');
-  closeNotifPanel();
-  renderCurrentSection();
-  if(sec==='roster') markRosterSeen();
-  if(sec==='chat') renderChat();
-}
-
-function renderCurrentSection(){
-  if(!CURRENT_USER) return;
-  try{
-    if(activeSection==='dashboard') renderDashboard();
-    else if(activeSection==='staff') renderStaffList();
-    else if(activeSection==='roster') renderRosterSection();
-    else if(activeSection==='leave') renderLeaveSection();
-    else if(activeSection==='exchange') renderExchangeSection();
-    else if(activeSection==='reports') renderReportsSection();
-    else if(activeSection==='settings') renderSettingsSection();
-  }catch(e){ console.error(e); toast('Error: '+e.message,'error'); }
-}
-
-/* ============ NOTIFICATIONS PANEL ============ */
-function toggleNotifPanel(){ $('notifPanel').classList.contains('hidden') ? openNotifPanel() : closeNotifPanel(); }
-function openNotifPanel(){
-  renderNotifPanel();
-  $('notifPanel').classList.remove('hidden');
-  const arr = objToArr(STATE.notifications).filter(n=>!n.read && (
-    n.target==='all' || n.target===(CURRENT_USER&&CURRENT_USER.staffId) || (isAdmin()&&n.target==='admin')
-  ));
-  arr.forEach(n=>db.ref('notifications/'+n._id+'/read').set(true));
-}
-function closeNotifPanel(){ $('notifPanel').classList.add('hidden'); }
-function renderNotifPanel(){
-  const arr = objToArr(STATE.notifications).filter(n=>{
-    if(n.target==='all') return true;
-    if(CURRENT_USER && CURRENT_USER.staffId && n.target===CURRENT_USER.staffId) return true;
-    if(isAdmin() && n.target==='admin') return true;
-    return false;
-  }).sort((a,b)=>b.ts-a.ts).slice(0,50);
-  const body = $('notifPanelBody');
-  if(!arr.length){ body.innerHTML='<div class="empty-state" style="padding:30px 10px;">No notifications yet</div>'; return; }
-  body.innerHTML = arr.map(n=>`
-    <div class="notif-item ${n.read?'':'unread'}" onclick="markNotifRead('${n._id}')">
-      <div class="t">${escapeHtml(n.title)}</div>
-      <div class="b">${escapeHtml(n.body||'')}</div>
-      <div class="ts">${new Date(n.ts).toLocaleString()}</div>
-    </div>`).join('');
-}
-function markNotifRead(id){ db.ref('notifications/'+id+'/read').set(true); }
-function renderNotifBell(){
-  if(!CURRENT_USER) return;
-  const arr = objToArr(STATE.notifications).filter(n=>!n.read && (
-    n.target==='all' || n.target===CURRENT_USER.staffId || (isAdmin()&&n.target==='admin')
-  ));
-  const dot = $('bellDot'); if(!dot) return;
-  if(arr.length){ dot.textContent = arr.length>9?'9+':arr.length; dot.classList.remove('hidden'); }
-  else dot.classList.add('hidden');
-}
-
-/* ============ INIT ============ */
-window.addEventListener('DOMContentLoaded', ()=>{
-  loadDarkMode();
-  if(!navigator.onLine) $('offlineBanner').classList.add('show');
-  setTimeout(()=>{ if($('staffLoginMobile')) $('staffLoginMobile').focus(); }, 300);
-});
-
-/* PART 2A END */
+/* PART 2B END */
 </script>
-<!-- ⬇⬇⬇ PART 2B STARTS HERE ⬇⬇⬇ -->
-  <script>
+<!-- ⬇⬇⬇ PART 3A STARTS HERE ⬇⬇⬇ -->
+   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v7 — Part 3A
+   PHLEBOTOMIST ROSTER v8 — Part 3A
    Auto Generate Wizard + OFF FIRST Algorithm + Conflict Resolution
+   
+   Rules:
+   - OFF per staff = number of Sundays in period
+   - Relax limit: Mon-Fri 1 | Sat 2 | Sun/Holiday 7
+   - OFF FIRST, then shifts (NO empty cells)
+   - Leftover staff → X (Extra)
+   - +1 → X duty | +2 → DX duty | >+2 → Admin modify
+   - Gender: E4/N12/N Male, D Female
    ========================================================================= */
 
 let WIZ = null;
@@ -2399,10 +1759,7 @@ function freshWizard(){
     conflictLog: [],
     currentDayIndex: 0,
     currentConflictDay: null,
-    currentConflictResult: null,
-    cplEarned: {},
-    extraHours: {},
-    phEntitlements: {}
+    currentConflictResult: null
   };
 }
 
@@ -2574,6 +1931,7 @@ function tplStep4Auto(){
         <li>Relax: Mon-Fri 1 | Sat 2 | Sun/Holiday 7</li>
         <li>+1 → X duty | +2 → DX duty</li>
         <li>Gender: E4/N12/N Male, D Female</li>
+        <li>No empty cells — leftover staff get X duty</li>
         <li>${holidays ? holidays+' Gazetted Holiday(s) confirmed' : 'No Gazetted Holidays'}</li>
         <li>Conflicts → App PAUSES → you decide</li>
       </ul>
@@ -2696,17 +2054,9 @@ function wizStartGeneration(){
   WIZ.grid = {};
   WIZ.locked = {};
   WIZ.offCount = {};
-  WIZ.cplEarned = {};
-  WIZ.extraHours = {};
-  WIZ.phEntitlements = {};
   
   WIZ.dates.forEach(d => { WIZ.grid[d] = {}; WIZ.locked[d] = {}; });
-  WIZ.staffArr.forEach(s => {
-    WIZ.offCount[s._id] = 0;
-    WIZ.cplEarned[s._id] = 0;
-    WIZ.extraHours[s._id] = 0;
-    WIZ.phEntitlements[s._id] = [];
-  });
+  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
   
   // PHASE 0: Special Off Dates from staff profile
   WIZ.staffArr.forEach(s => {
@@ -2751,8 +2101,6 @@ function wizStartGeneration(){
       if(WIZ.grid[x.date]){
         WIZ.grid[x.date][x.staffId] = x.type;
         WIZ.locked[x.date][x.staffId] = true;
-        if(x.type === 'M+E' || x.type === 'E+N') WIZ.extraHours[x.staffId] += 8;
-        else if(x.type === 'DE') WIZ.extraHours[x.staffId] += 4;
       }
     });
   }
@@ -2909,8 +2257,10 @@ function processDay(date){
   const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
   const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
   
+  // Fill shifts
   fillDayShifts(date, need, isOff);
   
+  // Check shift coverage
   const coverageCheck = checkShiftCoverage(date, need, isOff);
   if(!coverageCheck.ok){
     return {
@@ -2921,6 +2271,7 @@ function processDay(date){
     };
   }
   
+  // Relax limit check
   if(totalRelax > relaxLimit){
     const excess = totalRelax - relaxLimit;
     let conflictType, suggestion;
@@ -2948,6 +2299,7 @@ function fillDayShifts(date, need, isOff){
   const dayGrid = WIZ.grid[date];
   const freeStaff = WIZ.staffArr.filter(s => !dayGrid[s._id]);
   
+  // Step 1: Fill required shifts from Weekly Setup
   Object.keys(need).forEach(code => {
     const req = need[code];
     if(!req) return;
@@ -2976,12 +2328,20 @@ function fillDayShifts(date, need, isOff){
     }
   });
   
+  // ⭐ Step 2: X slots from Weekly Setup
   const xReq = need['X'] || 0;
   const xAssigned = Object.values(dayGrid).filter(c => c === 'X').length;
   let xSlots = Math.max(0, xReq - xAssigned);
-  freeStaff.forEach(s => {
+  
+  // ⭐ Step 3: Assign X to ANY remaining staff (NO empty cells!)
+  WIZ.staffArr.forEach(s => {
     if(dayGrid[s._id]) return;
-    if(xSlots > 0){ dayGrid[s._id] = 'X'; xSlots--; }
+    if(xSlots > 0){
+      dayGrid[s._id] = 'X';
+      xSlots--;
+    } else {
+      dayGrid[s._id] = 'X';
+    }
   });
 }
 
@@ -3112,23 +2472,8 @@ function confirmManualResolution(date){
 }
 
 /* ============ FINALIZE ============ */
-function finalizeGeneration(){
-  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
-  WIZ.dates.forEach(d=>{
-    WIZ.staffArr.forEach(s=>{
-      if(WIZ.grid[d][s._id] === 'OFF') WIZ.offCount[s._id]++;
-    });
-  });
-  
-  WIZ.warnings = [];
-  
-  WIZ.staffArr.forEach(s=>{
-    const diff = WIZ.offCount[s._id] - WIZ.offTarget;
-    if(diff !== 0){
-      WIZ.warnings.push(`${s.name}: ${WIZ.offCount[s._id]} OFF (target ${WIZ.offTarget}, diff ${diff>0?'+':''}${diff})`);
-    }
-  });
-  
+function finalizeGeneration(){  
+  // Gender check
   WIZ.dates.forEach(d=>{
     Object.keys(WIZ.grid[d]).forEach(sid=>{
       const code = WIZ.grid[d][sid];
@@ -3137,6 +2482,15 @@ function finalizeGeneration(){
       const staff = findStaff(sid);
       if(staff && staff.gender !== shiftDef.gender){
         WIZ.warnings.push(`${fmtDisplay(d)}: ${code} wrong gender (${staff.name})`);
+      }
+    });
+  });
+  
+  // Empty cell check (safety)
+  WIZ.dates.forEach(d=>{
+    WIZ.staffArr.forEach(s=>{
+      if(!WIZ.grid[d][s._id]){
+        WIZ.warnings.push(`${fmtDisplay(d)}: ${s.name} has no assignment`);
       }
     });
   });
@@ -3205,10 +2559,10 @@ function wizSaveRoster(){
 /* PART 3A END */
 </script>
 <!-- ⬇⬇⬇ PART 3B STARTS HERE ⬇⬇⬇ -->
-  <script>
+   <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v7 — Part 3B (Final)
-   Roster + Leave + Exchange + Chat + Reports + Dashboard + Init
+   PHLEBOTOMIST ROSTER v8 — Part 3B (Final)
+   Roster + Leave + Exchange + Chat + Reports + Dashboard + WhatsApp + Init
    ========================================================================= */
 
 /* ============ ROSTER ============ */
@@ -3340,10 +2694,56 @@ function applyRosterCell(pid, date, staffId){
     toast('✅ Roster updated','success');
     closeModal();
     renderRosterSection();
-    if(oldCode !== v && v){
-      setTimeout(()=>notifyDutyChangeWhatsApp(staffId, date, oldCode, v), 500);
+    // WhatsApp notification for duty change
+    if(oldCode !== v && v && !isSameRestCode(oldCode, v)){
+      setTimeout(()=>promptDutyChangeWhatsApp(staffId, date, oldCode, v), 400);
     }
   });
+}
+
+function isSameRestCode(a, b){
+  const rest = ['OFF','PH','GH','EL','CPL','CL','SL','AL','ML'];
+  return rest.includes(a) && rest.includes(b);
+}
+
+function promptDutyChangeWhatsApp(staffId, date, oldCode, newCode){
+  const s = findStaff(staffId);
+  if(!s) return;
+  if(!s.mobile){
+    // No mobile — send in-app only
+    pushNotification(staffId, '🔄 Duty Changed', `${fmtDisplay(date)}: ${oldCode||'—'} → ${newCode}`);
+    return;
+  }
+  const msg = `Dear ${s.name},\n\nYour duty on ${fmtDisplay(date)} has been changed.\n\nOld: ${oldCode||'—'}\nNew: ${newCode}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+  const body = `
+    <div class="ok-box">✅ Duty change saved</div>
+    <div class="info-box">
+      <b>${escapeHtml(s.name)}</b><br>
+      ${fmtDisplay(date)}<br>
+      <b>Old:</b> ${escapeHtml(oldCode||'—')} → <b>New:</b> ${escapeHtml(newCode)}
+    </div>
+    <div class="field"><label>Message</label>
+      <textarea id="dc_wa_msg" rows="5">${escapeHtml(msg)}</textarea>
+    </div>`;
+  const foot = `
+    <button class="btn btn-ghost" onclick="sendInAppDutyChangeNotif('${staffId}','${date}','${oldCode}','${newCode}')">Skip WhatsApp</button>
+    <button class="btn btn-success" onclick="sendDutyChangeWA('${staffId}')">📱 Send WhatsApp</button>`;
+  openModal('📱 Notify Duty Change', body, foot);
+}
+
+function sendDutyChangeWA(staffId){
+  const s = findStaff(staffId);
+  if(!s || !s.mobile){ toast('No mobile','error'); return; }
+  const msg = $('dc_wa_msg').value;
+  sendWhatsAppToStaff(s.mobile, msg);
+  closeModal();
+  toast('📱 WhatsApp opened','success');
+}
+
+function sendInAppDutyChangeNotif(staffId, date, oldCode, newCode){
+  pushNotification(staffId, '🔄 Duty Changed', `${fmtDisplay(date)}: ${oldCode||'—'} → ${newCode}`);
+  closeModal();
+  toast('✅ Staff notified in-app','success');
 }
 
 function renderRosterSummary(pid){
@@ -3391,9 +2791,102 @@ function markRosterSeen(){
   });
 }
 
-function exportRosterExcel(){
+/* ============ WHATSAPP SHARE 3 FORMATS ============ */
+function openShareRosterModal(){
   const pid = STATE.currentPeriodId;
-  if(!pid || !STATE.periods[pid]){ toast('No roster to export','error'); return; }
+  if(!pid || !STATE.periods[pid]){ toast('No roster','error'); return; }
+  const period = STATE.periods[pid];
+  const link = 'https://jolly-dolphin-eed8f8.netlify.app';
+  const staffArr = activeStaffArr();
+  const body = `
+    <div class="info-box">📱 Choose how to share the roster</div>
+    
+    <div class="card" style="cursor:pointer;border:2px solid var(--blue);margin-bottom:10px;" onclick="shareRosterAsLink()">
+      <h3 style="margin-top:0;color:var(--blue);">🔗 Link</h3>
+      <p style="font-size:13px;color:var(--text-2);margin:0;">Send app link — staff opens and sees roster</p>
+    </div>
+    
+    <div class="card" style="cursor:pointer;border:2px solid var(--success);margin-bottom:10px;" onclick="shareRosterAsExcel()">
+      <h3 style="margin-top:0;color:var(--success);">📊 Excel File</h3>
+      <p style="font-size:13px;color:var(--text-2);margin:0;">Download Excel + send via WhatsApp</p>
+    </div>
+    
+    <div class="card" style="cursor:pointer;border:2px solid var(--red);margin-bottom:10px;" onclick="shareRosterAsPDF()">
+      <h3 style="margin-top:0;color:var(--red);">📄 PDF / Print</h3>
+      <p style="font-size:13px;color:var(--text-2);margin:0;">Print or save as PDF</p>
+    </div>
+    
+    <div class="field">
+      <label>Send to</label>
+      <select id="share_target">
+        <option value="all">📢 All Staff</option>
+        <option value="specific">👤 Specific Staff</option>
+      </select>
+    </div>
+    <div class="field hidden" id="share_specific_wrap">
+      <label>Select Staff</label>
+      <select id="share_specific_staff">
+        ${staffArr.map(s=>`<option value="${s._id}" data-mobile="${escapeHtml(s.mobile||'')}">${escapeHtml(s.name)}</option>`).join('')}
+      </select>
+    </div>`;
+  const foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+  openModal('📱 Share Roster', body, foot, true);
+}
+
+function shareRosterAsLink(){
+  const pid = STATE.currentPeriodId;
+  const period = STATE.periods[pid];
+  const link = 'https://jolly-dolphin-eed8f8.netlify.app';
+  const msg = `Dear Team,\n\nThe new duty roster for ${period.label} has been published.\n\nView your duty online:\n${link}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+  promptSendWhatsApp(msg);
+}
+
+function shareRosterAsExcel(){
+  // First export Excel
+  exportRosterExcelSilent();
+  toast('📊 Excel downloaded — now opening WhatsApp','success');
+  const pid = STATE.currentPeriodId;
+  const period = STATE.periods[pid];
+  const msg = `Dear Team,\n\nDuty roster for ${period.label} is attached.\n\n(Please attach the Excel file that was just downloaded)\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+  setTimeout(()=>promptSendWhatsApp(msg), 800);
+}
+
+function shareRosterAsPDF(){
+  toast('🖨 Opening print dialog...','info');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      const msg = `Dear Team,\n\nThe new duty roster has been published. Please check your duty.\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+      promptSendWhatsApp(msg);
+    }, 1500);
+  }, 300);
+}
+
+function promptSendWhatsApp(msg){
+  const target = $('share_target').value;
+  if(target === 'specific'){
+    const sel = $('share_specific_staff');
+    const opt = sel.options[sel.selectedIndex];
+    const mobile = (opt.getAttribute('data-mobile')||'').replace(/[^0-9]/g,'');
+    if(!mobile){ toast('No mobile for this staff','error'); return; }
+    sendWhatsAppToStaff(mobile, msg);
+    closeModal();
+    logAudit('WhatsApp','Roster shared with '+opt.textContent);
+    return;
+  }
+  // All Staff
+  const arr = activeStaffArr().filter(s=>s.mobile);
+  if(!arr.length){ toast('No staff with mobile','error'); return; }
+  toast('📱 Opening WhatsApp for first staff — use Broadcast for all','warn');
+  const first = arr[0];
+  sendWhatsAppToStaff(first.mobile, msg);
+  closeModal();
+  logAudit('WhatsApp','Roster shared to all (broadcast)');
+}
+
+function exportRosterExcelSilent(){
+  const pid = STATE.currentPeriodId;
+  if(!pid || !STATE.periods[pid]) return;
   const dates = dateRange(STATE.periods[pid].start, STATE.periods[pid].end);
   const staffArr = activeStaffArr();
   const s = STATE.settings || {};
@@ -3410,20 +2903,6 @@ function exportRosterExcel(){
     aoa.push([st.name, ...dates.map(d=>(STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][st._id]) || '')]);
   });
   aoa.push([]);
-  aoa.push(['Summary','OFF','Leave','PH','Extra Hours','CPL','Target']);
-  staffArr.forEach(st=>{
-    let off=0, leave=0, ph=0, extraHrs=0;
-    dates.forEach(d=>{
-      const c = (STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][st._id]) || '';
-      if(c === 'OFF') off++;
-      else if(c === 'PH') ph++;
-      else if((STATE.leaveTypes||[]).includes(c)) leave++;
-      if(c === 'M+E' || c === 'E+N') extraHrs += 8;
-      if(c === 'DE') extraHrs += 4;
-    });
-    aoa.push([st.name, off, leave, ph, extraHrs, Math.floor(extraHrs/8), countSundays(STATE.periods[pid].start, STATE.periods[pid].end)]);
-  });
-  aoa.push([]);
   aoa.push(['Generated by: ____________','Prepared by: ____________','Approved by: ____________']);
 
   const wb = XLSX.utils.book_new();
@@ -3431,7 +2910,11 @@ function exportRosterExcel(){
   ws['!cols'] = [{wch:22}, ...dates.map(()=>({wch:8}))];
   XLSX.utils.book_append_sheet(wb, ws, 'Roster');
   XLSX.writeFile(wb, 'Roster_'+(STATE.periods[pid].label||pid).replace(/[^a-zA-Z0-9]/g,'_')+'.xlsx');
-  logAudit('Export','Roster exported to Excel');
+}
+
+function exportRosterExcel(){
+  exportRosterExcelSilent();
+  logAudit('Export','Roster Excel');
   toast('✅ Excel exported','success');
 }
 
@@ -3636,6 +3119,12 @@ function approveLeave(id){
     logAudit('Leave Approve', `${staffName(l.staffId)} — ${l.type}`);
     pushNotification(l.staffId, '✅ Leave Approved', `${l.type} — ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}`);
     toast('✅ Approved','success');
+    // WhatsApp prompt
+    const s = findStaff(l.staffId);
+    if(s && s.mobile){
+      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been APPROVED.\nDate: ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+      if(confirm('📱 Send WhatsApp to '+s.name+'?')) sendWhatsAppToStaff(s.mobile, msg);
+    }
   });
 }
 
@@ -3657,6 +3146,12 @@ function doRejectLeave(id){
     logAudit('Leave Reject', `${staffName(l.staffId)} — ${l.type}`);
     pushNotification(l.staffId, '❌ Leave Rejected', `${l.type} — ${reason || 'Not specified'}`);
     toast('❌ Rejected','success');
+    // WhatsApp prompt
+    const s = findStaff(l.staffId);
+    if(s && s.mobile){
+      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been REJECTED.\nReason: ${reason || 'N/A'}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+      if(confirm('📱 Send WhatsApp to '+s.name+'?')) sendWhatsAppToStaff(s.mobile, msg);
+    }
     closeModal();
   });
 }
@@ -3695,7 +3190,7 @@ function doModifyLeave(id){
   }
   db.ref().update(updates).then(()=>{
     logAudit('Leave Modify', `${staffName(l.staffId)} → ${newType}`);
-    pushNotification(l.staffId, '✏️ Leave Modified & Approved', `${newType} ${fmtDisplay(newStart)} to ${fmtDisplay(newEnd)}`);
+    pushNotification(l.staffId, '✏️ Leave Modified', `${newType} ${fmtDisplay(newStart)} to ${fmtDisplay(newEnd)}`);
     toast('✅ Modified','success');
     closeModal();
   });
@@ -3790,8 +3285,8 @@ function openExchangeModal(){
   const oneDay = pid && withinOneDayOfPublish(pid);
   const body = `
     <div class="tabsbar" style="border:none;">
-      <button class="active" id="exchModeStaffBtn" onclick="setExchMode('staff')">🔄 Staff ↔ Staff Exchange</button>
-      ${oneDay ? `<button id="exchModeAdminBtn" onclick="setExchMode('admin')">📝 Duty Change (1-Day)</button>` : ''}
+      <button class="active" id="exchModeStaffBtn" onclick="setExchMode('staff')">🔄 Staff ↔ Staff</button>
+      ${oneDay ? `<button id="exchModeAdminBtn" onclick="setExchMode('admin')">📝 Duty Change</button>` : ''}
     </div>
     ${!oneDay ? '<div class="info-box">ℹ️ The 1-day rule for Duty Change has expired.</div>' : ''}
     <div id="exchModeBody"></div>`;
@@ -3888,6 +3383,15 @@ function supervisorApproveExchange(id){
     pushNotification(e.fromStaffId, '✅ Exchange Approved', 'Roster updated');
     pushNotification(e.toStaffId, '✅ Exchange Approved', 'Roster updated');
     toast('✅ Approved — roster updated','success');
+    // WhatsApp both staff
+    const sA = findStaff(e.fromStaffId);
+    const sB = findStaff(e.toStaffId);
+    const msgA = `Dear ${sA?.name||''},\n\nYour duty exchange on ${fmtDisplay(e.date)} has been APPROVED.\nYou now work: ${e.toShift}\n\n— Phlebotomist Roster`;
+    const msgB = `Dear ${sB?.name||''},\n\nYour duty exchange on ${fmtDisplay(e.date)} has been APPROVED.\nYou now work: ${e.fromShift}\n\n— Phlebotomist Roster`;
+    if(confirm('📱 Send WhatsApp to both staff?')){
+      if(sA && sA.mobile) sendWhatsAppToStaff(sA.mobile, msgA);
+      setTimeout(()=>{ if(sB && sB.mobile) sendWhatsAppToStaff(sB.mobile, msgB); }, 1200);
+    }
   });
 }
 
@@ -3927,6 +3431,11 @@ function approveDutyChange(id){
     logAudit('Duty Change Approve', staffName(d.staffId));
     pushNotification(d.staffId, '✅ Duty Change Approved', 'Roster updated');
     toast('✅ Approved','success');
+    const s = findStaff(d.staffId);
+    if(s && s.mobile){
+      const msg = `Dear ${s.name},\n\nYour duty change request for ${fmtDisplay(d.date)} has been APPROVED.\nOld: ${d.oldShift}\nNew: ${d.newShift}\n\n— Phlebotomist Roster`;
+      if(confirm('📱 Send WhatsApp to '+s.name+'?')) sendWhatsAppToStaff(s.mobile, msg);
+    }
   });
 }
 
@@ -4267,7 +3776,7 @@ function renderDashboard(){
   }
 }
 
-/* ============ EXPOSE FUNCTIONS ============ */
+/* ============ EXPOSE ============ */
 window.switchLoginTab = switchLoginTab;
 window.doStaffLogin = doStaffLogin;
 window.doAdminLogin = doAdminLogin;
@@ -4279,10 +3788,15 @@ window.markNotifRead = markNotifRead;
 window.toggleDarkMode = toggleDarkMode;
 window.openWhatsAppPanel = openWhatsAppPanel;
 window.sendWhatsAppMessage = sendWhatsAppMessage;
-window.shareRosterWhatsApp = shareRosterWhatsApp;
-window.toggleRosterShareTarget = toggleRosterShareTarget;
-window.sendRosterWhatsApp = sendRosterWhatsApp;
-window.notifyDutyChangeWhatsApp = notifyDutyChangeWhatsApp;
+window.sendWhatsAppToStaff = sendWhatsAppToStaff;
+window.openShareRosterModal = openShareRosterModal;
+window.shareRosterAsLink = shareRosterAsLink;
+window.shareRosterAsExcel = shareRosterAsExcel;
+window.shareRosterAsPDF = shareRosterAsPDF;
+window.promptSendWhatsApp = promptSendWhatsApp;
+window.promptDutyChangeWhatsApp = promptDutyChangeWhatsApp;
+window.sendDutyChangeWA = sendDutyChangeWA;
+window.sendInAppDutyChangeNotif = sendInAppDutyChangeNotif;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.toast = toast;
