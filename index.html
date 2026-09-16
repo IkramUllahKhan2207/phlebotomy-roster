@@ -1710,13 +1710,8 @@ function resetUserPass(id){
 </script>
 <script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v11 — Part 3A (Fixed)
-   Auto Generate + Gazetted Holiday PH + Priority Adjustment
-   
-   Priority Order for Duty Staff PH:
-   1. 🥇 Find suitable day within relax limit → PH
-   2. 🥈 Break relax limit → PH
-   3. 🥉 Convert PH → CPL (1 PH = 1 CPL)
+   PHLEBOTOMIST ROSTER v12 — Part 3A (Fixed)
+   Auto Generate + PH=1 + N/N12 Priority Rest
    ========================================================================= */
 
 let WIZ = null;
@@ -1756,14 +1751,13 @@ function freshWizard(){
     currentDayIndex: 0,
     currentConflictDay: null,
     currentConflictResult: null,
-    phEntitlements: [],
     phCount: {},
-    cplConversions: []
+    restDays: {}
   };
 }
 
 function openAutoGenWizard(){
-  if(!isAdmin()){ toast('🔒 Only Admin can generate roster','error'); return; }
+  if(!isAdmin()){ toast('🔒 Only Admin','error'); return; }
   WIZ = freshWizard();
   renderWizard();
 }
@@ -1775,27 +1769,22 @@ function renderWizard(){
     body = wizStepsBar(1) + tplStep1();
     foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
             <button class="btn btn-primary" onclick="wizNext1()">Next: Confirm Holidays →</button>`;
-  }
-  else if(WIZ.step === 2){
+  } else if(WIZ.step === 2){
     body = wizStepsBar(2) + tplStep2();
     foot = `<button class="btn btn-ghost" onclick="WIZ.step=1;renderWizard();">← Back</button>
             <button class="btn btn-primary" onclick="wizNext2()">Next: Mode →</button>`;
-  }
-  else if(WIZ.step === 3){
+  } else if(WIZ.step === 3){
     body = wizStepsBar(3) + tplStep3();
     foot = `<button class="btn btn-ghost" onclick="WIZ.step=2;renderWizard();">← Back</button>
             <button class="btn btn-primary" onclick="wizNext3()">Next: Instructions →</button>`;
-  }
-  else if(WIZ.step === 4){
+  } else if(WIZ.step === 4){
     body = wizStepsBar(4) + (WIZ.mode === 'auto' ? tplStep4Auto() : tplStep4Manual());
     foot = `<button class="btn btn-ghost" onclick="WIZ.step=3;renderWizard();">← Back</button>
             <button class="btn btn-primary" onclick="wizStartGeneration()">🚀 Start Generation</button>`;
-  }
-  else if(WIZ.step === 5){
+  } else if(WIZ.step === 5){
     body = wizStepsBar(5) + tplConflictView();
     foot = '';
-  }
-  else if(WIZ.step === 6){
+  } else if(WIZ.step === 6){
     body = wizStepsBar(6) + tplFinalPreview();
     const canSave = WIZ.warnings.length === 0;
     foot = `<button class="btn btn-ghost" onclick="WIZ.step=4;renderWizard();">← Back</button>
@@ -1820,24 +1809,24 @@ function tplStep1(){
   const sundays = countSundays(WIZ.period.start, WIZ.period.end);
   const totalDays = dateRange(WIZ.period.start, WIZ.period.end).length;
   return `
-    <div class="info-box">📅 Select the period. Number of Sundays = OFF target.</div>
+    <div class="info-box">📅 Select the period. Sundays = OFF target.</div>
     <div class="grid grid-2">
       <div class="field"><label>Start Date</label><input type="date" id="wz_start" value="${WIZ.period.start}"></div>
       <div class="field"><label>End Date</label><input type="date" id="wz_end" value="${WIZ.period.end}"></div>
     </div>
-    <div class="field"><label>Label (Optional)</label><input id="wz_label" value="${escapeHtml(WIZ.period.label)}"></div>
+    <div class="field"><label>Label</label><input id="wz_label" value="${escapeHtml(WIZ.period.label)}"></div>
     <div class="ok-box">
       📊 <b>Summary:</b><br>
       • Total Days: <b>${totalDays}</b><br>
       • Sundays: <b>${sundays}</b><br>
-      • Each staff will get exactly <b>${sundays} OFF</b> (PH counted separately)
+      • Each staff gets exactly <b>${sundays} OFF</b>
     </div>`;
 }
 
 function wizNext1(){
   const s = $('wz_start').value, e = $('wz_end').value;
-  if(!s || !e){ toast('Please select start and end dates','error'); return; }
-  if(s > e){ toast('Start date must be before end date','error'); return; }
+  if(!s || !e){ toast('Select dates','error'); return; }
+  if(s > e){ toast('Start before end','error'); return; }
   WIZ.period.start = s;
   WIZ.period.end = e;
   WIZ.period.label = $('wz_label').value.trim() || (fmtDisplay(s)+' → '+fmtDisplay(e));
@@ -1853,13 +1842,12 @@ function tplStep2(){
   const existing = Object.keys(STATE.holidays||{}).filter(d => d >= WIZ.period.start && d <= WIZ.period.end).sort();
   return `
     <div class="warn-box">
-      ⚠️ <b>Confirm the Gazetted Holidays</b> in this period.<br><br>
+      ⚠️ <b>Confirm Gazetted Holidays</b><br><br>
       <b>Rules:</b><br>
-      • Gazetted Holiday: Sunday-style shifts (2M + 2E + 1N)<br>
-      • <b>Non-duty staff</b> → receive PH on the holiday<br>
-      • <b>Duty staff</b> → receive PH entitlement adjusted later<br>
-      • Priority: ① Relax limit → ② Break limit → ③ Convert to CPL<br>
-      • Every staff gets 1 PH per Gazetted Holiday
+      • Gazetted Holiday = Sunday style (2M+2E+1N)<br>
+      • Non-duty staff → PH on holiday<br>
+      • Duty staff → PH entitlement adjusted later<br>
+      • Every staff gets exactly 1 PH per Holiday
     </div>
     <div class="tabsbar" style="border:none;">
       <button class="active" id="holidayChoiceNo" onclick="wizSetHolidayChoice('no')">❌ No Holidays</button>
@@ -1868,23 +1856,25 @@ function tplStep2(){
     <div id="holidaySection" class="hidden">
       <div class="dyn-row">
         <div class="field"><label>Date</label><input type="date" id="h_confirm_date" min="${WIZ.period.start}" max="${WIZ.period.end}"></div>
-        <div class="field"><label>Name</label><input id="h_confirm_name" placeholder="e.g. Eid-ul-Fitr"></div>
+        <div class="field"><label>Name</label><input id="h_confirm_name" placeholder="e.g. Eid"></div>
         <button class="btn btn-primary btn-sm" onclick="wizAddConfirmedHoliday()">➕ Add</button>
       </div>
       <div id="confirmedHolidaysList"></div>
     </div>
     ${existing.length ? `
       <div class="info-box" style="background:var(--warn-light);border-color:var(--warn);color:#92400e;">
-        <b>ℹ️ From Settings:</b> Already in your global list:<br>
+        <b>ℹ️ From Settings:</b><br>
         ${existing.map(d=>`• ${fmtDisplay(d)} — ${escapeHtml(STATE.holidays[d])}`).join('<br>')}
       </div>` : ''}`;
 }
+
 function wizSetHolidayChoice(choice){
   $('holidayChoiceNo').classList.toggle('active', choice==='no');
   $('holidayChoiceYes').classList.toggle('active', choice==='yes');
   $('holidaySection').classList.toggle('hidden', choice!=='yes');
   if(choice==='no'){ WIZ.confirmedHolidays = []; renderConfirmedHolidays(); }
 }
+
 function wizAddConfirmedHoliday(){
   const d = $('h_confirm_date').value, n = $('h_confirm_name').value.trim();
   if(!d){ toast('Select date','error'); return; }
@@ -1893,21 +1883,24 @@ function wizAddConfirmedHoliday(){
   $('h_confirm_date').value=''; $('h_confirm_name').value='';
   renderConfirmedHolidays();
 }
+
 function wizRemoveConfirmedHoliday(idx){ WIZ.confirmedHolidays.splice(idx,1); renderConfirmedHolidays(); }
+
 function renderConfirmedHolidays(){
   const el = $('confirmedHolidaysList');
   if(!el) return;
-  if(!WIZ.confirmedHolidays.length){ el.innerHTML='<div class="empty-state">No holidays added</div>'; return; }
+  if(!WIZ.confirmedHolidays.length){ el.innerHTML='<div class="empty-state">No holidays</div>'; return; }
   el.innerHTML = WIZ.confirmedHolidays.map((h,i)=>`
     <div class="list-row"><div class="grow"><b>${fmtDisplay(h.date)}</b> — ${escapeHtml(h.name)}</div>
       <button class="btn btn-danger btn-sm" onclick="wizRemoveConfirmedHoliday(${i})">Remove</button></div>`).join('');
 }
+
 function wizNext2(){ WIZ.step = 3; renderWizard(); }
 
 function tplStep3(){
   const autoMode = WIZ.mode === 'auto';
   return `
-    <div class="info-box">Choose generation mode</div>
+    <div class="info-box">Choose mode</div>
     <div class="grid grid-2">
       <div class="card" style="cursor:pointer;border:3px solid ${autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('auto')">
         <h3 style="margin-top:0;color:var(--blue);">🤖 Auto Mode</h3>
@@ -1915,10 +1908,11 @@ function tplStep3(){
       </div>
       <div class="card" style="cursor:pointer;border:3px solid ${!autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('manual')">
         <h3 style="margin-top:0;color:var(--blue);">✏️ Manual Mode</h3>
-        <p style="font-size:13px;color:var(--text-2);margin:0;">Give specific instructions first.</p>
+        <p style="font-size:13px;color:var(--text-2);margin:0;">Give specific instructions.</p>
       </div>
     </div>`;
 }
+
 function wizSetMode(m){ WIZ.mode = m; renderWizard(); }
 function wizNext3(){ WIZ.step = 4; renderWizard(); }
 
@@ -1928,19 +1922,17 @@ function tplStep4Auto(){
   return `
     <div class="ok-box">✅ <b>Auto Mode.</b> App will generate complete roster.</div>
     <div class="info-box">
-      <b>📋 Rules Applied:</b>
+      <b>📋 Rules:</b>
       <ul>
         <li>Each staff gets <b>${sundays} OFF</b></li>
         <li>Relax: Mon-Fri 1 | Sat 2 | Sun/Holiday 7</li>
-        <li><b>Gazetted Holiday = Sunday style (2M+2E+1N)</b></li>
-        <li><b>Non-duty staff</b> → PH on holiday</li>
-        <li><b>Duty staff</b> → PH adjustment with priority:</li>
-        <li>🥇 Find suitable day in relax limit</li>
-        <li>🥈 Break relax limit if needed</li>
-        <li>🥉 Convert to CPL (1 PH = 1 CPL)</li>
+        <li>Gazetted Holiday = Sunday style (2M+2E+1N)</li>
+        <li><b>Non-duty staff → PH on holiday</b></li>
+        <li><b>Duty staff → PH adjustment (later)</b></li>
+        <li><b>Every staff gets exactly 1 PH per Holiday</b></li>
+        <li><b>N/N12 کے بعد: Day 2 پر OFF priority، else E/E4</b></li>
         <li>No empty cells</li>
-        <li>Gender rules enforced</li>
-        <li>${holidays ? holidays+' Holiday(s) confirmed' : 'No Holidays'}</li>
+        <li>${holidays ? holidays+' Holiday(s)' : 'No Holidays'}</li>
       </ul>
     </div>`;
 }
@@ -1954,7 +1946,6 @@ function tplStep4Manual(){
   
   return `
     <div class="info-box">All fields optional.</div>
-    
     <div class="card">
       <h3>1️⃣ Force OFF Days</h3>
       <div class="dyn-row">
@@ -1965,7 +1956,6 @@ function tplStep4Manual(){
       </div>
       <div id="m_offs_list"></div>
     </div>
-    
     <div class="card">
       <h3>2️⃣ Leave</h3>
       <div class="dyn-row">
@@ -1977,7 +1967,6 @@ function tplStep4Manual(){
       </div>
       <div id="m_leaves_list"></div>
     </div>
-    
     <div class="card">
       <h3>3️⃣ Gynee Duty (Female Only)</h3>
       <div class="dyn-row">
@@ -1988,7 +1977,6 @@ function tplStep4Manual(){
       </div>
       <div id="m_gynee_list"></div>
     </div>
-    
     <div class="card">
       <h3>4️⃣ Shift Override</h3>
       <div class="dyn-row">
@@ -2000,17 +1988,16 @@ function tplStep4Manual(){
       </div>
       <div id="m_shiftOverride_list"></div>
     </div>
-    
     <div class="card">
-      <h3>5️⃣ Extended Duty (12H/16H)</h3>
-      <div class="warn-box">⚠️ Admin only. Valid: M+E, E+N, DE.</div>
+      <h3>5️⃣ Extended Duty</h3>
+      <div class="warn-box">⚠️ Valid: M+E, E+N, DE.</div>
       <div class="dyn-row">
         <div class="field"><label>Staff</label><select id="m_ext_staff"><option value="">-- select --</option>${staffOpts}</select></div>
         <div class="field"><label>Type</label>
           <select id="m_ext_type">
-            <option value="M+E">M + E (16 hours)</option>
-            <option value="E+N">E + N (16 hours)</option>
-            <option value="DE">DE (12 hours)</option>
+            <option value="M+E">M+E (16H)</option>
+            <option value="E+N">E+N (16H)</option>
+            <option value="DE">DE (12H)</option>
           </select>
         </div>
         <div class="field"><label>Date</label><input type="date" id="m_ext_date"></div>
@@ -2023,793 +2010,33 @@ function tplStep4Manual(){
 function wizAddManual(key){
   const mi = WIZ.manual;
   const get = (id)=>$(id)?$(id).value:'';
-  
   if(key === 'offs'){
     const s = get('m_off_staff'), a = get('m_off_start'), b = get('m_off_end');
-    if(!s||!a){ toast('Select staff and start date','error'); return; }
-    const check = checkManualOffRelaxLimit(s, a, b||a);
-    if(!check.ok){
-      alert('❌ Relax limit exceeded!\n\n'+check.errors.join('\n'));
-      toast('Cannot add OFF','error');
-      return;
-    }
+    if(!s||!a){ toast('Select staff/date','error'); return; }
     mi.offs.push({staffId:s, start:a, end:b||a});
   } else if(key === 'leaves'){
     const s = get('m_leave_staff'), t = get('m_leave_type'), a = get('m_leave_start'), b = get('m_leave_end');
-    if(!s||!a){ toast('Select staff and date','error'); return; }
+    if(!s||!a){ toast('Select staff/date','error'); return; }
     mi.leaves.push({staffId:s, type:t, start:a, end:b||a});
   } else if(key === 'gynee'){
     const s = get('m_gynee_staff'), a = get('m_gynee_start'), b = get('m_gynee_end');
-    if(!s||!a){ toast('Select female staff and date','error'); return; }
+    if(!s||!a){ toast('Select female staff/date','error'); return; }
     mi.gynee.push({staffId:s, start:a, end:b||a});
   } else if(key === 'shiftOverride'){
     const s = get('m_shift_staff'), v = get('m_shift_val'), a = get('m_shift_start'), b = get('m_shift_end');
-    if(!s||!a){ toast('Select staff and date','error'); return; }
+    if(!s||!a){ toast('Select staff/date','error'); return; }
     mi.shiftOverride.push({staffId:s, shift:v, start:a, end:b||a});
   } else if(key === 'extendedDuty'){
     const s = get('m_ext_staff'), t = get('m_ext_type'), d = get('m_ext_date');
-    if(!s||!d){ toast('Select staff and date','error'); return; }
+    if(!s||!d){ toast('Select staff/date','error'); return; }
     mi.extendedDuty.push({staffId:s, type:t, date:d});
   }
   renderWizard();
 }
-
-function checkManualOffRelaxLimit(staffId, start, end){
-  const errors = [];
-  dateRange(start, end).forEach(d=>{
-    const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
-    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
-    const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
-    let current = 0;
-    WIZ.manual.offs.forEach(x=>{
-      dateRange(x.start, x.end).forEach(md=>{
-        if(md === d) current++;
-      });
-    });
-    if(d >= start && d <= end) current++;
-    if(current > relaxLimit){
-      errors.push(`${fmtDisplay(d)}: ${current} staff OFF — limit ${relaxLimit}`);
-    }
-  });
-  return { ok: errors.length === 0, errors };
-}
-
-function wizStartGeneration(){
-  WIZ.dates = dateRange(WIZ.period.start, WIZ.period.end);
-  WIZ.staffArr = activeStaffArr();
-  
-  if(!WIZ.staffArr.length){ toast('No active staff','error'); return; }
-  
-  WIZ.confirmedHolidays.forEach(h => { STATE.holidays[h.date] = h.name; });
-  WIZ.offTarget = countSundays(WIZ.period.start, WIZ.period.end);
-  
-  WIZ.grid = {};
-  WIZ.locked = {};
-  WIZ.offCount = {};
-  WIZ.phCount = {};
-  WIZ.phEntitlements = [];
-  WIZ.cplConversions = [];
-  
-  WIZ.dates.forEach(d => { WIZ.grid[d] = {}; WIZ.locked[d] = {}; });
-  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; });
-  
-  // PHASE 0: Special Off Dates from staff profile
-  WIZ.staffArr.forEach(s => {
-    (s.specialOffDates || []).forEach(d => {
-      if(WIZ.grid[d] && d >= WIZ.period.start && d <= WIZ.period.end){
-        if(!WIZ.locked[d][s._id]){
-          WIZ.grid[d][s._id] = 'OFF';
-          WIZ.locked[d][s._id] = true;
-          WIZ.offCount[s._id]++;
-        }
-      }
-    });
-  });
-  
-  // PHASE 0b: Manual Instructions
-  if(WIZ.mode === 'manual'){
-    WIZ.manual.offs.forEach(x=>{
-      dateRange(x.start, x.end).forEach(d=>{
-        if(WIZ.grid[d]){
-          WIZ.grid[d][x.staffId] = 'OFF';
-          WIZ.locked[d][x.staffId] = true;
-          WIZ.offCount[x.staffId]++;
-        }
-      });
-    });
-    WIZ.manual.leaves.forEach(x=>{
-      dateRange(x.start, x.end).forEach(d=>{
-        if(WIZ.grid[d]){ WIZ.grid[d][x.staffId] = x.type; WIZ.locked[d][x.staffId] = true; }
-      });
-    });
-    WIZ.manual.gynee.forEach(x=>{
-      dateRange(x.start, x.end).forEach(d=>{
-        if(WIZ.grid[d]){ WIZ.grid[d][x.staffId] = 'D'; WIZ.locked[d][x.staffId] = true; }
-      });
-    });
-    WIZ.manual.shiftOverride.forEach(x=>{
-      dateRange(x.start, x.end).forEach(d=>{
-        if(WIZ.grid[d]){ WIZ.grid[d][x.staffId] = x.shift; WIZ.locked[d][x.staffId] = true; }
-      });
-    });
-    WIZ.manual.extendedDuty.forEach(x=>{
-      if(WIZ.grid[x.date]){
-        WIZ.grid[x.date][x.staffId] = x.type;
-        WIZ.locked[x.date][x.staffId] = true;
-      }
-    });
-  }
-  
-  // PHASE 0c: Approved Leaves from Firebase
-  objToArr(STATE.leaves).forEach(l=>{
-    if(l.status !== 'approved') return;
-    const ls = l.startDate || l.date;
-    const le = l.endDate || l.date;
-    if(!WIZ.staffArr.some(s=>s._id===l.staffId)) return;
-    dateRange(ls, le).forEach(d=>{
-      if(WIZ.grid[d] && !WIZ.locked[d][l.staffId]){
-        WIZ.grid[d][l.staffId] = l.type;
-        WIZ.locked[d][l.staffId] = true;
-      }
-    });
-  });
-  
-  // PHASE 1: Assign OFF + PH
-  assignOFFToAllStaff();
-  
-  WIZ.currentDayIndex = 0;
-  WIZ.conflictLog = [];
-  WIZ.warnings = [];
-  
-  WIZ.step = 5;
-  processNextDay();
-}
-
-function assignOFFToAllStaff(){
-  const sundays = WIZ.dates.filter(d => isSunday(d));
-  const holidays = WIZ.dates.filter(d => isHoliday(d) && !isSunday(d));
-  const saturdays = WIZ.dates.filter(d => {
-    if(isSunday(d) || isHoliday(d)) return false;
-    return new Date(d+'T00:00:00').getDay() === 6;
-  });
-  const weekdays = WIZ.dates.filter(d => {
-    if(isSunday(d) || isHoliday(d)) return false;
-    const dn = new Date(d+'T00:00:00').getDay();
-    return dn >= 1 && dn <= 5;
-  });
-  
-  function getLockedOff(date){ let c=0; WIZ.staffArr.forEach(s=>{ if(WIZ.grid[date][s._id]==='OFF') c++; }); return c; }
-  function getLockedLeave(date){
-    let c=0;
-    WIZ.staffArr.forEach(s=>{
-      const code = WIZ.grid[date][s._id];
-      if(code && (STATE.leaveTypes||[]).includes(code) && code!=='OFF' && code!=='GH' && code!=='PH') c++;
-    });
-    return c;
-  }
-  function getLockedPH(date){ let c=0; WIZ.staffArr.forEach(s=>{ if(WIZ.grid[date][s._id]==='PH') c++; }); return c; }
-  function needsOff(sid){ return WIZ.offCount[sid] < WIZ.offTarget; }
-  function canTakeOff(date, sid){ return !WIZ.grid[date][sid]; }
-  
-  // Sundays — 7 OFF
-  sundays.forEach(sunday => {
-    const limits = STATE.leaveLimits['Sunday'] || {OFF:7, Leave:0};
-    const offLimit = limits.OFF || 7;
-    const slotsLeft = offLimit - getLockedLeave(sunday) - getLockedOff(sunday);
-    if(slotsLeft <= 0) return;
-    const candidates = WIZ.staffArr
-      .filter(s => canTakeOff(sunday, s._id) && needsOff(s._id))
-      .sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
-    for(let i=0; i<slotsLeft && i<candidates.length; i++){
-      WIZ.grid[sunday][candidates[i]._id] = 'OFF';
-      WIZ.offCount[candidates[i]._id]++;
-    }
-  });
-  
-  // Holidays — PH (up to 7)
-  holidays.forEach(holiday => {
-    const limits = STATE.leaveLimits['Holiday'] || {OFF:7, Leave:0};
-    const offLimit = limits.OFF || 7;
-    const slotsLeft = offLimit - getLockedLeave(holiday) - getLockedOff(holiday) - getLockedPH(holiday);
-    if(slotsLeft <= 0) return;
-    const candidates = WIZ.staffArr
-      .filter(s => canTakeOff(holiday, s._id))
-      .sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
-    for(let i=0; i<slotsLeft && i<candidates.length; i++){
-      WIZ.grid[holiday][candidates[i]._id] = 'PH';
-      WIZ.phCount[candidates[i]._id]++;
-    }
-  });
-  
-  // Saturdays — 2 OFF
-  saturdays.forEach(sat => {
-    const limits = STATE.leaveLimits['Saturday'] || {OFF:2, Leave:0};
-    const offLimit = limits.OFF || 2;
-    const slotsLeft = offLimit - getLockedLeave(sat) - getLockedOff(sat);
-    if(slotsLeft <= 0) return;
-    const candidates = WIZ.staffArr
-      .filter(s => canTakeOff(sat, s._id) && needsOff(s._id))
-      .sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
-    for(let i=0; i<slotsLeft && i<candidates.length; i++){
-      WIZ.grid[sat][candidates[i]._id] = 'OFF';
-      WIZ.offCount[candidates[i]._id]++;
-    }
-  });
-  
-  // Weekdays — 1 OFF
-  weekdays.forEach(wd => {
-    const dayKey = dayNameFor(wd);
-    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
-    const offLimit = limits.OFF || 1;
-    const slotsLeft = offLimit - getLockedLeave(wd) - getLockedOff(wd);
-    if(slotsLeft <= 0) return;
-    const candidates = WIZ.staffArr
-      .filter(s => canTakeOff(wd, s._id) && needsOff(s._id))
-      .sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
-    for(let i=0; i<slotsLeft && i<candidates.length; i++){
-      WIZ.grid[wd][candidates[i]._id] = 'OFF';
-      WIZ.offCount[candidates[i]._id]++;
-    }
-  });
-  
-  // Top-up remaining OFF
-  WIZ.staffArr.forEach(s => {
-    while(WIZ.offCount[s._id] < WIZ.offTarget){
-      let found = false;
-      for(const d of WIZ.dates){
-        if(isHoliday(d)) continue;
-        if(!canTakeOff(d, s._id)) continue;
-        const dayKey = isSunday(d) ? 'Sunday' : dayNameFor(d);
-        const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
-        const offLimit = limits.OFF || 1;
-        if(getLockedOff(d) + getLockedLeave(d) < offLimit){
-          WIZ.grid[d][s._id] = 'OFF';
-          WIZ.offCount[s._id]++;
-          found = true;
-          break;
-        }
-      }
-      if(!found) break;
-    }
-  });
-}
-
-function processNextDay(){
-  if(WIZ.currentDayIndex >= WIZ.dates.length){
-    finalizeGeneration();
-    WIZ.step = 6;
-    renderWizard();
-    return;
-  }
-  const d = WIZ.dates[WIZ.currentDayIndex];
-  const result = processDay(d);
-  if(result.conflict){
-    WIZ.currentConflictDay = d;
-    WIZ.currentConflictResult = result;
-    renderWizard();
-    return;
-  }
-  WIZ.currentDayIndex++;
-  setTimeout(processNextDay, 5);
-}
-
-function processDay(date){
-  const isOff = isHolidayOrSunday(date);
-  const dayKey = isHoliday(date) ? 'Holiday' : dayNameFor(date);
-  const need = STATE.weeklySetup[dayKey] || {};
-  const dayGrid = WIZ.grid[date];
-  
-  let offCount = 0, leaveCount = 0, phCount = 0;
-  Object.values(dayGrid).forEach(c=>{
-    if(c === 'OFF') offCount++;
-    else if(c === 'PH') phCount++;
-    else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
-  });
-  const totalRelax = offCount + leaveCount + phCount;
-  const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
-  const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
-  
-  fillDayShifts(date, need, isOff);
-  
-  const coverageCheck = checkShiftCoverage(date, need, isOff);
-  if(!coverageCheck.ok){
-    return {
-      conflict: true, type: 'shift_not_covered', date,
-      message: `${fmtDisplay(date)} (${dayShort(date)}): ${coverageCheck.code} needs ${coverageCheck.required}, only ${coverageCheck.actual}.`,
-      details: `Missing: ${coverageCheck.missing}`,
-      suggestion: { action: 'MODIFY', message: `Modify manually.` }
-    };
-  }
-  
-  if(totalRelax > relaxLimit){
-    const excess = totalRelax - relaxLimit;
-    let conflictType, suggestion;
-    if(excess === 1){
-      conflictType = 'relax_exceeded_by_1';
-      suggestion = { action: 'X_DUTY', message: `Assign 1 to X duty.` };
-    } else if(excess === 2){
-      conflictType = 'relax_exceeded_by_2';
-      suggestion = { action: 'DX_DUTY', message: `Assign 1 to DX duty.` };
-    } else {
-      conflictType = 'relax_exceeded_major';
-      suggestion = { action: 'MODIFY', message: `Too many staff. Modify manually.` };
-    }
-    return {
-      conflict: true, type: conflictType, date,
-      message: `${fmtDisplay(date)}: ${totalRelax} staff on relax, limit ${relaxLimit}.`,
-      details: `${offCount} OFF + ${leaveCount} Leave + ${phCount} PH`,
-      excess, suggestion
-    };
-  }
-  return { conflict: false };
-}
-
-function fillDayShifts(date, need, isOff){
-  const dayGrid = WIZ.grid[date];
-  const freeStaff = WIZ.staffArr.filter(s => !dayGrid[s._id]);
-  
-  Object.keys(need).forEach(code => {
-    const req = need[code];
-    if(!req) return;
-    const shiftDef = STATE.shifts[code];
-    if(!shiftDef) return;
-    const activeToday = isOff ? shiftDef.sun : shiftDef.monSat;
-    if(!activeToday) return;
-    
-    let assigned = Object.values(dayGrid).filter(c => c === code).length;
-    let remaining = req - assigned;
-    
-    while(remaining > 0){
-      const eligible = freeStaff.filter(s => {
-        if(dayGrid[s._id]) return false;
-        if(shiftDef.gender !== 'Any' && s.gender !== shiftDef.gender) return false;
-        return true;
-      });
-      eligible.sort((a,b) => {
-        const aP = (a.fixedShift === code ? 0 : (a.multiShifts||[]).indexOf(code) >= 0 ? (a.multiShifts.indexOf(code)+1) : 99);
-        const bP = (b.fixedShift === code ? 0 : (b.multiShifts||[]).indexOf(code) >= 0 ? (b.multiShifts.indexOf(code)+1) : 99);
-        return aP - bP;
-      });
-      if(!eligible.length) break;
-      dayGrid[eligible[0]._id] = code;
-      remaining--;
-    }
-  });
-  
-  const xReq = need['X'] || 0;
-  const xAssigned = Object.values(dayGrid).filter(c => c === 'X').length;
-  let xSlots = Math.max(0, xReq - xAssigned);
-  
-  WIZ.staffArr.forEach(s => {
-    if(dayGrid[s._id]) return;
-    if(xSlots > 0){
-      dayGrid[s._id] = 'X';
-      xSlots--;
-    } else {
-      dayGrid[s._id] = 'X';
-    }
-  });
-}
-
-function checkShiftCoverage(date, need, isOff){
-  const dayGrid = WIZ.grid[date];
-  for(const code of Object.keys(need)){
-    const req = need[code];
-    if(!req) continue;
-    const shiftDef = STATE.shifts[code];
-    if(!shiftDef) continue;
-    const activeToday = isOff ? shiftDef.sun : shiftDef.monSat;
-    if(!activeToday) continue;
-    const actual = Object.values(dayGrid).filter(c => c === code).length;
-    if(actual < req) return {ok:false, code, required:req, actual, missing:req-actual};
-  }
-  return {ok:true};
-}
-
-function tplConflictView(){
-  if(!WIZ.currentConflictResult) return '<div class="empty-state">Processing...</div>';
-  const c = WIZ.currentConflictResult;
-  const date = WIZ.currentConflictDay;
-  const staffArr = WIZ.staffArr;
-  
-  let suggestionHtml = '';
-  if(c.suggestion && (c.suggestion.action === 'X_DUTY' || c.suggestion.action === 'DX_DUTY')){
-    suggestionHtml = `
-      <div class="suggestion"><b>💡 Suggestion:</b> ${escapeHtml(c.suggestion.message)}</div>
-      <div class="field"><label>Select staff:</label>
-        <select id="conflict_staff_pick">
-          ${staffArr.map(s=>`<option value="${s._id}">${escapeHtml(s.name)} (${s.gender})</option>`).join('')}
-        </select>
-      </div>`;
-  } else {
-    suggestionHtml = `<div class="suggestion"><b>💡 Suggestion:</b> ${escapeHtml(c.suggestion.message||'Manual modification required.')}</div>`;
-  }
-  
-  let actionsHtml = '';
-  if(c.suggestion && (c.suggestion.action === 'X_DUTY' || c.suggestion.action === 'DX_DUTY')){
-    actionsHtml = `
-      <button class="btn btn-success" onclick="resolveConflict('accept')">✅ Confirm</button>
-      <button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify</button>`;
-  } else {
-    actionsHtml = `<button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify Manually</button>`;
-  }
-  
-  const progress = `Day ${WIZ.currentDayIndex + 1} of ${WIZ.dates.length}`;
-  const pct = Math.round(((WIZ.currentDayIndex) / WIZ.dates.length) * 100);
-  
-  return `
-    <div class="info-box"><b>Progress:</b> ${progress}</div>
-    <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
-    <div class="conflict-box">
-      <h3>⚠️ CONFLICT on ${fmtDisplay(date)}</h3>
-      <div class="problem"><b>Problem:</b><br>${escapeHtml(c.message)}<br><small>${escapeHtml(c.details)}</small></div>
-      ${suggestionHtml}
-      <div class="actions">${actionsHtml}</div>
-    </div>`;
-}
-
-function resolveConflict(action){
-  const date = WIZ.currentConflictDay;
-  const c = WIZ.currentConflictResult;
-  const dayGrid = WIZ.grid[date];
-  
-  if(action === 'accept'){
-    const pickEl = $('conflict_staff_pick');
-    const pickId = pickEl ? pickEl.value : null;
-    if(!pickId){ toast('Select staff','error'); return; }
-    if(c.suggestion.action === 'X_DUTY'){
-      dayGrid[pickId] = 'X';
-      WIZ.conflictLog.push({date, note: staffName(pickId)+' → X'});
-    } else if(c.suggestion.action === 'DX_DUTY'){
-      dayGrid[pickId] = 'DX';
-      WIZ.conflictLog.push({date, note: staffName(pickId)+' → DX'});
-    }
-  }
-  else if(action === 'modify'){
-    showManualResolution(date);
-    return;
-  }
-  
-  WIZ.currentDayIndex++;
-  setTimeout(processNextDay, 5);
-}
-
-function showManualResolution(date){
-  const dayGrid = WIZ.grid[date];
-  const allCodes = ['', ...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'PH', 'X', 'DX'];
-  const rows = WIZ.staffArr.map(s=>{
-    const cur = dayGrid[s._id] || '';
-    return `<div class="dyn-row">
-      <div style="flex:1;font-weight:700;min-width:130px;">${escapeHtml(s.name)} <small>(${s.gender})</small></div>
-      <div style="flex:2;min-width:160px;">
-        <select onchange="wizSetManual('${date}','${s._id}',this.value)" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:600;">
-          ${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c||'-- none --'}</option>`).join('')}
-        </select>
-      </div>
-    </div>`;
-  }).join('');
-  const body = `<div class="info-box">Manually assign for <b>${fmtDisplay(date)}</b></div>
-    <div style="max-height:450px;overflow-y:auto;">${rows}</div>`;
-  const foot = `<button class="btn btn-ghost" onclick="renderWizard()">Cancel</button>
-    <button class="btn btn-primary" onclick="confirmManualResolution('${date}')">✅ Apply & Continue</button>`;
-  openModal('✏️ Manual Resolution — '+fmtDisplay(date), body, foot, true);
-}
-
-function wizSetManual(date, staffId, code){
-  if(!WIZ.grid[date]) WIZ.grid[date] = {};
-  if(code) WIZ.grid[date][staffId] = code;
-  else delete WIZ.grid[date][staffId];
-}
-
-function confirmManualResolution(date){
-  WIZ.conflictLog.push({date, note:'Resolved manually'});
-  closeModal();
-  WIZ.currentDayIndex++;
-  setTimeout(processNextDay, 50);
-}
-
-/* =========================================================================
-   PH ADJUSTMENT FOR DUTY STAFF — PRIORITY ORDER
-   Priority 1: 🥇 Find suitable day within relax limit → PH
-   Priority 2: 🥈 Break relax limit → PH
-   Priority 3: 🥉 Convert PH → CPL (1 PH = 1 CPL)
-   ========================================================================= */
-
-function getDutyStaffWithoutPH(){
-  const result = [];
-  WIZ.staffArr.forEach(s => {
-    WIZ.confirmedHolidays.forEach(h => {
-      const code = WIZ.grid[h.date] && WIZ.grid[h.date][s._id];
-      // If staff was WORKING on holiday (not PH, not OFF, not Leave)
-      if(code && code !== 'PH' && code !== 'OFF' && !(STATE.leaveTypes||[]).includes(code)){
-        // Check if already has a PH somewhere in the period
-        let hasPH = false;
-        WIZ.dates.forEach(d=>{
-          if(WIZ.grid[d] && WIZ.grid[d][s._id] === 'PH') hasPH = true;
-        });
-        if(!hasPH){
-          result.push({ staffId: s._id, holidayDate: h.date, holidayName: h.name });
-        }
-      }
-    });
-  });
-  return result;
-}
-
-function adjustPHForDutyStaff(){
-  const pending = getDutyStaffWithoutPH();
-  if(!pending.length) return;
-  
-  pending.forEach(item => {
-    let resolved = false;
-    
-    // 🥇 PRIORITY 1: Find suitable day within relax limit
-    for(const d of WIZ.dates){
-      if(resolved) break;
-      if(d === item.holidayDate) continue; // Skip holiday itself
-      
-      // If this staff already has an assignment on this day, we could replace it
-      const currentCode = WIZ.grid[d] && WIZ.grid[d][item.staffId];
-      
-      // If current is OFF — check if we can remove it and give PH
-      // (PH replaces OFF — but that would mess up OFF balance)
-      // Better: find a day where staff has 'X' (Extra) or no assignment
-      
-      const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
-      const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
-      const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
-      
-      // Count current relax on this day
-      let offCount = 0, leaveCount = 0, phCount = 0;
-      WIZ.staffArr.forEach(s=>{
-        if(s._id === item.staffId) return; // exclude current staff
-        const c = WIZ.grid[d][s._id];
-        if(c === 'OFF') offCount++;
-        else if(c === 'PH') phCount++;
-        else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
-      });
-      
-      const currentTotal = offCount + leaveCount + phCount;
-      
-      // Check if there's room
-      if(currentTotal < relaxLimit){
-        // Free up this staff's current cell on this day (if occupied)
-        // For now, only replace if X or empty
-        if(!currentCode || currentCode === 'X'){
-          WIZ.grid[d][item.staffId] = 'PH';
-          WIZ.phCount[item.staffId] = (WIZ.phCount[item.staffId] || 0) + 1;
-          WIZ.conflictLog.push({date: d, note: `🥇 ${staffName(item.staffId)} → PH (adjustment from ${item.holidayName})`});
-          resolved = true;
-        }
-      }
-    }
-    
-    // 🥈 PRIORITY 2: Break relax limit if needed
-    if(!resolved){
-      for(const d of WIZ.dates){
-        if(resolved) break;
-        if(d === item.holidayDate) continue;
-        
-        const currentCode = WIZ.grid[d] && WIZ.grid[d][item.staffId];
-        // Only replace X or empty (don't steal OFF)
-        if(!currentCode || currentCode === 'X'){
-          WIZ.grid[d][item.staffId] = 'PH';
-          WIZ.phCount[item.staffId] = (WIZ.phCount[item.staffId] || 0) + 1;
-          WIZ.conflictLog.push({date: d, note: `🥈 ${staffName(item.staffId)} → PH (relax limit broken for entitlement)`});
-          resolved = true;
-        }
-      }
-    }
-    
-    // 🥉 PRIORITY 3: Convert to CPL
-    if(!resolved){
-      WIZ.cplConversions.push({
-        staffId: item.staffId,
-        holidayDate: item.holidayDate,
-        holidayName: item.holidayName,
-        cplAmount: 1,
-        reason: 'PH converted to CPL (no suitable day)',
-        createdAt: nowTs()
-      });
-      // Add CPL count to staff's track record
-      WIZ.phCount[item.staffId] = (WIZ.phCount[item.staffId] || 0) + 1; // Count as PH fulfilled
-      WIZ.conflictLog.push({date: item.holidayDate, note: `🥉 ${staffName(item.staffId)} → PH converted to CPL (1 CPL)`});
-      resolved = true;
-    }
-  });
-}
-
-function finalizeGeneration(){
-  // Adjust PH for duty staff BEFORE recalculating counts
-  adjustPHForDutyStaff();
-  
-  // Recompute counts
-  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; });
-  WIZ.dates.forEach(d=>{
-    WIZ.staffArr.forEach(s=>{
-      const c = WIZ.grid[d][s._id];
-      if(c === 'OFF') WIZ.offCount[s._id]++;
-      if(c === 'PH') WIZ.phCount[s._id]++;
-    });
-  });
-  
-  // Add CPL conversions to PH count for validation
-  WIZ.cplConversions.forEach(conv => {
-    WIZ.phCount[conv.staffId] = (WIZ.phCount[conv.staffId] || 0) + 1;
-  });
-  
-  WIZ.warnings = [];
-  
-  // 1. OFF balance check
-  WIZ.staffArr.forEach(s=>{
-    const diff = WIZ.offCount[s._id] - WIZ.offTarget;
-    if(diff !== 0){
-      WIZ.warnings.push(`❌ ${s.name}: ${WIZ.offCount[s._id]} OFF (target ${WIZ.offTarget}, diff ${diff>0?'+':''}${diff})`);
-    }
-  });
-  
-  // 2. PH check — every staff should have PH = number of holidays
-  const holidayCount = WIZ.confirmedHolidays.length;
-  if(holidayCount > 0){
-    WIZ.staffArr.forEach(s=>{
-      const expected = holidayCount;
-      const actual = WIZ.phCount[s._id] || 0;
-      if(actual < expected){
-        WIZ.warnings.push(`❌ ${s.name}: ${actual}/${expected} PH (must get ${expected} PH)`);
-      }
-    });
-  }
-  
-  // 3. Relax limit check per day
-  WIZ.dates.forEach(d=>{
-    const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
-    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
-    const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
-    let offCount = 0, leaveCount = 0, phCount = 0;
-    WIZ.staffArr.forEach(s=>{
-      const c = WIZ.grid[d][s._id];
-      if(c === 'OFF') offCount++;
-      else if(c === 'PH') phCount++;
-      else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
-    });
-    const totalRelax = offCount + leaveCount + phCount;
-    if(totalRelax > relaxLimit){
-      // PH entitlements are allowed to break limit — only warn for others
-      const nonPH = offCount + leaveCount;
-      if(nonPH > relaxLimit){
-        WIZ.warnings.push(`❌ ${fmtDisplay(d)} (${dayShort(d)}): ${nonPH} staff (OFF+Leave) — limit ${relaxLimit}`);
-      }
-    }
-  });
-  
-  // 4. Gender check
-  WIZ.dates.forEach(d=>{
-    Object.keys(WIZ.grid[d]).forEach(sid=>{
-      const code = WIZ.grid[d][sid];
-      const shiftDef = STATE.shifts[code];
-      if(!shiftDef || shiftDef.gender === 'Any') return;
-      const staff = findStaff(sid);
-      if(staff && staff.gender !== shiftDef.gender){
-        WIZ.warnings.push(`❌ ${fmtDisplay(d)}: ${code} wrong gender (${staff.name})`);
-      }
-    });
-  });
-  
-  // 5. Empty cell check
-  WIZ.dates.forEach(d=>{
-    WIZ.staffArr.forEach(s=>{
-      if(!WIZ.grid[d][s._id]){
-        WIZ.warnings.push(`❌ ${fmtDisplay(d)}: ${s.name} has NO assignment`);
-      }
-    });
-  });
-}
-
-function tplFinalPreview(){
-  const staffArr = WIZ.staffArr;
-  const dates = WIZ.dates;
-  const holidayCount = WIZ.confirmedHolidays.length;
-  let html = '';
-  
-  if(WIZ.warnings.length){
-    html += `<div class="err-box"><b>❌ ${WIZ.warnings.length} Error(s) — Cannot save:</b>
-      <ul>${WIZ.warnings.slice(0,20).map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul></div>`;
-  } else {
-    html += `<div class="ok-box">✅ No errors — Ready to save</div>`;
-  }
-  
-  if(WIZ.conflictLog.length){
-    html += `<div class="info-box"><b>📋 Auto Adjustments (${WIZ.conflictLog.length}):</b>
-      <ul>${WIZ.conflictLog.slice(0,15).map(c=>`<li>${fmtDisplay(c.date)}: ${escapeHtml(c.note)}</li>`).join('')}</ul>
-    </div>`;
-  }
-  
-  if(WIZ.cplConversions.length){
-    html += `<div class="warn-box"><b>💎 PH → CPL Conversions (${WIZ.cplConversions.length}):</b>
-      <ul>${WIZ.cplConversions.map(c=>`<li>${staffName(c.staffId)}: 1 PH (from ${fmtDisplay(c.holidayDate)}) → 1 CPL</li>`).join('')}</ul>
-    </div>`;
-  }
-  
-  html += `<h3>📋 Roster Grid</h3><div class="scroll-x" style="max-height:400px;overflow-y:auto;">
-    <table class="roster-table"><thead><tr><th>Staff</th>${dates.map(d=>`<th>${d.slice(8,10)}/${d.slice(5,7)}<br><span style="font-size:9px;font-weight:400;">${dayShort(d)}</span></th>`).join('')}</tr></thead><tbody>`;
-  staffArr.forEach(s=>{
-    html += `<tr><td style="text-align:right;font-weight:700;">${escapeHtml(s.name)}</td>`;
-    dates.forEach(d=>{
-      const code = WIZ.grid[d][s._id] || '';
-      const cls = code ? 'cell-'+code.replace('+','') : '';
-      html += `<td class="cellcode ${cls}">${escapeHtml(code)}</td>`;
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
-  
-  html += `<h3 style="margin-top:16px;">📊 Summary</h3><div class="scroll-x"><table><thead><tr>
-    <th>Staff</th><th>OFF</th><th>PH</th><th>CPL</th><th>Target OFF</th><th>PH Expected</th><th>Balance</th>
-  </tr></thead><tbody>`;
-  staffArr.forEach(s=>{
-    const off = WIZ.offCount[s._id];
-    const ph = WIZ.phCount[s._id] || 0;
-    const cplConv = WIZ.cplConversions.filter(c=>c.staffId===s._id).length;
-    const bal = off - WIZ.offTarget;
-    const phOk = ph >= holidayCount;
-    const cls = bal===0 ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
-    const phCls = phOk ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
-    html += `<tr><td>${escapeHtml(s.name)}</td><td ${cls}>${off}</td><td ${phCls}>${ph}</td><td>${cplConv}</td><td>${WIZ.offTarget}</td><td>${holidayCount}</td><td ${cls}>${bal>0?'+':''}${bal}</td></tr>`;
-  });
-  html += '</tbody></table></div>';
-  
-  return html;
-}
-
-function wizSaveRoster(){
-  if(WIZ.warnings.length){
-    alert('❌ Cannot save!\n\n'+WIZ.warnings.slice(0,10).join('\n'));
-    toast('❌ Fix errors first','error');
-    return;
-  }
-  const pid = WIZ.period.start + '_' + WIZ.period.end;
-  const updates = {};
-  updates['periods/'+pid] = {
-    start: WIZ.period.start, end: WIZ.period.end,
-    label: WIZ.period.label, createdAt: nowTs(), seenBy: {}
-  };
-  WIZ.dates.forEach(d=>{ updates['roster/'+pid+'/'+d] = WIZ.grid[d]; });
-  WIZ.confirmedHolidays.forEach(h=>{ updates['holidays/'+h.date] = h.name; });
-  
-  // Save CPL conversions
-  WIZ.cplConversions.forEach(conv => {
-    updates['cpLRecords/'+uid()] = {
-      staffId: conv.staffId,
-      type: 'CPL_CONVERSION',
-      amount: conv.cplAmount,
-      originalHolidayDate: conv.holidayDate,
-      holidayName: conv.holidayName,
-      reason: conv.reason,
-      status: 'approved',
-      source: 'PH_to_CPL',
-      periodId: pid,
-      createdBy: CURRENT_USER.name,
-      createdAt: nowTs()
-    };
-  });
-  
-  db.ref().update(updates).then(()=>{
-    STATE.currentPeriodId = pid;
-    logAudit('Roster Generated', 'Period: '+WIZ.period.label+' | CPL conversions: '+WIZ.cplConversions.length);
-    pushNotification('all', '📅 New Roster Published', WIZ.period.label+' is now available');
-    toast('✅ Roster saved!','success');
-    vibrate(100);
-    closeModal();
-    showSection('roster');
-  }).catch(err=>toast('Error: '+err.message,'error'));
-}
-
-/* PART 3A END */
 </script>
-<!-- ⬇⬇⬇ PART 3B STARTS HERE ⬇⬇⬇ -->
-  <script>
-/* =========================================================================
-   PHLEBOTOMIST ROSTER v11 — Part 3B (Final)
+<!-- PART 3A MID -->
+  /* =========================================================================
+   PHLEBOTOMIST ROSTER v12 — Part 3B (Final)
    Roster + Leave + Exchange + Chat + Reports + Dashboard + WhatsApp
    ========================================================================= */
 
@@ -2866,10 +2093,10 @@ function renderMyDataRoster(){
       <div class="my-item"><div class="lbl">🕐 Shift</div><div class="val">${escapeHtml(myCode)}</div></div>
       <div class="my-item"><div class="lbl">⏰ Time</div><div class="val">${sh.start?sh.start+' - '+sh.end:'—'}</div></div>
       <div class="my-item"><div class="lbl">🏢 Station</div><div class="val">${escapeHtml(sh.station||'—')}</div></div>
-      <div class="my-item"><div class="lbl">🌴 OFF (Period)</div><div class="val">${myOff}</div></div>
-      <div class="my-item"><div class="lbl">🎉 PH (Period)</div><div class="val">${myPH}</div></div>
+      <div class="my-item"><div class="lbl">🌴 OFF</div><div class="val">${myOff}</div></div>
+      <div class="my-item"><div class="lbl">🎉 PH</div><div class="val">${myPH}</div></div>
       <div class="my-item"><div class="lbl">⚡ Extra Hours</div><div class="val">${myExtraHours}</div></div>
-      <div class="my-item"><div class="lbl">💎 CPL Earned</div><div class="val">${myCPL}</div></div>
+      <div class="my-item"><div class="lbl">💎 CPL</div><div class="val">${myCPL}</div></div>
     </div>
     ${myExtraHours >= 8 ? `<div class="warn-box" style="margin-top:12px;"><b>🔔 Reminder:</b> You have completed <b>${myExtraHours}</b> extra duty hours and are eligible for <b>${Math.floor(myExtraHours/8)} CPL</b>.</div>` : ''}`;
 }
@@ -2946,20 +2173,18 @@ function applyRosterCell(pid, date, staffId){
     const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
     const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
     
-    let offCount = 0, leaveCount = 0, phCount = 0;
+    let offCount = 0, leaveCount = 0;
     Object.keys(STATE.roster[pid][date] || {}).forEach(sid=>{
       if(sid === staffId) return;
       const c = STATE.roster[pid][date][sid];
       if(c === 'OFF') offCount++;
-      else if(c === 'PH') phCount++;
       else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
     });
     
     if(v === 'OFF') offCount++;
-    else if(v === 'PH') phCount++;
     else if((STATE.leaveTypes||[]).includes(v) && v !== 'OFF' && v !== 'GH' && v !== 'PH') leaveCount++;
     
-    const totalRelax = offCount + leaveCount + phCount;
+    const totalRelax = offCount + leaveCount;
     
     if(totalRelax > relaxLimit){
       alert(`❌ Relax Limit Exceeded!\n\nDate: ${fmtDisplay(date)}\nLimit: ${relaxLimit}\nAfter: ${totalRelax}`);
@@ -3059,7 +2284,7 @@ function renderRosterSummary(pid){
     const cpl = Math.floor(extraHrs / 8);
     const balance = off - offTarget;
     const balanceClass = balance === 0 ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
-    const phClass = (holidayCount === 0 || ph >= holidayCount) ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
+    const phClass = (holidayCount === 0 || ph === holidayCount) ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
     html += `<tr class="${s._id===CURRENT_USER.staffId?'mine':''}">
       <td style="text-align:right;">${escapeHtml(s.name)}</td>
       <td>${off}</td><td ${phClass}>${ph}</td><td>${leave}</td><td>${gh}</td><td>${extraHrs}</td><td>${cpl}</td><td>${offTarget}</td>
@@ -3068,7 +2293,7 @@ function renderRosterSummary(pid){
   });
   html += '</tbody></table></div>';
   if(holidayCount > 0){
-    html += `<div class="info-box" style="margin-top:12px;">ℹ️ <b>PH Expected:</b> Each staff should have <b>${holidayCount}</b> PH (1 per Gazetted Holiday).</div>`;
+    html += `<div class="info-box" style="margin-top:12px;">ℹ️ <b>PH Expected:</b> Each staff should have exactly <b>${holidayCount}</b> PH.</div>`;
   }
   w.innerHTML = html;
 }
@@ -3086,29 +2311,25 @@ function markRosterSeen(){
   });
 }
 
-/* ============ WHATSAPP SHARE 3 FORMATS ============ */
+/* ============ SHARE ROSTER WHATSAPP ============ */
 function openShareRosterModal(){
   const pid = STATE.currentPeriodId;
   if(!pid || !STATE.periods[pid]){ toast('No roster','error'); return; }
   const staffArr = activeStaffArr();
   const body = `
     <div class="info-box">📱 Choose how to share the roster</div>
-    
     <div class="card" style="cursor:pointer;border:2px solid var(--blue);margin-bottom:10px;" onclick="shareRosterAsLink()">
       <h3 style="margin-top:0;color:var(--blue);">🔗 Link</h3>
-      <p style="font-size:13px;color:var(--text-2);margin:0;">Send app link — staff opens and sees roster</p>
+      <p style="font-size:13px;color:var(--text-2);margin:0;">Send app link</p>
     </div>
-    
     <div class="card" style="cursor:pointer;border:2px solid var(--success);margin-bottom:10px;" onclick="shareRosterAsExcel()">
       <h3 style="margin-top:0;color:var(--success);">📊 Excel File</h3>
-      <p style="font-size:13px;color:var(--text-2);margin:0;">Download Excel + send via WhatsApp</p>
+      <p style="font-size:13px;color:var(--text-2);margin:0;">Download Excel</p>
     </div>
-    
     <div class="card" style="cursor:pointer;border:2px solid var(--red);margin-bottom:10px;" onclick="shareRosterAsPDF()">
       <h3 style="margin-top:0;color:var(--red);">📄 PDF / Print</h3>
       <p style="font-size:13px;color:var(--text-2);margin:0;">Print or save as PDF</p>
     </div>
-    
     <div class="field">
       <label>Send to</label>
       <select id="share_target">
@@ -3139,7 +2360,7 @@ function shareRosterAsExcel(){
   toast('📊 Excel downloaded — now opening WhatsApp','success');
   const pid = STATE.currentPeriodId;
   const period = STATE.periods[pid];
-  const msg = `Dear Team,\n\nDuty roster for ${period.label} is attached.\n\n(Please attach the Excel file)\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+  const msg = `Dear Team,\n\nDuty roster for ${period.label} is attached.\n\n— Phlebotomist Roster\nKulsum International Hospital`;
   setTimeout(()=>promptSendWhatsApp(msg), 800);
 }
 
@@ -3148,7 +2369,7 @@ function shareRosterAsPDF(){
   setTimeout(()=>{
     window.print();
     setTimeout(()=>{
-      const msg = `Dear Team,\n\nNew duty roster published. Check your duty.\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+      const msg = `Dear Team,\n\nNew duty roster published.\n\n— Phlebotomist Roster`;
       promptSendWhatsApp(msg);
     }, 1500);
   }, 300);
@@ -3238,13 +2459,12 @@ function renderLeaveSection(){
             <span class="pill pill-${l.status}">${l.status.toUpperCase()}</span>
           </div>
           <div class="sub">📅 ${fmtDisplay(l.startDate||l.date)} to ${fmtDisplay(l.endDate||l.date)}${l.reason?(' — '+escapeHtml(l.reason)):''}</div>
-          ${l.rejectReason?`<div class="sub" style="color:var(--red);">❌ ${escapeHtml(l.rejectReason)}</div>`:''}
         </div>
         ${canApprove ? `
-          <button class="btn btn-success btn-sm" onclick="approveLeave('${l._id}')">✅ Approve</button>
-          <button class="btn btn-danger btn-sm" onclick="rejectLeaveModal('${l._id}')">❌ Reject</button>
-          <button class="btn btn-outline btn-sm" onclick="modifyLeaveModal('${l._id}')">✏️ Modify</button>
-        ` : (isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="deleteLeave('${l._id}')">🗑 Delete</button>` : '')}
+          <button class="btn btn-success btn-sm" onclick="approveLeave('${l._id}')">✅</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectLeaveModal('${l._id}')">❌</button>
+          <button class="btn btn-outline btn-sm" onclick="modifyLeaveModal('${l._id}')">✏️</button>
+        ` : (isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="deleteLeave('${l._id}')">🗑</button>` : '')}
       </div>`;
   }).join('');
 }
@@ -3298,7 +2518,7 @@ function renderLeaveModal(){
   const canSelectStaff = isAdmin() || isSupervisor();
 
   const body = `
-    <div class="info-box">ℹ️ OFF and GH are auto-approved. Other types require supervisor approval.</div>
+    <div class="info-box">ℹ️ OFF and GH auto-approved. Others need supervisor approval.</div>
     <div id="leaveEntriesWrap">
       ${LEAVE_ENTRIES.map((e,i)=>`
         <div class="dyn-row">
@@ -3307,10 +2527,10 @@ function renderLeaveModal(){
           <div class="field"><label>Start</label><input type="date" value="${e.start}" onchange="LEAVE_ENTRIES[${i}].start=this.value"></div>
           <div class="field"><label>End</label><input type="date" value="${e.end}" onchange="LEAVE_ENTRIES[${i}].end=this.value"></div>
           <div class="field"><label>Reason</label><input value="${escapeHtml(e.reason||'')}" onchange="LEAVE_ENTRIES[${i}].reason=this.value"></div>
-          <button class="icon-btn" onclick="removeLeaveEntry(${i})" title="Remove">✕</button>
+          <button class="icon-btn" onclick="removeLeaveEntry(${i})">✕</button>
         </div>`).join('')}
     </div>
-    <button class="btn btn-outline btn-sm" onclick="addLeaveEntry()">➕ Add Another Entry</button>
+    <button class="btn btn-outline btn-sm" onclick="addLeaveEntry()">➕ Add Another</button>
     <div id="leaveModalMsg" style="margin-top:12px;"></div>`;
 
   const foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -3337,12 +2557,12 @@ function submitLeaveEntries(){
   const msgEl = $('leaveModalMsg');
   const errors = [];
   LEAVE_ENTRIES.forEach(e=>{
-    if(!e.staff){ errors.push('Select a staff member'); return; }
+    if(!e.staff){ errors.push('Select staff'); return; }
     if(!e.start){ errors.push('Select start date'); return; }
-    if(e.end && e.end < e.start){ errors.push('End date must be after start'); return; }
+    if(e.end && e.end < e.start){ errors.push('End after start'); return; }
   });
   if(errors.length){
-    msgEl.innerHTML = `<div class="err-box"><b>Please fix:</b><ul>${errors.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>`;
+    msgEl.innerHTML = `<div class="err-box"><b>Fix:</b><ul>${errors.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>`;
     return;
   }
 
@@ -3373,791 +2593,5 @@ function submitLeaveEntries(){
     LEAVE_ENTRIES.forEach(e=>{
       const needsApproval = e.type !== 'OFF' && e.type !== 'GH' && !isAdmin();
       logAudit('Leave Add', `${staffName(e.staff)} — ${e.type}`);
-      pushNotification(e.staff, needsApproval ? '⏳ Leave Submitted' : '✅ Leave Approved',
-        `${e.type} from ${fmtDisplay(e.start)} to ${fmtDisplay(e.end||e.start)}`);
-      if(needsApproval) pushNotification('admin', '🔔 New Leave Request', `${staffName(e.staff)} — ${e.type}`);
-    });
-    toast('✅ Leave submitted','success');
-    vibrate(50);
-    closeModal();
-  });
-}
-
-function periodForDate(d){
-  let found = null;
-  Object.keys(STATE.periods||{}).forEach(pid=>{
-    const p = STATE.periods[pid];
-    if(p.start <= d && d <= p.end) found = pid;
-  });
-  return found;
-}
-
-function approveLeave(id){
-  const l = STATE.leaves[id];
-  if(!l) return;
-  const updates = {};
-  updates['leaves/'+id+'/status'] = 'approved';
-  updates['leaves/'+id+'/approvedBy'] = CURRENT_USER.name;
-  updates['leaves/'+id+'/approvedAt'] = nowTs();
-  const pid = periodForDate(l.startDate || l.date);
-  if(pid){
-    dateRange(l.startDate || l.date, l.endDate || l.date).forEach(d=>{
-      updates['roster/'+pid+'/'+d+'/'+l.staffId] = l.type;
-    });
-  }
-  db.ref().update(updates).then(()=>{
-    logAudit('Leave Approve', `${staffName(l.staffId)} — ${l.type}`);
-    pushNotification(l.staffId, '✅ Leave Approved', `${l.type} — ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}`);
-    toast('✅ Approved','success');
-    const s = findStaff(l.staffId);
-    if(s && s.mobile){
-      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been APPROVED.\nDate: ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}\n\n— Phlebotomist Roster`;
-      if(confirm('📱 Send WhatsApp to '+s.name+'?')) sendWhatsAppToStaff(s.mobile, msg);
-    }
-  });
-}
-
-function rejectLeaveModal(id){
-  const body = `<div class="field"><label>Reason</label><textarea id="rejReason" rows="3" placeholder="Reason..."></textarea></div>`;
-  const foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-danger" onclick="doRejectLeave('${id}')">❌ Reject</button>`;
-  openModal('Reject Leave', body, foot);
-}
-
-function doRejectLeave(id){
-  const reason = $('rejReason').value.trim();
-  const l = STATE.leaves[id];
-  if(!l) return;
-  db.ref('leaves/'+id).update({
-    status:'rejected', rejectReason: reason || '(No reason)',
-    rejectedBy: CURRENT_USER.name, rejectedAt: nowTs()
-  }).then(()=>{
-    logAudit('Leave Reject', `${staffName(l.staffId)} — ${l.type}`);
-    pushNotification(l.staffId, '❌ Leave Rejected', `${l.type} — ${reason || 'Not specified'}`);
-    toast('❌ Rejected','success');
-    const s = findStaff(l.staffId);
-    if(s && s.mobile){
-      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been REJECTED.\nReason: ${reason || 'N/A'}\n\n— Phlebotomist Roster`;
-      if(confirm('📱 Send WhatsApp?')) sendWhatsAppToStaff(s.mobile, msg);
-    }
-    closeModal();
-  });
-}
-
-function modifyLeaveModal(id){
-  const l = STATE.leaves[id];
-  const leaveTypes = STATE.leaveTypes || [];
-  const body = `
-    <div class="field"><label>Type</label><select id="modType">${leaveTypes.map(t=>`<option ${t===l.type?'selected':''}>${t}</option>`).join('')}</select></div>
-    <div class="field"><label>Start</label><input type="date" id="modStart" value="${l.startDate}"></div>
-    <div class="field"><label>End</label><input type="date" id="modEnd" value="${l.endDate}"></div>`;
-  const foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" onclick="doModifyLeave('${id}')">💾 Save & Approve</button>`;
-  openModal('✏️ Modify Leave', body, foot);
-}
-
-function doModifyLeave(id){
-  const l = STATE.leaves[id];
-  const newType = $('modType').value;
-  const newStart = $('modStart').value;
-  const newEnd = $('modEnd').value;
-  if(!newStart || !newEnd){ toast('Fill both dates','error'); return; }
-  if(newEnd < newStart){ toast('End after start','error'); return; }
-  const updates = {};
-  updates['leaves/'+id+'/type'] = newType;
-  updates['leaves/'+id+'/startDate'] = newStart;
-  updates['leaves/'+id+'/endDate'] = newEnd;
-  updates['leaves/'+id+'/status'] = 'approved';
-  updates['leaves/'+id+'/approvedBy'] = CURRENT_USER.name;
-  updates['leaves/'+id+'/approvedAt'] = nowTs();
-  const pid = periodForDate(newStart);
-  if(pid){
-    dateRange(newStart, newEnd).forEach(d=>{
-      updates['roster/'+pid+'/'+d+'/'+l.staffId] = newType;
-    });
-  }
-  db.ref().update(updates).then(()=>{
-    logAudit('Leave Modify', `${staffName(l.staffId)} → ${newType}`);
-    pushNotification(l.staffId, '✏️ Leave Modified', `${newType} ${fmtDisplay(newStart)} to ${fmtDisplay(newEnd)}`);
-    toast('✅ Modified','success');
-    closeModal();
-  });
-}
-
-function deleteLeave(id){
-  if(!confirm('Delete this leave permanently?')) return;
-  db.ref('leaves/'+id).remove().then(()=>{ logAudit('Leave Delete', id); toast('🗑 Deleted','success'); });
-}
-
-/* ============ EXCHANGE ============ */
-function switchExchTab(tab, btn){
-  exchTabView = tab;
-  document.querySelectorAll('#sec-exchange .tabsbar button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderExchangeSection();
-}
-
-function withinOneDayOfPublish(pid){
-  const p = STATE.periods[pid];
-  if(!p) return false;
-  return (nowTs() - (p.createdAt||0)) <= 24*3600*1000;
-}
-
-function renderMyDataExchange(){
-  const w = $('myDataExchange');
-  if(!CURRENT_STAFF){ w.style.display='none'; return; }
-  w.style.display='block';
-  const mine = objToArr(STATE.exchanges).filter(e=>e.fromStaffId===CURRENT_USER.staffId || e.toStaffId===CURRENT_USER.staffId);
-  const mineDCR = objToArr(STATE.dutyChangeRequests).filter(d=>d.staffId===CURRENT_USER.staffId);
-  w.innerHTML = `
-    <h3>🔄 My Exchange Requests</h3>
-    <div class="my-grid">
-      <div class="my-item"><div class="lbl">🔄 Staff Exchanges</div><div class="val">${mine.length}</div></div>
-      <div class="my-item"><div class="lbl">📝 Duty Change Req</div><div class="val">${mineDCR.length}</div></div>
-    </div>`;
-}
-
-function renderExchangeSection(){
-  renderMyDataExchange();
-  const w = $('exchangeListWrap');
-
-  if(exchTabView === 'duty'){
-    let arr = objToArr(STATE.dutyChangeRequests);
-    if(!isAdmin()) arr = arr.filter(d=>d.staffId === CURRENT_USER.staffId);
-    arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
-    if(!arr.length){ w.innerHTML = '<div class="empty-state">No duty change requests</div>'; return; }
-    w.innerHTML = arr.map(d=>`
-      <div class="list-row">
-        <div class="grow">
-          <div class="name">${escapeHtml(staffName(d.staffId))} — ${fmtDisplay(d.date)} <span class="pill pill-${d.status}">${d.status.toUpperCase()}</span></div>
-          <div class="sub">${escapeHtml(d.oldShift||'-')} → ${escapeHtml(d.newShift||'-')}${d.reason?' — '+escapeHtml(d.reason):''}</div>
-        </div>
-        ${isAdmin() && d.status==='pending' ? `
-          <button class="btn btn-success btn-sm" onclick="approveDutyChange('${d._id}')">✅</button>
-          <button class="btn btn-danger btn-sm" onclick="rejectDutyChange('${d._id}')">❌</button>` : ''}
-      </div>`).join('');
-    return;
-  }
-
-  let arr = objToArr(STATE.exchanges);
-  if(!isAdmin() && !isSupervisor()){
-    arr = arr.filter(e=>e.fromStaffId===CURRENT_USER.staffId || e.toStaffId===CURRENT_USER.staffId);
-  }
-  if(exchTabView === 'pending') arr = arr.filter(e=>e.status==='pending' || e.status==='accepted_by_b');
-  arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
-
-  if(!arr.length){ w.innerHTML = '<div class="empty-state">No exchange requests</div>'; return; }
-
-  w.innerHTML = arr.map(e=>{
-    let chipCls = 'pill-pending';
-    if(e.status === 'approved') chipCls = 'pill-approved';
-    else if(e.status.includes('reject')) chipCls = 'pill-rejected';
-    return `
-      <div class="list-row">
-        <div class="grow">
-          <div class="name">${escapeHtml(staffName(e.fromStaffId))} ↔ ${escapeHtml(staffName(e.toStaffId))} <span class="pill ${chipCls}">${escapeHtml(e.status.toUpperCase())}</span></div>
-          <div class="sub">📅 ${fmtDisplay(e.date)} — ${escapeHtml(e.fromShift||'-')} → ${escapeHtml(e.toShift||'-')}${e.reason?' — '+escapeHtml(e.reason):''}</div>
-        </div>
-        ${e.status==='pending' && e.toStaffId===CURRENT_USER.staffId ? `
-          <button class="btn btn-success btn-sm" onclick="staffBAccept('${e._id}')">✅ Accept</button>
-          <button class="btn btn-danger btn-sm" onclick="staffBReject('${e._id}')">❌ Reject</button>` : ''}
-        ${e.status==='accepted_by_b' && isSupervisor() ? `
-          <button class="btn btn-success btn-sm" onclick="supervisorApproveExchange('${e._id}')">✅ Approve</button>
-          <button class="btn btn-danger btn-sm" onclick="supervisorRejectExchange('${e._id}')">❌ Reject</button>` : ''}
-      </div>`;
-  }).join('');
-}
-
-function openExchangeModal(){
-  const pid = STATE.currentPeriodId;
-  const oneDay = pid && withinOneDayOfPublish(pid);
-  const body = `
-    <div class="tabsbar" style="border:none;">
-      <button class="active" id="exchModeStaffBtn" onclick="setExchMode('staff')">🔄 Staff ↔ Staff</button>
-      ${oneDay ? `<button id="exchModeAdminBtn" onclick="setExchMode('admin')">📝 Duty Change</button>` : ''}
-    </div>
-    ${!oneDay ? '<div class="info-box">ℹ️ The 1-day rule for Duty Change has expired.</div>' : ''}
-    <div id="exchModeBody"></div>`;
-  openModal('🔄 New Exchange Request', body, '', true);
-  setExchMode('staff');
-}
-
-function setExchMode(mode){
-  const sb = document.getElementById('exchModeStaffBtn');
-  const ab = document.getElementById('exchModeAdminBtn');
-  if(sb) sb.classList.toggle('active', mode==='staff');
-  if(ab) ab.classList.toggle('active', mode==='admin');
-  const w = $('exchModeBody');
-  const others = activeStaffArr().filter(s=>s._id !== CURRENT_USER.staffId);
-  const staffOpts = others.map(s=>`<option value="${s._id}">${escapeHtml(s.name)}</option>`).join('');
-  const shiftCodes = Object.keys(STATE.shifts||DEFAULT_SHIFTS);
-  const shiftOpts = shiftCodes.map(c=>`<option>${c}</option>`).join('');
-
-  if(mode === 'staff'){
-    w.innerHTML = `
-      <div class="field"><label>Exchange With</label><select id="exToStaff">${staffOpts}</select></div>
-      <div class="field"><label>Date</label><input type="date" id="exDate"></div>
-      <div class="field"><label>My Current Shift</label><select id="exFromShift">${shiftOpts}</select></div>
-      <div class="field"><label>Their Shift</label><select id="exToShift">${shiftOpts}</select></div>
-      <div class="field"><label>Reason</label><input id="exReason"></div>
-      <button class="btn btn-primary btn-block" onclick="submitStaffExchange()">📤 Send Request</button>`;
-  } else {
-    w.innerHTML = `
-      <div class="field"><label>Date</label><input type="date" id="dcDate"></div>
-      <div class="field"><label>Current Shift</label><select id="dcOld">${shiftOpts}</select></div>
-      <div class="field"><label>Requested Shift</label><select id="dcNew">${shiftOpts}</select></div>
-      <div class="field"><label>Reason</label><input id="dcReason"></div>
-      <button class="btn btn-primary btn-block" onclick="submitDutyChange()">📤 Send to Admin</button>`;
-  }
-}
-
-function checkExchangeGenderRule(shift, staffId){
-  const sh = STATE.shifts[shift];
-  if(!sh || sh.gender === 'Any') return true;
-  const s = findStaff(staffId);
-  return s && s.gender === sh.gender;
-}
-
-function submitStaffExchange(){
-  const toStaff = $('exToStaff').value;
-  const date = $('exDate').value;
-  const fromShift = $('exFromShift').value;
-  const toShift = $('exToShift').value;
-  const reason = $('exReason').value.trim();
-  if(!toStaff || !date){ toast('Select staff and date','error'); return; }
-  if(!checkExchangeGenderRule(toShift, CURRENT_USER.staffId)){ toast('Gender rule violation','error'); return; }
-  if(!checkExchangeGenderRule(fromShift, toStaff)){ toast('Gender rule violation','error'); return; }
-  db.ref('exchanges/'+uid()).set({
-    fromStaffId: CURRENT_USER.staffId, toStaffId: toStaff,
-    date, fromShift, toShift, reason, status:'pending', ts:nowTs()
-  }).then(()=>{
-    logAudit('Exchange Request', `${CURRENT_USER.name} ↔ ${staffName(toStaff)}`);
-    pushNotification(toStaff, '🔄 Exchange Request', `${CURRENT_USER.name} wants to exchange on ${fmtDisplay(date)}`);
-    toast('✅ Request sent','success');
-    closeModal();
-  });
-}
-
-function staffBAccept(id){
-  db.ref('exchanges/'+id+'/status').set('accepted_by_b').then(()=>{
-    const e = STATE.exchanges[id];
-    pushNotification(e.fromStaffId, '✅ Exchange Accepted', `${staffName(e.toStaffId)} accepted`);
-    pushNotification('admin', '🔔 Exchange Needs Approval', `${staffName(e.fromStaffId)} ↔ ${staffName(e.toStaffId)}`);
-    toast('✅ Accepted','success');
-  });
-}
-
-function staffBReject(id){
-  db.ref('exchanges/'+id+'/status').set('rejected_by_b').then(()=>{
-    const e = STATE.exchanges[id];
-    pushNotification(e.fromStaffId, '❌ Exchange Rejected', `${staffName(e.toStaffId)} rejected`);
-    toast('❌ Rejected','success');
-  });
-}
-
-function supervisorApproveExchange(id){
-  const e = STATE.exchanges[id];
-  if(!e) return;
-  const pid = periodForDate(e.date);
-  const updates = {};
-  updates['exchanges/'+id+'/status'] = 'approved';
-  updates['exchanges/'+id+'/approvedAt'] = nowTs();
-  if(pid){
-    updates['roster/'+pid+'/'+e.date+'/'+e.fromStaffId] = e.toShift;
-    updates['roster/'+pid+'/'+e.date+'/'+e.toStaffId] = e.fromShift;
-  }
-  db.ref().update(updates).then(()=>{
-    logAudit('Exchange Approve', `${staffName(e.fromStaffId)} ↔ ${staffName(e.toStaffId)}`);
-    pushNotification(e.fromStaffId, '✅ Exchange Approved', 'Roster updated');
-    pushNotification(e.toStaffId, '✅ Exchange Approved', 'Roster updated');
-    toast('✅ Approved — roster updated','success');
-    const sA = findStaff(e.fromStaffId);
-    const sB = findStaff(e.toStaffId);
-    const msgA = `Dear ${sA?.name||''},\n\nYour exchange on ${fmtDisplay(e.date)} has been APPROVED.\nYou now work: ${e.toShift}\n\n— Phlebotomist Roster`;
-    const msgB = `Dear ${sB?.name||''},\n\nYour exchange on ${fmtDisplay(e.date)} has been APPROVED.\nYou now work: ${e.fromShift}\n\n— Phlebotomist Roster`;
-    if(confirm('📱 Send WhatsApp to both staff?')){
-      if(sA && sA.mobile) sendWhatsAppToStaff(sA.mobile, msgA);
-      setTimeout(()=>{ if(sB && sB.mobile) sendWhatsAppToStaff(sB.mobile, msgB); }, 1200);
-    }
-  });
-}
-
-function supervisorRejectExchange(id){
-  db.ref('exchanges/'+id+'/status').set('rejected').then(()=>{
-    const e = STATE.exchanges[id];
-    pushNotification(e.fromStaffId, '❌ Exchange Rejected', 'Supervisor rejected');
-    pushNotification(e.toStaffId, '❌ Exchange Rejected', 'Supervisor rejected');
-    toast('❌ Rejected','success');
-  });
-}
-
-function submitDutyChange(){
-  const date = $('dcDate').value;
-  const oldS = $('dcOld').value;
-  const newS = $('dcNew').value;
-  const reason = $('dcReason').value.trim();
-  if(!date){ toast('Select date','error'); return; }
-  db.ref('dutyChangeRequests/'+uid()).set({
-    staffId: CURRENT_USER.staffId, date, oldShift: oldS, newShift: newS, reason, status: 'pending', ts: nowTs()
-  }).then(()=>{
-    logAudit('Duty Change Request', `${CURRENT_USER.name}: ${oldS} → ${newS}`);
-    pushNotification('admin', '🔔 Duty Change Request', `${CURRENT_USER.name} — ${fmtDisplay(date)}`);
-    toast('✅ Request sent','success');
-    closeModal();
-  });
-}
-
-function approveDutyChange(id){
-  const d = STATE.dutyChangeRequests[id];
-  if(!d) return;
-  const pid = periodForDate(d.date);
-  const updates = {};
-  updates['dutyChangeRequests/'+id+'/status'] = 'approved';
-  if(pid) updates['roster/'+pid+'/'+d.date+'/'+d.staffId] = d.newShift;
-  db.ref().update(updates).then(()=>{
-    logAudit('Duty Change Approve', staffName(d.staffId));
-    pushNotification(d.staffId, '✅ Duty Change Approved', 'Roster updated');
-    toast('✅ Approved','success');
-    const s = findStaff(d.staffId);
-    if(s && s.mobile){
-      const msg = `Dear ${s.name},\n\nYour duty change for ${fmtDisplay(d.date)} has been APPROVED.\nOld: ${d.oldShift}\nNew: ${d.newShift}\n\n— Phlebotomist Roster`;
-      if(confirm('📱 Send WhatsApp?')) sendWhatsAppToStaff(s.mobile, msg);
-    }
-  });
-}
-
-function rejectDutyChange(id){
-  db.ref('dutyChangeRequests/'+id+'/status').set('rejected').then(()=>{
-    const d = STATE.dutyChangeRequests[id];
-    pushNotification(d.staffId, '❌ Duty Change Rejected', d.reason || '');
-    toast('❌ Rejected','success');
-  });
-}
-
-/* ============ CHAT ============ */
-function renderChat(){
-  const side = $('chatSide');
-  const others = activeStaffArr().filter(s=>s._id !== CURRENT_USER.staffId);
-  let html = `<div class="cuser ${chatActivePeer==='group'?'active':''}" onclick="setChatPeer('group')">
-    <span style="font-size:20px;">👥</span> Group Chat
-  </div>`;
-  html += others.map(s=>`
-    <div class="cuser ${chatActivePeer===s._id?'active':''}" onclick="setChatPeer('${s._id}')">
-      <span style="width:28px;height:28px;border-radius:50%;background:${s.gender==='Female'?'#8a3fa0':'#1E5BA8'};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">${escapeHtml((s.name||'?').slice(0,1))}</span>
-      ${escapeHtml(s.name)}
-    </div>`).join('');
-  side.innerHTML = html;
-  renderChatMsgs();
-}
-function setChatPeer(p){ chatActivePeer = p; renderChat(); }
-function pairKey(a,b){ return [a,b].sort().join('__'); }
-function chatBasePath(){
-  if(chatActivePeer === 'group') return 'chat/group';
-  const key = pairKey(CURRENT_USER.staffId || CURRENT_USER.uid, chatActivePeer);
-  return 'chat/individual/' + key;
-}
-function renderChatMsgs(){
-  const wrap = $('chatMsgs');
-  if(!wrap) return;
-  let msgs = [];
-  if(chatActivePeer === 'group') msgs = objToArr(STATE.chatGroup);
-  else {
-    const key = pairKey(CURRENT_USER.staffId || CURRENT_USER.uid, chatActivePeer);
-    msgs = objToArr((STATE.chatIndividual || {})[key] || {});
-  }
-  msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
-  if(!msgs.length){ wrap.innerHTML = '<div class="empty-state">No messages yet. Send the first one! 💬</div>'; return; }
-  const myId = CURRENT_USER.staffId || CURRENT_USER.uid;
-  wrap.innerHTML = msgs.map(m=>{
-    const mine = m.senderId === myId;
-    const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-    let content = (m.type === 'image' && m.url)
-      ? `<img src="${escapeHtml(m.url)}" onclick="window.open(this.src)" alt="image">`
-      : escapeHtml(m.text || '');
-    return `<div class="msg ${mine?'mine':''}">
-      ${!mine ? `<div class="sender">${escapeHtml(m.senderName||'')}</div>` : ''}
-      ${content}
-      <div class="ts">${time}</div>
-    </div>`;
-  }).join('');
-  wrap.scrollTop = wrap.scrollHeight;
-}
-function sendChatText(){
-  const input = $('chatTextInput');
-  const val = input.value.trim();
-  if(!val) return;
-  const senderId = CURRENT_USER.staffId || CURRENT_USER.uid;
-  db.ref(chatBasePath()+'/'+uid()).set({
-    senderId, senderName: CURRENT_USER.name,
-    text: val, type: 'text', ts: nowTs()
-  }).then(()=>{ input.value = ''; });
-}
-function sendChatImage(){
-  const file = $('chatImgInput').files[0];
-  if(!file) return;
-  if(file.size > 5*1024*1024){ toast('Image under 5MB','error'); return; }
-  const senderId = CURRENT_USER.staffId || CURRENT_USER.uid;
-  const path = 'chatImages/'+uid()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'');
-  const ref = storage.ref(path);
-  toast('📤 Uploading...','warn');
-  ref.put(file)
-    .then(snap => snap.ref.getDownloadURL())
-    .then(url => db.ref(chatBasePath()+'/'+uid()).set({
-      senderId, senderName: CURRENT_USER.name,
-      url, type: 'image', ts: nowTs()
-    }))
-    .then(()=>{ toast('✅ Image sent','success'); $('chatImgInput').value=''; })
-    .catch(err=>toast('Failed: '+err.message,'error'));
-}
-
-/* ============ REPORTS ============ */
-function switchReportTab(tab, btn){
-  reportTabView = tab;
-  document.querySelectorAll('#sec-reports .tabsbar button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderReportsSection();
-}
-function renderReportsSection(){
-  const w = $('reportContentWrap');
-  if(reportTabView === 'daily') w.innerHTML = reportDaily();
-  else if(reportTabView === 'monthly') w.innerHTML = reportMonthly();
-  else if(reportTabView === 'cpl') w.innerHTML = reportCPL();
-  else if(reportTabView === 'leave') w.innerHTML = reportLeave();
-  else if(reportTabView === 'seen') w.innerHTML = reportSeen();
-  else if(reportTabView === 'audit') w.innerHTML = reportAudit();
-}
-function reportDaily(){
-  const today = todayStr();
-  const pid = STATE.currentPeriodId;
-  const staffArr = activeStaffArr();
-  const rows = staffArr.map(s=>{
-    const code = (pid && STATE.roster[pid] && STATE.roster[pid][today] && STATE.roster[pid][today][s._id]) || '';
-    const sh = STATE.shifts[code] || {};
-    return `<tr class="${s._id===CURRENT_USER.staffId?'mine':''}">
-      <td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.designation||'')}</td>
-      <td><b>${escapeHtml(code||'-')}</b></td>
-      <td>${sh.start?sh.start+'-'+sh.end:'-'}</td>
-      <td>${escapeHtml(sh.station||'-')}</td>
-    </tr>`;
-  }).join('');
-  return `<h3>☀️ Daily Duty Report — ${fmtDisplay(today)}</h3>
-    <div class="scroll-x"><table><thead><tr><th>Name</th><th>Designation</th><th>Shift</th><th>Time</th><th>Station</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-}
-function reportMonthly(){
-  const pid = STATE.currentPeriodId;
-  if(!pid) return '<div class="empty-state">No period selected</div>';
-  const dates = dateRange(STATE.periods[pid].start, STATE.periods[pid].end);
-  const staffArr = activeStaffArr();
-  const offTarget = countSundays(STATE.periods[pid].start, STATE.periods[pid].end);
-  const rows = staffArr.map(s=>{
-    let off=0, leave=0, ph=0, gh=0, extraHrs=0, duties=0;
-    dates.forEach(d=>{
-      const c = (STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][s._id]) || '';
-      if(c === 'OFF') off++;
-      else if(c === 'PH') ph++;
-      else if(c === 'GH') gh++;
-      else if((STATE.leaveTypes||[]).includes(c)) leave++;
-      else if(c === 'M+E' || c === 'E+N') extraHrs += 8;
-      else if(c === 'DE') extraHrs += 4;
-      else if(c) duties++;
-    });
-    const cpl = Math.floor(extraHrs / 8);
-    const bal = off - offTarget;
-    const cls = bal===0 ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
-    return `<tr class="${s._id===CURRENT_USER.staffId?'mine':''}">
-      <td>${escapeHtml(s.name)}</td><td>${dates.length}</td>
-      <td ${cls}>${off}</td><td>${leave}</td><td>${ph}</td><td>${gh}</td>
-      <td>${extraHrs}</td><td>${cpl}</td><td>${duties}</td>
-    </tr>`;
-  }).join('');
-  return `<h3>📆 Monthly Summary — ${escapeHtml(STATE.periods[pid].label||'')}</h3>
-    <div class="info-box">OFF Target: <b>${offTarget}</b> (Sundays) | PH & GH counted separately</div>
-    <div class="scroll-x"><table><thead><tr>
-      <th>Staff</th><th>Days</th><th>OFF</th><th>Leave</th><th>PH</th><th>GH</th><th>Extra Hrs</th><th>CPL</th><th>Duties</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-function reportCPL(){
-  const pid = STATE.currentPeriodId;
-  const dates = pid ? dateRange(STATE.periods[pid].start, STATE.periods[pid].end) : [];
-  const staffArr = activeStaffArr();
-  const rows = staffArr.map(s=>{
-    let sunHol = 0, cplUsed = 0, extraHrs = 0;
-    dates.forEach(d=>{
-      const c = (STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][s._id]) || '';
-      if((isSunday(d) || isHoliday(d)) && c && c !== 'OFF' && c !== 'PH' && !(STATE.leaveTypes||[]).includes(c)) sunHol++;
-      if(c === 'CPL') cplUsed++;
-      if(c === 'M+E' || c === 'E+N') extraHrs += 8;
-      else if(c === 'DE') extraHrs += 4;
-    });
-    const cplEarned = Math.floor(extraHrs / 8) + sunHol;
-    return `<tr class="${s._id===CURRENT_USER.staffId?'mine':''}">
-      <td>${escapeHtml(s.name)}</td>
-      <td>${sunHol}</td><td>${extraHrs}</td>
-      <td><b>${cplEarned}</b></td><td>${cplUsed}</td>
-      <td><b>${cplEarned - cplUsed}</b></td>
-    </tr>`;
-  }).join('');
-  return `<h3>💎 CPL / Overtime Balance</h3>
-    <div class="info-box">
-      • Sunday/Holiday duty = 1 CPL<br>
-      • 8 extra hours (M+E/E+N) = 1 CPL<br>
-      • 4 extra hours (DE) = 4/8 CPL<br>
-      • PH → CPL conversion = 1 PH = 1 CPL
-    </div>
-    <div class="scroll-x"><table><thead><tr>
-      <th>Staff</th><th>Sun/Hol</th><th>Extra Hrs</th><th>CPL Earned</th><th>CPL Used</th><th>Balance</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-function reportLeave(){
-  let arr = objToArr(STATE.leaves);
-  if(!isAdmin() && !isSupervisor()) arr = arr.filter(l=>l.staffId === CURRENT_USER.staffId);
-  arr.sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
-  if(!arr.length) return '<div class="empty-state">No leave records</div>';
-  const rows = arr.map(l=>`
-    <tr class="${l.staffId===CURRENT_USER.staffId?'mine':''}">
-      <td>${escapeHtml(staffName(l.staffId))}</td>
-      <td>${escapeHtml(l.type)}</td>
-      <td>${fmtDisplay(l.startDate||l.date)}</td>
-      <td>${fmtDisplay(l.endDate||l.date)}</td>
-      <td><span class="pill pill-${l.status}">${l.status.toUpperCase()}</span></td>
-      <td>${escapeHtml(l.reason||'')}</td>
-    </tr>`).join('');
-  return `<h3>🏖️ Leave Report</h3>
-    <div class="scroll-x"><table><thead><tr>
-      <th>Staff</th><th>Type</th><th>Start</th><th>End</th><th>Status</th><th>Reason</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-function reportSeen(){
-  if(!isAdmin()) return '<div class="empty-state">🔒 Only Admin</div>';
-  const pid = STATE.currentPeriodId;
-  if(!pid) return '<div class="empty-state">No period selected</div>';
-  const seenBy = (STATE.periods[pid] && STATE.periods[pid].seenBy) || {};
-  const rows = activeStaffArr().map(s=>{
-    const ts = seenBy[s._id];
-    return `<tr>
-      <td>${escapeHtml(s.name)}</td>
-      <td>${ts?'✅ Viewed':'❌ Not Viewed'}</td>
-      <td>${ts?new Date(ts).toLocaleString():'-'}</td>
-    </tr>`;
-  }).join('');
-  return `<h3>👁 Roster Seen Report — ${escapeHtml(STATE.periods[pid].label||'')}</h3>
-    <div class="info-box">Shows which staff have viewed the current roster.</div>
-    <div class="scroll-x"><table><thead><tr><th>Staff</th><th>Status</th><th>Last Viewed</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-}
-function reportAudit(){
-  if(!isAdmin()) return '<div class="empty-state">🔒 Only Admin</div>';
-  const arr = objToArr(STATE.auditLog).sort((a,b)=>b.ts-a.ts).slice(0,300);
-  if(!arr.length) return '<div class="empty-state">No audit entries yet</div>';
-  const rows = arr.map(a=>`
-    <tr>
-      <td>${new Date(a.ts).toLocaleString()}</td>
-      <td>${escapeHtml(a.user)}</td>
-      <td>${escapeHtml(a.role)}</td>
-      <td>${escapeHtml(a.action)}</td>
-      <td>${escapeHtml(a.details||'')}</td>
-    </tr>`).join('');
-  return `<h3>📝 Audit Log</h3>
-    <div class="info-box">All actions are logged for accountability.</div>
-    <div class="scroll-x"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-}
-function exportReportExcel(){
-  const table = $('reportContentWrap').querySelector('table');
-  if(!table){ toast('No data','error'); return; }
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.table_to_sheet(table);
-  XLSX.utils.book_append_sheet(wb, ws, reportTabView);
-  XLSX.writeFile(wb, 'Report_'+reportTabView+'_'+todayStr()+'.xlsx');
-  logAudit('Export', 'Report: '+reportTabView);
-  toast('✅ Exported','success');
-}
-
-/* ============ DASHBOARD ============ */
-function renderDashboard(){
-  const pid = STATE.currentPeriodId;
-  const today = todayStr();
-  const staffArr = activeStaffArr();
-  const pendingLeaves = objToArr(STATE.leaves).filter(l=>l.status==='pending').length;
-  const pendingExch = objToArr(STATE.exchanges).filter(e=>e.status==='pending'||e.status==='accepted_by_b').length;
-  const pendingDCR = objToArr(STATE.dutyChangeRequests).filter(d=>d.status==='pending').length;
-  const totalPeriods = Object.keys(STATE.periods).length;
-
-  $('dashStats').innerHTML = `
-    <div class="stat-card"><div class="num">${staffArr.length}</div><div class="lbl">👥 Active Staff</div></div>
-    <div class="stat-card red"><div class="num">${totalPeriods}</div><div class="lbl">📅 Roster Periods</div></div>
-    <div class="stat-card amber"><div class="num">${pendingLeaves}</div><div class="lbl">⏳ Pending Leaves</div></div>
-    <div class="stat-card green"><div class="num">${pendingExch + pendingDCR}</div><div class="lbl">🔄 Pending Requests</div></div>`;
-
-  const w = $('myDataDashboard');
-  if(CURRENT_STAFF){
-    let myCode = '—';
-    if(pid && STATE.roster[pid] && STATE.roster[pid][today]){
-      myCode = STATE.roster[pid][today][CURRENT_USER.staffId] || '—';
-    }
-    let offCount = 0, phCount = 0, leaveCount = 0, cplEarned = 0, cplUsed = 0, extraHrs = 0;
-    if(pid && STATE.roster[pid]){
-      const dates = dateRange(STATE.periods[pid].start, STATE.periods[pid].end);
-      dates.forEach(d=>{
-        const c = STATE.roster[pid][d] && STATE.roster[pid][d][CURRENT_USER.staffId];
-        if(c === 'OFF') offCount++;
-        else if(c === 'PH') phCount++;
-        else if(c && STATE.leaveTypes.includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
-        if((isSunday(d) || isHoliday(d)) && c && c !== 'OFF' && c !== 'PH' && !STATE.leaveTypes.includes(c)) cplEarned++;
-        if(c === 'CPL') cplUsed++;
-        if(c === 'M+E' || c === 'E+N') extraHrs += 8;
-        else if(c === 'DE') extraHrs += 4;
-      });
-      cplEarned += Math.floor(extraHrs / 8);
-    }
-    w.style.display = 'block';
-    w.innerHTML = `
-      <h3>👤 My Data — ${escapeHtml(CURRENT_STAFF.name)}</h3>
-      <div class="my-grid">
-        <div class="my-item"><div class="lbl">🕐 Today's Duty</div><div class="val">${escapeHtml(myCode)}</div></div>
-        <div class="my-item"><div class="lbl">🌴 OFF</div><div class="val">${offCount}</div></div>
-        <div class="my-item"><div class="lbl">🎉 PH</div><div class="val">${phCount}</div></div>
-        <div class="my-item"><div class="lbl">🏖️ Leave</div><div class="val">${leaveCount}</div></div>
-        <div class="my-item"><div class="lbl">⚡ Extra Hours</div><div class="val">${extraHrs}</div></div>
-        <div class="my-item"><div class="lbl">💎 CPL Balance</div><div class="val">${cplEarned - cplUsed}</div></div>
-      </div>
-      ${extraHrs >= 8 ? `<div class="warn-box" style="margin-top:12px;"><b>🔔 Reminder:</b> You have completed <b>${extraHrs}</b> extra duty hours and are eligible for <b>${Math.floor(extraHrs/8)} CPL</b>.</div>` : ''}`;
-  } else {
-    w.style.display = 'none';
-    w.innerHTML = '';
-  }
-
-  const pc = $('pendingApprovalsCard');
-  if(isSupervisor()){
-    const items = [];
-    objToArr(STATE.leaves).filter(l=>l.status==='pending').forEach(l=>{
-      items.push(`<div class="list-row"><div class="grow"><div class="name">🏖️ Leave: ${escapeHtml(staffName(l.staffId))}</div><div class="sub">${l.type} — ${fmtDisplay(l.startDate||l.date)} to ${fmtDisplay(l.endDate||l.date)}</div></div><button class="btn btn-success btn-sm" onclick="approveLeave('${l._id}')">✅ Approve</button><button class="btn btn-danger btn-sm" onclick="rejectLeaveModal('${l._id}')">❌ Reject</button></div>`);
-    });
-    objToArr(STATE.exchanges).filter(e=>e.status==='accepted_by_b').forEach(e=>{
-      items.push(`<div class="list-row"><div class="grow"><div class="name">🔄 Exchange: ${escapeHtml(staffName(e.fromStaffId))} ↔ ${escapeHtml(staffName(e.toStaffId))}</div><div class="sub">${fmtDisplay(e.date)} — ${e.fromShift} → ${e.toShift}</div></div><button class="btn btn-success btn-sm" onclick="supervisorApproveExchange('${e._id}')">✅</button><button class="btn btn-danger btn-sm" onclick="supervisorRejectExchange('${e._id}')">❌</button></div>`);
-    });
-    objToArr(STATE.dutyChangeRequests).filter(d=>d.status==='pending').forEach(d=>{
-      items.push(`<div class="list-row"><div class="grow"><div class="name">📝 Duty Change: ${escapeHtml(staffName(d.staffId))}</div><div class="sub">${fmtDisplay(d.date)} — ${d.oldShift} → ${d.newShift}</div></div><button class="btn btn-success btn-sm" onclick="approveDutyChange('${d._id}')">✅</button><button class="btn btn-danger btn-sm" onclick="rejectDutyChange('${d._id}')">❌</button></div>`);
-    });
-    if(items.length){
-      pc.style.display = 'block';
-      pc.innerHTML = '<h2>⏳ Pending Approvals</h2>' + items.join('');
-    } else pc.style.display = 'none';
-  } else pc.style.display = 'none';
-
-  const tbody = document.querySelector('#todayDutyTable tbody');
-  if(tbody){
-    const rows = staffArr.map(s=>{
-      const code = pid && STATE.roster[pid] && STATE.roster[pid][today] ? STATE.roster[pid][today][s._id] : null;
-      if(!code) return null;
-      const sh = STATE.shifts[code] || {};
-      return `<tr class="${s._id===(CURRENT_USER.staffId)?'mine':''}">
-        <td>${escapeHtml(s.name)}</td>
-        <td>${escapeHtml(s.designation||'—')}</td>
-        <td><b>${escapeHtml(code)}</b></td>
-        <td>${sh.start||'—'} - ${sh.end||'—'}</td>
-        <td>${escapeHtml(sh.station||'—')}</td>
-      </tr>`;
-    }).filter(Boolean);
-    tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5" class="empty-state">No roster entry for today</td></tr>';
-  }
-}
-
-/* ============ EXPOSE ============ */
-window.switchLoginTab = switchLoginTab;
-window.doStaffLogin = doStaffLogin;
-window.doAdminLogin = doAdminLogin;
-window.logout = logout;
-window.showSection = showSection;
-window.toggleNotifPanel = toggleNotifPanel;
-window.closeNotifPanel = closeNotifPanel;
-window.markNotifRead = markNotifRead;
-window.toggleDarkMode = toggleDarkMode;
-window.openWhatsAppPanel = openWhatsAppPanel;
-window.sendWhatsAppMessage = sendWhatsAppMessage;
-window.sendWhatsAppToStaff = sendWhatsAppToStaff;
-window.openShareRosterModal = openShareRosterModal;
-window.shareRosterAsLink = shareRosterAsLink;
-window.shareRosterAsExcel = shareRosterAsExcel;
-window.shareRosterAsPDF = shareRosterAsPDF;
-window.promptSendWhatsApp = promptSendWhatsApp;
-window.promptDutyChangeWhatsApp = promptDutyChangeWhatsApp;
-window.sendDutyChangeWA = sendDutyChangeWA;
-window.sendInAppDutyChangeNotif = sendInAppDutyChangeNotif;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.toast = toast;
-window.openStaffModal = openStaffModal;
-window.saveStaff = saveStaff;
-window.archiveStaff = archiveStaff;
-window.restoreStaff = restoreStaff;
-window.switchStaffTab = switchStaffTab;
-window.switchSettingsTab = switchSettingsTab;
-window.openShiftEditModal = openShiftEditModal;
-window.saveShift = saveShift;
-window.deleteShift = deleteShift;
-window.saveWeeklySettings = saveWeeklySettings;
-window.saveLeaveLimitsSettings = saveLeaveLimitsSettings;
-window.openStationModal = openStationModal;
-window.saveStation = saveStation;
-window.deleteStation = deleteStation;
-window.addHoliday = addHoliday;
-window.delHoliday = delHoliday;
-window.addLeaveType = addLeaveType;
-window.delLeaveType = delLeaveType;
-window.saveColors = saveColors;
-window.resetUserPass = resetUserPass;
-window.saveGeneralSettings = saveGeneralSettings;
-window.openAutoGenWizard = openAutoGenWizard;
-window.wizNext1 = wizNext1;
-window.wizNext2 = wizNext2;
-window.wizNext3 = wizNext3;
-window.wizSetHolidayChoice = wizSetHolidayChoice;
-window.wizAddConfirmedHoliday = wizAddConfirmedHoliday;
-window.wizRemoveConfirmedHoliday = wizRemoveConfirmedHoliday;
-window.wizSetMode = wizSetMode;
-window.wizAddManual = wizAddManual;
-window.wizStartGeneration = wizStartGeneration;
-window.resolveConflict = resolveConflict;
-window.wizSetManual = wizSetManual;
-window.confirmManualResolution = confirmManualResolution;
-window.wizSaveRoster = wizSaveRoster;
-window.onPeriodChange = onPeriodChange;
-window.editRosterCell = editRosterCell;
-window.applyRosterCell = applyRosterCell;
-window.exportRosterExcel = exportRosterExcel;
-window.switchLeaveTab = switchLeaveTab;
-window.openLeaveModal = openLeaveModal;
-window.addLeaveEntry = addLeaveEntry;
-window.removeLeaveEntry = removeLeaveEntry;
-window.submitLeaveEntries = submitLeaveEntries;
-window.approveLeave = approveLeave;
-window.rejectLeaveModal = rejectLeaveModal;
-window.doRejectLeave = doRejectLeave;
-window.modifyLeaveModal = modifyLeaveModal;
-window.doModifyLeave = doModifyLeave;
-window.deleteLeave = deleteLeave;
-window.switchExchTab = switchExchTab;
-window.openExchangeModal = openExchangeModal;
-window.setExchMode = setExchMode;
-window.submitStaffExchange = submitStaffExchange;
-window.staffBAccept = staffBAccept;
-window.staffBReject = staffBReject;
-window.supervisorApproveExchange = supervisorApproveExchange;
-window.supervisorRejectExchange = supervisorRejectExchange;
-window.submitDutyChange = submitDutyChange;
-window.approveDutyChange = approveDutyChange;
-window.rejectDutyChange = rejectDutyChange;
-window.setChatPeer = setChatPeer;
-window.sendChatText = sendChatText;
-window.sendChatImage = sendChatImage;
-window.switchReportTab = switchReportTab;
-window.exportReportExcel = exportReportExcel;
-
-/* =========================================================================
-   END OF APP
-   ========================================================================= */
-</script>
-</body>
-</html>
+      pushNotification(e.staff, needsApproval ? '⏳ Submitted' : '✅ Approved',
+        `${e.type} from ${fmtDisplay(e.start)} to ${fmtDisplay(e.end||e.start)}
