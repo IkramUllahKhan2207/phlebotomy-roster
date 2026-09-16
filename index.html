@@ -2082,15 +2082,27 @@ function confirmManualResolution(date){
 }
 
 /* ==================== FINALIZE ==================== */
-function finalizeGeneration(){
-  // Recompute offCount
-  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
-  WIZ.dates.forEach(d=>{
-    WIZ.staffArr.forEach(s=>{
-      if(WIZ.grid[d][s._id] === 'OFF') WIZ.offCount[s._id]++;
+finalizeGeneration = function(){
+  try {
+    _origFinalizeGeneration();
+    
+    if(WIZ.staffArr && WIZ.staffArr.length > 0){
+      calculatePHEntitlements();
+      settlePHEntitlements();
+      recalcCPLBalances();
+    }
+    
+    WIZ.staffArr.forEach(s => {
+      const pending = (WIZ.phEntitlements[s._id] || []).filter(e => e.status === 'pending');
+      pending.forEach(p => {
+        WIZ.warnings.push(`${s.name}: PH entitlement from ${fmtDisplay(p.holidayDate)} is pending. Convert to CPL or fix.`);
+      });
     });
-  });
-  
+  } catch(err) {
+    console.error('Finalize error:', err);
+    WIZ.warnings.push('Error in finalize: '+err.message);
+  }
+};
   WIZ.warnings = [];
   
   // Check OFF balance
@@ -2195,6 +2207,7 @@ function wizSaveRoster(){
 
 function calculatePHEntitlements(){
   WIZ.phEntitlements = {};
+  if(!WIZ.staffArr){ return; }
   WIZ.staffArr.forEach(s => { WIZ.phEntitlements[s._id] = []; });
   
   const holidayDates = WIZ.dates.filter(d => isHoliday(d));
@@ -2202,13 +2215,12 @@ function calculatePHEntitlements(){
   holidayDates.forEach(hd => {
     WIZ.staffArr.forEach(s => {
       const code = WIZ.grid[hd] ? WIZ.grid[hd][s._id] : '';
-      // If staff worked duty (not OFF, not Leave)
       if(code && code !== 'OFF' && !(STATE.leaveTypes||[]).includes(code)){
         WIZ.phEntitlements[s._id].push({
           holidayDate: hd,
           holidayName: STATE.holidays[hd],
           entitlementDate: null,
-          status: 'pending', // pending | settled | converted
+          status: 'pending',
           cplAmount: 0
         });
       }
@@ -2220,19 +2232,18 @@ function calculatePHEntitlements(){
 function settlePHEntitlements(){
   calculatePHEntitlements();
   
+  if(!WIZ.phEntitlements || !WIZ.staffArr){ return; }
+  
   WIZ.staffArr.forEach(sid => {
-    WIZ.phEntitlements[sid].forEach(ent => {
-      // Find an eligible date in same period where staff has no duty assignment
-      // and where Relax limit allows
+    const ents = WIZ.phEntitlements[sid] || [];
+    ents.forEach(ent => {
       const holidayDate = ent.holidayDate;
       for(const d of WIZ.dates){
         if(d === holidayDate) continue;
-        if(WIZ.grid[d][sid]) continue; // already assigned
-        // Check day type
+        if(!WIZ.grid[d] || WIZ.grid[d][sid]) continue;
         const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
         const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
         const offLimit = limits.OFF || 1;
-        // Count current OFF/PH on that day
         let offLikeCount = 0;
         WIZ.staffArr.forEach(s2 => {
           const c = WIZ.grid[d][s2._id];
