@@ -2188,26 +2188,18 @@ function wizSaveRoster(){
 
 /* PART 4A END */
 </script>
-<!-- ⬇⬇⬇ PART 4B STARTS HERE ⬇⬇⬇ -->
-  <script>
+<script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v6 — Part 4B
-   Gazetted Holiday PH + Extended Duty + CPL Balance
+   PHLEBOTOMIST ROSTER v6 — Part 4B (Clean)
+   Gazetted Holiday PH + Extended Duty + CPL
    ========================================================================= */
 
-/* ==================== GAZETTED HOLIDAY PH ENTITLEMENT ==================== */
-
-/*
-  Rule: If a staff works duty on a confirmed Gazetted Holiday,
-        that staff still receives a PH entitlement later.
-        PH entitlement does NOT count toward OFF target.
-        It is settled as PH on another eligible date (same month).
-        If not possible, Admin may convert PH → CPL (1 PH = 1 CPL).
-*/
+/* ============ GAZETTED HOLIDAY PH ENTITLEMENT ============ */
 
 function calculatePHEntitlements(){
   WIZ.phEntitlements = {};
-  if(!WIZ.staffArr){ return; }
+  if(!WIZ.staffArr || !WIZ.staffArr.length) return;
+  
   WIZ.staffArr.forEach(s => { WIZ.phEntitlements[s._id] = []; });
   
   const holidayDates = WIZ.dates.filter(d => isHoliday(d));
@@ -2228,11 +2220,10 @@ function calculatePHEntitlements(){
   });
 }
 
-/* Try to settle PH entitlements within same period */
 function settlePHEntitlements(){
   calculatePHEntitlements();
   
-  if(!WIZ.phEntitlements || !WIZ.staffArr){ return; }
+  if(!WIZ.phEntitlements || !WIZ.staffArr) return;
   
   WIZ.staffArr.forEach(sid => {
     const ents = WIZ.phEntitlements[sid] || [];
@@ -2260,16 +2251,7 @@ function settlePHEntitlements(){
   });
 }
 
-/* ==================== EXTENDED DUTY CALCULATIONS ==================== */
-
-/*
-  Extended Duty Types:
-  - M+E = 16 hours = 2 duty units + 8 extra hours
-  - E+N = 16 hours = 2 duty units + 8 extra hours
-  - DE  = 12 hours = 1 duty unit + 4 extra hours
-  
-  1 CPL = 8 extra hours
-*/
+/* ============ EXTENDED DUTY ============ */
 
 function calcExtendedHours(type){
   if(type === 'M+E' || type === 'E+N') return 8;
@@ -2280,25 +2262,23 @@ function calcExtendedHours(type){
 function recalcCPLBalances(){
   WIZ.cplEarned = {};
   WIZ.extraHours = {};
+  if(!WIZ.staffArr) return;
   WIZ.staffArr.forEach(s => { WIZ.cplEarned[s._id] = 0; WIZ.extraHours[s._id] = 0; });
   
   WIZ.dates.forEach(d => {
     WIZ.staffArr.forEach(s => {
       const code = WIZ.grid[d][s._id] || '';
       const extra = calcExtendedHours(code);
-      if(extra > 0){
-        WIZ.extraHours[s._id] += extra;
-      }
+      if(extra > 0) WIZ.extraHours[s._id] += extra;
     });
   });
   
-  // Convert 8 extra hours into 1 CPL
   WIZ.staffArr.forEach(s => {
     WIZ.cplEarned[s._id] = Math.floor(WIZ.extraHours[s._id] / 8);
   });
 }
 
-/* ==================== PH → CPL CONVERSION ==================== */
+/* ============ PH → CPL CONVERSION ============ */
 
 function openPHConversionModal(staffId, entIdx){
   const ent = WIZ.phEntitlements[staffId][entIdx];
@@ -2313,30 +2293,25 @@ function openPHConversionModal(staffId, entIdx){
       The PH entitlement could not be settled as a PH day within the same month.
       You may approve converting this PH into CPL balance: <b>1 PH = 1 CPL</b>.
     </div>
-    <div class="field"><label>Reason (Optional)</label>
+    <div class="field"><label>Reason</label>
       <input id="ph_conv_reason" value="Gazetted Holiday Worked - PH Converted to CPL">
     </div>`;
   const foot = `
     <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-success" onclick="confirmPHConversion('${staffId}',${entIdx})">✅ Approve Conversion (1 PH → 1 CPL)</button>`;
+    <button class="btn btn-success" onclick="confirmPHConversion('${staffId}',${entIdx})">✅ Approve (1 PH → 1 CPL)</button>`;
   openModal('Convert PH to CPL', body, foot);
 }
 
 function confirmPHConversion(staffId, entIdx){
   const ent = WIZ.phEntitlements[staffId][entIdx];
   const reason = $('ph_conv_reason').value.trim();
-  
   ent.status = 'converted';
   ent.cplAmount = 1;
   WIZ.cplEarned[staffId] = (WIZ.cplEarned[staffId] || 0) + 1;
   
-  // Save CPL record in Firebase
   const rec = {
-    staffId: staffId,
-    type: 'CPL',
-    amount: 1,
+    staffId: staffId, type: 'CPL', amount: 1,
     originalHolidayDate: ent.holidayDate,
-    entitlementDate: null,
     conversionDate: todayStr(),
     reason: reason || 'Gazetted Holiday Worked - PH Converted to CPL',
     status: 'approved',
@@ -2345,16 +2320,17 @@ function confirmPHConversion(staffId, entIdx){
     source: 'ph_conversion'
   };
   db.ref('cpLRecords/'+uid()).set(rec).then(()=>{
-    logAudit('PH→CPL Conversion', staffName(staffId)+' — PH from '+ent.holidayDate+' converted to CPL');
-    toast('PH converted to CPL (1 day added)','success');
+    logAudit('PH→CPL Conversion', staffName(staffId));
+    toast('PH converted to CPL','success');
     closeModal();
     renderWizard();
   });
 }
 
-/* ==================== RENDER PH SUMMARY ==================== */
+/* ============ PH & CPL SUMMARY ============ */
 
 function renderPHSummary(){
+  if(!WIZ.phEntitlements || !WIZ.staffArr) return '';
   const rows = [];
   WIZ.staffArr.forEach(s => {
     const ents = WIZ.phEntitlements[s._id] || [];
@@ -2366,7 +2342,7 @@ function renderPHSummary(){
       } else if(e.status === 'converted'){
         statusBadge = `<span class="pill" style="background:var(--blue);">Converted to CPL</span>`;
       } else {
-        statusBadge = `<span class="pill pill-pending">Pending Adjustment</span>`;
+        statusBadge = `<span class="pill pill-pending">Pending</span>`;
         actionBtn = `<button class="btn btn-success btn-sm" onclick="openPHConversionModal('${s._id}',${i})">Convert to CPL</button>`;
       }
       rows.push(`<tr>
@@ -2377,21 +2353,15 @@ function renderPHSummary(){
       </tr>`);
     });
   });
-  
-  if(!rows.length){
-    return `<div class="info-box">No PH entitlements — no staff worked on Gazetted Holidays.</div>`;
-  }
-  
+  if(!rows.length) return `<div class="info-box">No PH entitlements (no staff worked on Gazetted Holidays).</div>`;
   return `<h3 style="margin-top:14px;">Gazetted Holiday PH Entitlements</h3>
-    <div class="scroll-x"><table><thead><tr>
-      <th>Staff</th><th>Holiday Worked</th><th>Status</th><th>Action</th>
-    </tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    <div class="scroll-x"><table><thead><tr><th>Staff</th><th>Holiday</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>${rows.join('')}</tbody></table></div>`;
 }
-
-/* ==================== RENDER CPL SUMMARY ==================== */
 
 function renderCPLSummary(){
   recalcCPLBalances();
+  if(!WIZ.staffArr) return '';
   const rows = WIZ.staffArr.map(s => {
     const hours = WIZ.extraHours[s._id] || 0;
     const cpl = WIZ.cplEarned[s._id] || 0;
@@ -2403,113 +2373,73 @@ function renderCPLSummary(){
       <td>${rem}/8 hrs</td>
     </tr>`;
   }).join('');
-  
   return `<h3 style="margin-top:14px;">CPL Balance from Extended Duty</h3>
-    <div class="info-box">1 CPL = 8 extra hours. M+E/E+N = 8 extra hours. DE = 4 extra hours.</div>
-    <div class="scroll-x"><table><thead><tr>
-      <th>Staff</th><th>Extra Hours</th><th>CPL Earned</th><th>Remaining</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="info-box">1 CPL = 8 extra hours. M+E/E+N = 8 hrs. DE = 4 hrs.</div>
+    <div class="scroll-x"><table><thead><tr><th>Staff</th><th>Extra Hours</th><th>CPL Earned</th><th>Remaining</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
 }
 
-/* ==================== EXTENDED DUTY REMINDERS ==================== */
-
-function getExtendedDutyReminders(){
+function renderReminders(){
+  if(!WIZ.staffArr) return '';
   const reminders = [];
-  
-  // Check if any staff has 8+ hours pending CPL approval
   WIZ.staffArr.forEach(s => {
     const hours = WIZ.extraHours[s._id] || 0;
     const cpl = WIZ.cplEarned[s._id] || 0;
     if(hours >= 8){
-      reminders.push({
-        type: 'cpl_earned',
-        staffId: s._id,
-        message: `${s.name} has completed ${hours} extra hours and is eligible for ${cpl} CPL.`
-      });
+      reminders.push({type:'cpl_earned', message:`${s.name} has ${hours} extra hours and is eligible for ${cpl} CPL.`});
     }
-    if((hours % 8) >= 4 && (hours % 8) < 8){
-      reminders.push({
-        type: 'partial_hours',
-        staffId: s._id,
-        message: `${s.name} has ${hours % 8}/8 extra hours accumulated toward next CPL.`
-      });
-    }
-  });
-  
-  // Check pending PH entitlements
-  WIZ.staffArr.forEach(s => {
     const pending = (WIZ.phEntitlements[s._id] || []).filter(e => e.status === 'pending');
     if(pending.length){
-      reminders.push({
-        type: 'ph_pending',
-        staffId: s._id,
-        message: `${s.name} has ${pending.length} PH entitlement(s) pending adjustment.`
-      });
+      reminders.push({type:'ph_pending', message:`${s.name} has ${pending.length} PH entitlement(s) pending.`});
     }
   });
-  
-  return reminders;
-}
-
-function renderReminders(){
-  const rem = getExtendedDutyReminders();
-  if(!rem.length) return '';
+  if(!reminders.length) return '';
   return `<h3 style="margin-top:14px;">⚠️ Reminders</h3>
-    ${rem.map(r => `<div class="warn-box" style="margin-bottom:6px;">
-      <b>${r.type === 'ph_pending' ? 'PH Pending' : r.type === 'cpl_earned' ? 'CPL Earned' : 'Extra Hours'}:</b> ${escapeHtml(r.message)}
-    </div>`).join('')}`;
+    ${reminders.map(r => `<div class="warn-box" style="margin-bottom:6px;">${escapeHtml(r.message)}</div>`).join('')}`;
 }
 
-/* ==================== OVERRIDE FINALIZE & PREVIEW ==================== */
+/* ============ HOOKS — SAFE OVERRIDES ============ */
 
-// Store original finalize + preview and wrap them
-const _origFinalizeGeneration = finalizeGeneration;
+// Safe wrapper: don't crash if something is undefined
+const _origFinalize = finalizeGeneration;
 finalizeGeneration = function(){
-  _origFinalizeGeneration();
-  
-  // Calculate PH entitlements
-  calculatePHEntitlements();
-  
-  // Try to settle PH within period
-  settlePHEntitlements();
-  
-  // Recalc CPL balances
-  recalcCPLBalances();
-  
-  // Add PH warnings
-  WIZ.staffArr.forEach(s => {
-    const pending = (WIZ.phEntitlements[s._id] || []).filter(e => e.status === 'pending');
-    pending.forEach(p => {
-      WIZ.warnings.push(`${s.name}: PH entitlement from ${fmtDisplay(p.holidayDate)} is pending. Convert to CPL or fix.`);
-    });
-  });
-  
-  // Add extended duty warnings (shouldn't normally fire, but safety)
-  WIZ.staffArr.forEach(s => {
-    const code = WIZ.grid[WIZ.dates[0]] ? WIZ.grid[WIZ.dates[0]][s._id] : '';
-  });
-};
-
-const _origTplFinalPreview = tplFinalPreview;
-tplFinalPreview = function(){
-  let base = _origTplFinalPreview();
-  
-  // Insert PH Summary + CPL Summary + Reminders BEFORE the grid
-  const insertIdx = base.indexOf('<h3>Roster Grid</h3>');
-  if(insertIdx > -1){
-    const extras = renderReminders() + renderPHSummary() + renderCPLSummary();
-    base = base.slice(0, insertIdx) + extras + base.slice(insertIdx);
+  try {
+    _origFinalize();
+    if(WIZ.staffArr && WIZ.staffArr.length > 0){
+      calculatePHEntitlements();
+      settlePHEntitlements();
+      recalcCPLBalances();
+      WIZ.staffArr.forEach(s => {
+        const pending = (WIZ.phEntitlements[s._id] || []).filter(e => e.status === 'pending');
+        pending.forEach(p => {
+          WIZ.warnings.push(`${s.name}: PH entitlement from ${fmtDisplay(p.holidayDate)} is pending. Convert to CPL.`);
+        });
+      });
+    }
+  } catch(err){
+    console.error('Finalize error:', err);
   }
-  
-  return base;
 };
 
-/* ==================== SAVE WITH CPL RECORDS ==================== */
+const _origPreview = tplFinalPreview;
+tplFinalPreview = function(){
+  try {
+    let base = _origPreview();
+    const idx = base.indexOf('<h3>Roster Grid</h3>');
+    if(idx > -1){
+      const extras = renderReminders() + renderPHSummary() + renderCPLSummary();
+      base = base.slice(0, idx) + extras + base.slice(idx);
+    }
+    return base;
+  } catch(err){
+    console.error('Preview error:', err);
+    return _origPreview();
+  }
+};
 
-const _origWizSaveRoster = wizSaveRoster;
+const _origSave = wizSaveRoster;
 wizSaveRoster = function(){
   if(WIZ.warnings.length){ toast('Fix warnings first','error'); return; }
-  
   const pid = WIZ.period.start + '_' + WIZ.period.end;
   const updates = {};
   updates['periods/'+pid] = {
@@ -2519,38 +2449,25 @@ wizSaveRoster = function(){
   WIZ.dates.forEach(d=>{ updates['roster/'+pid+'/'+d] = WIZ.grid[d]; });
   WIZ.confirmedHolidays.forEach(h=>{ updates['holidays/'+h.date] = h.name; });
   
-  // Save extended duty records
-  const extendedDutyRecords = [];
+  const edRecords = [];
   WIZ.dates.forEach(d => {
     WIZ.staffArr.forEach(s => {
       const code = WIZ.grid[d][s._id] || '';
       const extra = calcExtendedHours(code);
-      if(extra > 0){
-        extendedDutyRecords.push({
-          staffId: s._id,
-          date: d,
-          type: code,
-          extraHours: extra,
-          periodId: pid
-        });
-      }
+      if(extra > 0) edRecords.push({staffId:s._id, date:d, type:code, extraHours:extra, periodId:pid});
     });
   });
   
   db.ref().update(updates).then(()=>{
-    // Save extended duty records separately
-    if(extendedDutyRecords.length){
+    if(edRecords.length){
       const edUpdates = {};
-      extendedDutyRecords.forEach(r => {
-        edUpdates['extendedDuty/'+uid()] = Object.assign(r, {createdAt: nowTs()});
-      });
+      edRecords.forEach(r => { edUpdates['extendedDuty/'+uid()] = Object.assign(r, {createdAt: nowTs()}); });
       return db.ref().update(edUpdates);
     }
   }).then(()=>{
-    // Save CPL earned
     const cplUpdates = {};
     WIZ.staffArr.forEach(s => {
-      if(WIZ.cplEarned[s._id] > 0){
+      if((WIZ.cplEarned[s._id]||0) > 0){
         cplUpdates['cpLBalances/'+s._id] = {
           earned: WIZ.cplEarned[s._id],
           extraHours: WIZ.extraHours[s._id],
@@ -2562,7 +2479,7 @@ wizSaveRoster = function(){
   }).then(()=>{
     STATE.currentPeriodId = pid;
     logAudit('Roster Generated', 'Period: '+WIZ.period.label);
-    pushNotification('all', '📅 New Roster Published', WIZ.period.label+' is now available');
+    pushNotification('all', '📅 New Roster Published', WIZ.period.label);
     toast('Roster saved!','success');
     closeModal();
     showSection('roster');
