@@ -1708,19 +1708,18 @@ function resetUserPass(id){
 
 /* PART 2B END */
 </script>
-<!-- ⬇⬇⬇ PART 3A STARTS HERE ⬇⬇⬇ -->
-   <script>
+<script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v8 — Part 3A
-   Auto Generate Wizard + OFF FIRST Algorithm + Conflict Resolution
+   PHLEBOTOMIST ROSTER v9 — Part 3A
+   Auto Generate + Gazetted Holiday PH + Strict Validation
    
    Rules:
-   - OFF per staff = number of Sundays in period
+   - OFF target = Sundays count (exact)
    - Relax limit: Mon-Fri 1 | Sat 2 | Sun/Holiday 7
-   - OFF FIRST, then shifts (NO empty cells)
-   - Leftover staff → X (Extra)
-   - +1 → X duty | +2 → DX duty | >+2 → Admin modify
-   - Gender: E4/N12/N Male, D Female
+   - Gazetted Holiday: Sunday-style (2M+2E+1N)
+   - PH for non-duty + PH entitlement for duty
+   - Combined OFF allowed (within limit)
+   - Strict validation: max OFF + relax limit enforced
    ========================================================================= */
 
 let WIZ = null;
@@ -1832,7 +1831,7 @@ function tplStep1(){
       📊 <b>Summary:</b><br>
       • Total Days: <b>${totalDays}</b><br>
       • Sundays: <b>${sundays}</b><br>
-      • Each staff will get exactly <b>${sundays} OFF</b>
+      • Each staff will get exactly <b>${sundays} OFF</b> (PH counted separately)
     </div>`;
 }
 
@@ -1855,7 +1854,9 @@ function countSundays(start, end){
 function tplStep2(){
   const existing = Object.keys(STATE.holidays||{}).filter(d => d >= WIZ.period.start && d <= WIZ.period.end).sort();
   return `
-    <div class="warn-box">⚠️ <b>Confirm the Gazetted Holidays</b> in this period.<br>The app will NOT assume any holiday automatically.</div>
+    <div class="warn-box">⚠️ <b>Confirm the Gazetted Holidays</b> in this period.<br>
+    On Gazetted Holidays, Sunday-style shifts apply (2M+2E+1N).<br>
+    Non-duty staff receive <b>PH</b>. Duty staff receive PH entitlement later.</div>
     <div class="tabsbar" style="border:none;">
       <button class="active" id="holidayChoiceNo" onclick="wizSetHolidayChoice('no')">❌ No Holidays</button>
       <button id="holidayChoiceYes" onclick="wizSetHolidayChoice('yes')">✅ Yes, Add Holidays</button>
@@ -1927,13 +1928,15 @@ function tplStep4Auto(){
     <div class="info-box">
       <b>📋 Rules Applied:</b>
       <ul>
-        <li>Each staff gets <b>${sundays} OFF</b></li>
+        <li>Each staff gets <b>${sundays} OFF</b> (PH counted separately)</li>
         <li>Relax: Mon-Fri 1 | Sat 2 | Sun/Holiday 7</li>
-        <li>+1 → X duty | +2 → DX duty</li>
-        <li>Gender: E4/N12/N Male, D Female</li>
+        <li><b>Gazetted Holiday = Sunday style (2M+2E+1N)</b></li>
+        <li>Non-duty staff get <b>PH</b> on holiday</li>
+        <li>Duty staff get PH entitlement adjusted later</li>
         <li>No empty cells — leftover staff get X duty</li>
+        <li>Gender: E4/N12/N Male, D Female</li>
+        <li>Strict validation: max OFF + relax limit enforced</li>
         <li>${holidays ? holidays+' Gazetted Holiday(s) confirmed' : 'No Gazetted Holidays'}</li>
-        <li>Conflicts → App PAUSES → you decide</li>
       </ul>
     </div>`;
 }
@@ -1949,7 +1952,7 @@ function tplStep4Manual(){
     <div class="info-box">All fields optional. App fills the rest.</div>
     
     <div class="card">
-      <h3>1️⃣ Force OFF Days</h3>
+      <h3>1️⃣ Force OFF Days (Combined allowed — within relax limit)</h3>
       <div class="dyn-row">
         <div class="field"><label>Staff</label><select id="m_off_staff"><option value="">-- select --</option>${staffOpts}</select></div>
         <div class="field"><label>Start</label><input type="date" id="m_off_start"></div>
@@ -2020,6 +2023,13 @@ function wizAddManual(key){
   if(key === 'offs'){
     const s = get('m_off_staff'), a = get('m_off_start'), b = get('m_off_end');
     if(!s||!a){ toast('Select staff and start date','error'); return; }
+    // Validate relax limit
+    const check = checkManualOffRelaxLimit(s, a, b||a);
+    if(!check.ok){
+      alert('❌ Relax limit exceeded!\n\n'+check.errors.join('\n'));
+      toast('Cannot add OFF — relax limit exceeded','error');
+      return;
+    }
     mi.offs.push({staffId:s, start:a, end:b||a});
   } else if(key === 'leaves'){
     const s = get('m_leave_staff'), t = get('m_leave_type'), a = get('m_leave_start'), b = get('m_leave_end');
@@ -2041,6 +2051,30 @@ function wizAddManual(key){
   renderWizard();
 }
 
+function checkManualOffRelaxLimit(staffId, start, end){
+  const errors = [];
+  dateRange(start, end).forEach(d=>{
+    const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
+    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
+    const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
+    
+    // Count current manual offs for this day
+    let current = 0;
+    WIZ.manual.offs.forEach(x=>{
+      dateRange(x.start, x.end).forEach(md=>{
+        if(md === d) current++;
+      });
+    });
+    // Add this one
+    if(d >= start && d <= end) current++;
+    
+    if(current > relaxLimit){
+      errors.push(`${fmtDisplay(d)} (${dayShort(d)}): ${current} staff OFF — limit is ${relaxLimit}`);
+    }
+  });
+  return { ok: errors.length === 0, errors };
+}
+
 /* ============ GENERATION ENGINE ============ */
 function wizStartGeneration(){
   WIZ.dates = dateRange(WIZ.period.start, WIZ.period.end);
@@ -2054,9 +2088,10 @@ function wizStartGeneration(){
   WIZ.grid = {};
   WIZ.locked = {};
   WIZ.offCount = {};
+  WIZ.phCount = {};
   
   WIZ.dates.forEach(d => { WIZ.grid[d] = {}; WIZ.locked[d] = {}; });
-  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
+  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; });
   
   // PHASE 0: Special Off Dates from staff profile
   WIZ.staffArr.forEach(s => {
@@ -2119,7 +2154,7 @@ function wizStartGeneration(){
     });
   });
   
-  // PHASE 1-4: Assign OFF
+  // PHASE 1: Assign OFF (Sundays count, but skip holidays — those get PH)
   assignOFFToAllStaff();
   
   WIZ.currentDayIndex = 0;
@@ -2131,7 +2166,8 @@ function wizStartGeneration(){
 }
 
 function assignOFFToAllStaff(){
-  const sundays = WIZ.dates.filter(d => isSunday(d) || isHoliday(d));
+  const sundays = WIZ.dates.filter(d => isSunday(d));
+  const holidays = WIZ.dates.filter(d => isHoliday(d) && !isSunday(d));
   const saturdays = WIZ.dates.filter(d => {
     if(isSunday(d) || isHoliday(d)) return false;
     return new Date(d+'T00:00:00').getDay() === 6;
@@ -2147,7 +2183,7 @@ function assignOFFToAllStaff(){
     let c=0;
     WIZ.staffArr.forEach(s=>{
       const code = WIZ.grid[date][s._id];
-      if(code && (STATE.leaveTypes||[]).includes(code) && code!=='OFF' && code!=='GH') c++;
+      if(code && (STATE.leaveTypes||[]).includes(code) && code!=='OFF' && code!=='GH' && code!=='PH') c++;
     });
     return c;
   }
@@ -2156,8 +2192,7 @@ function assignOFFToAllStaff(){
   
   // Sundays — 7 OFF
   sundays.forEach(sunday => {
-    const dayKey = isHoliday(sunday) ? 'Holiday' : 'Sunday';
-    const limits = STATE.leaveLimits[dayKey] || {OFF:7, Leave:0};
+    const limits = STATE.leaveLimits['Sunday'] || {OFF:7, Leave:0};
     const offLimit = limits.OFF || 7;
     const slotsLeft = offLimit - getLockedLeave(sunday) - getLockedOff(sunday);
     if(slotsLeft <= 0) return;
@@ -2167,6 +2202,21 @@ function assignOFFToAllStaff(){
     for(let i=0; i<slotsLeft && i<candidates.length; i++){
       WIZ.grid[sunday][candidates[i]._id] = 'OFF';
       WIZ.offCount[candidates[i]._id]++;
+    }
+  });
+  
+  // Holidays — 7 PH (not OFF)
+  holidays.forEach(holiday => {
+    const limits = STATE.leaveLimits['Holiday'] || {OFF:7, Leave:0};
+    const offLimit = limits.OFF || 7;
+    const slotsLeft = offLimit - getLockedLeave(holiday) - getLockedOff(holiday);
+    if(slotsLeft <= 0) return;
+    const candidates = WIZ.staffArr
+      .filter(s => canTakeOff(holiday, s._id))
+      .sort((a,b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
+    for(let i=0; i<slotsLeft && i<candidates.length; i++){
+      WIZ.grid[holiday][candidates[i]._id] = 'PH';
+      WIZ.phCount[candidates[i]._id]++;
     }
   });
   
@@ -2206,8 +2256,9 @@ function assignOFFToAllStaff(){
     while(WIZ.offCount[s._id] < WIZ.offTarget){
       let found = false;
       for(const d of WIZ.dates){
+        if(isHoliday(d)) continue; // Holidays use PH
         if(!canTakeOff(d, s._id)) continue;
-        const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
+        const dayKey = isSunday(d) ? 'Sunday' : dayNameFor(d);
         const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
         const offLimit = limits.OFF || 1;
         if(getLockedOff(d) + getLockedLeave(d) < offLimit){
@@ -2248,12 +2299,13 @@ function processDay(date){
   const need = STATE.weeklySetup[dayKey] || {};
   const dayGrid = WIZ.grid[date];
   
-  let offCount = 0, leaveCount = 0;
+  let offCount = 0, leaveCount = 0, phCount = 0;
   Object.values(dayGrid).forEach(c=>{
     if(c === 'OFF') offCount++;
-    else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH') leaveCount++;
+    else if(c === 'PH') phCount++;
+    else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
   });
-  const totalRelax = offCount + leaveCount;
+  const totalRelax = offCount + leaveCount + phCount;
   const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
   const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
   
@@ -2288,7 +2340,7 @@ function processDay(date){
     return {
       conflict: true, type: conflictType, date,
       message: `${fmtDisplay(date)} (${dayShort(date)}) has ${totalRelax} staff on relax, but limit is ${relaxLimit}.`,
-      details: `${offCount} OFF + ${leaveCount} Leave = ${totalRelax}`,
+      details: `${offCount} OFF + ${leaveCount} Leave + ${phCount} PH = ${totalRelax}`,
       excess, suggestion
     };
   }
@@ -2299,7 +2351,6 @@ function fillDayShifts(date, need, isOff){
   const dayGrid = WIZ.grid[date];
   const freeStaff = WIZ.staffArr.filter(s => !dayGrid[s._id]);
   
-  // Step 1: Fill required shifts from Weekly Setup
   Object.keys(need).forEach(code => {
     const req = need[code];
     if(!req) return;
@@ -2328,12 +2379,11 @@ function fillDayShifts(date, need, isOff){
     }
   });
   
-  // ⭐ Step 2: X slots from Weekly Setup
+  // Assign X to remaining staff (no empty cells)
   const xReq = need['X'] || 0;
   const xAssigned = Object.values(dayGrid).filter(c => c === 'X').length;
   let xSlots = Math.max(0, xReq - xAssigned);
   
-  // ⭐ Step 3: Assign X to ANY remaining staff (NO empty cells!)
   WIZ.staffArr.forEach(s => {
     if(dayGrid[s._id]) return;
     if(xSlots > 0){
@@ -2360,7 +2410,7 @@ function checkShiftCoverage(date, need, isOff){
   return {ok:true};
 }
 
-/* ============ STEP 5 ============ */
+/* ============ STEP 5: CONFLICT ============ */
 function tplConflictView(){
   if(!WIZ.currentConflictResult) return '<div class="empty-state">Processing...</div>';
   const c = WIZ.currentConflictResult;
@@ -2439,7 +2489,7 @@ function resolveConflict(action){
 
 function showManualResolution(date){
   const dayGrid = WIZ.grid[date];
-  const allCodes = ['', ...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'X', 'DX'];
+  const allCodes = ['', ...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'PH', 'X', 'DX'];
   const rows = WIZ.staffArr.map(s=>{
     const cur = dayGrid[s._id] || '';
     return `<div class="dyn-row">
@@ -2471,9 +2521,46 @@ function confirmManualResolution(date){
   setTimeout(processNextDay, 50);
 }
 
-/* ============ FINALIZE ============ */
-function finalizeGeneration(){  
-  // Gender check
+/* ============ FINALIZE — Strict Validation ============ */
+function finalizeGeneration(){
+  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; });
+  WIZ.dates.forEach(d=>{
+    WIZ.staffArr.forEach(s=>{
+      const c = WIZ.grid[d][s._id];
+      if(c === 'OFF') WIZ.offCount[s._id]++;
+      if(c === 'PH') WIZ.phCount[s._id]++;
+    });
+  });
+  
+  WIZ.warnings = [];
+  
+  // 1. OFF balance check
+  WIZ.staffArr.forEach(s=>{
+    const diff = WIZ.offCount[s._id] - WIZ.offTarget;
+    if(diff !== 0){
+      WIZ.warnings.push(`❌ ${s.name}: ${WIZ.offCount[s._id]} OFF (target ${WIZ.offTarget}, diff ${diff>0?'+':''}${diff})`);
+    }
+  });
+  
+  // 2. Relax limit check per day
+  WIZ.dates.forEach(d=>{
+    const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
+    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
+    const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
+    let offCount = 0, leaveCount = 0, phCount = 0;
+    WIZ.staffArr.forEach(s=>{
+      const c = WIZ.grid[d][s._id];
+      if(c === 'OFF') offCount++;
+      else if(c === 'PH') phCount++;
+      else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
+    });
+    const totalRelax = offCount + leaveCount + phCount;
+    if(totalRelax > relaxLimit){
+      WIZ.warnings.push(`❌ ${fmtDisplay(d)} (${dayShort(d)}): ${totalRelax} staff (${offCount} OFF + ${leaveCount} Leave + ${phCount} PH) — limit ${relaxLimit}`);
+    }
+  });
+  
+  // 3. Gender check
   WIZ.dates.forEach(d=>{
     Object.keys(WIZ.grid[d]).forEach(sid=>{
       const code = WIZ.grid[d][sid];
@@ -2481,32 +2568,32 @@ function finalizeGeneration(){
       if(!shiftDef || shiftDef.gender === 'Any') return;
       const staff = findStaff(sid);
       if(staff && staff.gender !== shiftDef.gender){
-        WIZ.warnings.push(`${fmtDisplay(d)}: ${code} wrong gender (${staff.name})`);
+        WIZ.warnings.push(`❌ ${fmtDisplay(d)}: ${code} wrong gender (${staff.name} is ${staff.gender})`);
       }
     });
   });
   
-  // Empty cell check (safety)
+  // 4. Empty cell check
   WIZ.dates.forEach(d=>{
     WIZ.staffArr.forEach(s=>{
       if(!WIZ.grid[d][s._id]){
-        WIZ.warnings.push(`${fmtDisplay(d)}: ${s.name} has no assignment`);
+        WIZ.warnings.push(`❌ ${fmtDisplay(d)}: ${s.name} has NO assignment`);
       }
     });
   });
 }
 
-/* ============ STEP 6 ============ */
+/* ============ STEP 6: PREVIEW ============ */
 function tplFinalPreview(){
   const staffArr = WIZ.staffArr;
   const dates = WIZ.dates;
   let html = '';
   
   if(WIZ.warnings.length){
-    html += `<div class="err-box"><b>⚠ ${WIZ.warnings.length} Warning(s):</b>
+    html += `<div class="err-box"><b>❌ ${WIZ.warnings.length} Error(s) — Cannot save:</b>
       <ul>${WIZ.warnings.slice(0,20).map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul></div>`;
   } else {
-    html += `<div class="ok-box">✅ No warnings — Ready to save</div>`;
+    html += `<div class="ok-box">✅ No errors — Ready to save</div>`;
   }
   
   html += `<h3>📋 Roster Grid</h3><div class="scroll-x" style="max-height:400px;overflow-y:auto;">
@@ -2522,12 +2609,15 @@ function tplFinalPreview(){
   });
   html += '</tbody></table></div>';
   
-  html += `<h3 style="margin-top:16px;">📊 Summary</h3><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Target</th><th>Balance</th></tr></thead><tbody>`;
+  html += `<h3 style="margin-top:16px;">📊 Summary</h3><div class="scroll-x"><table><thead><tr>
+    <th>Staff</th><th>OFF</th><th>PH</th><th>Target</th><th>Balance</th>
+  </tr></thead><tbody>`;
   staffArr.forEach(s=>{
     const off = WIZ.offCount[s._id];
+    const ph = WIZ.phCount[s._id];
     const bal = off - WIZ.offTarget;
     const cls = bal===0 ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
-    html += `<tr><td>${escapeHtml(s.name)}</td><td ${cls}>${off}</td><td>${WIZ.offTarget}</td><td ${cls}>${bal>0?'+':''}${bal}</td></tr>`;
+    html += `<tr><td>${escapeHtml(s.name)}</td><td ${cls}>${off}</td><td>${ph}</td><td>${WIZ.offTarget}</td><td ${cls}>${bal>0?'+':''}${bal}</td></tr>`;
   });
   html += '</tbody></table></div>';
   
@@ -2535,7 +2625,11 @@ function tplFinalPreview(){
 }
 
 function wizSaveRoster(){
-  if(WIZ.warnings.length){ toast('Fix warnings first','error'); return; }
+  if(WIZ.warnings.length){
+    alert('❌ Cannot save!\n\n'+WIZ.warnings.slice(0,10).join('\n'));
+    toast('❌ Fix errors first','error');
+    return;
+  }
   const pid = WIZ.period.start + '_' + WIZ.period.end;
   const updates = {};
   updates['periods/'+pid] = {
@@ -2559,10 +2653,11 @@ function wizSaveRoster(){
 /* PART 3A END */
 </script>
 <!-- ⬇⬇⬇ PART 3B STARTS HERE ⬇⬇⬇ -->
-   <script>
+</script>
+<script>
 /* =========================================================================
-   PHLEBOTOMIST ROSTER v8 — Part 3B (Final)
-   Roster + Leave + Exchange + Chat + Reports + Dashboard + WhatsApp + Init
+   PHLEBOTOMIST ROSTER v9 — Part 3B (Final)
+   Roster + Leave + Exchange + Chat + Reports + Dashboard + WhatsApp
    ========================================================================= */
 
 /* ============ ROSTER ============ */
@@ -2678,7 +2773,12 @@ function editRosterCell(pid, date, staffId){
         ${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('')}
       </select>
     </div>
-    <div class="warn-box">⚠️ Extended Duty (M+E، E+N، DE) is Admin-approved extended duty.</div>`;
+    <div class="warn-box">
+      ⚠️ <b>Validation:</b><br>
+      • Relax limit (Mon-Fri 1 | Sat 2 | Sun/Holiday 7) is enforced<br>
+      • Gender rules enforced<br>
+      • Extended Duty is Admin-approved
+    </div>`;
   const foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
     <button class="btn btn-primary" onclick="applyRosterCell('${pid}','${date}','${staffId}')">💾 Save</button>`;
   openModal('✏️ Edit Roster Cell', body, foot);
@@ -2687,6 +2787,65 @@ function editRosterCell(pid, date, staffId){
 function applyRosterCell(pid, date, staffId){
   const oldCode = (STATE.roster[pid] && STATE.roster[pid][date] && STATE.roster[pid][date][staffId]) || '';
   const v = $('rc_code').value;
+  
+  // ⭐ Validation: Relax limit
+  if(v && v !== oldCode){
+    const dayKey = isHoliday(date) ? 'Holiday' : dayNameFor(date);
+    const limits = STATE.leaveLimits[dayKey] || {OFF:1, Leave:0};
+    const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
+    
+    let offCount = 0, leaveCount = 0, phCount = 0;
+    Object.keys(STATE.roster[pid][date] || {}).forEach(sid=>{
+      if(sid === staffId) return;
+      const c = STATE.roster[pid][date][sid];
+      if(c === 'OFF') offCount++;
+      else if(c === 'PH') phCount++;
+      else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
+    });
+    
+    if(v === 'OFF') offCount++;
+    else if(v === 'PH') phCount++;
+    else if((STATE.leaveTypes||[]).includes(v) && v !== 'OFF' && v !== 'GH' && v !== 'PH') leaveCount++;
+    
+    const totalRelax = offCount + leaveCount + phCount;
+    
+    if(totalRelax > relaxLimit){
+      alert(`❌ Relax Limit Exceeded!\n\nDate: ${fmtDisplay(date)} (${dayShort(date)})\nDay type: ${dayKey}\nLimit: ${relaxLimit} staff\nAfter this change: ${totalRelax} (${offCount} OFF + ${leaveCount} Leave + ${phCount} PH)\n\nCannot save. Choose a different code or date.`);
+      toast('❌ Relax limit exceeded','error');
+      return;
+    }
+  }
+  
+  // ⭐ Gender check
+  if(v){
+    const shiftDef = STATE.shifts[v];
+    if(shiftDef && shiftDef.gender !== 'Any'){
+      const staff = findStaff(staffId);
+      if(staff && staff.gender !== shiftDef.gender){
+        alert(`❌ Gender Rule Violation!\n\n${v} requires ${shiftDef.gender} staff.\n${staff.name} is ${staff.gender}.`);
+        toast('❌ Gender rule violation','error');
+        return;
+      }
+    }
+  }
+  
+  // ⭐ OFF target check (if changing to OFF)
+  if(v === 'OFF' && oldCode !== 'OFF'){
+    const offTarget = countSundays(STATE.periods[pid].start, STATE.periods[pid].end);
+    let currentOff = 0;
+    dateRange(STATE.periods[pid].start, STATE.periods[pid].end).forEach(d=>{
+      if(d === date) return;
+      const c = STATE.roster[pid][d] && STATE.roster[pid][d][staffId];
+      if(c === 'OFF') currentOff++;
+    });
+    if(currentOff + 1 > offTarget){
+      alert(`❌ OFF Target Exceeded!\n\n${staffName(staffId)} already has ${currentOff} OFF.\nTarget: ${offTarget}\nAdding one more would exceed.`);
+      toast('❌ OFF target exceeded','error');
+      return;
+    }
+  }
+  
+  // Save
   const path = 'roster/'+pid+'/'+date+'/'+staffId;
   const promise = v ? db.ref(path).set(v) : db.ref(path).remove();
   promise.then(()=>{
@@ -2694,7 +2853,6 @@ function applyRosterCell(pid, date, staffId){
     toast('✅ Roster updated','success');
     closeModal();
     renderRosterSection();
-    // WhatsApp notification for duty change
     if(oldCode !== v && v && !isSameRestCode(oldCode, v)){
       setTimeout(()=>promptDutyChangeWhatsApp(staffId, date, oldCode, v), 400);
     }
@@ -2710,7 +2868,6 @@ function promptDutyChangeWhatsApp(staffId, date, oldCode, newCode){
   const s = findStaff(staffId);
   if(!s) return;
   if(!s.mobile){
-    // No mobile — send in-app only
     pushNotification(staffId, '🔄 Duty Changed', `${fmtDisplay(date)}: ${oldCode||'—'} → ${newCode}`);
     return;
   }
@@ -2753,14 +2910,15 @@ function renderRosterSummary(pid){
   const staffArr = activeStaffArr();
   const offTarget = countSundays(STATE.periods[pid].start, STATE.periods[pid].end);
 
-  let html = '<h2>📊 Summary</h2><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Leave</th><th>PH</th><th>Extra Hrs</th><th>CPL</th><th>Target</th><th>Balance</th></tr></thead><tbody>';
+  let html = '<h2>📊 Summary</h2><div class="scroll-x"><table><thead><tr><th>Staff</th><th>OFF</th><th>Leave</th><th>PH</th><th>GH</th><th>Extra Hrs</th><th>CPL</th><th>Target</th><th>Balance</th></tr></thead><tbody>';
 
   staffArr.forEach(s=>{
-    let off=0, leave=0, ph=0, extraHrs=0;
+    let off=0, leave=0, ph=0, gh=0, extraHrs=0;
     dates.forEach(d=>{
       const c = (STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][s._id]) || '';
       if(c === 'OFF') off++;
       else if(c === 'PH') ph++;
+      else if(c === 'GH') gh++;
       else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leave++;
       if(c === 'M+E' || c === 'E+N') extraHrs += 8;
       if(c === 'DE') extraHrs += 4;
@@ -2770,7 +2928,7 @@ function renderRosterSummary(pid){
     const balanceClass = balance === 0 ? 'style="color:var(--success);font-weight:800;"' : 'style="color:var(--red);font-weight:800;"';
     html += `<tr class="${s._id===CURRENT_USER.staffId?'mine':''}">
       <td style="text-align:right;">${escapeHtml(s.name)}</td>
-      <td>${off}</td><td>${leave}</td><td>${ph}</td><td>${extraHrs}</td><td>${cpl}</td><td>${offTarget}</td>
+      <td>${off}</td><td>${leave}</td><td>${ph}</td><td>${gh}</td><td>${extraHrs}</td><td>${cpl}</td><td>${offTarget}</td>
       <td ${balanceClass}>${balance>0?'+':''}${balance}</td>
     </tr>`;
   });
@@ -2795,8 +2953,6 @@ function markRosterSeen(){
 function openShareRosterModal(){
   const pid = STATE.currentPeriodId;
   if(!pid || !STATE.periods[pid]){ toast('No roster','error'); return; }
-  const period = STATE.periods[pid];
-  const link = 'https://jolly-dolphin-eed8f8.netlify.app';
   const staffArr = activeStaffArr();
   const body = `
     <div class="info-box">📱 Choose how to share the roster</div>
@@ -2842,7 +2998,6 @@ function shareRosterAsLink(){
 }
 
 function shareRosterAsExcel(){
-  // First export Excel
   exportRosterExcelSilent();
   toast('📊 Excel downloaded — now opening WhatsApp','success');
   const pid = STATE.currentPeriodId;
@@ -2874,14 +3029,13 @@ function promptSendWhatsApp(msg){
     logAudit('WhatsApp','Roster shared with '+opt.textContent);
     return;
   }
-  // All Staff
   const arr = activeStaffArr().filter(s=>s.mobile);
   if(!arr.length){ toast('No staff with mobile','error'); return; }
   toast('📱 Opening WhatsApp for first staff — use Broadcast for all','warn');
   const first = arr[0];
   sendWhatsAppToStaff(first.mobile, msg);
   closeModal();
-  logAudit('WhatsApp','Roster shared to all (broadcast)');
+  logAudit('WhatsApp','Roster shared (broadcast)');
 }
 
 function exportRosterExcelSilent(){
@@ -3119,10 +3273,9 @@ function approveLeave(id){
     logAudit('Leave Approve', `${staffName(l.staffId)} — ${l.type}`);
     pushNotification(l.staffId, '✅ Leave Approved', `${l.type} — ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}`);
     toast('✅ Approved','success');
-    // WhatsApp prompt
     const s = findStaff(l.staffId);
     if(s && s.mobile){
-      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been APPROVED.\nDate: ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been APPROVED.\nDate: ${fmtDisplay(l.startDate)} to ${fmtDisplay(l.endDate)}\n\n— Phlebotomist Roster`;
       if(confirm('📱 Send WhatsApp to '+s.name+'?')) sendWhatsAppToStaff(s.mobile, msg);
     }
   });
@@ -3146,10 +3299,9 @@ function doRejectLeave(id){
     logAudit('Leave Reject', `${staffName(l.staffId)} — ${l.type}`);
     pushNotification(l.staffId, '❌ Leave Rejected', `${l.type} — ${reason || 'Not specified'}`);
     toast('❌ Rejected','success');
-    // WhatsApp prompt
     const s = findStaff(l.staffId);
     if(s && s.mobile){
-      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been REJECTED.\nReason: ${reason || 'N/A'}\n\n— Phlebotomist Roster\nKulsum International Hospital`;
+      const msg = `Dear ${s.name},\n\nYour ${l.type} request has been REJECTED.\nReason: ${reason || 'N/A'}\n\n— Phlebotomist Roster`;
       if(confirm('📱 Send WhatsApp to '+s.name+'?')) sendWhatsAppToStaff(s.mobile, msg);
     }
     closeModal();
@@ -3383,7 +3535,6 @@ function supervisorApproveExchange(id){
     pushNotification(e.fromStaffId, '✅ Exchange Approved', 'Roster updated');
     pushNotification(e.toStaffId, '✅ Exchange Approved', 'Roster updated');
     toast('✅ Approved — roster updated','success');
-    // WhatsApp both staff
     const sA = findStaff(e.fromStaffId);
     const sB = findStaff(e.toStaffId);
     const msgA = `Dear ${sA?.name||''},\n\nYour duty exchange on ${fmtDisplay(e.date)} has been APPROVED.\nYou now work: ${e.toShift}\n\n— Phlebotomist Roster`;
@@ -3585,7 +3736,7 @@ function reportMonthly(){
     </tr>`;
   }).join('');
   return `<h3>📆 Monthly Summary — ${escapeHtml(STATE.periods[pid].label||'')}</h3>
-    <div class="info-box">OFF Target per staff: <b>${offTarget}</b> (Sundays count)</div>
+    <div class="info-box">OFF Target per staff: <b>${offTarget}</b> (Sundays count)<br>PH & GH counted separately</div>
     <div class="scroll-x"><table><thead><tr>
       <th>Staff</th><th>Days</th><th>OFF</th><th>Leave</th><th>PH</th><th>GH</th><th>Extra Hrs</th><th>CPL</th><th>Duties</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -3598,7 +3749,7 @@ function reportCPL(){
     let sunHol = 0, cplUsed = 0, extraHrs = 0;
     dates.forEach(d=>{
       const c = (STATE.roster[pid] && STATE.roster[pid][d] && STATE.roster[pid][d][s._id]) || '';
-      if((isSunday(d) || isHoliday(d)) && c && c !== 'OFF' && !(STATE.leaveTypes||[]).includes(c)) sunHol++;
+      if((isSunday(d) || isHoliday(d)) && c && c !== 'OFF' && c !== 'PH' && !(STATE.leaveTypes||[]).includes(c)) sunHol++;
       if(c === 'CPL') cplUsed++;
       if(c === 'M+E' || c === 'E+N') extraHrs += 8;
       else if(c === 'DE') extraHrs += 4;
@@ -3715,8 +3866,8 @@ function renderDashboard(){
         const c = STATE.roster[pid][d] && STATE.roster[pid][d][CURRENT_USER.staffId];
         if(c === 'OFF') offCount++;
         else if(c === 'PH') phCount++;
-        else if(c && STATE.leaveTypes.includes(c) && c !== 'OFF' && c !== 'GH') leaveCount++;
-        if((isSunday(d) || isHoliday(d)) && c && c !== 'OFF' && !STATE.leaveTypes.includes(c)) cplEarned++;
+        else if(c && STATE.leaveTypes.includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
+        if((isSunday(d) || isHoliday(d)) && c && c !== 'OFF' && c !== 'PH' && !STATE.leaveTypes.includes(c)) cplEarned++;
         if(c === 'CPL') cplUsed++;
         if(c === 'M+E' || c === 'E+N') extraHrs += 8;
         else if(c === 'DE') extraHrs += 4;
