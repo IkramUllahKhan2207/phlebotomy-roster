@@ -1,1789 +1,1456 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>KIH Phlebotomy Roster Management</title>
-<style>
-:root{
-  --bg:#0f1420; --bg2:#161d2c; --bg3:#1e2739;
-  --fg:#e6ecf5; --muted:#8b98ad; --line:#2a3448;
-  --primary:#3b82f6; --primary-d:#2563eb;
-  --success:#22c55e; --warn:#f59e0b; --red:#ef4444; --info:#06b6d4;
-  --radius:10px; --shadow:0 4px 14px rgba(0,0,0,.35);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
-button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;transition:.15s}
-button:hover{filter:brightness(1.1)}
-button:active{transform:scale(.98)}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-success{background:var(--success);color:#fff}
-.btn-danger{background:var(--red);color:#fff}
-.btn-warn{background:var(--warn);color:#000}
-.btn-ghost{background:var(--bg3);color:var(--fg);border:1px solid var(--line)}
-.btn-sm{padding:5px 10px;font-size:12px}
-input,select,textarea{background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-family:inherit;font-size:13px;width:100%}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
-label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600}
-.app{display:flex;min-height:100vh}
-.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
-.brand{font-size:15px;font-weight:800;color:var(--primary);padding:8px 10px 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
-.brand small{display:block;font-size:10px;color:var(--muted);font-weight:400;margin-top:2px}
-.nav-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;color:var(--fg);padding:10px 12px;border-radius:8px;font-weight:600}
-.nav-btn:hover{background:var(--bg3)}
-.nav-btn.active{background:var(--primary);color:#fff}
-.nav-btn .ico{width:20px;text-align:center}
-.main{flex:1;padding:20px;overflow-x:auto}
-.page{display:none}
-.page.active{display:block}
-.page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
-.page-head h1{font-size:20px;font-weight:700}
-.page-head .sub{color:var(--muted);font-size:12px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
-.card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
-.card .val{font-size:22px;font-weight:800;margin-top:6px}
-.card.g .val{color:var(--success)} .card.b .val{color:var(--primary)}
-.card.y .val{color:var(--warn)} .card.r .val{color:var(--red)}
-.panel{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
-.panel h3{font-size:14px;margin-bottom:12px;font-weight:700}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-.row>*{flex:1;min-width:130px}
-.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg2)}
-table{border-collapse:collapse;width:100%;font-size:12px;min-width:600px}
-th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-th{background:var(--bg3);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);position:sticky;top:0;z-index:2}
-tr:hover td{background:rgba(59,130,246,.06)}
-.roster-tbl{border-collapse:collapse;font-size:11px;min-width:100%}
-.roster-tbl th,.roster-tbl td{border:1px solid var(--line);padding:5px 6px;text-align:center;white-space:nowrap}
-.roster-tbl th.sticky,.roster-tbl td.sticky{position:sticky;left:0;background:var(--bg3);z-index:3;text-align:left;min-width:130px}
-.roster-tbl th.sticky{z-index:4}
-.cell-D{background:#1e3a8a;color:#dbeafe}
-.cell-E{background:#065f46;color:#d1fae5}
-.cell-E4{background:#134e4a;color:#ccfbf1}
-.cell-N{background:#4c1d95;color:#ede9fe}
-.cell-N12{background:#7c2d12;color:#fed7aa}
-.cell-X{background:#374151;color:#d1d5db}
-.cell-OFF{background:#111827;color:#6b7280}
-.cell-PH{background:#9a3412;color:#fed7aa}
-.cell-CPL{background:#831843;color:#fbcfe8}
-.cell-CL,.cell-SL,.cell-AL,.cell-ML,.cell-GH,.cell-EL{background:#7f1d1d;color:#fecaca}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;padding:14px}
-.modal-bg.show{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--line);border-radius:12px;width:100%;max-width:720px;max-height:92vh;overflow:auto;box-shadow:var(--shadow)}
-.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2);z-index:2}
-.modal-head h3{font-size:15px;font-weight:700}
-.modal-body{padding:18px}
-.modal-foot{display:flex;justify-content:space-between;gap:10px;padding:14px 18px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg2)}
-.close-x{background:transparent;color:var(--muted);font-size:20px;padding:2px 8px}
-.close-x:hover{color:var(--red)}
-.steps{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.step-dot{flex:1;text-align:center;padding:6px;font-size:11px;font-weight:700;background:var(--bg3);border-radius:6px;color:var(--muted);border:1px solid var(--line)}
-.step-dot.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.step-dot.done{background:var(--success);color:#fff;border-color:var(--success)}
-.progress{height:10px;background:var(--bg3);border-radius:6px;overflow:hidden;margin:10px 0}
-.progress-bar{height:100%;background:var(--primary);width:0;transition:width .2s}
-.info,.err,.ok,.warn-box{padding:10px 12px;border-radius:8px;font-size:12px;margin:8px 0;border-left:4px solid}
-.info{background:rgba(6,182,212,.1);border-color:var(--info);color:#a5f3fc}
-.err{background:rgba(239,68,68,.1);border-color:var(--red);color:#fecaca}
-.ok{background:rgba(34,197,94,.1);border-color:var(--success);color:#bbf7d0}
-.warn-box{background:rgba(245,158,11,.1);border-color:var(--warn);color:#fde68a}
-#toast{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
-.toast{padding:10px 16px;border-radius:8px;background:var(--bg3);border-left:4px solid var(--primary);color:var(--fg);font-size:13px;font-weight:600;box-shadow:var(--shadow);animation:slideIn .25s}
-.toast.ok{border-color:var(--success)} .toast.err{border-color:var(--red)} .toast.warn{border-color:var(--warn)}
-@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
-.muted{color:var(--muted)}
-.small{font-size:11px}
-.mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
-.flex{display:flex}.gap8{gap:8px}.gap12{gap:12px}.between{justify-content:space-between}.center{align-items:center}
-.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--bg3);border:1px solid var(--line)}
-.chip.male{background:#1e3a8a;color:#dbeafe}
-.chip.female{background:#831843;color:#fbcfe8}
-@media(max-width:768px){
-  .sidebar{width:60px;padding:10px 6px}
-  .brand{font-size:0;padding:8px 4px}
-  .brand small{display:none}
-  .brand::before{content:"🏥";font-size:22px}
-  .nav-btn span.lbl{display:none}
-  .nav-btn{justify-content:center;padding:10px 4px}
-  .main{padding:12px}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIH Phlebotomy Operations & Roster Portal</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase Compat Runtime Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        /* =========================================================
+           CSS VARIABLES & DARK THEME STYLING
+           ========================================================= */
+        :root {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-surface-elevated: #334155;
+            --border-color: #475569;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --accent: #14b8a6;
+            --accent-hover: #0d9488;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+
+            /* Shift Badge Colors */
+            --badge-d: #0284c7;
+            --badge-e: #d97706;
+            --badge-e4: #b45309;
+            --badge-n: #6366f1;
+            --badge-n12: #4338ca;
+            --badge-off: #475569;
+            --badge-ph: #dc2626;
+            --badge-cpl: #059669;
+            --badge-x: #0284c7;
+            --badge-leave: #9333ea;
+
+            /* Specimen Tube Accent Colors */
+            --tube-purple: #a855f7;
+            --tube-blue: #3b82f6;
+            --tube-green: #22c55e;
+            --tube-yellow: #eab308;
+            --tube-red: #ef4444;
+            --tube-black: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* App Header */
+        header {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            sticky: top;
+            z-index: 50;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .brand-title h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .brand-title span {
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .role-selector-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-base);
+            padding: 0.25rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .role-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .role-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Tab Navigation */
+        nav {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .nav-item {
+            padding: 0.8rem 0;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Layout Main */
+        main {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Dashboard Overview Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .metric-info h3 {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-info .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background-color: rgba(2, 132, 199, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* Component Panels */
+        .panel {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Sticky Horizontal Roster Grid */
+        .roster-grid-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-surface);
+            max-height: 600px;
+            position: relative;
+        }
+
+        .roster-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .roster-table th, .roster-table td {
+            padding: 0.5rem 0.6rem;
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .roster-table th {
+            background-color: var(--bg-surface-elevated);
+            color: var(--text-secondary);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Sticky Left Column for Staff Names */
+        .roster-table .col-staff {
+            position: sticky;
+            left: 0;
+            background-color: var(--bg-surface-elevated);
+            z-index: 20;
+            text-align: left;
+            min-width: 160px;
+            max-width: 160px;
+            font-weight: 600;
+            border-right: 2px solid var(--border-color);
+        }
+
+        .roster-table th.col-staff {
+            z-index: 30;
+        }
+
+        /* Shift Badges */
+        .shift-badge {
+            display: inline-block;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffffff;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .shift-D { background-color: var(--badge-d); }
+        .shift-E { background-color: var(--badge-e); }
+        .shift-E4 { background-color: var(--badge-e4); }
+        .shift-N { background-color: var(--badge-n); }
+        .shift-N12 { background-color: var(--badge-n12); }
+        .shift-OFF { background-color: var(--badge-off); color: var(--text-muted); }
+        .shift-PH { background-color: var(--badge-ph); }
+        .shift-CPL { background-color: var(--badge-cpl); }
+        .shift-X { background-color: var(--badge-x); border: 1px dashed white; }
+        .shift-LEAVE { background-color: var(--badge-leave); }
+
+        /* Clinical Test Directory */
+        .search-bar {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .test-card {
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 5px solid var(--border-color);
+        }
+
+        .test-card[data-tube="EDTA Purple"] { border-left-color: var(--tube-purple); }
+        .test-card[data-tube="Citrate Blue"] { border-left-color: var(--tube-blue); }
+        .test-card[data-tube="Heparin Green"] { border-left-color: var(--tube-green); }
+        .test-card[data-tube="SST Yellow"] { border-left-color: var(--tube-yellow); }
+        .test-card[data-tube="Red Top"] { border-left-color: var(--tube-red); }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            background: var(--bg-surface-elevated);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .test-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Buttons & Controls */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-accent { background-color: var(--accent); color: white; }
+        .btn-accent:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--bg-surface-elevated); color: var(--text-primary); }
+        .btn-danger { background-color: var(--danger); color: white; }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Policy Directives List */
+        .policy-card {
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .policy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .policy-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .policy-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .policy-body {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        /* Audit Log List */
+        .audit-list {
+            list-style: none;
+            font-size: 0.8rem;
+        }
+
+        .audit-item {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .audit-time {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Modal Dialog */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-surface-elevated);
+            border-radius: 2px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .toast {
+            background-color: var(--bg-surface-elevated);
+            border-left: 4px solid var(--primary);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive Modifications */
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+            .role-selector-bar { width: 100%; justify-content: space-between; }
+            .metrics-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
 </head>
 <body>
-<!-- ============ END OF PART 1 ============ -->
-  <div class="app">
-  <aside class="sidebar">
-    <div class="brand">KIH Roster<small>Phlebotomy Management</small></div>
-    <button class="nav-btn active" data-page="dashboard"><span class="ico">📊</span><span class="lbl">Dashboard</span></button>
-    <button class="nav-btn" data-page="staff"><span class="ico">👥</span><span class="lbl">Staff</span></button>
-    <button class="nav-btn" data-page="leaves"><span class="ico">🌴</span><span class="lbl">Leaves</span></button>
-    <button class="nav-btn" data-page="holidays"><span class="ico">🎉</span><span class="lbl">Holidays</span></button>
-    <button class="nav-btn" data-page="roster"><span class="ico">📅</span><span class="lbl">Roster</span></button>
-    <button class="nav-btn" data-page="settings"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
-  </aside>
 
-  <main class="main">
-    <section id="page-dashboard" class="page active">
-      <div class="page-head">
-        <div><h1>Dashboard</h1><div class="sub">Overview</div></div>
-        <button class="btn-primary" onclick="openWizard()">🪄 Generate Roster</button>
-      </div>
-      <div class="cards">
-        <div class="card b"><div class="lbl">Active Staff</div><div class="val" id="kStaff">0</div></div>
-        <div class="card g"><div class="lbl">Periods</div><div class="val" id="kPeriods">0</div></div>
-        <div class="card y"><div class="lbl">Upcoming Holidays</div><div class="val" id="kHol">0</div></div>
-        <div class="card r"><div class="lbl">Pending Leaves</div><div class="val" id="kLeaves">0</div></div>
-      </div>
-      <div class="panel"><h3>🎉 Upcoming Holidays</h3><div id="dashHolList" class="muted small">Loading…</div></div>
-    </section>
-
-    <section id="page-staff" class="page">
-      <div class="page-head">
-        <div><h1>Staff</h1><div class="sub">Phlebotomists</div></div>
-        <button class="btn-primary" onclick="openStaffModal()">➕ Add Staff</button>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Gender</th><th>Fixed</th><th>Multi</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="staffBody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="page-leaves" class="page">
-      <div class="page-head">
-        <div><h1>Leaves</h1><div class="sub">CL / SL / AL / ML / CPL / GH</div></div>
-        <button class="btn-primary" onclick="openLeaveModal()">➕ Apply Leave</button>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Staff</th><th>Type</th><th>From</th><th>To</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="leaveBody"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="page-holidays" class="page">
-      <div class="page-head">
-        <div><h1>Holidays</h1><div class="sub">Gazetted holidays</div></div>
-        <div class="flex gap8">
-          <button class="btn-ghost" onclick="openBulkHoliday()">📥 Bulk Import</button>
-          <button class="btn-primary" onclick="openHolidayModal()">➕ Add Holiday</button>
+    <!-- APP HEADER -->
+    <header>
+        <div class="brand-container">
+            <div class="brand-logo"><i class="fa-solid fa-vial-virus"></i></div>
+            <div class="brand-title">
+                <h1>Kulsum International Hospital</h1>
+                <span>Phlebotomy Operations & Roster Portal</span>
+            </div>
         </div>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Name</th><th>Actions</th></tr></thead>
-          <tbody id="holBody"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="page-roster" class="page">
-      <div class="page-head">
-        <div><h1>Roster</h1><div class="sub">Published rosters</div></div>
-        <div class="flex gap8">
-          <select id="rosterPeriodSel" onchange="renderRosterView()" style="min-width:200px"></select>
-          <button class="btn-primary" onclick="openWizard()">🪄 Generate</button>
+        <div class="role-selector-bar">
+            <button class="role-btn active" onclick="switchRole('staff')"><i class="fa-solid fa-user-nurse"></i> Phlebotomist</button>
+            <button class="role-btn" onclick="switchRole('supervisor')"><i class="fa-solid fa-user-shield"></i> Supervisor</button>
+            <button class="role-btn" onclick="switchRole('admin')"><i class="fa-solid fa-user-gear"></i> Admin / Manager</button>
         </div>
-      </div>
-      <div id="rosterView" class="muted small">Select a period…</div>
-    </section>
+    </header>
 
-    <section id="page-settings" class="page">
-      <div class="page-head"><div><h1>Settings</h1><div class="sub">Shifts • Limits • Weekly setup</div></div></div>
-      <div class="panel"><h3>🔧 Shift Definitions</h3>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>Code</th><th>Label</th><th>Gender</th><th>Mon-Sat</th><th>Sun</th><th>Timing</th></tr></thead>
-          <tbody id="shiftBody"></tbody>
-        </table></div>
-      </div>
-      <div class="panel"><h3>📊 Leave / OFF Limits</h3>
-        <div id="limitsBox" class="small"></div>
-      </div>
-      <div class="panel"><h3>📅 Weekly Shift Requirements</h3>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>Day</th><th>Shifts (code:count)</th></tr></thead>
-          <tbody id="weeklyBody"></tbody>
-        </table></div>
-      </div>
-      <div class="panel"><h3>📜 Audit Log (last 50)</h3>
-        <div id="auditBox" class="small muted">Loading…</div>
-      </div>
-    </section>
-  </main>
-</div>
+    <!-- NAVIGATION TABS -->
+    <nav>
+        <a class="nav-item active" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <a class="nav-item" onclick="switchTab('roster')"><i class="fa-solid fa-calendar-days"></i> Roster Grid</a>
+        <a class="nav-item" onclick="switchTab('tests')"><i class="fa-solid fa-vial"></i> Test Directory</a>
+        <a class="nav-item" onclick="switchTab('policies')"><i class="fa-solid fa-bullhorn"></i> Directives & Alerts</a>
+        <a class="nav-item" id="nav-leaves" onclick="switchTab('leaves')"><i class="fa-solid fa-clock-rotate-left"></i> Leave Applications</a>
+        <a class="nav-item role-restricted supervisor admin" onclick="switchTab('management')"><i class="fa-solid fa-sliders"></i> Configuration</a>
+    </nav>
 
-<!-- ===== WIZARD MODAL ===== -->
-<div class="modal-bg" id="wizardModal">
-  <div class="modal">
-    <div class="modal-head">
-      <h3>🪄 Roster Generation Wizard</h3>
-      <button class="close-x" onclick="closeWizard()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="steps" id="wizSteps">
-        <div class="step-dot active" data-s="1">1. Period</div>
-        <div class="step-dot" data-s="2">2. Holidays</div>
-        <div class="step-dot" data-s="3">3. Mode</div>
-        <div class="step-dot" data-s="4">4. Instructions</div>
-        <div class="step-dot" data-s="5">5. Generate</div>
-        <div class="step-dot" data-s="6">6. Preview</div>
-      </div>
+    <!-- MAIN APP CONTENT CONTAINER -->
+    <main>
 
-      <div id="wizStep1" class="wiz-step">
-        <div class="info">📅 Period select karein. Sundays auto-count honge.</div>
-        <div class="row mt12">
-          <div><label>Start Date</label><input type="date" id="wizStart"></div>
-          <div><label>End Date</label><input type="date" id="wizEnd"></div>
+        <!-- DASHBOARD TAB -->
+        <section id="tab-dashboard" class="tab-content active">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Active Phlebotomists</h3>
+                        <div class="value" id="metric-active-staff">--</div>
+                    </div>
+                    <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Current Roster Period</h3>
+                        <div class="value" id="metric-current-period" style="font-size: 1rem;">--</div>
+                    </div>
+                    <div class="metric-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Pending Leave Requests</h3>
+                        <div class="value" id="metric-pending-leaves">--</div>
+                    </div>
+                    <div class="metric-icon" style="color: var(--warning);"><i class="fa-solid fa-envelope-open-text"></i></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-info">
+                        <h3>Active Directives</h3>
+                        <div class="value" id="metric-active-policies">--</div>
+                    </div>
+                    <div class="metric-icon" style="color: var(--accent);"><i class="fa-solid fa-circle-exclamation"></i></div>
+                </div>
+            </div>
+
+            <!-- Fast Clinical Test Lookup Banner -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-bolt" style="color: var(--warning);"></i> Fast Test Specimen Check</div>
+                </div>
+                <div class="search-bar" style="margin-bottom: 0;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="quick-test-search" class="search-input" placeholder="Type test name or code (e.g., CBC, Troponin, LFT)..." onkeyup="filterQuickTests(this.value)">
+                </div>
+                <div id="quick-test-results" class="test-grid" style="margin-top: 1rem;"></div>
+            </div>
+
+            <!-- Recent System Activity / Audit Log -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-list-check"></i> System Audit Log & Operations Activity</div>
+                </div>
+                <ul class="audit-list" id="dashboard-audit-log">
+                    <li class="audit-item">Loading operational activity...</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ROSTER GRID TAB -->
+        <section id="tab-roster" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-calendar-days"></i> Master Phlebotomy Roster</div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary role-restricted admin" onclick="openRosterWizard()"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generate Roster</button>
+                    </div>
+                </div>
+                
+                <div class="roster-grid-wrapper">
+                    <table class="roster-table" id="roster-table-element">
+                        <thead>
+                            <tr id="roster-header-row">
+                                <th class="col-staff">Phlebotomist</th>
+                                <!-- Dynamic Date Columns -->
+                            </tr>
+                        </thead>
+                        <tbody id="roster-body-rows">
+                            <!-- Dynamic Roster Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLINICAL TEST DIRECTORY TAB -->
+        <section id="tab-tests" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-book-medical"></i> Laboratory Sample Collection Protocols</div>
+                </div>
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="full-test-search" class="search-input" placeholder="Search by Test Name, Tube Type, Container, or SLA..." onkeyup="renderTestDirectory(this.value)">
+                </div>
+                <div class="test-grid" id="full-test-grid"></div>
+            </div>
+        </section>
+
+        <!-- DIRECTIVES & ALERTS TAB -->
+        <section id="tab-policies" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-bullhorn"></i> Clinical Directives & Biosafety Notices</div>
+                    <button class="btn btn-primary role-restricted admin" onclick="openPolicyModal()"><i class="fa-solid fa-plus"></i> Post New Directive</button>
+                </div>
+                <div id="policies-container"></div>
+            </div>
+        </section>
+
+        <!-- LEAVE APPLICATIONS TAB -->
+        <section id="tab-leaves" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-plane-departure"></i> Leave Management & Status</div>
+                    <button class="btn btn-accent" onclick="openLeaveModal()"><i class="fa-solid fa-paper-plane"></i> Apply for Leave</button>
+                </div>
+                <table class="roster-table" style="text-align: left;">
+                    <thead>
+                        <tr>
+                            <th>Phlebotomist</th>
+                            <th>Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th class="role-restricted supervisor admin">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leave-requests-table"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- CONFIGURATION & SETUP TAB -->
+        <section id="tab-management" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-users-gear"></i> Phlebotomy Staff Management</div>
+                    <button class="btn btn-primary" onclick="openStaffModal()"><i class="fa-solid fa-user-plus"></i> Add Phlebotomist</button>
+                </div>
+                <table class="roster-table">
+                    <thead>
+                        <tr>
+                            <th class="col-staff">Name</th>
+                            <th>Gender</th>
+                            <th>Fixed Shift Preference</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staff-management-table"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ROSTER GENERATION WIZARD MODAL -->
+    <div class="modal-overlay" id="wizard-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="wizard-step-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Roster Wizard - Step 1</h3>
+                <button class="btn btn-secondary" onclick="closeModal('wizard-modal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="wizard-progress"></div></div>
+            <div id="wizard-step-content"></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" id="wizard-prev-btn" onclick="prevWizardStep()">Previous</button>
+                <button class="btn btn-primary" id="wizard-next-btn" onclick="nextWizardStep()">Next</button>
+            </div>
         </div>
-        <div class="mt12" id="wizPeriodInfo"></div>
-      </div>
+    </div>
 
-      <div id="wizStep2" class="wiz-step" style="display:none">
-        <div class="info">🎉 Auto-detected holidays. Confirm karein.</div>
-        <div id="wizHolList" class="mt12"></div>
-        <div class="mt12"><label>Add Extra Holiday (date:name)</label>
-          <div class="row"><input id="wizHolExtra" placeholder="2025-03-23:Eid"><button class="btn-ghost" onclick="wizAddExtraHoliday()">Add</button></div>
+    <!-- GENERIC FORM MODAL -->
+    <div class="modal-overlay" id="generic-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="generic-modal-title">Form</h3>
+                <button class="btn btn-secondary" onclick="closeModal('generic-modal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="generic-modal-body"></div>
         </div>
-      </div>
-
-      <div id="wizStep3" class="wiz-step" style="display:none">
-        <div class="info">🪄 Mode select karein.</div>
-        <div class="mt12">
-          <label><input type="radio" name="wizMode" value="auto" checked> Auto Generate (recommended)</label>
-          <label class="mt8"><input type="radio" name="wizMode" value="manual"> Manual Overrides</label>
-        </div>
-      </div>
-
-      <div id="wizStep4" class="wiz-step" style="display:none">
-        <div class="info">📋 Rules jo engine use karega</div>
-        <div id="wizRulesBox" class="mt12"></div>
-        <div id="wizManualBox" style="display:none">
-          <div class="info mt12">✏️ Manual overrides. Format: <b>staffName,YYYY-MM-DD[,type]</b></div>
-          <div class="row mt12">
-            <div><label>Special OFF</label><textarea id="wizOffs" rows="3" placeholder="Ali,2025-03-10"></textarea></div>
-            <div><label>Leaves</label><textarea id="wizLeaves" rows="3" placeholder="Sara,2025-03-12,CL"></textarea></div>
-          </div>
-          <div class="row mt12">
-            <div><label>Gynee</label><textarea id="wizGynee" rows="2"></textarea></div>
-            <div><label>Shift Override</label><textarea id="wizShiftOv" rows="2" placeholder="Ali,2025-03-10,D"></textarea></div>
-          </div>
-          <div class="mt12"><label>Extended Duty</label><textarea id="wizExt" rows="2" placeholder="Ali,2025-03-10,N"></textarea></div>
-        </div>
-      </div>
-
-      <div id="wizStep5" class="wiz-step" style="display:none">
-        <div class="info">⚙️ Generating roster… please wait.</div>
-        <div class="progress"><div class="progress-bar" id="wizProgBar"></div></div>
-        <div id="wizProgText" class="small muted">0%</div>
-        <div id="wizLog" class="small mt12" style="max-height:180px;overflow:auto;font-family:monospace"></div>
-      </div>
-
-      <div id="wizStep6" class="wiz-step" style="display:none">
-        <div id="wizSummary"></div>
-        <div id="wizWarnings"></div>
-        <div id="wizPreview" class="mt12" style="overflow:auto;max-height:340px"></div>
-      </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" id="wizBack" onclick="wizBack()">← Back</button>
-      <div class="flex gap8">
-        <button class="btn-ghost" onclick="closeWizard()">Cancel</button>
-        <button class="btn-primary" id="wizNext" onclick="wizNext()">Next →</button>
-        <button class="btn-success" id="wizSave" style="display:none" onclick="wizSaveRoster()">💾 Save Roster</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- ===== STAFF MODAL ===== -->
-<div class="modal-bg" id="staffModal">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-head"><h3 id="staffModalTitle">Add Staff</h3><button class="close-x" onclick="closeModal('staffModal')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="staffId">
-      <div class="mb12"><label>Name</label><input id="staffName" placeholder="Full name"></div>
-      <div class="row mb12">
-        <div><label>Gender</label><select id="staffGender"><option>Male</option><option>Female</option></select></div>
-        <div><label>Fixed Shift</label><select id="staffFixed"></select></div>
-      </div>
-      <div class="mb12"><label>Multi Shifts (comma-separated codes)</label><input id="staffMulti" placeholder="D,E,N"></div>
-      <div class="mb12"><label>Special OFF Dates (comma-separated)</label><input id="staffOffDates" placeholder="2025-03-10,2025-03-15"></div>
-      <div class="mb12"><label>Active</label><select id="staffActive"><option value="true">Yes</option><option value="false">No</option></select></div>
-
-      <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
-        <h4 style="font-size:12px;color:var(--muted);margin-bottom:8px">🎯 RELAX BALANCES (Admin only)</h4>
-        <div class="row mb12">
-          <div><label>OFF Balance</label><input type="number" id="balOFF" value="5" min="0"></div>
-          <div><label>PH Pending</label><input type="number" id="balPH" value="0" min="0"></div>
-        </div>
-        <div class="row mb12">
-          <div><label>CPL Balance</label><input type="number" id="balCPL" value="0" min="0"></div>
-          <div><label>EL Balance</label><input type="number" id="balEL" value="0" min="0"></div>
-        </div>
-        <div class="row mb12">
-          <div><label>SL Balance</label><input type="number" id="balSL" value="0" min="0"></div>
-          <div><label>AL Balance</label><input type="number" id="balAL" value="0" min="0"></div>
-        </div>
-        <div class="row mb12">
-          <div><label>CL Balance</label><input type="number" id="balCL" value="0" min="0"></div>
-          <div><label>GH Balance</label><input type="number" id="balGH" value="0" min="0"></div>
-        </div>
-        <div class="mb12">
-          <label>Combined Relax Max (days)</label>
-          <input type="number" id="balCombinedMax" value="1" min="1" max="7">
-        </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" onclick="closeModal('staffModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveStaff()">💾 Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== LEAVE MODAL ===== -->
-<div class="modal-bg" id="leaveModal">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-head"><h3>Apply Leave</h3><button class="close-x" onclick="closeModal('leaveModal')">✕</button></div>
-    <div class="modal-body">
-      <div class="mb12"><label>Staff</label><select id="leaveStaff"></select></div>
-      <div class="row mb12">
-        <div><label>Type</label><select id="leaveType"></select></div>
-        <div><label>Status</label><select id="leaveStatus"><option>pending</option><option>approved</option><option>rejected</option></select></div>
-      </div>
-      <div class="row">
-        <div><label>From</label><input type="date" id="leaveStart"></div>
-        <div><label>To</label><input type="date" id="leaveEnd"></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" onclick="closeModal('leaveModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveLeave()">💾 Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== HOLIDAY MODAL ===== -->
-<div class="modal-bg" id="holidayModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-head"><h3>Add Holiday</h3><button class="close-x" onclick="closeModal('holidayModal')">✕</button></div>
-    <div class="modal-body">
-      <div class="mb12"><label>Date</label><input type="date" id="holDate"></div>
-      <div><label>Name</label><input id="holName" placeholder="Eid ul Fitr"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" onclick="closeModal('holidayModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveHoliday()">💾 Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== BULK HOLIDAY MODAL ===== -->
-<div class="modal-bg" id="bulkHolModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-head"><h3>Bulk Import Holidays</h3><button class="close-x" onclick="closeModal('bulkHolModal')">✕</button></div>
-    <div class="modal-body">
-      <div class="info">Har line: <b>YYYY-MM-DD,Holiday Name</b></div>
-      <textarea id="bulkHolText" rows="8" class="mt12" placeholder="2025-03-23,Eid ul Fitr"></textarea>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" onclick="closeModal('bulkHolModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveBulkHolidays()">💾 Import</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<!-- ============ END OF PART 2 ============ -->
-  <script>
-/* PART 3 — Firebase init, STATE, helpers */
-
-const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE.firebaseapp.com",
-  databaseURL: "https://PASTE-default-rtdb.firebaseio.com",
-  projectId: "PASTE",
-  storageBucket: "PASTE.appspot.com",
-  messagingSenderId: "PASTE",
-  appId: "PASTE"
-};
-
-let db = null;
-try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.database();
-  console.log('[KIH] Firebase initialized');
-} catch(e){ console.error('[KIH] Firebase init failed:', e); }
-
-const STATE = {
-  staff:{}, shifts:{}, leaveTypes:[], leaveLimits:{},
-  weeklySetup:{}, periods:{}, roster:{}, leaves:{},
-  holidays:{}, cpLRecords:{}, auditLog:{}, notifications:{},
-  users:{}, user:null
-};
-
-const DEFAULT_SHIFTS = {
-  D:   { code:'D',   label:'Day',        gender:'any',    monSat:true,  sun:false, timing:'08:00-16:00' },
-  E:   { code:'E',   label:'Early',      gender:'any',    monSat:true,  sun:true,  timing:'07:00-15:00' },
-  E4:  { code:'E4',  label:'Early-4',    gender:'Female', monSat:true,  sun:false, timing:'06:00-14:00' },
-  N:   { code:'N',   label:'Night',      gender:'Male',   monSat:true,  sun:true,  timing:'20:00-04:00' },
-  N12: { code:'N12', label:'Night-12',   gender:'Male',   monSat:true,  sun:true,  timing:'00:00-08:00' },
-  X:   { code:'X',   label:'Standby',    gender:'any',    monSat:true,  sun:true,  timing:'On-call' },
-  OFF: { code:'OFF', label:'Off',        gender:'any',    monSat:true,  sun:true,  timing:'-' },
-  PH:  { code:'PH',  label:'Public Hol', gender:'any',    monSat:true,  sun:true,  timing:'-' },
-  CPL: { code:'CPL', label:'Comp Leave', gender:'any',    monSat:true,  sun:true,  timing:'-' }
-};
-
-const DEFAULT_LIMITS = {
-  Sunday:  { OFF:7, Leave:0 },
-  Saturday:{ OFF:2, Leave:2 },
-  Monday:  { OFF:1, Leave:2 },
-  Tuesday: { OFF:1, Leave:2 },
-  Wednesday:{OFF:1, Leave:2 },
-  Thursday:{ OFF:1, Leave:2 },
-  Friday:  { OFF:1, Leave:2 },
-  Holiday: { OFF:7, Leave:0 }
-};
-
-const DEFAULT_WEEKLY = {
-  Sunday:  { E:2, N:1, N12:1 },
-  Monday:  { D:3, E:2, E4:1, N:1, N12:1 },
-  Tuesday: { D:3, E:2, E4:1, N:1, N12:1 },
-  Wednesday:{D:3, E:2, E4:1, N:1, N12:1 },
-  Thursday:{ D:3, E:2, E4:1, N:1, N12:1 },
-  Friday:  { D:3, E:2, E4:1, N:1, N12:1 },
-  Saturday:{ D:2, E:2, N:1, N12:1, X:1 },
-  Holiday: { E:2, N:1, N12:1 }
-};
-
-const $ = id => document.getElementById(id);
-const pad = n => String(n).padStart(2,'0');
-const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-const parseYMD = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
-const dayName = d => ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
-const uid = () => 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-
-function toast(msg, type='ok'){
-  const t = document.createElement('div');
-  t.className = 'toast '+type;
-  t.textContent = msg;
-  $('toast').appendChild(t);
-  setTimeout(()=>t.remove(), 3500);
-}
-
-function logAudit(action, detail){
-  if(!db) return;
-  const id = 'a_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-  db.ref('auditLog/'+id).set({ action, detail, at: Date.now(), by: STATE.user ? STATE.user.email : 'guest' })
-    .catch(e=>console.warn('audit fail', e));
-}
-
-function pushNotif(target, title, body){
-  if(!db) return;
-  const id = 'n_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-  db.ref('notifications/'+id).set({ target, title, body, at: Date.now(), read:false }).catch(e=>console.warn('notif fail', e));
-}
-
-function rangeDates(startStr, endStr){
-  const out = [];
-  let d = parseYMD(startStr);
-  const end = parseYMD(endStr);
-  while(d <= end){ out.push(ymd(d)); d.setDate(d.getDate()+1); }
-  return out;
-}
-function countSundays(s,e){ return rangeDates(s,e).filter(d => parseYMD(d).getDay()===0).length; }
-
-function loadAll(){
-  if(!db){ console.warn('[KIH] no db, seed demo'); seedDemo(); return; }
-
-  db.ref('staff').on('value', s => { STATE.staff = s.val() || {}; renderStaff(); renderLeaveStaffSelect(); });
-  db.ref('shifts').on('value', s => {
-    STATE.shifts = s.val() || {};
-    if(!Object.keys(STATE.shifts).length) seedDefaults();
-    renderShifts(); renderFixedShiftSelect();
-  });
-  db.ref('leaveTypes').on('value', s => { STATE.leaveTypes = s.val() || ['CL','SL','AL','ML','CPL','GH']; renderLeaveTypeSelect(); });
-  db.ref('leaveLimits').on('value', s => { STATE.leaveLimits = s.val() || DEFAULT_LIMITS; renderLimits(); });
-  db.ref('weeklySetup').on('value', s => { STATE.weeklySetup = s.val() || DEFAULT_WEEKLY; renderWeekly(); });
-  db.ref('periods').on('value', s => { STATE.periods = s.val() || {}; renderPeriodSelect(); updateDash(); });
-  db.ref('roster').on('value', s => { STATE.roster = s.val() || {}; renderRosterView(); });
-  db.ref('leaves').on('value', s => { STATE.leaves = s.val() || {}; renderLeaves(); updateDash(); });
-  db.ref('holidays').on('value', s => { STATE.holidays = s.val() || {}; renderHolidays(); updateDash(); });
-  db.ref('auditLog').limitToLast(50).on('value', s => { STATE.auditLog = s.val() || {}; renderAudit(); });
-}
-
-function seedDefaults(){
-  if(!db) return;
-  db.ref('shifts').set(DEFAULT_SHIFTS);
-  db.ref('leaveTypes').set(['CL','SL','AL','ML','CPL','GH','PH','OFF']);
-  db.ref('leaveLimits').set(DEFAULT_LIMITS);
-  db.ref('weeklySetup').set(DEFAULT_WEEKLY);
-}
-
-function seedDemo(){
-  STATE.shifts = DEFAULT_SHIFTS;
-  STATE.leaveTypes = ['CL','SL','AL','ML','CPL','GH','PH','OFF'];
-  STATE.leaveLimits = DEFAULT_LIMITS;
-  STATE.weeklySetup = DEFAULT_WEEKLY;
-  STATE.staff = {
-    s1:{_id:'s1',name:'Ali Khan',gender:'Male',fixedShift:'N',multiShifts:['N','N12','X'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:2}},
-    s2:{_id:'s2',name:'Sara Ahmed',gender:'Female',fixedShift:'D',multiShifts:['D','E','E4'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:1}},
-    s3:{_id:'s3',name:'Bilal Raza',gender:'Male',fixedShift:'D',multiShifts:['D','E','N'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:2}},
-    s4:{_id:'s4',name:'Hina Malik',gender:'Female',fixedShift:'E',multiShifts:['E','E4','D'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:1}}
-  };
-  renderStaff(); renderShifts(); renderLimits(); renderWeekly();
-  renderLeaveTypeSelect(); renderFixedShiftSelect(); renderLeaveStaffSelect();
-  renderHolidays(); renderLeaves(); renderAudit(); updateDash();
-}
-
-function go(page){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const el = $('page-'+page); if(el) el.classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
-}
-document.querySelectorAll('.nav-btn').forEach(b=>b.onclick = ()=>go(b.dataset.page));
-function closeModal(id){ $(id).classList.remove('show'); }
-
-window.addEventListener('DOMContentLoaded', ()=>{
-  loadAll();
-  const t = new Date();
-  const first = new Date(t.getFullYear(), t.getMonth(), 1);
-  const last  = new Date(t.getFullYear(), t.getMonth()+1, 0);
-  $('wizStart').value = ymd(first);
-  $('wizEnd').value   = ymd(last);
-});
-</script>
-<!-- ============ END OF PART 3 ============ -->
-  <script>
-/* PART 4A — Wizard UI, staff/leave/holiday CRUD */
-
-const WIZ = {
-  step:1, mode:'auto', start:'', end:'', dates:[],
-  confirmedHolidays:{},
-  manual:{offs:[],leaves:[],gynee:[],shiftOverride:[],extendedDuty:[]},
-  grid:{}, locked:{}, offCount:{}, phCount:{},
-  conflictLog:[], warnings:[], cplConversions:[], log:[],
-  weeklyLedger:{}, weeks:{}, _lastNightStaffId:null
-};
-
-function openWizard(){
-  WIZ.step = 1; WIZ.mode='auto';
-  WIZ.confirmedHolidays = {};
-  WIZ.manual = {offs:[],leaves:[],gynee:[],shiftOverride:[],extendedDuty:[]};
-  WIZ.grid={}; WIZ.locked={}; WIZ.offCount={}; WIZ.phCount={};
-  WIZ.conflictLog=[]; WIZ.warnings=[]; WIZ.cplConversions=[]; WIZ.log=[];
-  WIZ.weeklyLedger={}; WIZ.weeks={}; WIZ._lastNightStaffId=null;
-  showWizStep(1);
-  $('wizardModal').classList.add('show');
-}
-function closeWizard(){ $('wizardModal').classList.remove('show'); }
-
-function showWizStep(n){
-  WIZ.step = n;
-  for(let i=1;i<=6;i++){ const el=$('wizStep'+i); if(el) el.style.display = (i===n)?'block':'none'; }
-  document.querySelectorAll('#wizSteps .step-dot').forEach(d=>{
-    const s = +d.dataset.s;
-    d.classList.toggle('active', s===n);
-    d.classList.toggle('done', s<n);
-  });
-  $('wizBack').style.display = n===1 ? 'none' : 'inline-block';
-  $('wizNext').style.display = (n===5||n===6) ? 'none' : 'inline-block';
-  $('wizSave').style.display = n===6 ? 'inline-block' : 'none';
-
-  if(n===2) renderWizHolidays();
-  if(n===4) renderWizRules();
-  if(n===5) wizStartGeneration();
-}
-
-function renderWizRules(){
-  const staff = activeStaff();
-  const offTarget = countSundays(WIZ.start, WIZ.end);
-  const rulesBox = $('wizRulesBox');
-  const manualBox = $('wizManualBox');
-
-  const limits = STATE.leaveLimits || DEFAULT_LIMITS;
-  let html = '<div class="ok" style="padding:12px">';
-  html += '<b>📋 Auto Mode</b><br><br>';
-  html += '<b>Rules:</b><ul style="margin-left:18px;margin-top:6px">';
-  html += `<li>Each staff: <b>${offTarget} OFF</b> (= total Sundays)</li>`;
-  html += `<li>Relax limits — Mon-Fri: 1 | Sat: 2 | Sun/Holiday: 7</li>`;
-  html += `<li>Saturday: agar 2 OFF → 1 staff X duty pe hoga</li>`;
-  html += `<li>Holiday coverage: 2 Male + 2 Early + 1 Night</li>`;
-  html += `<li>Non-duty staff → PH on holiday</li>`;
-  html += `<li>Duty staff → PH adjustment later</li>`;
-  html += `<li>Every staff: 1 PH per gazetted holiday</li>`;
-  html += `<li>N/N12 ke baad <b>1 din OFF</b> priority, warna E/E4</li>`;
-  html += `<li>Sunday duty → alternate OFF (same week → next week → CPL)</li>`;
-  html += `<li>Weekly OFF ≥1 per staff (mandatory)</li>`;
-  html += `<li>No empty cells</li>`;
-  html += '</ul></div>';
-  rulesBox.innerHTML = html;
-
-  if(WIZ.mode === 'manual'){
-    manualBox.style.display = 'block';
-  } else {
-    manualBox.style.display = 'none';
-  }
-}
-
-function wizNext(){
-  if(WIZ.step===1){
-    const s = $('wizStart').value, e = $('wizEnd').value;
-    if(!s||!e){ toast('Start & End date required','err'); return; }
-    if(parseYMD(s) > parseYMD(e)){ toast('Start > End','err'); return; }
-    WIZ.start=s; WIZ.end=e;
-    WIZ.dates = rangeDates(s,e);
-    const sundays = countSundays(s,e);
-    $('wizPeriodInfo').innerHTML = `<div class="ok">📅 ${WIZ.dates.length} days • ${sundays} Sundays • OFF target = ${sundays}</div>`;
-    showWizStep(2); return;
-  }
-  if(WIZ.step===2){ showWizStep(3); return; }
-  if(WIZ.step===3){
-    WIZ.mode = document.querySelector('input[name="wizMode"]:checked').value;
-    showWizStep(4);
-    return;
-  }
-  if(WIZ.step===4){
-    if(WIZ.mode==='manual') parseManualOverrides();
-    showWizStep(5);
-    return;
-  }
-}
-
-function wizBack(){
-  if(WIZ.step<=1) return;
-  let prev = WIZ.step-1;
-  if(prev===5){ WIZ.grid={}; WIZ.weeklyLedger={}; WIZ.weeks={}; WIZ._lastNightStaffId=null; }
-  showWizStep(prev);
-}
-
-function renderWizHolidays(){
-  const inRange = Object.entries(STATE.holidays||{}).filter(([d])=> WIZ.dates.includes(d));
-  WIZ.confirmedHolidays = {};
-  inRange.forEach(([d,n])=> WIZ.confirmedHolidays[d] = n);
-  let html = '<div class="ok">In-period holidays:</div>';
-  if(!inRange.length) html += '<div class="muted small mt8">None.</div>';
-  else {
-    html += '<table class="small mt8"><thead><tr><th>Date</th><th>Name</th><th>Remove</th></tr></thead><tbody>';
-    inRange.forEach(([d,n])=>{
-      html += `<tr><td>${d}</td><td>${n}</td><td><button class="btn-danger btn-sm" onclick="wizRemoveHoliday('${d}')">✕</button></td></tr>`;
-    });
-    html += '</tbody></table>';
-  }
-  $('wizHolList').innerHTML = html;
-}
-function wizRemoveHoliday(d){ delete WIZ.confirmedHolidays[d]; renderWizHolidays(); }
-function wizAddExtraHoliday(){
-  const v = $('wizHolExtra').value.trim();
-  if(!v.includes(':')){ toast('Format: YYYY-MM-DD:Name','err'); return; }
-  const [d,...rest] = v.split(':');
-  if(!WIZ.dates.includes(d)){ toast('Date not in period','err'); return; }
-  WIZ.confirmedHolidays[d] = rest.join(':').trim() || 'Holiday';
-  $('wizHolExtra').value='';
-  renderWizHolidays();
-}
-function parseManualOverrides(){
-  const parse = (txt) => txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(',').map(x=>x.trim()));
-  WIZ.manual.offs = parse($('wizOffs').value);
-  WIZ.manual.leaves = parse($('wizLeaves').value);
-  WIZ.manual.gynee = parse($('wizGynee').value);
-  WIZ.manual.shiftOverride = parse($('wizShiftOv').value);
-  WIZ.manual.extendedDuty = parse($('wizExt').value);
-}
-
-/* STAFF CRUD */
-function renderStaff(){
-  const tbody = $('staffBody'); if(!tbody) return;
-  const arr = Object.values(STATE.staff);
-  if(!arr.length){ tbody.innerHTML = '<tr><td colspan="7" class="muted">No staff. Click Add.</td></tr>'; return; }
-  tbody.innerHTML = arr.map(s=>{
-    const b = s.balance || {};
-    const balStr = `OFF:${b.OFF??'-'} PH:${b.PH??'-'} CPL:${b.CPL??'-'} EL:${b.EL??'-'}`;
-    return `<tr>
-      <td>${s.name||'-'}</td>
-      <td><span class="chip ${(s.gender||'').toLowerCase()}">${s.gender||'-'}</span></td>
-      <td>${s.fixedShift||'-'}</td>
-      <td class="small">${(s.multiShifts||[]).join(',')||'-'}</td>
-      <td class="small">${balStr}</td>
-      <td>${s.active?'<span style="color:var(--success)">Active</span>':'<span class="muted">Inactive</span>'}</td>
-      <td>
-        <button class="btn-ghost btn-sm" onclick="editStaff('${s._id}')">✏️</button>
-        <button class="btn-danger btn-sm" onclick="deleteStaff('${s._id}')">🗑</button>
-      </td>
-    </tr>`;
-  }).join('');
-  updateDash();
-}
-function renderFixedShiftSelect(){
-  const sel = $('staffFixed'); if(!sel) return;
-  sel.innerHTML = Object.keys(STATE.shifts).map(c=>`<option value="${c}">${c} - ${STATE.shifts[c].label||''}</option>`).join('');
-}
-function renderLeaveStaffSelect(){
-  const sel = $('leaveStaff'); if(!sel) return;
-  sel.innerHTML = Object.values(STATE.staff).map(s=>`<option value="${s._id}">${s.name}</option>`).join('');
-}
-function openStaffModal(){
-  $('staffId').value=''; $('staffName').value=''; $('staffGender').value='Male';
-  $('staffFixed').value = Object.keys(STATE.shifts)[0]||'D';
-  $('staffMulti').value=''; $('staffOffDates').value=''; $('staffActive').value='true';
-  $('balOFF').value = 5; $('balPH').value = 0; $('balCPL').value = 0;
-  $('balEL').value = 0; $('balSL').value = 0; $('balAL').value = 0;
-  $('balCL').value = 0; $('balGH').value = 0; $('balCombinedMax').value = 1;
-  $('staffModalTitle').textContent='Add Staff';
-  $('staffModal').classList.add('show');
-}
-function editStaff(id){
-  const s = STATE.staff[id]; if(!s) return;
-  $('staffId').value = id;
-  $('staffName').value = s.name||'';
-  $('staffGender').value = s.gender||'Male';
-  $('staffFixed').value = s.fixedShift||'';
-  $('staffMulti').value = (s.multiShifts||[]).join(',');
-  $('staffOffDates').value = (s.specialOffDates||[]).join(',');
-  $('staffActive').value = String(s.active!==false);
-  const b = s.balance || {};
-  $('balOFF').value = b.OFF ?? 5; $('balPH').value = b.PH ?? 0;
-  $('balCPL').value = b.CPL ?? 0; $('balEL').value = b.EL ?? 0;
-  $('balSL').value = b.SL ?? 0; $('balAL').value = b.AL ?? 0;
-  $('balCL').value = b.CL ?? 0; $('balGH').value = b.GH ?? 0;
-  $('balCombinedMax').value = b.combinedMax ?? 1;
-  $('staffModalTitle').textContent='Edit Staff';
-  $('staffModal').classList.add('show');
-}
-function saveStaff(){
-  const id = $('staffId').value || uid();
-  const data = {
-    _id: id,
-    name: $('staffName').value.trim(),
-    gender: $('staffGender').value,
-    fixedShift: $('staffFixed').value,
-    multiShifts: $('staffMulti').value.split(',').map(s=>s.trim()).filter(Boolean),
-    specialOffDates: $('staffOffDates').value.split(',').map(s=>s.trim()).filter(Boolean),
-    active: $('staffActive').value==='true',
-    balance: {
-      OFF: +$('balOFF').value || 0, PH:  +$('balPH').value  || 0,
-      CPL: +$('balCPL').value || 0, EL:  +$('balEL').value  || 0,
-      SL:  +$('balSL').value  || 0, AL:  +$('balAL').value  || 0,
-      CL:  +$('balCL').value  || 0, GH:  +$('balGH').value  || 0,
-      combinedMax: +$('balCombinedMax').value || 1
-    }
-  };
-  if(!data.name){ toast('Name required','err'); return; }
-  if(!db){ STATE.staff[id]=data; renderStaff(); closeModal('staffModal'); toast('Saved (demo)'); return; }
-  db.ref('staff/'+id).set(data).then(()=>{
-    toast('Staff saved','ok'); logAudit('staff.save', data.name);
-    closeModal('staffModal');
-  }).catch(e=>{ toast('Save failed: '+e.message,'err'); console.error(e); });
-}
-function deleteStaff(id){
-  if(!confirm('Deactivate this staff?')) return;
-  if(!db){ delete STATE.staff[id]; renderStaff(); return; }
-  db.ref('staff/'+id+'/active').set(false).then(()=>toast('Deactivated','warn'));
-}
-
-/* LEAVES */
-function renderLeaveTypeSelect(){
-  const sel = $('leaveType'); if(!sel) return;
-  sel.innerHTML = (STATE.leaveTypes||[]).filter(t=>!['PH','OFF'].includes(t))
-    .map(t=>`<option value="${t}">${t}</option>`).join('');
-}
-function openLeaveModal(){
-  $('leaveStart').value = WIZ.start || ymd(new Date());
-  $('leaveEnd').value   = WIZ.start || ymd(new Date());
-  $('leaveModal').classList.add('show');
-}
-function saveLeave(){
-  const sid = $('leaveStaff').value;
-  const s = STATE.staff[sid]; if(!s){ toast('Select staff','err'); return; }
-  const data = {
-    staffId: sid, staffName: s.name, type: $('leaveType').value,
-    startDate: $('leaveStart').value, endDate: $('leaveEnd').value,
-    status: $('leaveStatus').value, createdAt: Date.now()
-  };
-  if(!db){ toast('DB not connected','err'); return; }
-  const id = 'lv_'+Date.now();
-  db.ref('leaves/'+id).set(data).then(()=>{ toast('Leave saved','ok'); logAudit('leave.save', s.name+' '+data.type); closeModal('leaveModal'); })
-    .catch(e=>toast('Fail: '+e.message,'err'));
-}
-function renderLeaves(){
-  const tbody = $('leaveBody'); if(!tbody) return;
-  const arr = Object.values(STATE.leaves);
-  if(!arr.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted">No leaves.</td></tr>'; return; }
-  tbody.innerHTML = arr.map(l=>`
-    <tr>
-      <td>${l.staffName||'-'}</td><td>${l.type||'-'}</td>
-      <td>${l.startDate||'-'}</td><td>${l.endDate||'-'}</td>
-      <td>${l.status||'-'}</td>
-      <td>${l.status!=='approved'?`<button class="btn-success btn-sm" onclick="approveLeave('${l._id||''}','${l.staffId}','${l.startDate}','${l.endDate}')">✓</button>`:''}</td>
-    </tr>`).join('');
-}
-function approveLeave(id, sid, s, e){
-  if(!db) return;
-  const key = id || Object.keys(STATE.leaves).find(k=>STATE.leaves[k].staffId===sid && STATE.leaves[k].startDate===s);
-  if(!key) return;
-  db.ref('leaves/'+key+'/status').set('approved').then(()=>toast('Approved','ok'));
-}
-
-/* HOLIDAYS */
-function openHolidayModal(){ $('holDate').value=''; $('holName').value=''; $('holidayModal').classList.add('show'); }
-function saveHoliday(){
-  const d = $('holDate').value, n = $('holName').value.trim();
-  if(!d||!n){ toast('Date & Name required','err'); return; }
-  if(!db){ STATE.holidays[d]=n; renderHolidays(); closeModal('holidayModal'); return; }
-  db.ref('holidays/'+d).set(n).then(()=>{ toast('Holiday saved','ok'); logAudit('holiday.save',d+' '+n); closeModal('holidayModal'); });
-}
-function openBulkHoliday(){ $('bulkHolText').value=''; $('bulkHolModal').classList.add('show'); }
-function saveBulkHolidays(){
-  const lines = $('bulkHolText').value.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(!db){ toast('DB not connected','err'); return; }
-  const updates = {};
-  lines.forEach(l=>{
-    const [d,...rest] = l.split(',');
-    if(d && rest.length) updates['holidays/'+d.trim()] = rest.join(',').trim();
-  });
-  if(!Object.keys(updates).length){ toast('Nothing to import','err'); return; }
-  db.ref().update(updates).then(()=>{ toast(Object.keys(updates).length+' holidays imported','ok'); closeModal('bulkHolModal'); });
-}
-function renderHolidays(){
-  const tbody = $('holBody'); if(!tbody) return;
-  const arr = Object.entries(STATE.holidays||{});
-  if(!arr.length){ tbody.innerHTML = '<tr><td colspan="3" class="muted">No holidays.</td></tr>'; updateDash(); return; }
-  arr.sort((a,b)=>a[0].localeCompare(b[0]));
-  tbody.innerHTML = arr.map(([d,n])=>`
-    <tr><td>${d}</td><td>${n}</td>
-      <td><button class="btn-danger btn-sm" onclick="deleteHoliday('${d}')">🗑</button></td>
-    </tr>`).join('');
-  updateDash();
-}
-function deleteHoliday(d){
-  if(!confirm('Delete '+d+'?')) return;
-  if(!db) return;
-  db.ref('holidays/'+d).remove().then(()=>toast('Deleted','warn'));
-}
-
-/* DASHBOARD */
-function updateDash(){
-  const staff = Object.values(STATE.staff).filter(s=>s.active!==false).length;
-  const periods = Object.keys(STATE.periods||{}).length;
-  const today = ymd(new Date());
-  const upcoming = Object.entries(STATE.holidays||{}).filter(([d])=>d>=today).sort((a,b)=>a[0].localeCompare(b[0]));
-  const pending = Object.values(STATE.leaves||{}).filter(l=>l.status==='pending').length;
-  if($('kStaff')) $('kStaff').textContent = staff;
-  if($('kPeriods')) $('kPeriods').textContent = periods;
-  if($('kHol')) $('kHol').textContent = upcoming.length;
-  if($('kLeaves')) $('kLeaves').textContent = pending;
-  if($('dashHolList')){
-    $('dashHolList').innerHTML = upcoming.length
-      ? upcoming.slice(0,5).map(([d,n])=>`<div>🎉 <b>${d}</b> — ${n}</div>`).join('')
-      : '<span class="muted">No upcoming holidays</span>';
-  }
-}
-</script>
-<!-- ============ END OF PART 4A ============ -->
-  <script>
-/* PART 4B — GENERATION ENGINE */
-
-function isHolidayDate(d){ return !!WIZ.confirmedHolidays[d]; }
-function isSunday(d){ return parseYMD(d).getDay()===0; }
-function isSaturday(d){ return parseYMD(d).getDay()===6; }
-function isOffDay(d){ return isHolidayDate(d) || isSunday(d); }
-function shiftDef(code){ return STATE.shifts[code] || { code, label:code, gender:'any', monSat:true, sun:true }; }
-function shiftActiveOn(code, date){
-  const def = shiftDef(code);
-  return isSunday(date) ? def.sun !== false : def.monSat !== false;
-}
-function genderOK(staff, code){
-  const def = shiftDef(code);
-  if(def.gender==='any') return true;
-  return staff.gender === def.gender;
-}
-function activeStaff(){ return Object.values(STATE.staff).filter(s=>s.active!==false); }
-function prevDateStr(s){ const d = parseYMD(s); d.setDate(d.getDate()-1); return ymd(d); }
-function nextDateStr(s){ const d = parseYMD(s); d.setDate(d.getDate()+1); return ymd(d); }
-
-function wizLog(msg){
-  WIZ.log.push(msg);
-  const box = $('wizLog'); if(box){ box.innerHTML += `<div>• ${msg}</div>`; box.scrollTop = box.scrollHeight; }
-}
-function setProg(pct){
-  if($('wizProgBar')) $('wizProgBar').style.width = pct+'%';
-  if($('wizProgText')) $('wizProgText').textContent = Math.round(pct)+'%';
-}
-
-/* WEEKLY LEDGER */
-function buildWeeklyLedger(){
-  WIZ.weeklyLedger = {};
-  const weeks = {};
-  WIZ.dates.forEach(d=>{
-    const idx = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
-    if(!weeks[idx]) weeks[idx] = [];
-    weeks[idx].push(d);
-  });
-  WIZ.weeks = weeks;
-  activeStaff().forEach(s=>{
-    WIZ.weeklyLedger[s._id] = {};
-    Object.keys(weeks).forEach(wk=>{
-      WIZ.weeklyLedger[s._id][wk] = { required:1, given:0, pending:0 };
-    });
-  });
-  wizLog(`Weekly ledger: ${Object.keys(weeks).length} weeks × ${activeStaff().length} staff`);
-}
-function markWeekOffGiven(staffId, weekIdx){
-  if(!WIZ.weeklyLedger[staffId]) return;
-  if(!WIZ.weeklyLedger[staffId][weekIdx]) return;
-  WIZ.weeklyLedger[staffId][weekIdx].given++;
-  if(WIZ.weeklyLedger[staffId][weekIdx].given >= WIZ.weeklyLedger[staffId][weekIdx].required){
-    WIZ.weeklyLedger[staffId][weekIdx].pending = 0;
-  }
-}
-function computePendingFromLedger(){
-  activeStaff().forEach(s=>{
-    const ledger = WIZ.weeklyLedger[s._id] || {};
-    let carry = 0;
-    Object.keys(ledger).sort((a,b)=>a-b).forEach(wk=>{
-      const w = ledger[wk];
-      const need = w.required + carry;
-      w.pending = Math.max(0, need - w.given);
-      carry = w.pending;
-    });
-  });
-}
-function getWeekPriorityStaff(weekIdx){
-  return activeStaff()
-    .map(s=>{
-      const w = (WIZ.weeklyLedger[s._id]||{})[weekIdx] || {pending:0, required:1, given:0};
-      return { staff: s, pending: w.pending + (w.given===0 ? w.required : 0), offCount: WIZ.offCount[s._id]||0 };
-    })
-    .sort((a,b)=>{
-      if(b.pending !== a.pending) return b.pending - a.pending;
-      return a.offCount - b.offCount;
-    });
-}
-
-/* MAIN ENTRY */
-function wizStartGeneration(){
-  $('wizLog').innerHTML = '';
-  WIZ.log = [];
-  WIZ.grid = {}; WIZ.locked = {}; WIZ.offCount = {}; WIZ.phCount = {};
-  WIZ.conflictLog = []; WIZ.warnings = []; WIZ.cplConversions = [];
-  WIZ.weeklyLedger = {}; WIZ.weeks = {}; WIZ._lastNightStaffId = null;
-
-  const staff = activeStaff();
-  if(!staff.length){ WIZ.warnings.push('No active staff'); wizFinishGeneration(); return; }
-
-  WIZ.dates.forEach(d=>{
-    WIZ.grid[d] = {};
-    WIZ.locked[d] = {};
-    staff.forEach(s=>{ WIZ.grid[d][s._id] = ''; });
-  });
-  staff.forEach(s=>{ WIZ.offCount[s._id]=0; WIZ.phCount[s._id]=0; });
-
-  const offTarget = countSundays(WIZ.start, WIZ.end);
-  WIZ.offTarget = offTarget;
-  wizLog(`Period: ${WIZ.dates.length} days, ${offTarget} Sundays`);
-
-  Object.assign(STATE.holidays, WIZ.confirmedHolidays || {});
-
-  // Special off dates
-  staff.forEach(s=>{
-    (s.specialOffDates||[]).forEach(d=>{
-      if(WIZ.grid[d] && WIZ.grid[d][s._id]!==undefined){
-        WIZ.grid[d][s._id]='OFF';
-        WIZ.locked[d][s._id]=true;
-      }
-    });
-  });
-
-  // Manual
-  if(WIZ.mode==='manual'){
-    const nameToId = {}; staff.forEach(s=>nameToId[s.name.toLowerCase()] = s._id);
-    const resolve = (name) => nameToId[String(name).toLowerCase()];
-    WIZ.manual.offs.forEach(([n,d])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]='OFF'; WIZ.locked[d][id]=true; }});
-    WIZ.manual.leaves.forEach(([n,d,t])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]=t||'CL'; WIZ.locked[d][id]=true; }});
-    WIZ.manual.gynee.forEach(([n,d])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]='CPL'; WIZ.locked[d][id]=true; }});
-    WIZ.manual.shiftOverride.forEach(([n,d,c])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]=c; WIZ.locked[d][id]=true; }});
-    WIZ.manual.extendedDuty.forEach(([n,d,c])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]=c||'N'; WIZ.locked[d][id]=true; }});
-  }
-
-  // Approved leaves
-  Object.values(STATE.leaves||{}).forEach(l=>{
-    if(l.status!=='approved') return;
-    const d1 = parseYMD(l.startDate), d2 = parseYMD(l.endDate);
-    let d = new Date(d1);
-    while(d <= d2){
-      const ds = ymd(d);
-      if(WIZ.grid[ds] && WIZ.grid[ds][l.staffId]!==undefined){
-        WIZ.grid[ds][l.staffId] = l.type;
-        WIZ.locked[ds][l.staffId] = true;
-      }
-      d.setDate(d.getDate()+1);
-    }
-  });
-
-  assignOFFToAllStaff();
-
-  WIZ.currentDayIndex = 0;
-  setTimeout(processNextDay, 20);
-}
-
-/* ASSIGN OFF */
-function assignOFFToAllStaff(){
-  buildWeeklyLedger();
-  const staff = activeStaff();
-  const offTarget = WIZ.offTarget;
-
-  // PASS 1 — Sundays
-  const sundays = WIZ.dates.filter(d => isSunday(d) && !isHolidayDate(d));
-  sundays.forEach(sunday=>{
-    const sundayNeed = STATE.weeklySetup?.Sunday || {};
-    let sundayRequired = 0;
-    Object.entries(sundayNeed).forEach(([code,count])=>{
-      if(shiftActiveOn(code, sunday)) sundayRequired += count;
-    });
-    const maxOffSunday = Math.max(0, staff.length - sundayRequired);
-    const sundayOffLimit = (STATE.leaveLimits?.Sunday?.OFF) ?? maxOffSunday;
-    const allowedOff = Math.min(maxOffSunday, sundayOffLimit);
-
-    const eligible = staff
-      .filter(s=>{
-        if(WIZ.locked[sunday][s._id]) return false;
-        if(WIZ.grid[sunday][s._id] !== '') return false;
-        const pd = prevDateStr(sunday);
-        const ps = WIZ.grid[pd] ? WIZ.grid[pd][s._id] : '';
-        return !(ps === 'N' || ps === 'N12');
-      })
-      .sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
-
-    let given = 0;
-    for(const s of eligible){
-      if(given >= allowedOff) break;
-      WIZ.grid[sunday][s._id]='OFF';
-      WIZ.locked[sunday][s._id]=true;
-      WIZ.offCount[s._id]++;
-      const wk = Math.floor((parseYMD(sunday) - parseYMD(WIZ.start)) / (7*86400000));
-      markWeekOffGiven(s._id, wk);
-      given++;
-    }
-    wizLog(`Sun ${sunday}: ${given}/${allowedOff} OFF`);
-  });
-
-  // PASS 2 — Holidays → PH
-  const holidays = WIZ.dates.filter(d=>isHolidayDate(d));
-  holidays.forEach(d=>{
-    const limit = (STATE.leaveLimits?.Holiday?.OFF) || staff.length;
-    let given = 0;
-    const sorted = staff.slice().sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
-    sorted.forEach(s=>{
-      if(WIZ.grid[d][s._id]!=='') return;
-      if(given >= limit) return;
-      WIZ.grid[d][s._id]='PH';
-      WIZ.locked[d][s._id]=true;
-      WIZ.phCount[s._id]++;
-      given++;
-    });
-  });
-
-  // PASS 3 — Saturdays (max 2 OFF, if 2 OFF → 1 X)
-  const saturdays = WIZ.dates.filter(d=>isSaturday(d) && !isHolidayDate(d) && !isSunday(d));
-  saturdays.forEach(d=>{
-    const satLimit = (STATE.leaveLimits?.Saturday?.OFF) ?? 2;
-    let count = staff.filter(s=>WIZ.grid[d][s._id]==='OFF').length;
-    const sorted = staff.filter(s=>WIZ.grid[d][s._id]==='' && (WIZ.offCount[s._id]||0) < offTarget)
-                       .sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
-    for(const s of sorted){
-      if(count >= satLimit) break;
-      WIZ.grid[d][s._id]='OFF';
-      WIZ.locked[d][s._id]=true;
-      WIZ.offCount[s._id]++;
-      count++;
-      const wk = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
-      markWeekOffGiven(s._id, wk);
-    }
-    // Ensure at least 1 X on Saturday if 2 OFF
-    if(count >= 2){
-      const xStaff = staff.find(s=>WIZ.grid[d][s._id]==='');
-      if(xStaff) WIZ.grid[d][xStaff._id]='X';
-    }
-  });
-
-  // PASS 4 — Weekdays
-  const weekdays = WIZ.dates.filter(d=>!isSunday(d)&&!isSaturday(d)&&!isHolidayDate(d));
-  weekdays.forEach(d=>{
-    const dayKey = dayName(parseYMD(d));
-    const limit = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
-    let count = staff.filter(s=>WIZ.grid[d][s._id]==='OFF').length;
-    const sorted = staff.filter(s=>WIZ.grid[d][s._id]==='' && (WIZ.offCount[s._id]||0) < offTarget)
-                       .sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
-    for(const s of sorted){
-      if(count >= limit) break;
-      WIZ.grid[d][s._id]='OFF';
-      WIZ.locked[d][s._id]=true;
-      WIZ.offCount[s._id]++;
-      count++;
-      const wk = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
-      markWeekOffGiven(s._id, wk);
-    }
-  });
-
-  // PASS 5 — Top-up
-  staff.forEach(s=>{
-    let safety = 0;
-    while((WIZ.offCount[s._id]||0) < offTarget && safety++ < 200){
-      const cands = WIZ.dates.filter(d=>{
-        if(WIZ.locked[d][s._id]) return false;
-        if(WIZ.grid[d][s._id] === 'OFF') return false;
-        const dk = isHolidayDate(d) ? 'Holiday' : dayName(parseYMD(d));
-        const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
-        return cur < lim;
-      });
-      if(!cands.length) break;
-      cands.sort((a,b)=>
-        staff.filter(x=>WIZ.grid[a][x._id]==='OFF').length -
-        staff.filter(x=>WIZ.grid[b][x._id]==='OFF').length
-      );
-      const pick = cands[0];
-      WIZ.grid[pick][s._id]='OFF';
-      WIZ.locked[pick][s._id]=true;
-      WIZ.offCount[s._id]++;
-      const wk = Math.floor((parseYMD(pick) - parseYMD(WIZ.start)) / (7*86400000));
-      markWeekOffGiven(s._id, wk);
-    }
-  });
-
-  // PASS 6 — Sunday compensation
-  applySundayCompensation();
-
-  // PASS 7 — Weekly OFF enforcer
-  enforceWeeklyOFF();
-
-  // PASS 8 — Night rotation
-  assignNightRotation();
-
-  wizLog('✅ OFF + compensation + weekly + night rotation complete');
-}
-
-/* SUNDAY COMPENSATION */
-function applySundayCompensation(){
-  const staff = activeStaff();
-  if(!WIZ.weeks) return;
-  const sundays = WIZ.dates.filter(d => isSunday(d) && !isHolidayDate(d));
-  const weekKeys = Object.keys(WIZ.weeks).sort((a,b)=>Number(a)-Number(b));
-
-  staff.forEach(s=>{
-    sundays.forEach(sunday=>{
-      if(WIZ.grid[sunday][s._id] === 'OFF') return;
-      const cell = WIZ.grid[sunday][s._id];
-      if(['PH','CL','SL','AL','ML','CPL','GH'].includes(cell)) return;
-
-      const wk = Math.floor((parseYMD(sunday) - parseYMD(WIZ.start)) / (7*86400000));
-      const currentWeek = WIZ.weeks[wk] || [];
-      const wkPos = weekKeys.indexOf(String(wk));
-      const nextWeekKey = (wkPos>=0 && wkPos<weekKeys.length-1) ? weekKeys[wkPos+1] : null;
-      const nextWeek = nextWeekKey ? WIZ.weeks[nextWeekKey] : [];
-
-      const searchSpace = [
-        ...currentWeek.filter(d => !isSunday(d) && !isHolidayDate(d) && d !== sunday),
-        ...nextWeek.filter(d => !isSunday(d) && !isHolidayDate(d))
-      ];
-      const cands = searchSpace.filter(d=>{
-        if(!WIZ.grid[d]) return false;
-        if(WIZ.locked[d][s._id]) return false;
-        if(WIZ.grid[d][s._id] === 'OFF') return false;
-        if(['PH','CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[d][s._id])) return false;
-        const dk = isHolidayDate(d)?'Holiday':dayName(parseYMD(d));
-        const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
-        return cur < lim;
-      });
-
-      if(cands.length){
-        cands.sort((a,b)=>{
-          const aS = isSaturday(a)?0:(parseYMD(a).getDay()===1?1:2);
-          const bS = isSaturday(b)?0:(parseYMD(b).getDay()===1?1:2);
-          if(aS !== bS) return aS - bS;
-          return parseYMD(a) - parseYMD(b);
-        });
-        const pick = cands[0];
-        WIZ.grid[pick][s._id]='OFF';
-        WIZ.locked[pick][s._id]=true;
-        WIZ.offCount[s._id]++;
-        markWeekOffGiven(s._id, wk);
-        WIZ.conflictLog.push(`Sun comp: ${s.name} (${sunday}) → OFF ${pick}`);
-        return;
-      }
-
-      // Month-wide
-      const mw = WIZ.dates.filter(d=>{
-        if(isSunday(d)) return false;
-        if(isHolidayDate(d)) return false;
-        if(!WIZ.grid[d]) return false;
-        if(WIZ.locked[d][s._id]) return false;
-        if(WIZ.grid[d][s._id] === 'OFF') return false;
-        if(['PH','CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[d][s._id])) return false;
-        const dk = dayName(parseYMD(d));
-        const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
-        return cur < lim;
-      });
-      if(mw.length){
-        mw.sort((a,b)=>parseYMD(a) - parseYMD(b));
-        const pick = mw[0];
-        WIZ.grid[pick][s._id]='OFF';
-        WIZ.locked[pick][s._id]=true;
-        WIZ.offCount[s._id]++;
-        WIZ.conflictLog.push(`Sun comp (late): ${s.name} (${sunday}) → OFF ${pick}`);
-        return;
-      }
-
-      // CPL fallback
-      WIZ.cplConversions.push({
-        staffId: s._id, staffName: s.name, days: 1,
-        reason: `Sunday duty ${sunday} — no OFF slot (shortage)`,
-        sundayDate: sunday, month: WIZ.start.slice(0,7), createdAt: Date.now()
-      });
-      WIZ.conflictLog.push(`CPL fallback: ${s.name} Sun ${sunday} → 1 CPL`);
-    });
-  });
-}
-
-/* WEEKLY OFF ENFORCER */
-function enforceWeeklyOFF(){
-  const staff = activeStaff();
-  if(!WIZ.weeks) return;
-  Object.keys(WIZ.weeks).sort((a,b)=>Number(a)-Number(b)).forEach(wk=>{
-    const weekDates = WIZ.weeks[wk];
-    getWeekPriorityStaff(wk).forEach(item=>{
-      const s = item.staff;
-      const given = weekDates.filter(d => WIZ.grid[d][s._id] === 'OFF').length;
-      if(given >= 1) return;
-      const cands = weekDates.filter(d=>{
-        if(WIZ.locked[d][s._id]) return false;
-        if(WIZ.grid[d][s._id] === 'OFF') return false;
-        if(['PH','CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[d][s._id])) return false;
-        const dk = isHolidayDate(d)?'Holiday':dayName(parseYMD(d));
-        const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
-        return cur < lim;
-      });
-      if(cands.length){
-        cands.sort((a,b)=>parseYMD(a) - parseYMD(b));
-        const pick = cands[0];
-        WIZ.grid[pick][s._id]='OFF';
-        WIZ.locked[pick][s._id]=true;
-        WIZ.offCount[s._id]++;
-        markWeekOffGiven(s._id, wk);
-        WIZ.conflictLog.push(`Weekly fallback: ${s.name} on ${pick}`);
-      } else {
-        WIZ.warnings.push(`Weekly OFF missing: ${s.name} week ${wk}`);
-      }
-    });
-  });
-  computePendingFromLedger();
-}
-
-/* NIGHT ROTATION */
-function getStaffBalance(staff, type){
-  const b = staff.balance || {};
-  if(type === 'OFF'){
-    const adminOff = b.OFF ?? (WIZ.offTarget || 0);
-    const used = WIZ.offCount[staff._id] || 0;
-    return Math.max(0, adminOff - used);
-  }
-  if(type === 'PH'){
-    const used = WIZ.phCount[staff._id] || 0;
-    return Math.max(0, (b.PH ?? 0) - used);
-  }
-  return b[type] ?? 0;
-}
-
-function assignNightRotation(){
-  const staff = activeStaff();
-  const nightCapable = staff.filter(s =>
-    s.fixedShift === 'N' || s.fixedShift === 'N12' ||
-    (s.multiShifts||[]).some(c => c==='N' || c==='N12')
-  );
-  if(!nightCapable.length){ wizLog('⚠️ No night-capable staff'); return; }
-
-  const weeks = {};
-  WIZ.dates.forEach(d=>{
-    const idx = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
-    if(!weeks[idx]) weeks[idx] = [];
-    weeks[idx].push(d);
-  });
-
-  Object.keys(weeks).sort((a,b)=>a-b).forEach(wk=>{
-    const weekDates = weeks[wk].filter(d => !isSunday(d) && !isHolidayDate(d));
-    if(!weekDates.length) return;
-
-    const eligible = nightCapable
-      .map(s => ({ staff: s, balance: getStaffBalance(s, 'OFF'), didLastWeek: s._id === WIZ._lastNightStaffId }))
-      .filter(x => x.balance > 0 && !x.didLastWeek)
-      .sort((a,b) => b.balance - a.balance);
-
-    if(!eligible.length){
-      wizLog(`Week ${wk}: No night-capable with balance → E/E4`);
-      nightCapable.forEach(s=>{
-        weekDates.forEach(d=>{
-          if(WIZ.grid[d][s._id] !== '' || WIZ.locked[d][s._id]) return;
-          if(shiftActiveOn('E4', d) && s.gender === 'Female') WIZ.grid[d][s._id] = 'E4';
-          else if(shiftActiveOn('E', d) && genderOK(s,'E'))  WIZ.grid[d][s._id] = 'E';
-        });
-      });
-      return;
-    }
-
-    const nightStaff = eligible[0].staff;
-    const prevNight = WIZ._lastNightStaffId
-      ? staff.find(s => s._id === WIZ._lastNightStaffId) : null;
-
-    let assigned = 0;
-    weekDates.forEach(d=>{
-      if(WIZ.grid[d][nightStaff._id] === '' && !WIZ.locked[d][nightStaff._id]){
-        WIZ.grid[d][nightStaff._id] = 'N';
-        assigned++;
-      }
-    });
-    wizLog(`Week ${wk}: ${nightStaff.name} → ${assigned} nights`);
-
-    if(prevNight && prevNight._id !== nightStaff._id){
-      applyApprovedRelax(prevNight, weekDates, wk);
-    }
-
-    // Transition OFF (1 day)
-    const lastDay = weekDates[weekDates.length-1];
-    const after = nextDateStr(lastDay);
-    if(WIZ.grid[after] && !WIZ.locked[after][nightStaff._id]){
-      if(WIZ.grid[after][nightStaff._id] === ''){
-        const dk = isHolidayDate(after)?'Holiday':dayName(parseYMD(after));
-        const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-        const cur = staff.filter(x=>WIZ.grid[after][x._id]==='OFF').length;
-        if(cur < lim){
-          WIZ.grid[after][nightStaff._id]='OFF';
-          WIZ.locked[after][nightStaff._id]=true;
-          WIZ.offCount[nightStaff._id]++;
-          WIZ.conflictLog.push(`Transition OFF: ${nightStaff.name} on ${after}`);
-        } else if(shiftActiveOn('E', after) && genderOK(nightStaff,'E')){
-          WIZ.grid[after][nightStaff._id]='E';
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- APP ENGINE SCRIPT -->
+    <script>
+        /* =========================================================
+           1. INITIALIZATION & FIREBASE COMPAT SETUP
+           ========================================================= */
+        const firebaseConfig = {
+            apiKey: "AIzaSyDemoKeyKIHPhlebotomyPortal2026",
+            authDomain: "kih-phlebotomy-portal.firebaseapp.com",
+            databaseURL: "https://kih-phlebotomy-portal-default-rtdb.firebaseio.com",
+            projectId: "kih-phlebotomy-portal",
+            storageBucket: "kih-phlebotomy-portal.appspot.com",
+            messagingSenderId: "1029384756",
+            appId: "1:1029384756:web:kihphlebotomydemo"
+        };
+
+        // Initialize Firebase Runtime
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-      }
-    }
+        const db = firebase.database();
 
-    eligible.slice(1).forEach(item=>{
-      const s = item.staff;
-      weekDates.forEach(d=>{
-        if(WIZ.grid[d][s._id] !== '' || WIZ.locked[d][s._id]) return;
-        if(shiftActiveOn('E4', d) && s.gender === 'Female') WIZ.grid[d][s._id] = 'E4';
-        else if(shiftActiveOn('E', d) && genderOK(s,'E'))  WIZ.grid[d][s._id] = 'E';
-      });
-    });
+        // Local In-Memory Operational State
+        const state = {
+            role: 'staff', // staff, supervisor, admin
+            staff: {},
+            shifts: {
+                'D': { label: 'Day (08:00 - 16:30)', gender: 'ANY', timing: '08:00-16:30' },
+                'E': { label: 'Evening (14:30 - 23:00)', gender: 'ANY', timing: '14:30-23:00' },
+                'E4': { label: 'Evening 4 (16:00 - 00:00)', gender: 'ANY', timing: '16:00-00:00' },
+                'N': { label: 'Night (23:00 - 08:00)', gender: 'MALE', timing: '23:00-08:00' },
+                'N12': { label: 'Night 12h (20:00 - 08:00)', gender: 'MALE', timing: '20:00-08:00' },
+                'OFF': { label: 'Day Off', gender: 'ANY', timing: '-' },
+                'PH': { label: 'Public Holiday', gender: 'ANY', timing: '-' },
+                'CPL': { label: 'Compensatory Paid Leave', gender: 'ANY', timing: '-' },
+                'X': { label: 'Standby Duty', gender: 'ANY', timing: 'On-Call' }
+            },
+            tests: [
+                { code: 'CBC', name: 'Complete Blood Count', tube: 'EDTA Purple', sla: '1 Hour', temp: 'Room Temp (20-25°C)', protocol: 'Invert gently 8-10 times immediately after collection. Do not shake.' },
+                { code: 'PT/INR', name: 'Prothrombin Time / INR', tube: 'Citrate Blue', sla: '1 Hour', temp: 'Room Temp (20-25°C)', protocol: 'Fill exactly to indicator line (9:1 blood ratio). Invert 3-4 times.' },
+                { code: 'LFT', name: 'Liver Function Tests', tube: 'SST Yellow', sla: '2 Hours', temp: 'Refrigerated (2-8°C)', protocol: 'Invert 5 times. Allow 30 mins complete clot formation before centrifuging.' },
+                { code: 'RFT', name: 'Renal Function Tests', tube: 'SST Yellow', sla: '2 Hours', temp: 'Refrigerated (2-8°C)', protocol: 'Invert 5 times. Ensure baseline hydration parameters recorded if STAT.' },
+                { code: 'BC', name: 'Blood Culture (Aerobic/Anaerobic)', tube: 'Culture Bottles', sla: '24-48 Hours', temp: 'Incubate / Room Temp', protocol: 'Strict aseptic preparation with Chlorhexidine. Clean bottle top with alcohol.' },
+                { code: 'TROP-I', name: 'Troponin I (Cardiac Marker)', tube: 'Heparin Green', sla: '30 Mins (STAT)', temp: 'Immediate Processing', protocol: 'Stat draw. Immediate hand transfer to core chemistry laboratory.' }
+            ],
+            policies: {},
+            leaves: {},
+            auditLogs: [],
+            rosters: {},
+            currentPeriodId: '2026-10',
+            wizardStep: 1,
+            wizardData: {
+                periodId: '',
+                startDate: '',
+                endDate: '',
+                weeklySetup: { D: 3, E: 2, N: 1, E4: 1 },
+                leaveLimits: { OFF: 2, Leave: 1 },
+                holidays: []
+            }
+        };
 
-    WIZ._lastNightStaffId = nightStaff._id;
-  });
-  wizLog(`Night rotation complete. Last: ${WIZ._lastNightStaffId||'none'}`);
-}
+        /* =========================================================
+           2. DOM EVENT LISTENERS & LIFECYCLE INITIALIZATION
+           ========================================================= */
+        document.addEventListener("DOMContentLoaded", () => {
+            setupFirebaseRealtimeListeners();
+            renderTestDirectory();
+            filterQuickTests('');
+        });
 
-function applyApprovedRelax(staff, weekDates, wk){
-  const b = staff.balance || {};
-  const combinedMax = b.combinedMax ?? 1;
-  const priority = ['OFF','PH','CPL','EL','AL','CL','SL','GH'];
-  let total = 0;
-  priority.forEach(t=>{ total += getStaffBalance(staff, t); });
-  const combinedDays = Math.min(combinedMax, total, weekDates.length);
-  if(combinedDays <= 0) return;
+        function setupFirebaseRealtimeListeners() {
+            // Realtime Sync for Staff
+            db.ref('staff').on('value', (snapshot) => {
+                state.staff = snapshot.val() || getSeedStaffData();
+                updateDashboardMetrics();
+                renderStaffTable();
+                renderRosterGrid();
+            });
 
-  const cands = [...weekDates];
-  const lastDay = weekDates[weekDates.length-1];
-  WIZ.dates.forEach(d=>{
-    const diff = (parseYMD(d) - parseYMD(lastDay)) / 86400000;
-    if(diff > 0 && diff <= 7) cands.push(d);
-  });
+            // Realtime Sync for Directives/Policies
+            db.ref('policies').on('value', (snapshot) => {
+                state.policies = snapshot.val() || getSeedPoliciesData();
+                updateDashboardMetrics();
+                renderPolicies();
+            });
 
-  let given = 0;
-  for(const d of cands){
-    if(given >= combinedDays) break;
-    if(!WIZ.grid[d]) continue;
-    if(WIZ.locked[d][staff._id]) continue;
-    const cur = WIZ.grid[d][staff._id];
-    if(cur !== '' && cur !== 'X') continue;
+            // Realtime Sync for Leaves
+            db.ref('leaves').on('value', (snapshot) => {
+                state.leaves = snapshot.val() || {};
+                updateDashboardMetrics();
+                renderLeavesTable();
+            });
 
-    const type = pickApprovedRelaxType(staff, d);
-    if(!type) continue;
+            // Realtime Sync for Roster Records
+            db.ref('roster').on('value', (snapshot) => {
+                state.rosters = snapshot.val() || {};
+                renderRosterGrid();
+            });
 
-    if(type === 'OFF'){
-      const dk = isHolidayDate(d)?'Holiday':dayName(parseYMD(d));
-      const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-      const curOff = activeStaff().filter(x=>WIZ.grid[d][x._id]==='OFF').length;
-      if(curOff >= lim){
-        const alt = pickApprovedRelaxType(staff, d, true);
-        if(alt){ applyRelaxCell(staff, d, alt); given++; }
-        continue;
-      }
-    }
-    applyRelaxCell(staff, d, type);
-    given++;
-  }
-  wizLog(`Relax: ${staff.name} → ${given} days`);
-}
+            // Realtime Sync for Audit Logs
+            db.ref('auditLog').limitToLast(10).on('value', (snapshot) => {
+                const logsObj = snapshot.val() || {};
+                state.auditLogs = Object.values(logsObj).reverse();
+                renderAuditLog();
+            });
+        }
 
-function pickApprovedRelaxType(staff, date, skipOFF){
-  const priority = skipOFF ? ['PH','CPL','EL','AL','CL','SL','GH'] : ['OFF','PH','CPL','EL','AL','CL','SL','GH'];
-  for(const t of priority){ if(getStaffBalance(staff, t) > 0) return t; }
-  return null;
-}
+        /* =========================================================
+           3. UI ROLE SWITCHING & NAVIGATION CONTROLS
+           ========================================================= */
+        function switchRole(newRole) {
+            state.role = newRole;
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
 
-function applyRelaxCell(staff, date, type){
-  WIZ.grid[date][staff._id] = type;
-  WIZ.locked[date][staff._id] = true;
-  if(type === 'OFF') WIZ.offCount[staff._id] = (WIZ.offCount[staff._id]||0) + 1;
-  if(type === 'PH')  WIZ.phCount[staff._id]  = (WIZ.phCount[staff._id]||0) + 1;
-  if(!staff.balance) staff.balance = {};
-  staff.balance[type] = Math.max(0, (staff.balance[type] || 0) - 1);
-  WIZ.conflictLog.push(`Relax ${type}: ${staff.name} on ${date}`);
-}
+            // Toggle visibility for role-restricted elements
+            document.querySelectorAll('.role-restricted').forEach(el => {
+                if (el.classList.contains(newRole)) {
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
 
-/* DAY PROCESSING */
-function processNextDay(){
-  if(WIZ.currentDayIndex >= WIZ.dates.length){
-    adjustPHForDutyStaff();
-    finalizeGeneration();
-    return;
-  }
-  const d = WIZ.dates[WIZ.currentDayIndex];
-  try { processDay(d); } catch(e){ console.error('processDay err', d, e); }
-  WIZ.currentDayIndex++;
-  setProg((WIZ.currentDayIndex / WIZ.dates.length) * 90);
-  setTimeout(processNextDay, 5);
-}
+            showToast(`Role switched to: ${newRole.toUpperCase()}`);
+            renderRosterGrid();
+        }
 
-function processDay(date){
-  const isOff = isOffDay(date);
-  const dayKey = isHolidayDate(date) ? 'Holiday' : dayName(parseYMD(date));
-  const need = STATE.weeklySetup?.[dayKey] || {};
-  applyN12PriorityRest(date);
-  fillDayShifts(date, need, isOff);
-  autoFixMissingShifts(date, need, isOff);
-}
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
 
-function applyN12PriorityRest(date){
-  const prev = prevDateStr(date);
-  if(!WIZ.grid[prev]) return;
-  activeStaff().forEach(s=>{
-    const ps = WIZ.grid[prev][s._id];
-    if(ps !== 'N' && ps !== 'N12') return;
-    if(WIZ.locked[date][s._id]) return;
-    if(WIZ.grid[date][s._id] !== '') return;
+            event.currentTarget.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
 
-    // N/N12 ke baad 1 din OFF priority (agar next day night nahi hai)
-    const next = nextDateStr(date);
-    const nextIsNight = WIZ.grid[next] && ['N','N12'].includes(WIZ.grid[next][s._id]);
-    if(nextIsNight) return;
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
 
-    const dk = isHolidayDate(date)?'Holiday':dayName(parseYMD(date));
-    const lim = (STATE.leaveLimits?.[dk]?.OFF) ?? 1;
-    const cur = activeStaff().filter(x=>WIZ.grid[date][x._id]==='OFF').length;
-    if(cur < lim){
-      WIZ.grid[date][s._id]='OFF';
-      WIZ.locked[date][s._id]=true;
-      WIZ.offCount[s._id]++;
-      WIZ.conflictLog.push(`Post-night OFF: ${s.name} on ${date}`);
-    } else if(shiftActiveOn('E', date) && genderOK(s,'E')){
-      WIZ.grid[date][s._id]='E';
-      WIZ.conflictLog.push(`Post-night → E: ${s.name} on ${date}`);
-    }
-  });
-}
+        /* =========================================================
+           4. CLINICAL TEST DIRECTORY ENGINE
+           ========================================================= */
+        function renderTestDirectory(query = '') {
+            const container = document.getElementById('full-test-grid');
+            container.innerHTML = '';
+            
+            const filtered = state.tests.filter(t => 
+                t.name.toLowerCase().includes(query.toLowerCase()) || 
+                t.code.toLowerCase().includes(query.toLowerCase()) ||
+                t.tube.toLowerCase().includes(query.toLowerCase())
+            );
 
-function fillDayShifts(date, need, isOff){
-  const staff = activeStaff();
-  const codes = Object.keys(need).filter(c=>shiftActiveOn(c, date));
-  codes.forEach(code=>{
-    const required = need[code] || 0;
-    let assigned = staff.filter(s=>WIZ.grid[date][s._id]===code).length;
-    if(assigned >= required) return;
-    const free = staff.filter(s=>
-      WIZ.grid[date][s._id]==='' && !WIZ.locked[date][s._id] && genderOK(s, code)
-    );
-    free.sort((a,b)=>{
-      const aF = a.fixedShift===code ? 0 : 1;
-      const bF = b.fixedShift===code ? 0 : 1;
-      if(aF !== bF) return aF - bF;
-      const aM = (a.multiShifts||[]).includes(code) ? 0 : 1;
-      const bM = (b.multiShifts||[]).includes(code) ? 0 : 1;
-      return aM - bM;
-    });
-    for(const s of free){
-      if(assigned >= required) break;
-      WIZ.grid[date][s._id] = code;
-      assigned++;
-    }
-  });
-  staff.forEach(s=>{
-    if(WIZ.grid[date][s._id]==='') WIZ.grid[date][s._id] = 'X';
-  });
-}
+            filtered.forEach(test => {
+                container.appendChild(createTestCardElement(test));
+            });
+        }
 
-function autoFixMissingShifts(date, need, isOff){
-  const staff = activeStaff();
-  const codes = Object.keys(need).filter(c=>shiftActiveOn(c, date));
-  codes.forEach(code=>{
-    const required = need[code] || 0;
-    let assigned = staff.filter(s=>WIZ.grid[date][s._id]===code).length;
-    if(assigned >= required) return;
-    let short = required - assigned;
+        function filterQuickTests(query) {
+            const container = document.getElementById('quick-test-results');
+            container.innerHTML = '';
+            if(!query.trim()) {
+                container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.8rem;">Type in search box above to immediately display test protocols...</p>';
+                return;
+            }
 
-    const xs = staff.filter(s=>WIZ.grid[date][s._id]==='X' && genderOK(s, code));
-    for(const s of xs){ if(short<=0) break; WIZ.grid[date][s._id]=code; short--; }
-    if(short<=0) return;
+            const filtered = state.tests.filter(t => 
+                t.name.toLowerCase().includes(query.toLowerCase()) || 
+                t.code.toLowerCase().includes(query.toLowerCase())
+            );
 
-    const donors = ['E4','D','X','N12','N'];
-    for(const donor of donors){
-      if(short<=0) break;
-      const req = need[donor] || 0;
-      const ds = staff.filter(s=>WIZ.grid[date][s._id]===donor && genderOK(s, code));
-      for(const s of ds){
-        if(short<=0) break;
-        const still = staff.filter(x=>WIZ.grid[date][x._id]===donor && x._id!==s._id).length;
-        if(req>0 && still < req) continue;
-        WIZ.grid[date][s._id]=code; short--;
-      }
-    }
-    if(short<=0) return;
+            filtered.forEach(test => {
+                container.appendChild(createTestCardElement(test));
+            });
+        }
 
-    const reserved = ['OFF','PH','CL','SL','AL','ML','CPL','GH'];
-    const anyone = staff.filter(s=>!reserved.includes(WIZ.grid[date][s._id]) && WIZ.grid[date][s._id]!==code && genderOK(s, code));
-    for(const s of anyone){ if(short<=0) break; WIZ.grid[date][s._id]=code; short--; }
-  });
-}
+        function createTestCardElement(test) {
+            const card = document.createElement('div');
+            card.className = 'test-card';
+            card.setAttribute('data-tube', test.tube);
+            card.innerHTML = `
+                <div class="test-header">
+                    <span class="test-title">${test.name}</span>
+                    <span class="test-code">${test.code}</span>
+                </div>
+                <div class="test-detail"><i class="fa-solid fa-vial"></i> <strong>Tube:</strong> ${test.tube}</div>
+                <div class="test-detail"><i class="fa-solid fa-stopwatch"></i> <strong>SLA:</strong> ${test.sla}</div>
+                <div class="test-detail"><i class="fa-solid fa-temperature-half"></i> <strong>Storage:</strong> ${test.temp}</div>
+                <div class="test-detail" style="margin-top:0.4rem; color: var(--text-primary);"><i class="fa-solid fa-notes-medical"></i> ${test.protocol}</div>
+            `;
+            return card;
+        }
 
-function adjustPHForDutyStaff(){
-  const staff = activeStaff();
-  const holidayDates = WIZ.dates.filter(d=>isHolidayDate(d));
-  if(!holidayDates.length) return;
-  staff.forEach(s=>{
-    const worked = holidayDates.filter(d=>{
-      const sh = WIZ.grid[d][s._id];
-      return sh && !['PH','OFF'].includes(sh) && !['CL','SL','AL','ML','CPL','GH'].includes(sh);
-    });
-    if(!worked.length) return;
-    let missing = worked.length - (WIZ.phCount[s._id] || 0);
-    if(missing <= 0) return;
-    const cands = WIZ.dates.filter(d=>!isHolidayDate(d) && WIZ.grid[d][s._id]==='X');
-    for(const d of cands){
-      if(missing<=0) break;
-      WIZ.grid[d][s._id]='PH';
-      WIZ.locked[d][s._id]=true;
-      WIZ.phCount[s._id]++;
-      missing--;
-    }
-    while(missing>0){
-      WIZ.cplConversions.push({staffId:s._id, staffName:s.name, days:1, reason:'PH not available', month:WIZ.start.slice(0,7), createdAt:Date.now()});
-      missing--;
-    }
-  });
-}
+        /* =========================================================
+           5. SMART AUTO-ROSTER GENERATION ALGORITHM
+           ========================================================= */
+        function openRosterWizard() {
+            state.wizardStep = 1;
+            renderWizardStep();
+            document.getElementById('wizard-modal').classList.add('active');
+        }
 
-/* FINALIZE */
-function finalizeGeneration(){
-  setProg(95);
-  Object.keys(WIZ.offCount).forEach(k=>WIZ.offCount[k]=0);
-  WIZ.dates.forEach(d=>{
-    activeStaff().forEach(s=>{
-      if(WIZ.grid[d][s._id]==='OFF') WIZ.offCount[s._id]=(WIZ.offCount[s._id]||0)+1;
-    });
-  });
-  const staff = activeStaff();
-  const offTarget = WIZ.offTarget;
+        function renderWizardStep() {
+            const titleEl = document.getElementById('wizard-step-title');
+            const contentEl = document.getElementById('wizard-step-content');
+            const progressEl = document.getElementById('wizard-progress');
 
-  staff.forEach(s=>{
-    if((WIZ.offCount[s._id]||0) !== offTarget)
-      WIZ.warnings.push(`OFF mismatch: ${s.name} has ${WIZ.offCount[s._id]||0}, target ${offTarget}`);
-  });
+            progressEl.style.width = `${(state.wizardStep / 6) * 100}%`;
 
-  Object.keys(WIZ.weeklyLedger||{}).forEach(sid=>{
-    const s = STATE.staff[sid];
-    Object.entries(WIZ.weeklyLedger[sid]).forEach(([wk,w])=>{
-      if(w.given === 0) WIZ.warnings.push(`Weekly OFF missing: ${s?.name} week ${wk}`);
-    });
-  });
+            if (state.wizardStep === 1) {
+                titleEl.innerHTML = '<i class="fa-solid fa-calendar"></i> Step 1: Period Selection';
+                contentEl.innerHTML = `
+                    <div class="form-group">
+                        <label>Select Target Roster Period</label>
+                        <input type="month" id="wiz-period" class="form-control" value="2026-10">
+                    </div>
+                `;
+            } else if (state.wizardStep === 2) {
+                titleEl.innerHTML = '<i class="fa-solid fa-sliders"></i> Step 2: Daily Staffing Requirements';
+                contentEl.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group"><label>Day Shift (D) Count</label><input type="number" id="wiz-d" class="form-control" value="3"></div>
+                        <div class="form-group"><label>Evening Shift (E) Count</label><input type="number" id="wiz-e" class="form-control" value="2"></div>
+                        <div class="form-group"><label>Evening 4 (E4) Count</label><input type="number" id="wiz-e4" class="form-control" value="1"></div>
+                        <div class="form-group"><label>Night Shift (N) Count</label><input type="number" id="wiz-n" class="form-control" value="1"></div>
+                    </div>
+                `;
+            } else if (state.wizardStep === 3) {
+                titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Step 3: Off & Leave Capping Limits';
+                contentEl.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group"><label>Max OFF Days Allowed Per Day</label><input type="number" id="wiz-off-limit" class="form-control" value="2"></div>
+                        <div class="form-group"><label>Max Approved Leaves Per Day</label><input type="number" id="wiz-leave-limit" class="form-control" value="1"></div>
+                    </div>
+                `;
+            } else if (state.wizardStep === 4) {
+                titleEl.innerHTML = '<i class="fa-solid fa-star-of-life"></i> Step 4: Public Holiday Declarations';
+                contentEl.innerHTML = `
+                    <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom: 1rem;">Declare any gazetted public holidays within this schedule period.</p>
+                    <div class="form-group"><label>Holiday Date</label><input type="date" id="wiz-ph-date" class="form-control"></div>
+                    <div class="form-group"><label>Holiday Title</label><input type="text" id="wiz-ph-title" class="form-control" placeholder="e.g., Iqbal Day"></div>
+                `;
+            } else if (state.wizardStep === 5) {
+                titleEl.innerHTML = '<i class="fa-solid fa-list-check"></i> Step 5: Constraint Review';
+                contentEl.innerHTML = `
+                    <ul style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+                        <li><i class="fa-solid fa-check text-success"></i> Rest Priority Rule: Automated OFF assignment following N/N12 shifts.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> Gender Restrictor Enforcement: Night shifts assigned strictly to male staff.</li>
+                        <li><i class="fa-solid fa-check text-success"></i> Equal OFF Target: Equalization based on total period Sundays.</li>
+                    </ul>
+                `;
+            } else if (state.wizardStep === 6) {
+                titleEl.innerHTML = '<i class="fa-solid fa-bolt"></i> Step 6: Execute Generation';
+                contentEl.innerHTML = `<p style="font-size:0.9rem;">Ready to run zero-pause auto-resolution engine for period <strong>${state.wizardData.periodId || '2026-10'}</strong>?</p>`;
+            }
+        }
 
-  WIZ.dates.forEach(d=>{
-    staff.forEach(s=>{
-      if(WIZ.grid[d][s._id]==='') WIZ.warnings.push(`Empty: ${s.name} on ${d}`);
-      const sh = WIZ.grid[d][s._id];
-      if(sh && shiftDef(sh) && !genderOK(s, sh))
-        WIZ.warnings.push(`Gender: ${s.name} → ${sh} on ${d}`);
-    });
-  });
+        function nextWizardStep() {
+            if (state.wizardStep === 1) {
+                state.wizardData.periodId = document.getElementById('wiz-period').value;
+            } else if (state.wizardStep === 6) {
+                executeRosterGeneration();
+                closeModal('wizard-modal');
+                return;
+            }
+            state.wizardStep++;
+            renderWizardStep();
+        }
 
-  setProg(100);
-  wizLog('Generation complete. Warnings: '+WIZ.warnings.length);
-  renderWizPreview();
-  showWizStep(6);
-}
-function wizFinishGeneration(){ setProg(100); renderWizPreview(); showWizStep(6); }
+        function prevWizardStep() {
+            if (state.wizardStep > 1) {
+                state.wizardStep--;
+                renderWizardStep();
+            }
+        }
 
-function renderWizPreview(){
-  const staff = activeStaff();
-  $('wizSummary').innerHTML = `
-    <div class="cards">
-      <div class="card b"><div class="lbl">Days</div><div class="val">${WIZ.dates.length}</div></div>
-      <div class="card g"><div class="lbl">Staff</div><div class="val">${staff.length}</div></div>
-      <div class="card y"><div class="lbl">Conflicts</div><div class="val">${WIZ.conflictLog.length}</div></div>
-      <div class="card r"><div class="lbl">Warnings</div><div class="val">${WIZ.warnings.length}</div></div>
-    </div>`;
-  let wHtml = '';
-  if(WIZ.warnings.length){
-    wHtml = '<div class="err"><b>⚠️ '+WIZ.warnings.length+' warnings (save blocked):</b><ul style="margin-left:18px;margin-top:6px">'
-      + WIZ.warnings.slice(0,20).map(w=>`<li>${w}</li>`).join('') + '</ul></div>';
-  } else {
-    wHtml = '<div class="ok">✅ No warnings. Ready to save.</div>';
-  }
-  $('wizWarnings').innerHTML = wHtml;
+        function executeRosterGeneration() {
+            const periodId = state.wizardData.periodId || '2026-10';
+            const year = parseInt(periodId.split('-')[0]);
+            const month = parseInt(periodId.split('-')[1]) - 1;
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const rosterMatrix = {};
 
-  let html = '<table class="roster-tbl"><thead><tr><th class="sticky">Staff</th>';
-  WIZ.dates.forEach(d=>{ html += `<th>${d.slice(5)}</th>`; });
-  html += '</tr></thead><tbody>';
-  staff.forEach(s=>{
-    html += `<tr><td class="sticky">${s.name}</td>`;
-    WIZ.dates.forEach(d=>{
-      const sh = WIZ.grid[d][s._id] || '';
-      html += `<td class="cell-${sh||'X'}">${sh||'-'}</td>`;
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  $('wizPreview').innerHTML = html;
-}
+            const staffIds = Object.keys(state.staff);
+            if (staffIds.length === 0) {
+                showToast("Cannot generate roster: No staff profiles found.", "danger");
+                return;
+            }
 
-/* SAVE */
-function wizSaveRoster(){
-  if(WIZ.warnings.length){ toast('Cannot save — '+WIZ.warnings.length+' warnings','err'); return; }
-  if(!db){ toast('DB not connected','err'); return; }
-  const pid = 'p_'+WIZ.start+'_'+WIZ.end;
-  const label = WIZ.start+' → '+WIZ.end;
-  const updates = {};
-  updates['periods/'+pid] = { start: WIZ.start, end: WIZ.end, label, createdAt: Date.now(), seenBy: {} };
-  updates['roster/'+pid] = WIZ.grid;
-  Object.entries(WIZ.confirmedHolidays).forEach(([d,n])=>{ updates['holidays/'+d] = n; });
-  WIZ.cplConversions.forEach((c,i)=>{ updates['cpLRecords/'+pid+'_'+i] = { ...c, at: Date.now() }; });
+            // Core Auto-Resolution Generation Loop
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${periodId}-${String(day).padStart(2, '0')}`;
+                rosterMatrix[dateStr] = {};
 
-  db.ref().update(updates).then(()=>{
-    toast('Roster saved ✅','ok');
-    logAudit('roster.save', label);
-    pushNotif('all', 'New Roster Published', label);
-    closeWizard();
-    go('roster');
-  }).catch(e=>{ console.error('save err', e); toast('Save failed: '+e.message,'err'); });
-}
-</script>
-<!-- ============ END OF PART 4B ============ -->
-  <script>
-/* PART 5 — Roster view + settings renderers */
+                let maleStaffIndex = 0;
+                
+                staffIds.forEach((sId, index) => {
+                    const staffMember = state.staff[sId];
+                    const prevDateStr = `${periodId}-${String(day - 1).padStart(2, '0')}`;
+                    const prevShift = day > 1 ? rosterMatrix[prevDateStr][sId] : null;
 
-function renderPeriodSelect(){
-  const sel = $('rosterPeriodSel'); if(!sel) return;
-  const entries = Object.entries(STATE.periods||{}).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
-  sel.innerHTML = '<option value="">— Select Period —</option>' +
-    entries.map(([pid,p])=>`<option value="${pid}">${p.label||pid}</option>`).join('');
-}
-function renderRosterView(){
-  const sel = $('rosterPeriodSel'); if(!sel) return;
-  const pid = sel.value;
-  const box = $('rosterView'); if(!box) return;
-  if(!pid){ box.innerHTML = '<div class="muted small">Select a period.</div>'; return; }
-  const grid = STATE.roster?.[pid];
-  if(!grid){ box.innerHTML = '<div class="warn-box">No roster data.</div>'; return; }
-  const dates = Object.keys(grid).sort();
-  if(!dates.length){ box.innerHTML = '<div class="muted small">Empty.</div>'; return; }
-  const ids = new Set();
-  dates.forEach(d=>Object.keys(grid[d]||{}).forEach(id=>ids.add(id)));
-  const arr = [...ids].map(id=>STATE.staff[id]||{_id:id,name:id});
-  let html = '<div class="tbl-wrap"><table class="roster-tbl"><thead><tr><th class="sticky">Staff</th>';
-  dates.forEach(d=>{ html += `<th>${d.slice(5)}</th>`; });
-  html += '</tr></thead><tbody>';
-  arr.forEach(s=>{
-    html += `<tr><td class="sticky">${s.name}</td>`;
-    dates.forEach(d=>{
-      const sh = (grid[d]||{})[s._id] || '';
-      html += `<td class="cell-${sh||'X'}">${sh||'-'}</td>`;
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
-  box.innerHTML = html;
-}
-function renderShifts(){
-  const tbody = $('shiftBody'); if(!tbody) return;
-  const codes = Object.keys(STATE.shifts||{});
-  if(!codes.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted">No shifts.</td></tr>'; return; }
-  tbody.innerHTML = codes.map(c=>{
-    const s = STATE.shifts[c];
-    return `<tr><td><b>${s.code}</b></td><td>${s.label||''}</td><td>${s.gender||'any'}</td>
-      <td>${s.monSat!==false?'✓':'—'}</td><td>${s.sun!==false?'✓':'—'}</td>
-      <td class="small">${s.timing||''}</td></tr>`;
-  }).join('');
-}
-function renderLimits(){
-  const box = $('limitsBox'); if(!box) return;
-  const limits = STATE.leaveLimits||{};
-  const keys = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Holiday'];
-  box.innerHTML = keys.map(k=>{
-    const l = limits[k]||{};
-    return `<div class="mb8"><b>${k}:</b> OFF=${l.OFF??'-'} • Leave=${l.Leave??'-'}</div>`;
-  }).join('');
-}
-function renderWeekly(){
-  const tbody = $('weeklyBody'); if(!tbody) return;
-  const ws = STATE.weeklySetup||{};
-  const keys = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Holiday'];
-  tbody.innerHTML = keys.map(k=>{
-    const need = ws[k]||{};
-    const str = Object.entries(need).map(([c,n])=>`${c}:${n}`).join(', ');
-    return `<tr><td>${k}</td><td class="small">${str||'-'}</td></tr>`;
-  }).join('');
-}
-function renderAudit(){
-  const box = $('auditBox'); if(!box) return;
-  const arr = Object.entries(STATE.auditLog||{}).map(([id,v])=>({id,...v}))
-    .sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,50);
-  if(!arr.length){ box.innerHTML='<span class="muted">No audit entries.</span>'; return; }
-  box.innerHTML = arr.map(a=>{
-    const t = new Date(a.at||0).toLocaleString();
-    return `<div class="mb8"><span class="muted">${t}</span> — <b>${a.action}</b> ${a.detail||''}</div>`;
-  }).join('');
-}
-document.addEventListener('change', e=>{
-  if(e.target && e.target.id==='rosterPeriodSel') renderRosterView();
-});
-</script>
-<!-- ============ END OF PART 5 ============ -->
-  <script>
-/* PART 6 — Final init */
+                    // Rule 1: Rest Priority Rule (Night Shift -> Rest)
+                    if (prevShift === 'N' || prevShift === 'N12') {
+                        rosterMatrix[dateStr][sId] = 'OFF';
+                        return;
+                    }
 
-window.addEventListener('error', e=>{
-  console.error('[KIH Global Error]', e.message, e.filename, e.lineno);
-});
-window.addEventListener('unhandledrejection', e=>{
-  console.error('[KIH Unhandled Promise]', e.reason);
-});
+                    // Rule 2: Fixed Shift Override
+                    if (staffMember.fixedShift && staffMember.fixedShift !== 'NONE') {
+                        rosterMatrix[dateStr][sId] = staffMember.fixedShift;
+                        return;
+                    }
 
-setTimeout(()=>{
-  if(!Object.keys(STATE.weeklySetup||{}).length){ STATE.weeklySetup = DEFAULT_WEEKLY; renderWeekly(); }
-  if(!Object.keys(STATE.leaveLimits||{}).length){ STATE.leaveLimits = DEFAULT_LIMITS; renderLimits(); }
-  if(!Object.keys(STATE.shifts||{}).length){ STATE.shifts = DEFAULT_SHIFTS; renderShifts(); renderFixedShiftSelect(); }
-}, 1500);
+                    // Rule 3: Gender Enforcer for Night Shifts
+                    if (index % 4 === 0 && staffMember.gender === 'MALE') {
+                        rosterMatrix[dateStr][sId] = 'N';
+                    } else if (index % 3 === 0) {
+                        rosterMatrix[dateStr][sId] = 'E';
+                    } else if (index % 5 === 0) {
+                        rosterMatrix[dateStr][sId] = 'OFF';
+                    } else {
+                        rosterMatrix[dateStr][sId] = 'D';
+                    }
+                });
+            }
 
-console.log('[KIH] All parts loaded ✓');
-</script>
+            // Save Generated Roster & Log Audit Event
+            db.ref(`roster/${periodId}`).set(rosterMatrix);
+            logAuditEvent(`Generated automated schedule roster matrix for Period ${periodId}`);
+            showToast(`Roster generated successfully for ${periodId}`);
+        }
+
+        /* =========================================================
+           6. RENDER ENGINE FOR ROSTER & DASHBOARD
+           ========================================================= */
+        function renderRosterGrid() {
+            const headerRow = document.getElementById('roster-header-row');
+            const tbody = document.getElementById('roster-body-rows');
+            
+            headerRow.innerHTML = '<th class="col-staff">Phlebotomist</th>';
+            tbody.innerHTML = '';
+
+            const periodId = state.currentPeriodId;
+            const periodData = state.rosters[periodId] || {};
+            const dates = Object.keys(periodData).sort();
+
+            if (dates.length === 0) {
+                // Render fallback structure if no matrix initialized
+                for (let d = 1; d <= 30; d++) {
+                    const th = document.createElement('th');
+                    th.innerText = `Oct ${d}`;
+                    headerRow.appendChild(th);
+                }
+                Object.values(state.staff).forEach(staff => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="col-staff">${staff.name}</td>` + '<td><span class="shift-badge shift-D">D</span></td>'.repeat(30);
+                    tbody.appendChild(tr);
+                });
+                return;
+            }
+
+            // Render Dates Column Headers
+            dates.forEach(dStr => {
+                const th = document.createElement('th');
+                const dayNum = dStr.split('-')[2];
+                th.innerText = `Day ${dayNum}`;
+                headerRow.appendChild(th);
+            });
+
+            // Render Staff Rows
+            Object.keys(state.staff).forEach(sId => {
+                const staff = state.staff[sId];
+                const tr = document.createElement('tr');
+                let rowHtml = `<td class="col-staff">${staff.name} <br><small style="color:var(--text-muted); font-size:0.65rem;">${staff.gender}</small></td>`;
+
+                dates.forEach(dStr => {
+                    const shiftCode = periodData[dStr][sId] || 'OFF';
+                    rowHtml += `<td><span class="shift-badge shift-${shiftCode}">${shiftCode}</span></td>`;
+                });
+
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateDashboardMetrics() {
+            document.getElementById('metric-active-staff').innerText = Object.keys(state.staff).length;
+            document.getElementById('metric-current-period').innerText = state.currentPeriodId;
+            document.getElementById('metric-pending-leaves').innerText = Object.values(state.leaves).filter(l => l.status === 'PENDING').length;
+            document.getElementById('metric-active-policies').innerText = Object.keys(state.policies).length;
+        }
+
+        function renderPolicies() {
+            const container = document.getElementById('policies-container');
+            container.innerHTML = '';
+
+            Object.keys(state.policies).forEach(pId => {
+                const policy = state.policies[pId];
+                const ackCount = (policy.acknowledgedBy || []).length;
+                const totalStaff = Object.keys(state.staff).length;
+
+                const card = document.createElement('div');
+                card.className = 'policy-card';
+                card.innerHTML = `
+                    <div class="policy-header">
+                        <span class="policy-title">${policy.title}</span>
+                        <span class="policy-meta">${policy.date}</span>
+                    </div>
+                    <div class="policy-body">${policy.content}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; color:var(--accent);"><i class="fa-solid fa-circle-check"></i> Compliance: ${ackCount}/${totalStaff} Acknowledged</span>
+                        <button class="btn btn-secondary" onclick="acknowledgePolicy('${pId}')"><i class="fa-solid fa-check"></i> Acknowledge</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function acknowledgePolicy(pId) {
+            const currentStaffId = "STF-101"; // Default active context
+            const policy = state.policies[pId];
+            const acks = policy.acknowledgedBy || [];
+
+            if (!acks.includes(currentStaffId)) {
+                acks.push(currentStaffId);
+                db.ref(`policies/${pId}/acknowledgedBy`).set(acks);
+                logAuditEvent(`Acknowledged Directive Directive ID: ${pId}`);
+                showToast("Directive acknowledged successfully.");
+            } else {
+                showToast("You have already acknowledged this directive.");
+            }
+        }
+
+        function renderStaffTable() {
+            const tbody = document.getElementById('staff-management-table');
+            tbody.innerHTML = '';
+
+            Object.keys(state.staff).forEach(sId => {
+                const staff = state.staff[sId];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="col-staff">${staff.name}</td>
+                    <td>${staff.gender}</td>
+                    <td>${staff.fixedShift || 'None'}</td>
+                    <td><span style="color:var(--success); font-weight:600;">Active</span></td>
+                    <td><button class="btn btn-danger" style="padding:0.2rem 0.5rem;" onclick="deleteStaff('${sId}')"><i class="fa-solid fa-trash"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderLeavesTable() {
+            const tbody = document.getElementById('leave-requests-table');
+            tbody.innerHTML = '';
+
+            Object.keys(state.leaves).forEach(lId => {
+                const leave = state.leaves[lId];
+                const staffName = state.staff[leave.staffId]?.name || leave.staffId;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${staffName}</td>
+                    <td>${leave.type}</td>
+                    <td>${leave.startDate}</td>
+                    <td>${leave.endDate}</td>
+                    <td><span class="shift-badge shift-${leave.status === 'APPROVED' ? 'CPL' : 'PH'}">${leave.status}</span></td>
+                    <td class="role-restricted supervisor admin">
+                        ${leave.status === 'PENDING' ? `
+                            <button class="btn btn-primary" style="padding:0.2rem 0.5rem;" onclick="updateLeaveStatus('${lId}', 'APPROVED')">Approve</button>
+                            <button class="btn btn-danger" style="padding:0.2rem 0.5rem;" onclick="updateLeaveStatus('${lId}', 'REJECTED')">Reject</button>
+                        ` : '-'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateLeaveStatus(lId, status) {
+            db.ref(`leaves/${lId}/status`).set(status);
+            logAuditEvent(`Updated Leave Application ${lId} state to ${status}`);
+            showToast(`Leave application ${status.toLowerCase()}`);
+        }
+
+        function renderAuditLog() {
+            const container = document.getElementById('dashboard-audit-log');
+            container.innerHTML = '';
+
+            state.auditLogs.forEach(log => {
+                const li = document.createElement('li');
+                li.className = 'audit-item';
+                li.innerHTML = `
+                    <span><strong style="color:var(--primary);">${log.user}:</strong> ${log.action}</span>
+                    <span class="audit-time">${log.timestamp}</span>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        function logAuditEvent(actionDetails) {
+            const newLogRef = db.ref('auditLog').push();
+            newLogRef.set({
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                user: state.role.toUpperCase(),
+                action: actionDetails
+            });
+        }
+
+        /* =========================================================
+           7. MODALS & DATA ENTRY DIALOGS
+           ========================================================= */
+        function openStaffModal() {
+            const body = document.getElementById('generic-modal-body');
+            document.getElementById('generic-modal-title').innerText = "Add New Phlebotomist";
+            body.innerHTML = `
+                <div class="form-group"><label>Full Name</label><input type="text" id="staff-name" class="form-control" placeholder="e.g., Muhammad Ali"></div>
+                <div class="form-group"><label>Gender</label><select id="staff-gender" class="form-control"><option value="MALE">Male</option><option value="FEMALE">Female</option></select></div>
+                <div class="form-group"><label>Fixed Shift Preference</label><select id="staff-shift" class="form-control"><option value="NONE">None (Rotational)</option><option value="D">Day (D)</option><option value="E">Evening (E)</option></select></div>
+                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="saveStaffProfile()">Save Phlebotomist</button>
+            `;
+            document.getElementById('generic-modal').classList.add('active');
+        }
+
+        function saveStaffProfile() {
+            const name = document.getElementById('staff-name').value;
+            const gender = document.getElementById('staff-gender').value;
+            const fixedShift = document.getElementById('staff-shift').value;
+
+            if (!name) return showToast("Please enter staff name", "danger");
+
+            const newId = `STF-${Math.floor(100 + Math.random() * 900)}`;
+            db.ref(`staff/${newId}`).set({ name, gender, fixedShift, active: true });
+            logAuditEvent(`Added new phlebotomist profile: ${name} (${newId})`);
+            closeModal('generic-modal');
+            showToast("Staff profile added.");
+        }
+
+        function deleteStaff(sId) {
+            db.ref(`staff/${sId}`).remove();
+            logAuditEvent(`Removed staff profile ${sId}`);
+            showToast("Staff profile removed.");
+        }
+
+        function openLeaveModal() {
+            const body = document.getElementById('generic-modal-body');
+            document.getElementById('generic-modal-title').innerText = "Apply for Leave";
+            body.innerHTML = `
+                <div class="form-group"><label>Phlebotomist</label><select id="leave-staff-id" class="form-control">${Object.keys(state.staff).map(id => `<option value="${id}">${state.staff[id].name}</option>`).join('')}</select></div>
+                <div class="form-group"><label>Leave Type</label><select id="leave-type" class="form-control"><option value="Casual Leave (CL)">Casual Leave (CL)</option><option value="Sick Leave (SL)">Sick Leave (SL)</option><option value="Annual Leave (AL)">Annual Leave (AL)</option></select></div>
+                <div class="form-group"><label>Start Date</label><input type="date" id="leave-start" class="form-control"></div>
+                <div class="form-group"><label>End Date</label><input type="date" id="leave-end" class="form-control"></div>
+                <button class="btn btn-accent" style="width:100%; margin-top:1rem;" onclick="submitLeaveRequest()">Submit Leave Request</button>
+            `;
+            document.getElementById('generic-modal').classList.add('active');
+        }
+
+        function submitLeaveRequest() {
+            const staffId = document.getElementById('leave-staff-id').value;
+            const type = document.getElementById('leave-type').value;
+            const startDate = document.getElementById('leave-start').value;
+            const endDate = document.getElementById('leave-end').value;
+
+            if (!startDate || !endDate) return showToast("Please select valid dates", "danger");
+
+            const newRef = db.ref('leaves').push();
+            newRef.set({ staffId, type, startDate, endDate, status: 'PENDING' });
+            logAuditEvent(`Submitted leave request for ${state.staff[staffId]?.name || staffId}`);
+            closeModal('generic-modal');
+            showToast("Leave request submitted.");
+        }
+
+        function openPolicyModal() {
+            const body = document.getElementById('generic-modal-body');
+            document.getElementById('generic-modal-title').innerText = "Post Operational Directive";
+            body.innerHTML = `
+                <div class="form-group"><label>Directive Title</label><input type="text" id="pol-title" class="form-control" placeholder="e.g., Blood Culture Aseptic Protocols"></div>
+                <div class="form-group"><label>Content / Guidelines</label><textarea id="pol-content" class="form-control" rows="4" placeholder="Detailed directive statement..."></textarea></div>
+                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="savePolicyDirective()">Publish Directive</button>
+            `;
+            document.getElementById('generic-modal').classList.add('active');
+        }
+
+        function savePolicyDirective() {
+            const title = document.getElementById('pol-title').value;
+            const content = document.getElementById('pol-content').value;
+
+            if (!title || !content) return showToast("Please complete directive fields", "danger");
+
+            const newRef = db.ref('policies').push();
+            newRef.set({ title, content, date: new Date().toISOString().split('T')[0], acknowledgedBy: [] });
+            logAuditEvent(`Published operational policy directive: ${title}`);
+            closeModal('generic-modal');
+            showToast("Policy directive published.");
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        /* =========================================================
+           8. FALLBACK SEED DATA
+           ========================================================= */
+        function getSeedStaffData() {
+            return {
+                'STF-101': { name: 'Tariq Mehmood', gender: 'MALE', fixedShift: 'NONE', active: true },
+                'STF-102': { name: 'Ayesha Khan', gender: 'FEMALE', fixedShift: 'D', active: true },
+                'STF-103': { name: 'Usman Ahmed', gender: 'MALE', fixedShift: 'NONE', active: true },
+                'STF-104': { name: 'Zainab Bibi', gender: 'FEMALE', fixedShift: 'NONE', active: true },
+                'STF-105': { name: 'Bilal Malik', gender: 'MALE', fixedShift: 'N', active: true }
+            };
+        }
+
+        function getSeedPoliciesData() {
+            return {
+                'POL-01': { title: 'Strict Order of Draw & Tube Inversion Protocols', content: 'Ensure Blood Culture bottles are drawn first, followed by Citrate Blue tubes. Mandatory 8-time inversion for EDTA Purple containers to prevent micro-clotting.', date: '2026-09-15', acknowledgedBy: ['STF-101'] },
+                'POL-02': { title: 'Stat Troponin-I Lab Transport SLA', content: 'All STAT Troponin-I samples collected from ER or ICU must be dispatched to Core Chem Section within 10 minutes of draw time.', date: '2026-09-17', acknowledgedBy: [] }
+            };
+        }
+    </script>
 </body>
 </html>
-<!-- ============ END OF PART 6 ============ */
