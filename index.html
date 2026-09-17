@@ -1207,9 +1207,7 @@ window.addEventListener('popstate', ()=>{
 window.addEventListener('online', ()=>toast('🌐 Back online','success'));
 window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ if($('modalRoot').innerHTML.trim()) closeModal(); else if(!$('notifPanel').classList.contains('hidden')) closeNotifPanel(); } });
 </script>
-<!-- ⬇⬇⬇ PART 4 STARTS HERE ⬇⬇⬇ -->
-  <script>
-/* ============ AUTO GENERATE WIZARD ============ */
+/* ============ AUTO GENERATE WIZARD — PART 4A ============ */
 let WIZ = null;
 
 function freshWizard(){
@@ -1245,28 +1243,23 @@ function renderWizard(){
   let body = '', foot = '';
   if(WIZ.step === 1){
     body = wizStepsBar(1) + tplStep1();
-    foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="wizNext1()">Next →</button>`;
+    foot = `<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="wizNext1()">Next →</button>`;
   } else if(WIZ.step === 2){
     body = wizStepsBar(2) + tplStep2();
-    foot = `<button class="btn btn-ghost" onclick="WIZ.step=1;renderWizard();">← Back</button>
-            <button class="btn btn-primary" onclick="wizNext2()">Next →</button>`;
+    foot = `<button class="btn btn-ghost" onclick="WIZ.step=1;renderWizard();">← Back</button><button class="btn btn-primary" onclick="wizNext2()">Next →</button>`;
   } else if(WIZ.step === 3){
     body = wizStepsBar(3) + tplStep3();
-    foot = `<button class="btn btn-ghost" onclick="WIZ.step=2;renderWizard();">← Back</button>
-            <button class="btn btn-primary" onclick="wizNext3()">Next →</button>`;
+    foot = `<button class="btn btn-ghost" onclick="WIZ.step=2;renderWizard();">← Back</button><button class="btn btn-primary" onclick="wizNext3()">Next →</button>`;
   } else if(WIZ.step === 4){
     body = wizStepsBar(4) + (WIZ.mode === 'auto' ? tplStep4Auto() : tplStep4Manual());
-    foot = `<button class="btn btn-ghost" onclick="WIZ.step=3;renderWizard();">← Back</button>
-            <button class="btn btn-primary" onclick="wizStartGeneration()">🚀 Start</button>`;
+    foot = `<button class="btn btn-ghost" onclick="WIZ.step=3;renderWizard();">← Back</button><button class="btn btn-primary" onclick="wizStartGeneration()">🚀 Start</button>`;
   } else if(WIZ.step === 5){
     body = wizStepsBar(5) + tplConflictView();
     foot = '';
   } else if(WIZ.step === 6){
     body = wizStepsBar(6) + tplFinalPreview();
     const canSave = WIZ.warnings.length === 0;
-    foot = `<button class="btn btn-ghost" onclick="WIZ.step=4;renderWizard();">← Back</button>
-            <button class="btn ${canSave?'btn-primary':'btn-ghost'}" ${canSave?'':'disabled'} onclick="wizSaveRoster()">💾 Save Roster</button>`;
+    foot = `<button class="btn btn-ghost" onclick="WIZ.step=4;renderWizard();">← Back</button><button class="btn ${canSave?'btn-primary':'btn-ghost'}" ${canSave?'':'disabled'} onclick="wizSaveRoster()">💾 Save Roster</button>`;
   }
   openModal('⚙ Auto Generate Roster', body, foot, true);
 }
@@ -1283,8 +1276,7 @@ function wizStepsBar(active){
 function tplStep1(){
   const sundays = countSundays(WIZ.period.start, WIZ.period.end);
   const totalDays = dateRange(WIZ.period.start, WIZ.period.end).length;
-  return `
-    <div class="info-box">📅 Select period. Sundays = OFF target.</div>
+  return `<div class="info-box">📅 Sundays = OFF target.</div>
     <div class="grid grid-2">
       <div class="field"><label>Start Date</label><input type="date" id="wz_start" value="${WIZ.period.start}"></div>
       <div class="field"><label>End Date</label><input type="date" id="wz_end" value="${WIZ.period.end}"></div>
@@ -1304,12 +1296,7 @@ function countSundays(start, end){ return dateRange(start, end).filter(d => isSu
 
 function tplStep2(){
   const existing = Object.keys(STATE.holidays||{}).filter(d => d >= WIZ.period.start && d <= WIZ.period.end).sort();
-  return `
-    <div class="warn-box">⚠️ <b>Confirm Gazetted Holidays</b><br><br>
-    • Gazetted Holiday = Sunday style (2M+2E+1N)<br>
-    • Non-duty staff → PH on holiday<br>
-    • Duty staff → PH adjustment (later)<br>
-    • Every staff gets exactly 1 PH per Holiday</div>
+  return `<div class="warn-box">⚠️ <b>Confirm Gazetted Holidays</b><br>Holiday = Sunday style (2M+2E+1N)<br>Non-duty → PH on holiday<br>Duty → PH adjustment later<br>Every staff: 1 PH per Holiday</div>
     <div class="tabsbar" style="border:none;">
       <button class="active" id="holidayChoiceNo" onclick="wizSetHolidayChoice('no')">❌ No</button>
       <button id="holidayChoiceYes" onclick="wizSetHolidayChoice('yes')">✅ Yes</button>
@@ -1349,17 +1336,10 @@ function wizNext2(){ WIZ.step = 3; renderWizard(); }
 
 function tplStep3(){
   const autoMode = WIZ.mode === 'auto';
-  return `
-    <div class="grid grid-2">
-      <div class="card" style="cursor:pointer;border:3px solid ${autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('auto')">
-        <h3 style="margin-top:0;color:var(--blue);">🤖 Auto</h3>
-        <p style="font-size:13px;color:var(--text-2);margin:0;">App generates complete roster</p>
-      </div>
-      <div class="card" style="cursor:pointer;border:3px solid ${!autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('manual')">
-        <h3 style="margin-top:0;color:var(--blue);">✏️ Manual</h3>
-        <p style="font-size:13px;color:var(--text-2);margin:0;">Give instructions</p>
-      </div>
-    </div>`;
+  return `<div class="grid grid-2">
+    <div class="card" style="cursor:pointer;border:3px solid ${autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('auto')"><h3 style="margin-top:0;color:var(--blue);">🤖 Auto</h3><p style="font-size:13px;color:var(--text-2);margin:0;">App generates complete roster</p></div>
+    <div class="card" style="cursor:pointer;border:3px solid ${!autoMode?'var(--blue)':'var(--border)'};" onclick="wizSetMode('manual')"><h3 style="margin-top:0;color:var(--blue);">✏️ Manual</h3><p style="font-size:13px;color:var(--text-2);margin:0;">Give instructions</p></div>
+  </div>`;
 }
 function wizSetMode(m){ WIZ.mode = m; renderWizard(); }
 function wizNext3(){ WIZ.step = 4; renderWizard(); }
@@ -1367,22 +1347,18 @@ function wizNext3(){ WIZ.step = 4; renderWizard(); }
 function tplStep4Auto(){
   const sundays = countSundays(WIZ.period.start, WIZ.period.end);
   const holidays = WIZ.confirmedHolidays.length;
-  return `
-    <div class="ok-box">✅ <b>Auto Mode.</b></div>
-    <div class="info-box">
-      <b>📋 Rules:</b>
-      <ul>
-        <li>Each staff: <b>${sundays} OFF</b></li>
-        <li>Relax: Mon-Fri 1 | Sat 2 | Sun/Holiday 7</li>
-        <li>Holiday = 2M+2E+1N</li>
-        <li>Non-duty → PH on holiday</li>
-        <li>Duty → PH adjustment later</li>
-        <li><b>Every staff: 1 PH per Holiday</b></li>
-        <li><b>N/N12 کے بعد: Day 2 پر OFF priority, else E/E4</b></li>
-        <li>No empty cells</li>
-        <li>${holidays ? holidays+' Holiday(s)' : 'No Holidays'}</li>
-      </ul>
-    </div>`;
+  return `<div class="ok-box">✅ <b>Auto Mode.</b></div>
+    <div class="info-box"><b>📋 Rules:</b><ul>
+      <li>Each staff: <b>${sundays} OFF</b></li>
+      <li>Relax: Mon-Fri 1 | Sat 2 | Sun/Holiday 7</li>
+      <li>Holiday = 2M+2E+1N</li>
+      <li>Non-duty → PH on holiday</li>
+      <li>Duty → PH adjustment later</li>
+      <li>Every staff: 1 PH per Holiday</li>
+      <li>N/N12 کے بعد: Day 2 پر OFF priority, else E/E4</li>
+      <li>No empty cells</li>
+      <li>${holidays ? holidays+' Holiday(s)' : 'No Holidays'}</li>
+    </ul></div>`;
 }
 
 function tplStep4Manual(){
@@ -1392,48 +1368,38 @@ function tplStep4Manual(){
   const shiftCodes = Object.keys(STATE.shifts||DEFAULT_SHIFTS);
   const leaveOpts = (STATE.leaveTypes||[]).map(t=>`<option>${t}</option>`).join('');
   return `
-    <div class="card"><h3>1️⃣ Force OFF</h3>
-      <div class="dyn-row">
-        <div class="field"><label>Staff</label><select id="m_off_staff"><option value="">--</option>${staffOpts}</select></div>
-        <div class="field"><label>Start</label><input type="date" id="m_off_start"></div>
-        <div class="field"><label>End</label><input type="date" id="m_off_end"></div>
-        <button class="btn btn-primary btn-sm" onclick="wizAddManual('offs')">➕</button>
-      </div>
-    </div>
-    <div class="card"><h3>2️⃣ Leave</h3>
-      <div class="dyn-row">
-        <div class="field"><label>Staff</label><select id="m_leave_staff"><option value="">--</option>${staffOpts}</select></div>
-        <div class="field"><label>Type</label><select id="m_leave_type">${leaveOpts}</select></div>
-        <div class="field"><label>Start</label><input type="date" id="m_leave_start"></div>
-        <div class="field"><label>End</label><input type="date" id="m_leave_end"></div>
-        <button class="btn btn-primary btn-sm" onclick="wizAddManual('leaves')">➕</button>
-      </div>
-    </div>
-    <div class="card"><h3>3️⃣ Gynee (Female)</h3>
-      <div class="dyn-row">
-        <div class="field"><label>Female</label><select id="m_gynee_staff"><option value="">--</option>${femaleOpts}</select></div>
-        <div class="field"><label>Start</label><input type="date" id="m_gynee_start"></div>
-        <div class="field"><label>End</label><input type="date" id="m_gynee_end"></div>
-        <button class="btn btn-primary btn-sm" onclick="wizAddManual('gynee')">➕</button>
-      </div>
-    </div>
-    <div class="card"><h3>4️⃣ Shift Override</h3>
-      <div class="dyn-row">
-        <div class="field"><label>Staff</label><select id="m_shift_staff"><option value="">--</option>${staffOpts}</select></div>
-        <div class="field"><label>Shift</label><select id="m_shift_val">${shiftCodes.map(c=>`<option>${c}</option>`).join('')}</select></div>
-        <div class="field"><label>Start</label><input type="date" id="m_shift_start"></div>
-        <div class="field"><label>End</label><input type="date" id="m_shift_end"></div>
-        <button class="btn btn-primary btn-sm" onclick="wizAddManual('shiftOverride')">➕</button>
-      </div>
-    </div>
-    <div class="card"><h3>5️⃣ Extended Duty</h3>
-      <div class="dyn-row">
-        <div class="field"><label>Staff</label><select id="m_ext_staff"><option value="">--</option>${staffOpts}</select></div>
-        <div class="field"><label>Type</label><select id="m_ext_type"><option value="M+E">M+E (16H)</option><option value="E+N">E+N (16H)</option><option value="DE">DE (12H)</option></select></div>
-        <div class="field"><label>Date</label><input type="date" id="m_ext_date"></div>
-        <button class="btn btn-primary btn-sm" onclick="wizAddManual('extendedDuty')">➕</button>
-      </div>
-    </div>`;
+    <div class="card"><h3>1️⃣ Force OFF</h3><div class="dyn-row">
+      <div class="field"><label>Staff</label><select id="m_off_staff"><option value="">--</option>${staffOpts}</select></div>
+      <div class="field"><label>Start</label><input type="date" id="m_off_start"></div>
+      <div class="field"><label>End</label><input type="date" id="m_off_end"></div>
+      <button class="btn btn-primary btn-sm" onclick="wizAddManual('offs')">➕</button>
+    </div></div>
+    <div class="card"><h3>2️⃣ Leave</h3><div class="dyn-row">
+      <div class="field"><label>Staff</label><select id="m_leave_staff"><option value="">--</option>${staffOpts}</select></div>
+      <div class="field"><label>Type</label><select id="m_leave_type">${leaveOpts}</select></div>
+      <div class="field"><label>Start</label><input type="date" id="m_leave_start"></div>
+      <div class="field"><label>End</label><input type="date" id="m_leave_end"></div>
+      <button class="btn btn-primary btn-sm" onclick="wizAddManual('leaves')">➕</button>
+    </div></div>
+    <div class="card"><h3>3️⃣ Gynee (Female)</h3><div class="dyn-row">
+      <div class="field"><label>Female</label><select id="m_gynee_staff"><option value="">--</option>${femaleOpts}</select></div>
+      <div class="field"><label>Start</label><input type="date" id="m_gynee_start"></div>
+      <div class="field"><label>End</label><input type="date" id="m_gynee_end"></div>
+      <button class="btn btn-primary btn-sm" onclick="wizAddManual('gynee')">➕</button>
+    </div></div>
+    <div class="card"><h3>4️⃣ Shift Override</h3><div class="dyn-row">
+      <div class="field"><label>Staff</label><select id="m_shift_staff"><option value="">--</option>${staffOpts}</select></div>
+      <div class="field"><label>Shift</label><select id="m_shift_val">${shiftCodes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Start</label><input type="date" id="m_shift_start"></div>
+      <div class="field"><label>End</label><input type="date" id="m_shift_end"></div>
+      <button class="btn btn-primary btn-sm" onclick="wizAddManual('shiftOverride')">➕</button>
+    </div></div>
+    <div class="card"><h3>5️⃣ Extended Duty</h3><div class="dyn-row">
+      <div class="field"><label>Staff</label><select id="m_ext_staff"><option value="">--</option>${staffOpts}</select></div>
+      <div class="field"><label>Type</label><select id="m_ext_type"><option value="M+E">M+E (16H)</option><option value="E+N">E+N (16H)</option><option value="DE">DE (12H)</option></select></div>
+      <div class="field"><label>Date</label><input type="date" id="m_ext_date"></div>
+      <button class="btn btn-primary btn-sm" onclick="wizAddManual('extendedDuty')">➕</button>
+    </div></div>`;
 }
 
 function wizAddManual(key){
@@ -1446,8 +1412,9 @@ function wizAddManual(key){
   else if(key === 'extendedDuty'){ const s=get('m_ext_staff'),t=get('m_ext_type'),d=get('m_ext_date'); if(!s||!d){toast('Select','error');return;} mi.extendedDuty.push({staffId:s,type:t,date:d}); }
   renderWizard();
 }
+/* ============ END OF PART 4A ============ */
+    /* ============ GENERATION ENGINE — PART 4B ============ */
 
-/* ============ GENERATION ============ */
 function wizStartGeneration(){
   WIZ.dates = dateRange(WIZ.period.start, WIZ.period.end);
   WIZ.staffArr = activeStaffArr();
@@ -1458,7 +1425,6 @@ function wizStartGeneration(){
   WIZ.dates.forEach(d => { WIZ.grid[d] = {}; WIZ.locked[d] = {}; });
   WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; WIZ.restDays[s._id] = 0; });
 
-  // Special Off Dates
   WIZ.staffArr.forEach(s => {
     (s.specialOffDates || []).forEach(d => {
       if(WIZ.grid[d] && d >= WIZ.period.start && d <= WIZ.period.end){
@@ -1466,7 +1432,7 @@ function wizStartGeneration(){
       }
     });
   });
-  // Manual
+
   if(WIZ.mode === 'manual'){
     WIZ.manual.offs.forEach(x=>{ dateRange(x.start,x.end).forEach(d=>{ if(WIZ.grid[d]){ WIZ.grid[d][x.staffId]='OFF'; WIZ.locked[d][x.staffId]=true; WIZ.offCount[x.staffId]++; } }); });
     WIZ.manual.leaves.forEach(x=>{ dateRange(x.start,x.end).forEach(d=>{ if(WIZ.grid[d]){ WIZ.grid[d][x.staffId]=x.type; WIZ.locked[d][x.staffId]=true; } }); });
@@ -1474,7 +1440,7 @@ function wizStartGeneration(){
     WIZ.manual.shiftOverride.forEach(x=>{ dateRange(x.start,x.end).forEach(d=>{ if(WIZ.grid[d]){ WIZ.grid[d][x.staffId]=x.shift; WIZ.locked[d][x.staffId]=true; } }); });
     WIZ.manual.extendedDuty.forEach(x=>{ if(WIZ.grid[x.date]){ WIZ.grid[x.date][x.staffId]=x.type; WIZ.locked[x.date][x.staffId]=true; } });
   }
-  // Approved Leaves
+
   objToArr(STATE.leaves).forEach(l=>{
     if(l.status !== 'approved') return;
     const ls = l.startDate || l.date;
@@ -1505,7 +1471,6 @@ function assignOFFToAllStaff(){
   function needsOff(sid){ return WIZ.offCount[sid] < WIZ.offTarget; }
   function canTakeOff(date, sid){ return !WIZ.grid[date][sid]; }
 
-  // Sundays
   sundays.forEach(sunday => {
     const limits = STATE.leaveLimits['Sunday'] || {OFF:7};
     const offLimit = limits.OFF || 7;
@@ -1515,7 +1480,6 @@ function assignOFFToAllStaff(){
     for(let i=0; i<slotsLeft && i<candidates.length; i++){ WIZ.grid[sunday][candidates[i]._id] = 'OFF'; WIZ.offCount[candidates[i]._id]++; }
   });
 
-  // Holidays - PH
   holidays.forEach(holiday => {
     const limits = STATE.leaveLimits['Holiday'] || {OFF:7};
     const offLimit = limits.OFF || 7;
@@ -1525,7 +1489,6 @@ function assignOFFToAllStaff(){
     for(let i=0; i<slotsLeft && i<candidates.length; i++){ WIZ.grid[holiday][candidates[i]._id] = 'PH'; WIZ.phCount[candidates[i]._id] = 1; }
   });
 
-  // Saturdays - 2 OFF
   saturdays.forEach(sat => {
     const limits = STATE.leaveLimits['Saturday'] || {OFF:2};
     const offLimit = limits.OFF || 2;
@@ -1535,7 +1498,6 @@ function assignOFFToAllStaff(){
     for(let i=0; i<slotsLeft && i<candidates.length; i++){ WIZ.grid[sat][candidates[i]._id] = 'OFF'; WIZ.offCount[candidates[i]._id]++; }
   });
 
-  // Weekdays - 1 OFF
   weekdays.forEach(wd => {
     const dayKey = dayNameFor(wd);
     const limits = STATE.leaveLimits[dayKey] || {OFF:1};
@@ -1546,7 +1508,6 @@ function assignOFFToAllStaff(){
     for(let i=0; i<slotsLeft && i<candidates.length; i++){ WIZ.grid[wd][candidates[i]._id] = 'OFF'; WIZ.offCount[candidates[i]._id]++; }
   });
 
-  // Top-up
   WIZ.staffArr.forEach(s => {
     while(WIZ.offCount[s._id] < WIZ.offTarget){
       let found = false;
@@ -1568,8 +1529,7 @@ function assignOFFToAllStaff(){
 function processNextDay(){
   if(WIZ.currentDayIndex >= WIZ.dates.length){ finalizeGeneration(); WIZ.step = 6; renderWizard(); return; }
   const d = WIZ.dates[WIZ.currentDayIndex];
-  const result = processDay(d);
-  if(result.conflict){ WIZ.currentConflictDay = d; WIZ.currentConflictResult = result; renderWizard(); return; }
+  processDay(d);
   WIZ.currentDayIndex++;
   setTimeout(processNextDay, 5);
 }
@@ -1578,46 +1538,12 @@ function processDay(date){
   const isOff = isHolidayOrSunday(date);
   const dayKey = isHoliday(date) ? 'Holiday' : dayNameFor(date);
   const need = STATE.weeklySetup[dayKey] || {};
-  const dayGrid = WIZ.grid[date];
-
-  // ⭐ N/N12 priority rest FIRST
   applyN12PriorityRest(date);
-
-  let offCount = 0, leaveCount = 0, phCount = 0;
-  Object.values(dayGrid).forEach(c=>{
-    if(c === 'OFF') offCount++;
-    else if(c === 'PH') phCount++;
-    else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
-  });
-  const totalRelax = offCount + leaveCount + phCount;
-  const limits = STATE.leaveLimits[dayKey] || {OFF:1};
-  const relaxLimit = (limits.OFF||0) + (limits.Leave||0);
-
   fillDayShifts(date, need, isOff);
-
-  const coverageCheck = checkShiftCoverage(date, need, isOff);
-  if(!coverageCheck.ok){
-    return { conflict: true, type: 'shift_not_covered', date,
-      message: `${fmtDisplay(date)}: ${coverageCheck.code} needs ${coverageCheck.required}, only ${coverageCheck.actual}.`,
-      details: `Missing: ${coverageCheck.missing}`,
-      suggestion: { action: 'MODIFY', message: `Modify manually.` } };
-  }
-
-  if(totalRelax > relaxLimit){
-    const excess = totalRelax - relaxLimit;
-    let conflictType, suggestion;
-    if(excess === 1){ conflictType='relax_exceeded_by_1'; suggestion={action:'X_DUTY',message:`Assign 1 to X.`}; }
-    else if(excess === 2){ conflictType='relax_exceeded_by_2'; suggestion={action:'DX_DUTY',message:`Assign 1 to DX.`}; }
-    else { conflictType='relax_exceeded_major'; suggestion={action:'MODIFY',message:`Too many.`}; }
-    return { conflict: true, type: conflictType, date,
-      message: `${fmtDisplay(date)}: ${totalRelax} staff, limit ${relaxLimit}.`,
-      details: `${offCount} OFF + ${leaveCount} Leave + ${phCount} PH`,
-      excess, suggestion };
-  }
+  autoFixMissingShifts(date, need, isOff);
   return { conflict: false };
 }
 
-/* ⭐ N/N12 Priority Rest */
 function applyN12PriorityRest(date){
   const dayIdx = WIZ.dates.indexOf(date);
   if(dayIdx <= 0) return;
@@ -1638,12 +1564,12 @@ function applyN12PriorityRest(date){
         WIZ.grid[date][s._id] = 'OFF';
         WIZ.locked[date][s._id] = true;
         WIZ.offCount[s._id]++;
-        WIZ.restDays[s._id]++;
-        WIZ.conflictLog.push({date, note: `⭐ ${s.name}: OFF (priority rest after N/N12)`});
+        WIZ.restDays[s._id] = (WIZ.restDays[s._id]||0) + 1;
+        WIZ.conflictLog.push({date, note: `⭐ ${s.name}: OFF (N/N12 rest)`});
       } else {
         WIZ.grid[date][s._id] = 'E';
         WIZ.locked[date][s._id] = true;
-        WIZ.conflictLog.push({date, note: `⭐ ${s.name}: E (no room for OFF after N/N12)`});
+        WIZ.conflictLog.push({date, note: `⭐ ${s.name}: E (no room for OFF)`});
       }
     }
   });
@@ -1687,22 +1613,60 @@ function fillDayShifts(date, need, isOff){
   });
 }
 
-function checkShiftCoverage(date, need, isOff){
+function autoFixMissingShifts(date, need, isOff){
   const dayGrid = WIZ.grid[date];
-  for(const code of Object.keys(need)){
+  Object.keys(need).forEach(code => {
     const req = need[code];
-    if(!req) continue;
+    if(!req) return;
     const shiftDef = STATE.shifts[code];
-    if(!shiftDef) continue;
+    if(!shiftDef) return;
     const activeToday = isOff ? shiftDef.sun : shiftDef.monSat;
-    if(!activeToday) continue;
-    const actual = Object.values(dayGrid).filter(c => c === code).length;
-    if(actual < req) return {ok:false, code, required:req, actual, missing:req-actual};
-  }
-  return {ok:true};
+    if(!activeToday) return;
+    const current = Object.values(dayGrid).filter(c => c === code).length;
+    let missing = req - current;
+    if(missing <= 0) return;
+
+    WIZ.staffArr.forEach(s => {
+      if(missing <= 0) return;
+      if(dayGrid[s._id] === 'X'){
+        if(shiftDef.gender !== 'Any' && s.gender !== shiftDef.gender) return;
+        dayGrid[s._id] = code;
+        missing--;
+        WIZ.conflictLog.push({date, note: `🔧 ${s.name}: X → ${code}`});
+      }
+    });
+
+    if(missing > 0){
+      const lessCritical = ['E4', 'D', 'X', 'N12', 'N'];
+      WIZ.staffArr.forEach(s => {
+        if(missing <= 0) return;
+        const sCode = dayGrid[s._id];
+        if(!lessCritical.includes(sCode)) return;
+        if(shiftDef.gender !== 'Any' && s.gender !== shiftDef.gender) return;
+        const srcReq = need[sCode] || 0;
+        const srcCurrent = Object.values(dayGrid).filter(c => c === sCode).length;
+        if(srcCurrent - 1 < srcReq) return;
+        dayGrid[s._id] = code;
+        missing--;
+        WIZ.conflictLog.push({date, note: `🔧 ${s.name}: ${sCode} → ${code}`});
+      });
+    }
+
+    if(missing > 0){
+      WIZ.staffArr.forEach(s => {
+        if(missing <= 0) return;
+        const sCode = dayGrid[s._id];
+        if(sCode === 'OFF' || sCode === 'PH' || (STATE.leaveTypes||[]).includes(sCode)) return;
+        if(sCode === code) return;
+        if(shiftDef.gender !== 'Any' && s.gender !== shiftDef.gender) return;
+        dayGrid[s._id] = code;
+        missing--;
+        WIZ.conflictLog.push({date, note: `⚠️ ${s.name}: ${sCode} → ${code} (force)`});
+      });
+    }
+  });
 }
 
-/* ============ PH ADJUSTMENT ============ */
 function adjustPHForDutyStaff(){
   const pending = [];
   WIZ.staffArr.forEach(s => {
@@ -1718,7 +1682,6 @@ function adjustPHForDutyStaff(){
   if(!pending.length) return;
   pending.forEach(item => {
     let resolved = false;
-    // Priority 1: within relax limit
     for(const d of WIZ.dates){
       if(resolved) break;
       if(d === item.holidayDate) continue;
@@ -1738,11 +1701,10 @@ function adjustPHForDutyStaff(){
       if(offCount + leaveCount + phCount < relaxLimit){
         WIZ.grid[d][item.staffId] = 'PH';
         WIZ.phCount[item.staffId] = (WIZ.phCount[item.staffId]||0) + 1;
-        WIZ.conflictLog.push({date:d, note:`🥇 ${staffName(item.staffId)} → PH`});
+        WIZ.conflictLog.push({date:d, note:`🥇 ${staffName(item.staffId)} → PH (adjustment)`});
         resolved = true;
       }
     }
-    // Priority 2: break limit
     if(!resolved){
       for(const d of WIZ.dates){
         if(resolved) break;
@@ -1755,7 +1717,6 @@ function adjustPHForDutyStaff(){
         resolved = true;
       }
     }
-    // Priority 3: CPL
     if(!resolved){
       WIZ.phCount[item.staffId] = (WIZ.phCount[item.staffId]||0) + 1;
       WIZ.cplConversions = WIZ.cplConversions || [];
@@ -1773,13 +1734,11 @@ function finalizeGeneration(){
   });
   WIZ.warnings = [];
 
-  // OFF balance
   WIZ.staffArr.forEach(s=>{
     const diff = WIZ.offCount[s._id] - WIZ.offTarget;
     if(diff !== 0) WIZ.warnings.push(`❌ ${s.name}: ${WIZ.offCount[s._id]} OFF (target ${WIZ.offTarget})`);
   });
 
-  // PH check
   const holidayCount = WIZ.confirmedHolidays.length;
   if(holidayCount > 0){
     WIZ.staffArr.forEach(s=>{
@@ -1788,7 +1747,6 @@ function finalizeGeneration(){
     });
   }
 
-  // Relax limit
   WIZ.dates.forEach(d=>{
     const dayKey = isHoliday(d) ? 'Holiday' : dayNameFor(d);
     const limits = STATE.leaveLimits[dayKey] || {OFF:1};
@@ -1799,12 +1757,9 @@ function finalizeGeneration(){
       if(c === 'OFF') offCount++;
       else if((STATE.leaveTypes||[]).includes(c) && c !== 'OFF' && c !== 'GH' && c !== 'PH') leaveCount++;
     });
-    if(offCount + leaveCount > relaxLimit){
-      WIZ.warnings.push(`❌ ${fmtDisplay(d)} (${dayShort(d)}): ${offCount+leaveCount} staff — limit ${relaxLimit}`);
-    }
+    if(offCount + leaveCount > relaxLimit) WIZ.warnings.push(`❌ ${fmtDisplay(d)} (${dayShort(d)}): ${offCount+leaveCount} staff — limit ${relaxLimit}`);
   });
 
-  // Gender
   WIZ.dates.forEach(d=>{
     Object.keys(WIZ.grid[d]).forEach(sid=>{
       const code = WIZ.grid[d][sid];
@@ -1815,86 +1770,34 @@ function finalizeGeneration(){
     });
   });
 
-  // Empty cells
   WIZ.dates.forEach(d=>{
     WIZ.staffArr.forEach(s=>{ if(!WIZ.grid[d][s._id]) WIZ.warnings.push(`❌ ${fmtDisplay(d)}: ${s.name} NO assignment`); });
   });
 }
 
-/* ============ CONFLICT ============ */
 function tplConflictView(){
   if(!WIZ.currentConflictResult) return '<div class="empty-state">Processing...</div>';
   const c = WIZ.currentConflictResult;
   const date = WIZ.currentConflictDay;
-  const staffArr = WIZ.staffArr;
-  let suggestionHtml = '';
-  if(c.suggestion && (c.suggestion.action === 'X_DUTY' || c.suggestion.action === 'DX_DUTY')){
-    suggestionHtml = `<div class="suggestion"><b>💡 ${escapeHtml(c.suggestion.message)}</b></div>
-      <div class="field"><label>Staff:</label><select id="conflict_staff_pick">${staffArr.map(s=>`<option value="${s._id}">${escapeHtml(s.name)} (${s.gender})</option>`).join('')}</select></div>`;
-  } else {
-    suggestionHtml = `<div class="suggestion"><b>💡 ${escapeHtml(c.suggestion.message||'Modify manually.')}</b></div>`;
-  }
-  let actionsHtml = '';
-  if(c.suggestion && (c.suggestion.action === 'X_DUTY' || c.suggestion.action === 'DX_DUTY')){
-    actionsHtml = `<button class="btn btn-success" onclick="resolveConflict('accept')">✅ Confirm</button>
-      <button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify</button>`;
-  } else {
-    actionsHtml = `<button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify</button>`;
-  }
+  let suggestionHtml = `<div class="suggestion"><b>💡 ${escapeHtml(c.suggestion.message||'Modify manually.')}</b></div>`;
+  let actionsHtml = `<button class="btn btn-primary" onclick="resolveConflict('modify')">✏️ Modify</button>`;
   const progress = `Day ${WIZ.currentDayIndex + 1} of ${WIZ.dates.length}`;
-  const pct = Math.round(((WIZ.currentDayIndex) / WIZ.dates.length) * 100);
-  return `
-    <div class="info-box"><b>${progress}</b></div>
+  const pct = Math.round((WIZ.currentDayIndex / WIZ.dates.length) * 100);
+  return `<div class="info-box"><b>${progress}</b></div>
     <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
     <div class="conflict-box">
-      <h3>⚠️ CONFLICT on ${fmtDisplay(date)}</h3>
-      <div class="problem"><b>Problem:</b><br>${escapeHtml(c.message)}<br><small>${escapeHtml(c.details)}</small></div>
+      <h3>⚠️ Conflict on ${fmtDisplay(date)}</h3>
+      <div class="problem"><b>${escapeHtml(c.message)}</b><br><small>${escapeHtml(c.details)}</small></div>
       ${suggestionHtml}
       <div class="actions">${actionsHtml}</div>
     </div>`;
 }
+
 function resolveConflict(action){
-  const date = WIZ.currentConflictDay;
-  const c = WIZ.currentConflictResult;
-  const dayGrid = WIZ.grid[date];
-  if(action === 'accept'){
-    const pickEl = $('conflict_staff_pick');
-    const pickId = pickEl ? pickEl.value : null;
-    if(!pickId){ toast('Select staff','error'); return; }
-    if(c.suggestion.action === 'X_DUTY'){ dayGrid[pickId] = 'X'; WIZ.conflictLog.push({date, note: staffName(pickId)+' → X'}); }
-    else if(c.suggestion.action === 'DX_DUTY'){ dayGrid[pickId] = 'DX'; WIZ.conflictLog.push({date, note: staffName(pickId)+' → DX'}); }
-  }
-  else if(action === 'modify'){ showManualResolution(date); return; }
   WIZ.currentDayIndex++;
   setTimeout(processNextDay, 5);
 }
-function showManualResolution(date){
-  const dayGrid = WIZ.grid[date];
-  const allCodes = ['', ...Object.keys(STATE.shifts||DEFAULT_SHIFTS), ...(STATE.leaveTypes||[]), 'OFF', 'PH', 'X', 'DX'];
-  const rows = WIZ.staffArr.map(s=>{
-    const cur = dayGrid[s._id] || '';
-    return `<div class="dyn-row"><div style="flex:1;font-weight:700;">${escapeHtml(s.name)} (${s.gender})</div>
-      <div style="flex:2;"><select onchange="wizSetManual('${date}','${s._id}',this.value)" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);">
-        ${allCodes.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c||'-- none --'}</option>`).join('')}
-      </select></div></div>`;
-  }).join('');
-  const foot = `<button class="btn btn-ghost" onclick="renderWizard()">Cancel</button>
-    <button class="btn btn-primary" onclick="confirmManualResolution('${date}')">✅ Apply</button>`;
-  openModal('✏️ Manual Resolution', `<div style="max-height:450px;overflow-y:auto;">${rows}</div>`, foot, true);
-}
-function wizSetManual(date, staffId, code){
-  if(!WIZ.grid[date]) WIZ.grid[date] = {};
-  if(code) WIZ.grid[date][staffId] = code;
-  else delete WIZ.grid[date][staffId];
-}
-function confirmManualResolution(date){
-  WIZ.conflictLog.push({date, note:'Resolved manually'});
-  closeModal();
-  WIZ.currentDayIndex++;
-  setTimeout(processNextDay, 50);
-}
 
-/* ============ PREVIEW ============ */
 function tplFinalPreview(){
   const staffArr = WIZ.staffArr;
   const dates = WIZ.dates;
@@ -1944,7 +1847,6 @@ function wizSaveRoster(){
   updates['periods/'+pid] = {start:WIZ.period.start, end:WIZ.period.end, label:WIZ.period.label, createdAt:nowTs(), seenBy:{}};
   WIZ.dates.forEach(d=>{ updates['roster/'+pid+'/'+d] = WIZ.grid[d]; });
   WIZ.confirmedHolidays.forEach(h=>{ updates['holidays/'+h.date] = h.name; });
-  // CPL conversions
   if(WIZ.cplConversions && WIZ.cplConversions.length){
     WIZ.cplConversions.forEach(conv => {
       updates['cpLRecords/'+uid()] = {
@@ -1966,7 +1868,7 @@ function wizSaveRoster(){
   }).catch(err=>toast('Error: '+err.message,'error'));
 }
 
-/* PART 4 END */
+/* ============ END OF PART 4B ============ */
 </script>
 <!-- ⬇⬇⬇ PART 5 STARTS HERE ⬇⬇⬇ -->
   <script>
