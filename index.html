@@ -15,10 +15,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{
-  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-  background:var(--bg); color:var(--fg); font-size:14px; line-height:1.5;
-}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5}
 button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;transition:.15s}
 button:hover{filter:brightness(1.1)}
 button:active{transform:scale(.98)}
@@ -28,63 +25,41 @@ button:active{transform:scale(.98)}
 .btn-warn{background:var(--warn);color:#000}
 .btn-ghost{background:var(--bg3);color:var(--fg);border:1px solid var(--line)}
 .btn-sm{padding:5px 10px;font-size:12px}
-input,select,textarea{
-  background:var(--bg3);color:var(--fg);border:1px solid var(--line);
-  border-radius:6px;padding:7px 10px;font-family:inherit;font-size:13px;width:100%;
-}
+input,select,textarea{background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-family:inherit;font-size:13px;width:100%}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600}
 .app{display:flex;min-height:100vh}
-
-/* Sidebar */
-.sidebar{
-  width:220px;background:var(--bg2);border-right:1px solid var(--line);
-  padding:16px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;
-}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
 .brand{font-size:15px;font-weight:800;color:var(--primary);padding:8px 10px 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
 .brand small{display:block;font-size:10px;color:var(--muted);font-weight:400;margin-top:2px}
-.nav-btn{
-  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
-  background:transparent;color:var(--fg);padding:10px 12px;border-radius:8px;font-weight:600;
-}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;color:var(--fg);padding:10px 12px;border-radius:8px;font-weight:600}
 .nav-btn:hover{background:var(--bg3)}
 .nav-btn.active{background:var(--primary);color:#fff}
 .nav-btn .ico{width:20px;text-align:center}
-
-/* Main */
 .main{flex:1;padding:20px;overflow-x:auto}
 .page{display:none}
 .page.active{display:block}
 .page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .page-head h1{font-size:20px;font-weight:700}
 .page-head .sub{color:var(--muted);font-size:12px}
-
-/* Cards */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
 .card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
 .card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .card .val{font-size:22px;font-weight:800;margin-top:6px}
 .card.g .val{color:var(--success)} .card.b .val{color:var(--primary)}
 .card.y .val{color:var(--warn)} .card.r .val{color:var(--red)}
-
 .panel{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .panel h3{font-size:14px;margin-bottom:12px;font-weight:700}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>*{flex:1;min-width:130px}
-
-/* Table */
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg2)}
 table{border-collapse:collapse;width:100%;font-size:12px;min-width:600px}
 th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{background:var(--bg3);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);position:sticky;top:0;z-index:2}
 tr:hover td{background:rgba(59,130,246,.06)}
-
-/* Roster grid */
 .roster-tbl{border-collapse:collapse;font-size:11px;min-width:100%}
 .roster-tbl th,.roster-tbl td{border:1px solid var(--line);padding:5px 6px;text-align:center;white-space:nowrap}
-.roster-tbl th.sticky,.roster-tbl td.sticky{
-  position:sticky;left:0;background:var(--bg3);z-index:3;text-align:left;min-width:130px;
-}
+.roster-tbl th.sticky,.roster-tbl td.sticky{position:sticky;left:0;background:var(--bg3);z-index:3;text-align:left;min-width:130px}
 .roster-tbl th.sticky{z-index:4}
 .cell-D{background:#1e3a8a;color:#dbeafe}
 .cell-E{background:#065f46;color:#d1fae5}
@@ -96,51 +71,30 @@ tr:hover td{background:rgba(59,130,246,.06)}
 .cell-PH{background:#9a3412;color:#fed7aa}
 .cell-CPL{background:#831843;color:#fbcfe8}
 .cell-Leave{background:#7f1d1d;color:#fecaca}
-
-/* Modal */
-.modal-bg{
-  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
-  display:none;align-items:center;justify-content:center;padding:14px;
-}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;padding:14px}
 .modal-bg.show{display:flex}
-.modal{
-  background:var(--bg2);border:1px solid var(--line);border-radius:12px;
-  width:100%;max-width:720px;max-height:92vh;overflow:auto;box-shadow:var(--shadow);
-}
+.modal{background:var(--bg2);border:1px solid var(--line);border-radius:12px;width:100%;max-width:720px;max-height:92vh;overflow:auto;box-shadow:var(--shadow)}
 .modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2);z-index:2}
 .modal-head h3{font-size:15px;font-weight:700}
 .modal-body{padding:18px}
 .modal-foot{display:flex;justify-content:space-between;gap:10px;padding:14px 18px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg2)}
 .close-x{background:transparent;color:var(--muted);font-size:20px;padding:2px 8px}
 .close-x:hover{color:var(--red)}
-
-/* Steps */
 .steps{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.step-dot{
-  flex:1;text-align:center;padding:6px;font-size:11px;font-weight:700;
-  background:var(--bg3);border-radius:6px;color:var(--muted);border:1px solid var(--line);
-}
+.step-dot{flex:1;text-align:center;padding:6px;font-size:11px;font-weight:700;background:var(--bg3);border-radius:6px;color:var(--muted);border:1px solid var(--line)}
 .step-dot.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .step-dot.done{background:var(--success);color:#fff;border-color:var(--success)}
-
-/* Progress */
 .progress{height:10px;background:var(--bg3);border-radius:6px;overflow:hidden;margin:10px 0}
 .progress-bar{height:100%;background:var(--primary);width:0;transition:width .2s}
-
-/* Info boxes */
 .info,.err,.ok,.warn-box{padding:10px 12px;border-radius:8px;font-size:12px;margin:8px 0;border-left:4px solid}
 .info{background:rgba(6,182,212,.1);border-color:var(--info);color:#a5f3fc}
 .err{background:rgba(239,68,68,.1);border-color:var(--red);color:#fecaca}
 .ok{background:rgba(34,197,94,.1);border-color:var(--success);color:#bbf7d0}
 .warn-box{background:rgba(245,158,11,.1);border-color:var(--warn);color:#fde68a}
-
-/* Toast */
 #toast{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
 .toast{padding:10px 16px;border-radius:8px;background:var(--bg3);border-left:4px solid var(--primary);color:var(--fg);font-size:13px;font-weight:600;box-shadow:var(--shadow);animation:slideIn .25s}
 .toast.ok{border-color:var(--success)} .toast.err{border-color:var(--red)} .toast.warn{border-color:var(--warn)}
 @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
-
-/* Misc */
 .muted{color:var(--muted)}
 .small{font-size:11px}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
@@ -148,7 +102,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
 .chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--bg3);border:1px solid var(--line)}
 .chip.male{background:#1e3a8a;color:#dbeafe}
 .chip.female{background:#831843;color:#fbcfe8}
-
 @media(max-width:768px){
   .sidebar{width:60px;padding:10px 6px}
   .brand{font-size:0;padding:8px 4px}
@@ -209,8 +162,8 @@ tr:hover td{background:rgba(59,130,246,.06)}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Gender</th><th>Fixed</th><th>Multi</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="staffBody"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+          <thead><tr><th>Name</th><th>Gender</th><th>Fixed</th><th>Multi</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="staffBody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -306,7 +259,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
         <div class="step-dot" data-s="6">6. Preview</div>
       </div>
 
-      <!-- Step 1 -->
       <div id="wizStep1" class="wiz-step">
         <div class="info">📅 Period select karein. Sundays auto-count honge.</div>
         <div class="row mt12">
@@ -316,7 +268,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
         <div class="mt12" id="wizPeriodInfo"></div>
       </div>
 
-      <!-- Step 2 -->
       <div id="wizStep2" class="wiz-step" style="display:none">
         <div class="info">🎉 Auto-detected holidays. Confirm karein.</div>
         <div id="wizHolList" class="mt12"></div>
@@ -325,7 +276,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
         </div>
       </div>
 
-      <!-- Step 3 -->
       <div id="wizStep3" class="wiz-step" style="display:none">
         <div class="info">🪄 Mode select karein.</div>
         <div class="mt12">
@@ -334,7 +284,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
         </div>
       </div>
 
-      <!-- Step 4 -->
       <div id="wizStep4" class="wiz-step" style="display:none">
         <div class="info">✏️ Manual overrides. Format: <b>staffName,YYYY-MM-DD</b> (one per line).</div>
         <div class="row mt12">
@@ -348,7 +297,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
         <div class="mt12"><label>Extended Duty</label><textarea id="wizExt" rows="2" placeholder="Ali,2025-03-10,N"></textarea></div>
       </div>
 
-      <!-- Step 5 -->
       <div id="wizStep5" class="wiz-step" style="display:none">
         <div class="info">⚙️ Generating roster… please wait.</div>
         <div class="progress"><div class="progress-bar" id="wizProgBar"></div></div>
@@ -356,7 +304,6 @@ tr:hover td{background:rgba(59,130,246,.06)}
         <div id="wizLog" class="small mt12" style="max-height:180px;overflow:auto;font-family:monospace"></div>
       </div>
 
-      <!-- Step 6 -->
       <div id="wizStep6" class="wiz-step" style="display:none">
         <div id="wizSummary"></div>
         <div id="wizWarnings"></div>
@@ -374,9 +321,9 @@ tr:hover td{background:rgba(59,130,246,.06)}
   </div>
 </div>
 
-<!-- ===== STAFF MODAL ===== -->
+<!-- ===== STAFF MODAL (with balances) ===== -->
 <div class="modal-bg" id="staffModal">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:560px">
     <div class="modal-head"><h3 id="staffModalTitle">Add Staff</h3><button class="close-x" onclick="closeModal('staffModal')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="staffId">
@@ -387,7 +334,37 @@ tr:hover td{background:rgba(59,130,246,.06)}
       </div>
       <div class="mb12"><label>Multi Shifts (comma-separated codes)</label><input id="staffMulti" placeholder="D,E,N"></div>
       <div class="mb12"><label>Special OFF Dates (comma-separated)</label><input id="staffOffDates" placeholder="2025-03-10,2025-03-15"></div>
-      <div><label>Active</label><select id="staffActive"><option value="true">Yes</option><option value="false">No</option></select></div>
+      <div class="mb12"><label>Active</label><select id="staffActive"><option value="true">Yes</option><option value="false">No</option></select></div>
+
+      <!-- 🆕 RELAX BALANCES (Admin-only) -->
+      <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+        <h4 style="font-size:12px;color:var(--muted);margin-bottom:8px">🎯 RELAX BALANCES (Admin only)</h4>
+
+        <div class="row mb12">
+          <div><label>OFF Balance</label><input type="number" id="balOFF" value="5" min="0"></div>
+          <div><label>PH Pending</label><input type="number" id="balPH" value="0" min="0"></div>
+        </div>
+
+        <div class="row mb12">
+          <div><label>CPL Balance</label><input type="number" id="balCPL" value="0" min="0"></div>
+          <div><label>EL Balance</label><input type="number" id="balEL" value="0" min="0"></div>
+        </div>
+
+        <div class="row mb12">
+          <div><label>SL Balance</label><input type="number" id="balSL" value="0" min="0"></div>
+          <div><label>AL Balance</label><input type="number" id="balAL" value="0" min="0"></div>
+        </div>
+
+        <div class="row mb12">
+          <div><label>CL Balance</label><input type="number" id="balCL" value="0" min="0"></div>
+          <div><label>GH Balance</label><input type="number" id="balGH" value="0" min="0"></div>
+        </div>
+
+        <div class="mb12">
+          <label>Combined Relax Max (days admin approves)</label>
+          <input type="number" id="balCombinedMax" value="1" min="1" max="7">
+        </div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn-ghost" onclick="closeModal('staffModal')">Cancel</button>
@@ -474,7 +451,6 @@ try {
   console.log('[KIH] Firebase initialized');
 } catch(e){ console.error('[KIH] Firebase init failed:', e); }
 
-/* ---------- Global STATE ---------- */
 const STATE = {
   staff: {}, shifts: {}, leaveTypes: [], leaveLimits: {},
   weeklySetup: {}, periods: {}, roster: {}, leaves: {},
@@ -516,7 +492,6 @@ const DEFAULT_WEEKLY = {
   Holiday: { E:2, N:1, N12:1 }
 };
 
-/* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,'0');
 const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -560,7 +535,6 @@ function countSundays(startStr, endStr){
   return rangeDates(startStr, endStr).filter(d => parseYMD(d).getDay()===0).length;
 }
 
-/* ---------- Firebase Loaders ---------- */
 function loadAll(){
   if(!db){ console.warn('[KIH] no db, using demo data'); seedDemo(); return; }
 
@@ -597,17 +571,16 @@ function seedDemo(){
   STATE.leaveLimits = DEFAULT_LIMITS;
   STATE.weeklySetup = DEFAULT_WEEKLY;
   STATE.staff = {
-    s1:{_id:'s1',name:'Ali Khan',gender:'Male',fixedShift:'N',multiShifts:['N','N12','X'],specialOffDates:[],active:true},
-    s2:{_id:'s2',name:'Sara Ahmed',gender:'Female',fixedShift:'D',multiShifts:['D','E','E4'],specialOffDates:[],active:true},
-    s3:{_id:'s3',name:'Bilal Raza',gender:'Male',fixedShift:'D',multiShifts:['D','E','N'],specialOffDates:[],active:true},
-    s4:{_id:'s4',name:'Hina Malik',gender:'Female',fixedShift:'E',multiShifts:['E','E4','D'],specialOffDates:[],active:true}
+    s1:{_id:'s1',name:'Ali Khan',gender:'Male',fixedShift:'N',multiShifts:['N','N12','X'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:2}},
+    s2:{_id:'s2',name:'Sara Ahmed',gender:'Female',fixedShift:'D',multiShifts:['D','E','E4'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:1}},
+    s3:{_id:'s3',name:'Bilal Raza',gender:'Male',fixedShift:'D',multiShifts:['D','E','N'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:2}},
+    s4:{_id:'s4',name:'Hina Malik',gender:'Female',fixedShift:'E',multiShifts:['E','E4','D'],specialOffDates:[],active:true,balance:{OFF:5,PH:0,CPL:0,EL:0,SL:0,AL:0,CL:0,GH:0,combinedMax:1}}
   };
   renderStaff(); renderShifts(); renderLimits(); renderWeekly();
   renderLeaveTypeSelect(); renderFixedShiftSelect(); renderLeaveStaffSelect();
   renderHolidays(); renderLeaves(); renderAudit(); updateDash();
 }
 
-/* ---------- Navigation ---------- */
 function go(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const el = $('page-'+page); if(el) el.classList.add('active');
@@ -618,10 +591,8 @@ document.querySelectorAll('.nav-btn').forEach(b=>b.onclick = ()=>go(b.dataset.pa
 
 function closeModal(id){ $(id).classList.remove('show'); }
 
-/* ---------- Kick off ---------- */
 window.addEventListener('DOMContentLoaded', ()=>{
   loadAll();
-  // default dates
   const t = new Date();
   const first = new Date(t.getFullYear(), t.getMonth(), 1);
   const last  = new Date(t.getFullYear(), t.getMonth()+1, 0);
@@ -635,12 +606,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
    PART 4A — Wizard UI, staff/leave/holiday CRUD
    ============================================================ */
 
-/* ---------- WIZARD ---------- */
 const WIZ = {
   step:1, mode:'auto', start:'', end:'', dates:[],
   confirmedHolidays:{}, manual:{offs:[],leaves:[],gynee:[],shiftOverride:[],extendedDuty:[]},
   grid:{}, locked:{}, offCount:{}, phCount:{}, restDays:{},
-  conflictLog:[], warnings:[], cplConversions:[], log:[]
+  conflictLog:[], warnings:[], cplConversions:[], log:[],
+  weeklyLedger:{}, weeks:{}, _lastNightStaffId:null
 };
 
 function openWizard(){
@@ -649,6 +620,7 @@ function openWizard(){
   WIZ.manual = {offs:[],leaves:[],gynee:[],shiftOverride:[],extendedDuty:[]};
   WIZ.grid={}; WIZ.locked={}; WIZ.offCount={}; WIZ.phCount={}; WIZ.restDays={};
   WIZ.conflictLog=[]; WIZ.warnings=[]; WIZ.cplConversions=[]; WIZ.log=[];
+  WIZ.weeklyLedger={}; WIZ.weeks={}; WIZ._lastNightStaffId=null;
   showWizStep(1);
   $('wizardModal').classList.add('show');
 }
@@ -695,7 +667,7 @@ function wizBack(){
   if(WIZ.step<=1) return;
   let prev = WIZ.step-1;
   if(prev===4 && WIZ.mode!=='manual') prev = 3;
-  if(prev===5){ /* regenerate on re-enter */ WIZ.grid={}; }
+  if(prev===5){ WIZ.grid={}; WIZ.weeklyLedger={}; WIZ.weeks={}; WIZ._lastNightStaffId=null; }
   showWizStep(prev);
 }
 
@@ -730,7 +702,7 @@ function prefillManualOverrides(){
   $('wizShiftOv').value=''; $('wizExt').value='';
 }
 function parseManualOverrides(){
-  const parse = (txt, n) => txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(',').map(x=>x.trim()));
+  const parse = (txt) => txt.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(',').map(x=>x.trim()));
   WIZ.manual.offs = parse($('wizOffs').value);
   WIZ.manual.leaves = parse($('wizLeaves').value);
   WIZ.manual.gynee = parse($('wizGynee').value);
@@ -738,23 +710,27 @@ function parseManualOverrides(){
   WIZ.manual.extendedDuty = parse($('wizExt').value);
 }
 
-/* ---------- STAFF CRUD ---------- */
+/* ---------- STAFF CRUD (with balances) ---------- */
 function renderStaff(){
   const tbody = $('staffBody'); if(!tbody) return;
   const arr = Object.values(STATE.staff);
-  if(!arr.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted">No staff. Click Add.</td></tr>'; return; }
-  tbody.innerHTML = arr.map(s=>`
-    <tr>
+  if(!arr.length){ tbody.innerHTML = '<tr><td colspan="7" class="muted">No staff. Click Add.</td></tr>'; return; }
+  tbody.innerHTML = arr.map(s=>{
+    const b = s.balance || {};
+    const balStr = `OFF:${b.OFF??'-'} PH:${b.PH??'-'} CPL:${b.CPL??'-'} EL:${b.EL??'-'}`;
+    return `<tr>
       <td>${s.name||'-'}</td>
       <td><span class="chip ${(s.gender||'').toLowerCase()}">${s.gender||'-'}</span></td>
       <td>${s.fixedShift||'-'}</td>
       <td class="small">${(s.multiShifts||[]).join(',')||'-'}</td>
+      <td class="small">${balStr}</td>
       <td>${s.active?'<span style="color:var(--success)">Active</span>':'<span class="muted">Inactive</span>'}</td>
       <td>
         <button class="btn-ghost btn-sm" onclick="editStaff('${s._id}')">✏️</button>
         <button class="btn-danger btn-sm" onclick="deleteStaff('${s._id}')">🗑</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   updateDash();
 }
 function renderFixedShiftSelect(){
@@ -770,6 +746,11 @@ function openStaffModal(){
   $('staffId').value=''; $('staffName').value=''; $('staffGender').value='Male';
   $('staffFixed').value = Object.keys(STATE.shifts)[0]||'D';
   $('staffMulti').value=''; $('staffOffDates').value=''; $('staffActive').value='true';
+
+  $('balOFF').value = 5; $('balPH').value = 0; $('balCPL').value = 0;
+  $('balEL').value = 0; $('balSL').value = 0; $('balAL').value = 0;
+  $('balCL').value = 0; $('balGH').value = 0; $('balCombinedMax').value = 1;
+
   $('staffModalTitle').textContent='Add Staff';
   $('staffModal').classList.add('show');
 }
@@ -782,6 +763,18 @@ function editStaff(id){
   $('staffMulti').value = (s.multiShifts||[]).join(',');
   $('staffOffDates').value = (s.specialOffDates||[]).join(',');
   $('staffActive').value = String(s.active!==false);
+
+  const b = s.balance || {};
+  $('balOFF').value = b.OFF ?? 5;
+  $('balPH').value  = b.PH  ?? 0;
+  $('balCPL').value = b.CPL ?? 0;
+  $('balEL').value  = b.EL  ?? 0;
+  $('balSL').value  = b.SL  ?? 0;
+  $('balAL').value  = b.AL  ?? 0;
+  $('balCL').value  = b.CL  ?? 0;
+  $('balGH').value  = b.GH  ?? 0;
+  $('balCombinedMax').value = b.combinedMax ?? 1;
+
   $('staffModalTitle').textContent='Edit Staff';
   $('staffModal').classList.add('show');
 }
@@ -794,12 +787,24 @@ function saveStaff(){
     fixedShift: $('staffFixed').value,
     multiShifts: $('staffMulti').value.split(',').map(s=>s.trim()).filter(Boolean),
     specialOffDates: $('staffOffDates').value.split(',').map(s=>s.trim()).filter(Boolean),
-    active: $('staffActive').value==='true'
+    active: $('staffActive').value==='true',
+    balance: {
+      OFF: +$('balOFF').value || 0,
+      PH:  +$('balPH').value  || 0,
+      CPL: +$('balCPL').value || 0,
+      EL:  +$('balEL').value  || 0,
+      SL:  +$('balSL').value  || 0,
+      AL:  +$('balAL').value  || 0,
+      CL:  +$('balCL').value  || 0,
+      GH:  +$('balGH').value  || 0,
+      combinedMax: +$('balCombinedMax').value || 1
+    }
   };
   if(!data.name){ toast('Name required','err'); return; }
   if(!db){ STATE.staff[id]=data; renderStaff(); closeModal('staffModal'); toast('Saved (demo)'); return; }
   db.ref('staff/'+id).set(data).then(()=>{
-    toast('Staff saved','ok'); logAudit('staff.save', data.name);
+    toast('Staff saved with balances','ok');
+    logAudit('staff.save', data.name);
     closeModal('staffModal');
   }).catch(e=>{ toast('Save failed: '+e.message,'err'); console.error(e); });
 }
@@ -914,7 +919,15 @@ function updateDash(){
 <!-- ============ END OF PART 4A ============ -->
   <script>
 /* ============================================================
-   PART 4B — Generation Engine (MOST CRITICAL)
+   PART 4B — GENERATION ENGINE (Final, Complete)
+   ============================================================
+   Contains:
+   - Helpers: isHolidayDate, isSunday, isSaturday, isOffDay, shiftDef, etc.
+   - Weekly OFF ledger system
+   - Sunday-duty compensation with CPL fallback
+   - Night rotation with admin-approved relax types
+   - N12 priority rest (rotation aware)
+   - Fill shifts, auto-fix, adjustPH, finalize
    ============================================================ */
 
 function isHolidayDate(d){ return !!WIZ.confirmedHolidays[d]; }
@@ -932,11 +945,11 @@ function genderOK(staff, code){
   if(def.gender==='any') return true;
   return staff.gender === def.gender;
 }
-function activeStaff(){
-  return Object.values(STATE.staff).filter(s=>s.active!==false);
-}
+function activeStaff(){ return Object.values(STATE.staff).filter(s=>s.active!==false); }
 
-/* ---------- Wiz log ---------- */
+function prevDateStr(dateStr){ const d = parseYMD(dateStr); d.setDate(d.getDate()-1); return ymd(d); }
+function nextDateStr(dateStr){ const d = parseYMD(dateStr); d.setDate(d.getDate()+1); return ymd(d); }
+
 function wizLog(msg){
   WIZ.log.push(msg);
   const box = $('wizLog'); if(box){ box.innerHTML += `<div>• ${msg}</div>`; box.scrollTop = box.scrollHeight; }
@@ -946,59 +959,107 @@ function setProg(pct){
   if($('wizProgText')) $('wizProgText').textContent = Math.round(pct)+'%';
 }
 
-/* ---------- Main entry ---------- */
+/* ============================================================
+   WEEKLY LEDGER
+   ============================================================ */
+function buildWeeklyLedger(){
+  WIZ.weeklyLedger = {};
+  const weeks = {};
+  WIZ.dates.forEach(d=>{
+    const idx = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
+    if(!weeks[idx]) weeks[idx] = [];
+    weeks[idx].push(d);
+  });
+  WIZ.weeks = weeks;
+
+  activeStaff().forEach(s=>{
+    WIZ.weeklyLedger[s._id] = {};
+    Object.keys(weeks).forEach(wk=>{
+      WIZ.weeklyLedger[s._id][wk] = { required:1, given:0, pending:0 };
+    });
+  });
+  wizLog(`Weekly ledger: ${Object.keys(weeks).length} weeks × ${activeStaff().length} staff`);
+}
+function markWeekOffGiven(staffId, weekIdx){
+  if(!WIZ.weeklyLedger[staffId]) return;
+  if(!WIZ.weeklyLedger[staffId][weekIdx]) return;
+  WIZ.weeklyLedger[staffId][weekIdx].given++;
+  if(WIZ.weeklyLedger[staffId][weekIdx].given >= WIZ.weeklyLedger[staffId][weekIdx].required){
+    WIZ.weeklyLedger[staffId][weekIdx].pending = 0;
+  }
+}
+function computePendingFromLedger(){
+  activeStaff().forEach(s=>{
+    const ledger = WIZ.weeklyLedger[s._id] || {};
+    let carry = 0;
+    Object.keys(ledger).sort((a,b)=>a-b).forEach(wk=>{
+      const w = ledger[wk];
+      const need = w.required + carry;
+      w.pending = Math.max(0, need - w.given);
+      carry = w.pending;
+    });
+  });
+}
+function getWeekPriorityStaff(weekIdx){
+  return activeStaff()
+    .map(s=>{
+      const w = (WIZ.weeklyLedger[s._id]||{})[weekIdx] || {pending:0, required:1, given:0};
+      return { staff: s, pending: w.pending + (w.given===0 ? w.required : 0), offCount: WIZ.offCount[s._id]||0, givenThisWeek: w.given };
+    })
+    .sort((a,b)=>{
+      if(b.pending !== a.pending) return b.pending - a.pending;
+      return a.offCount - b.offCount;
+    });
+}
+
+/* ============================================================
+   MAIN ENTRY
+   ============================================================ */
 function wizStartGeneration(){
   $('wizLog').innerHTML = '';
   WIZ.log = [];
   WIZ.grid = {}; WIZ.locked = {}; WIZ.offCount = {}; WIZ.phCount = {}; WIZ.restDays = {};
   WIZ.conflictLog = []; WIZ.warnings = []; WIZ.cplConversions = [];
+  WIZ.weeklyLedger = {}; WIZ.weeks = {}; WIZ._lastNightStaffId = null;
 
   const staff = activeStaff();
   if(!staff.length){ WIZ.warnings.push('No active staff'); wizFinishGeneration(); return; }
 
-  // Init grid
   WIZ.dates.forEach(d=>{
     WIZ.grid[d] = {};
     WIZ.locked[d] = {};
     staff.forEach(s=>{ WIZ.grid[d][s._id] = ''; });
   });
-  staff.forEach(s=>{
-    WIZ.offCount[s._id] = 0;
-    WIZ.phCount[s._id] = 0;
-    WIZ.restDays[s._id] = 0;
-  });
+  staff.forEach(s=>{ WIZ.offCount[s._id]=0; WIZ.phCount[s._id]=0; WIZ.restDays[s._id]=0; });
 
   const offTarget = countSundays(WIZ.start, WIZ.end);
   WIZ.offTarget = offTarget;
   wizLog(`Period: ${WIZ.dates.length} days, ${offTarget} Sundays (OFF target = ${offTarget})`);
 
-  // Seed STATE.holidays from wizard confirmed
   Object.assign(STATE.holidays, WIZ.confirmedHolidays || {});
 
-  // 1) Special off dates locked
+  // Special off dates
   staff.forEach(s=>{
     (s.specialOffDates||[]).forEach(d=>{
       if(WIZ.grid[d] && WIZ.grid[d][s._id]!==undefined){
-        WIZ.grid[d][s._id] = 'OFF';
-        WIZ.locked[d][s._id] = true;
+        WIZ.grid[d][s._id]='OFF';
+        WIZ.locked[d][s._id]=true;
       }
     });
   });
 
-  // 2) Manual overrides
+  // Manual overrides
   if(WIZ.mode==='manual'){
     const nameToId = {}; staff.forEach(s=>nameToId[s.name.toLowerCase()] = s._id);
     const resolve = (name) => nameToId[String(name).toLowerCase()];
-
     WIZ.manual.offs.forEach(([n,d])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]='OFF'; WIZ.locked[d][id]=true; }});
     WIZ.manual.leaves.forEach(([n,d,t])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]=t||'CL'; WIZ.locked[d][id]=true; }});
     WIZ.manual.gynee.forEach(([n,d])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]='CPL'; WIZ.locked[d][id]=true; }});
     WIZ.manual.shiftOverride.forEach(([n,d,c])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]=c; WIZ.locked[d][id]=true; }});
     WIZ.manual.extendedDuty.forEach(([n,d,c])=>{ const id=resolve(n); if(id&&WIZ.grid[d]){ WIZ.grid[d][id]=c||'N'; WIZ.locked[d][id]=true; }});
-    wizLog('Manual overrides applied');
   }
 
-  // 3) Approved leaves
+  // Approved leaves
   Object.values(STATE.leaves||{}).forEach(l=>{
     if(l.status!=='approved') return;
     const d1 = parseYMD(l.startDate), d2 = parseYMD(l.endDate);
@@ -1012,37 +1073,59 @@ function wizStartGeneration(){
       d.setDate(d.getDate()+1);
     }
   });
-  wizLog('Approved leaves applied');
 
-  // 4) Distribute OFF days
+  // OFF distribution
   assignOFFToAllStaff();
 
-  // 5) Day-by-day processing
   WIZ.currentDayIndex = 0;
-  WIZ.dates.forEach(d=>{ WIZ.locked[d] = WIZ.locked[d] || {}; });
-
   setTimeout(processNextDay, 20);
 }
 
-/* ---------- OFF distribution ---------- */
+/* ============================================================
+   ASSIGN OFF TO ALL STAFF
+   ============================================================ */
 function assignOFFToAllStaff(){
+  buildWeeklyLedger();
   const staff = activeStaff();
   const offTarget = WIZ.offTarget;
 
-  // Categorize dates
-  const sundays = WIZ.dates.filter(d=>isSunday(d) && !isHolidayDate(d));
-  const holidays = WIZ.dates.filter(d=>isHolidayDate(d));
-  const saturdays = WIZ.dates.filter(d=>isSaturday(d) && !isHolidayDate(d) && !isSunday(d));
-  const weekdays = WIZ.dates.filter(d=>!isSunday(d)&&!isSaturday(d)&&!isHolidayDate(d));
-
-  // Pass 1: Sundays — give OFF to everyone
-  staff.forEach(s=>{
-    sundays.forEach(d=>{
-      if(WIZ.grid[d][s._id] === ''){ WIZ.grid[d][s._id]='OFF'; WIZ.locked[d][s._id]=true; WIZ.offCount[s._id]++; }
+  // PASS 1 — Sundays
+  const sundays = WIZ.dates.filter(d => isSunday(d) && !isHolidayDate(d));
+  sundays.forEach(sunday=>{
+    const sundayNeed = STATE.weeklySetup?.Sunday || {};
+    let sundayRequired = 0;
+    Object.entries(sundayNeed).forEach(([code,count])=>{
+      if(shiftActiveOn(code, sunday)) sundayRequired += count;
     });
+    const maxOffSunday = Math.max(0, staff.length - sundayRequired);
+    const sundayOffLimit = (STATE.leaveLimits?.Sunday?.OFF) ?? maxOffSunday;
+    const allowedOff = Math.min(maxOffSunday, sundayOffLimit);
+
+    const eligible = staff
+      .filter(s=>{
+        if(WIZ.locked[sunday][s._id]) return false;
+        if(WIZ.grid[sunday][s._id] !== '') return false;
+        const prevDay = prevDateStr(sunday);
+        const prevShift = WIZ.grid[prevDay] ? WIZ.grid[prevDay][s._id] : '';
+        return !(prevShift === 'N' || prevShift === 'N12');
+      })
+      .sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
+
+    let given = 0;
+    for(const s of eligible){
+      if(given >= allowedOff) break;
+      WIZ.grid[sunday][s._id]='OFF';
+      WIZ.locked[sunday][s._id]=true;
+      WIZ.offCount[s._id]++;
+      const wk = Math.floor((parseYMD(sunday) - parseYMD(WIZ.start)) / (7*86400000));
+      markWeekOffGiven(s._id, wk);
+      given++;
+    }
+    wizLog(`Sunday ${sunday}: ${given}/${allowedOff} OFF (${sundayRequired} duty)`);
   });
 
-  // Pass 2: Holidays — give PH (1 per staff per holiday) if not already set
+  // PASS 2 — Holidays → PH
+  const holidays = WIZ.dates.filter(d=>isHolidayDate(d));
   holidays.forEach(d=>{
     const limitHolidayOff = (STATE.leaveLimits?.Holiday?.OFF) || staff.length;
     let given = 0;
@@ -1052,12 +1135,13 @@ function assignOFFToAllStaff(){
       if(given >= limitHolidayOff) return;
       WIZ.grid[d][s._id]='PH';
       WIZ.locked[d][s._id]=true;
-      WIZ.phCount[s._id] = (WIZ.phCount[s._id]||0)+1;
+      WIZ.phCount[s._id]++;
       given++;
     });
   });
 
-  // Pass 3: Saturdays — up to leaveLimits.Saturday.OFF
+  // PASS 3 — Saturdays (extra)
+  const saturdays = WIZ.dates.filter(d=>isSaturday(d) && !isHolidayDate(d) && !isSunday(d));
   const satLimit = (STATE.leaveLimits?.Saturday?.OFF) ?? 2;
   saturdays.forEach(d=>{
     let count = staff.filter(s=>WIZ.grid[d][s._id]==='OFF').length;
@@ -1065,11 +1149,17 @@ function assignOFFToAllStaff(){
                        .sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
     for(const s of sorted){
       if(count >= satLimit) break;
-      WIZ.grid[d][s._id]='OFF'; WIZ.locked[d][s._id]=true; WIZ.offCount[s._id]++; count++;
+      WIZ.grid[d][s._id]='OFF';
+      WIZ.locked[d][s._id]=true;
+      WIZ.offCount[s._id]++;
+      count++;
+      const wk = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
+      markWeekOffGiven(s._id, wk);
     }
   });
 
-  // Pass 4: Weekdays — up to leaveLimits.<Day>.OFF
+  // PASS 4 — Weekdays (extra)
+  const weekdays = WIZ.dates.filter(d=>!isSunday(d)&&!isSaturday(d)&&!isHolidayDate(d));
   weekdays.forEach(d=>{
     const dayKey = dayName(parseYMD(d));
     const limit = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
@@ -1078,15 +1168,19 @@ function assignOFFToAllStaff(){
                        .sort((a,b)=>(WIZ.offCount[a._id]||0)-(WIZ.offCount[b._id]||0));
     for(const s of sorted){
       if(count >= limit) break;
-      WIZ.grid[d][s._id]='OFF'; WIZ.locked[d][s._id]=true; WIZ.offCount[s._id]++; count++;
+      WIZ.grid[d][s._id]='OFF';
+      WIZ.locked[d][s._id]=true;
+      WIZ.offCount[s._id]++;
+      count++;
+      const wk = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
+      markWeekOffGiven(s._id, wk);
     }
   });
 
-  // Top-up: any staff still below offTarget
+  // PASS 5 — Top-up
   staff.forEach(s=>{
     let safety = 0;
     while((WIZ.offCount[s._id]||0) < offTarget && safety++ < 200){
-      // find a date where s is not locked and current OFF count < relax limit
       const candidates = WIZ.dates.filter(d=>{
         if(WIZ.locked[d][s._id]) return false;
         if(WIZ.grid[d][s._id] === 'OFF') return false;
@@ -1096,20 +1190,339 @@ function assignOFFToAllStaff(){
         return cur < lim;
       });
       if(!candidates.length) break;
-      // pick date with fewest existing OFFs
       candidates.sort((a,b)=>
         staff.filter(x=>WIZ.grid[a][x._id]==='OFF').length -
         staff.filter(x=>WIZ.grid[b][x._id]==='OFF').length
       );
-      const d = candidates[0];
-      WIZ.grid[d][s._id]='OFF'; WIZ.locked[d][s._id]=true; WIZ.offCount[s._id]++;
+      const pick = candidates[0];
+      WIZ.grid[pick][s._id]='OFF';
+      WIZ.locked[pick][s._id]=true;
+      WIZ.offCount[s._id]++;
+      const wk = Math.floor((parseYMD(pick) - parseYMD(WIZ.start)) / (7*86400000));
+      markWeekOffGiven(s._id, wk);
     }
   });
 
-  wizLog('OFF days assigned');
+  // PASS 6 — Sunday compensation (CPL fallback)
+  applySundayCompensation();
+
+  // PASS 7 — Weekly OFF enforcer fallback
+  enforceWeeklyOFF();
+
+  // PASS 8 — Night rotation
+  assignNightRotation();
+
+  wizLog('✅ OFF + compensation + weekly + night rotation complete');
 }
 
-/* ---------- Day processing ---------- */
+/* ============================================================
+   SUNDAY COMPENSATION (with CPL fallback)
+   ============================================================ */
+function applySundayCompensation(){
+  const staff = activeStaff();
+  if(!WIZ.weeks) return;
+
+  const sundays = WIZ.dates.filter(d => isSunday(d) && !isHolidayDate(d));
+  const weekKeysSorted = Object.keys(WIZ.weeks).sort((a,b)=>Number(a)-Number(b));
+
+  staff.forEach(s=>{
+    sundays.forEach(sunday=>{
+      if(WIZ.grid[sunday][s._id] === 'OFF') return;
+      const cell = WIZ.grid[sunday][s._id];
+      if(['PH','CL','SL','AL','ML','CPL','GH'].includes(cell)) return;
+
+      const wk = Math.floor((parseYMD(sunday) - parseYMD(WIZ.start)) / (7*86400000));
+      const currentWeek = WIZ.weeks[wk] || [];
+      const wkIdxPos = weekKeysSorted.indexOf(String(wk));
+      const nextWeekKey = (wkIdxPos>=0 && wkIdxPos<weekKeysSorted.length-1) ? weekKeysSorted[wkIdxPos+1] : null;
+      const nextWeek = nextWeekKey ? WIZ.weeks[nextWeekKey] : [];
+
+      const searchSpace = [
+        ...currentWeek.filter(d => !isSunday(d) && !isHolidayDate(d) && d !== sunday),
+        ...nextWeek.filter(d => !isSunday(d) && !isHolidayDate(d))
+      ];
+
+      const candidates = searchSpace.filter(d=>{
+        if(!WIZ.grid[d]) return false;
+        if(WIZ.locked[d][s._id]) return false;
+        if(WIZ.grid[d][s._id] === 'OFF') return false;
+        if(['PH','CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[d][s._id])) return false;
+        const dayKey = isHolidayDate(d)?'Holiday':dayName(parseYMD(d));
+        const lim = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
+        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
+        return cur < lim;
+      });
+
+      // Case A: Alternate OFF available
+      if(candidates.length){
+        candidates.sort((a,b)=>{
+          const aScore = isSaturday(a) ? 0 : (parseYMD(a).getDay() === 1 ? 1 : 2);
+          const bScore = isSaturday(b) ? 0 : (parseYMD(b).getDay() === 1 ? 1 : 2);
+          if(aScore !== bScore) return aScore - bScore;
+          return parseYMD(a) - parseYMD(b);
+        });
+        const pick = candidates[0];
+        WIZ.grid[pick][s._id]='OFF';
+        WIZ.locked[pick][s._id]=true;
+        WIZ.offCount[s._id]++;
+        markWeekOffGiven(s._id, wk);
+        WIZ.conflictLog.push(`Sunday comp: ${s.name} (${sunday}) → OFF ${pick}`);
+        wizLog(`Comp: ${s.name} Sun ${sunday} → OFF ${pick}`);
+        return;
+      }
+
+      // Case B: Month-wide search
+      const monthWide = WIZ.dates.filter(d=>{
+        if(isSunday(d)) return false;
+        if(isHolidayDate(d)) return false;
+        if(!WIZ.grid[d]) return false;
+        if(WIZ.locked[d][s._id]) return false;
+        if(WIZ.grid[d][s._id] === 'OFF') return false;
+        if(['PH','CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[d][s._id])) return false;
+        const dayKey = dayName(parseYMD(d));
+        const lim = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
+        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
+        return cur < lim;
+      });
+
+      if(monthWide.length){
+        monthWide.sort((a,b)=>parseYMD(a) - parseYMD(b));
+        const pick = monthWide[0];
+        WIZ.grid[pick][s._id]='OFF';
+        WIZ.locked[pick][s._id]=true;
+        WIZ.offCount[s._id]++;
+        WIZ.conflictLog.push(`Sunday comp (late): ${s.name} (${sunday}) → OFF ${pick}`);
+        wizLog(`Late comp: ${s.name} Sun ${sunday} → OFF ${pick}`);
+        return;
+      }
+
+      // Case C: No slot → CPL (next month)
+      WIZ.cplConversions.push({
+        staffId: s._id, staffName: s.name, days: 1,
+        reason: `Sunday duty ${sunday} — no OFF slot (shortage)`,
+        sundayDate: sunday, month: WIZ.start.slice(0,7), createdAt: Date.now()
+      });
+      WIZ.conflictLog.push(`CPL fallback: ${s.name} Sun ${sunday} → 1 CPL next month`);
+      wizLog(`⚠️ CPL: ${s.name} Sun ${sunday} — no slot`);
+    });
+  });
+}
+
+/* ============================================================
+   WEEKLY OFF ENFORCER (fallback)
+   ============================================================ */
+function enforceWeeklyOFF(){
+  const staff = activeStaff();
+  if(!WIZ.weeks) return;
+
+  Object.keys(WIZ.weeks).sort((a,b)=>Number(a)-Number(b)).forEach(wk=>{
+    const weekDates = WIZ.weeks[wk];
+    const priorities = getWeekPriorityStaff(wk);
+
+    priorities.forEach(item=>{
+      const s = item.staff;
+      const given = weekDates.filter(d => WIZ.grid[d][s._id] === 'OFF').length;
+      if(given >= 1) return;
+
+      const candidates = weekDates.filter(d=>{
+        if(WIZ.locked[d][s._id]) return false;
+        if(WIZ.grid[d][s._id] === 'OFF') return false;
+        if(['PH','CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[d][s._id])) return false;
+        const dayKey = isHolidayDate(d)?'Holiday':dayName(parseYMD(d));
+        const lim = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
+        const cur = staff.filter(x=>WIZ.grid[d][x._id]==='OFF').length;
+        return cur < lim;
+      });
+
+      if(candidates.length){
+        candidates.sort((a,b)=>parseYMD(a) - parseYMD(b));
+        const pick = candidates[0];
+        WIZ.grid[pick][s._id]='OFF';
+        WIZ.locked[pick][s._id]=true;
+        WIZ.offCount[s._id]++;
+        markWeekOffGiven(s._id, wk);
+        WIZ.conflictLog.push(`Weekly OFF fallback: ${s.name} on ${pick}`);
+      } else {
+        WIZ.warnings.push(`Weekly OFF missing: ${s.name} week ${wk}`);
+      }
+    });
+  });
+
+  computePendingFromLedger();
+}
+
+/* ============================================================
+   NIGHT ROTATION (with admin-approved relax types)
+   ============================================================ */
+function getStaffBalance(staff, type){
+  const b = staff.balance || {};
+  if(type === 'OFF'){
+    const adminOff = b.OFF ?? (WIZ.offTarget || 0);
+    const used = WIZ.offCount[staff._id] || 0;
+    return Math.max(0, adminOff - used);
+  }
+  if(type === 'PH'){
+    const usedPH = WIZ.phCount[staff._id] || 0;
+    return Math.max(0, (b.PH ?? 0) - usedPH);
+  }
+  return b[type] ?? 0;
+}
+
+function assignNightRotation(){
+  const staff = activeStaff();
+  const nightCapable = staff.filter(s =>
+    s.fixedShift === 'N' || s.fixedShift === 'N12' ||
+    (s.multiShifts||[]).some(c => c==='N' || c==='N12')
+  );
+  if(!nightCapable.length){ wizLog('⚠️ No night-capable staff'); return; }
+
+  const weeks = {};
+  WIZ.dates.forEach(d=>{
+    const idx = Math.floor((parseYMD(d) - parseYMD(WIZ.start)) / (7*86400000));
+    if(!weeks[idx]) weeks[idx] = [];
+    weeks[idx].push(d);
+  });
+
+  Object.keys(weeks).sort((a,b)=>a-b).forEach(wk=>{
+    const weekDates = weeks[wk].filter(d => !isSunday(d) && !isHolidayDate(d));
+    if(!weekDates.length) return;
+
+    const eligible = nightCapable
+      .map(s => ({ staff: s, balance: getStaffBalance(s, 'OFF'), didLastWeek: s._id === WIZ._lastNightStaffId }))
+      .filter(x => x.balance > 0 && !x.didLastWeek)
+      .sort((a,b) => b.balance - a.balance);
+
+    if(!eligible.length){
+      wizLog(`Week ${wk}: ⚠️ No night-capable staff with balance → E/E4`);
+      nightCapable.forEach(s=>{
+        weekDates.forEach(d=>{
+          if(WIZ.grid[d][s._id] !== '' || WIZ.locked[d][s._id]) return;
+          if(shiftActiveOn('E4', d) && s.gender === 'Female') WIZ.grid[d][s._id] = 'E4';
+          else if(shiftActiveOn('E', d) && genderOK(s,'E'))  WIZ.grid[d][s._id] = 'E';
+        });
+      });
+      return;
+    }
+
+    const nightStaffThisWeek = eligible[0].staff;
+    const previousNightStaff = WIZ._lastNightStaffId
+      ? staff.find(s => s._id === WIZ._lastNightStaffId) : null;
+
+    let assigned = 0;
+    weekDates.forEach(d=>{
+      if(WIZ.grid[d][nightStaffThisWeek._id] === '' && !WIZ.locked[d][nightStaffThisWeek._id]){
+        WIZ.grid[d][nightStaffThisWeek._id] = 'N';
+        assigned++;
+      }
+    });
+    wizLog(`Week ${wk}: ${nightStaffThisWeek.name} → ${assigned} nights`);
+    WIZ.conflictLog.push(`Week ${wk}: ${nightStaffThisWeek.name} night (replaces ${previousNightStaff?.name||'—'})`);
+
+    if(previousNightStaff && previousNightStaff._id !== nightStaffThisWeek._id){
+      applyApprovedRelax(previousNightStaff, weekDates, wk);
+    }
+
+    const lastWeekDay = weekDates[weekDates.length-1];
+    const afterWeek = nextDateStr(lastWeekDay);
+    if(WIZ.grid[afterWeek] && !WIZ.locked[afterWeek][nightStaffThisWeek._id]){
+      if(WIZ.grid[afterWeek][nightStaffThisWeek._id] === ''){
+        const dayKey = isHolidayDate(afterWeek)?'Holiday':dayName(parseYMD(afterWeek));
+        const lim = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
+        const curOff = staff.filter(x=>WIZ.grid[afterWeek][x._id]==='OFF').length;
+        if(curOff < lim){
+          WIZ.grid[afterWeek][nightStaffThisWeek._id]='OFF';
+          WIZ.locked[afterWeek][nightStaffThisWeek._id]=true;
+          WIZ.offCount[nightStaffThisWeek._id]++;
+          WIZ.conflictLog.push(`Transition OFF: ${nightStaffThisWeek.name} on ${afterWeek}`);
+        } else if(shiftActiveOn('E', afterWeek) && genderOK(nightStaffThisWeek,'E')){
+          WIZ.grid[afterWeek][nightStaffThisWeek._id]='E';
+        }
+      }
+    }
+
+    eligible.slice(1).forEach(item=>{
+      const s = item.staff;
+      weekDates.forEach(d=>{
+        if(WIZ.grid[d][s._id] !== '' || WIZ.locked[d][s._id]) return;
+        if(shiftActiveOn('E4', d) && s.gender === 'Female') WIZ.grid[d][s._id] = 'E4';
+        else if(shiftActiveOn('E', d) && genderOK(s,'E'))  WIZ.grid[d][s._id] = 'E';
+      });
+    });
+
+    WIZ._lastNightStaffId = nightStaffThisWeek._id;
+  });
+
+  wizLog(`Night rotation complete. Last: ${WIZ._lastNightStaffId||'none'}`);
+}
+
+function applyApprovedRelax(staff, weekDates, wk){
+  const b = staff.balance || {};
+  const combinedMax = b.combinedMax ?? 1;
+  const priority = ['OFF','PH','CPL','EL','AL','CL','SL','GH'];
+
+  let totalAvailable = 0;
+  priority.forEach(t=>{ totalAvailable += getStaffBalance(staff, t); });
+  const combinedDays = Math.min(combinedMax, totalAvailable, weekDates.length);
+
+  if(combinedDays <= 0){ wizLog(`Week ${wk}: ${staff.name} — no relax balance`); return; }
+  wizLog(`Week ${wk}: ${staff.name} → combined relax ${combinedDays} days`);
+
+  const candidates = [...weekDates];
+  const lastDay = weekDates[weekDates.length-1];
+  WIZ.dates.forEach(d=>{
+    const diff = (parseYMD(d) - parseYMD(lastDay)) / 86400000;
+    if(diff > 0 && diff <= 7) candidates.push(d);
+  });
+
+  let relaxGiven = 0;
+  for(const d of candidates){
+    if(relaxGiven >= combinedDays) break;
+    if(!WIZ.grid[d]) continue;
+    if(WIZ.locked[d][staff._id]) continue;
+    const cur = WIZ.grid[d][staff._id];
+    if(cur !== '' && cur !== 'X') continue;
+
+    const type = pickApprovedRelaxType(staff, d);
+    if(!type) continue;
+
+    if(type === 'OFF'){
+      const dayKey = isHolidayDate(d)?'Holiday':dayName(parseYMD(d));
+      const lim = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
+      const curOff = activeStaff().filter(x=>WIZ.grid[d][x._id]==='OFF').length;
+      if(curOff >= lim){
+        const alt = pickApprovedRelaxType(staff, d, true);
+        if(alt){ applyRelaxCell(staff, d, alt); relaxGiven++; }
+        continue;
+      }
+    }
+    applyRelaxCell(staff, d, type);
+    relaxGiven++;
+  }
+  wizLog(`Week ${wk}: ${staff.name} → ${relaxGiven} relax days given`);
+}
+
+function pickApprovedRelaxType(staff, date, skipOFF){
+  const priority = skipOFF ? ['PH','CPL','EL','AL','CL','SL','GH'] : ['OFF','PH','CPL','EL','AL','CL','SL','GH'];
+  for(const t of priority){ if(getStaffBalance(staff, t) > 0) return t; }
+  return null;
+}
+
+function applyRelaxCell(staff, date, type){
+  WIZ.grid[date][staff._id] = type;
+  WIZ.locked[date][staff._id] = true;
+
+  if(type === 'OFF') WIZ.offCount[staff._id] = (WIZ.offCount[staff._id]||0) + 1;
+  if(type === 'PH')  WIZ.phCount[staff._id]  = (WIZ.phCount[staff._id]||0) + 1;
+
+  if(!staff.balance) staff.balance = {};
+  staff.balance[type] = Math.max(0, (staff.balance[type] || 0) - 1);
+
+  WIZ.conflictLog.push(`Relax ${type}: ${staff.name} on ${date}`);
+}
+
+/* ============================================================
+   DAY-BY-DAY PROCESSING
+   ============================================================ */
 function processNextDay(){
   if(WIZ.currentDayIndex >= WIZ.dates.length){
     adjustPHForDutyStaff();
@@ -1127,48 +1540,41 @@ function processDay(date){
   const isOff = isOffDay(date);
   const dayKey = isHolidayDate(date) ? 'Holiday' : dayName(parseYMD(date));
   const need = STATE.weeklySetup?.[dayKey] || {};
-
   applyN12PriorityRest(date);
   fillDayShifts(date, need, isOff);
   autoFixMissingShifts(date, need, isOff);
 }
 
-/* ---------- N/N12 next-day rest ---------- */
 function applyN12PriorityRest(date){
   const prev = prevDateStr(date);
   if(!WIZ.grid[prev]) return;
+
   activeStaff().forEach(s=>{
     const prevShift = WIZ.grid[prev][s._id];
-    if(prevShift!=='N' && prevShift!=='N12') return;
+    if(prevShift !== 'N' && prevShift !== 'N12') return;
     if(WIZ.locked[date][s._id]) return;
-    if(WIZ.grid[date][s._id]==='OFF' || WIZ.grid[date][s._id]==='PH' || /^[A-Z]+$/.test(WIZ.grid[date][s._id]) && ['CL','SL','AL','ML','CPL','GH'].includes(WIZ.grid[date][s._id])) return;
+    if(WIZ.grid[date][s._id] !== '') return;
 
-    // Try OFF first
+    const nextDay = nextDateStr(date);
+    const nextIsNight = WIZ.grid[nextDay] && ['N','N12'].includes(WIZ.grid[nextDay][s._id]);
+    if(nextIsNight) return;
+
     const dayKey = isHolidayDate(date)?'Holiday':dayName(parseYMD(date));
     const limit = (STATE.leaveLimits?.[dayKey]?.OFF) ?? 1;
     const curOff = activeStaff().filter(x=>WIZ.grid[date][x._id]==='OFF').length;
-    if(WIZ.grid[date][s._id]==='' && curOff < limit){
+
+    if(curOff < limit){
       WIZ.grid[date][s._id]='OFF';
       WIZ.locked[date][s._id]=true;
-      WIZ.offCount[s._id] = (WIZ.offCount[s._id]||0)+1;
-      WIZ.conflictLog.push(`N-rest OFF: ${s.name} on ${date}`);
-      return;
-    }
-    // else E (early)
-    if(WIZ.grid[date][s._id]==='' && shiftActiveOn('E', date) && genderOK(s,'E')){
+      WIZ.offCount[s._id]++;
+      WIZ.conflictLog.push(`Post-night OFF: ${s.name} on ${date}`);
+    } else if(shiftActiveOn('E', date) && genderOK(s,'E')){
       WIZ.grid[date][s._id]='E';
-      WIZ.conflictLog.push(`N-rest→E: ${s.name} on ${date}`);
+      WIZ.conflictLog.push(`Post-night → E: ${s.name} on ${date}`);
     }
   });
 }
 
-function prevDateStr(dateStr){
-  const d = parseYMD(dateStr);
-  d.setDate(d.getDate()-1);
-  return ymd(d);
-}
-
-/* ---------- Fill shifts ---------- */
 function fillDayShifts(date, need, isOff){
   const staff = activeStaff();
   const codes = Object.keys(need).filter(c=>shiftActiveOn(c, date));
@@ -1178,13 +1584,11 @@ function fillDayShifts(date, need, isOff){
     let assigned = staff.filter(s=>WIZ.grid[date][s._id]===code).length;
     if(assigned >= required) return;
 
-    // eligible free staff
     const free = staff.filter(s=>
       WIZ.grid[date][s._id]==='' &&
       !WIZ.locked[date][s._id] &&
       genderOK(s, code)
     );
-    // sort: fixedShift first, then multiShifts contains, then others
     free.sort((a,b)=>{
       const aFix = a.fixedShift===code ? 0 : 1;
       const bFix = b.fixedShift===code ? 0 : 1;
@@ -1201,15 +1605,11 @@ function fillDayShifts(date, need, isOff){
     }
   });
 
-  // Remaining → X (standby)
   staff.forEach(s=>{
-    if(WIZ.grid[date][s._id]===''){
-      WIZ.grid[date][s._id] = 'X';
-    }
+    if(WIZ.grid[date][s._id]==='') WIZ.grid[date][s._id] = 'X';
   });
 }
 
-/* ---------- Auto-fix missing shifts ---------- */
 function autoFixMissingShifts(date, need, isOff){
   const staff = activeStaff();
   const codes = Object.keys(need).filter(c=>shiftActiveOn(c, date));
@@ -1220,7 +1620,6 @@ function autoFixMissingShifts(date, need, isOff){
     if(assigned >= required) return;
     let short = required - assigned;
 
-    // 1) Convert X staff
     const xStaff = staff.filter(s=>WIZ.grid[date][s._id]==='X' && genderOK(s, code));
     for(const s of xStaff){
       if(short<=0) break;
@@ -1229,7 +1628,6 @@ function autoFixMissingShifts(date, need, isOff){
     }
     if(short<=0) return;
 
-    // 2) Convert less-critical shifts (only if source stays above its requirement)
     const donors = ['E4','D','X','N12','N'];
     for(const donor of donors){
       if(short<=0) break;
@@ -1238,14 +1636,13 @@ function autoFixMissingShifts(date, need, isOff){
       for(const s of donorStaff){
         if(short<=0) break;
         const stillAssigned = staff.filter(x=>WIZ.grid[date][x._id]===donor && x._id!==s._id).length;
-        if(donorReq>0 && stillAssigned < donorReq) continue; // would break donor
+        if(donorReq>0 && stillAssigned < donorReq) continue;
         WIZ.grid[date][s._id]=code; short--;
         WIZ.conflictLog.push(`${donor}→${code}: ${s.name} on ${date}`);
       }
     }
     if(short<=0) return;
 
-    // 3) Force convert anyone except OFF/PH/Leave
     const reserved = ['OFF','PH','CL','SL','AL','ML','CPL','GH'];
     const anyone = staff.filter(s=>
       !reserved.includes(WIZ.grid[date][s._id]) &&
@@ -1260,7 +1657,6 @@ function autoFixMissingShifts(date, need, isOff){
   });
 }
 
-/* ---------- PH adjustment for duty staff ---------- */
 function adjustPHForDutyStaff(){
   const staff = activeStaff();
   const holidayDates = WIZ.dates.filter(d=>isHolidayDate(d));
@@ -1278,28 +1674,27 @@ function adjustPHForDutyStaff(){
     let missing = needed - given;
     if(missing <= 0) return;
 
-    // Try give PH on non-holiday days (replace X or free)
     const candidates = WIZ.dates.filter(d=>!isHolidayDate(d) && WIZ.grid[d][s._id]==='X');
     for(const d of candidates){
       if(missing<=0) break;
       WIZ.grid[d][s._id]='PH';
       WIZ.locked[d][s._id]=true;
-      WIZ.phCount[s._id]=(WIZ.phCount[s._id]||0)+1;
+      WIZ.phCount[s._id]++;
       missing--;
       WIZ.conflictLog.push(`PH compensate: ${s.name} on ${d}`);
     }
-    // Remaining → CPL conversion
     while(missing>0){
-      WIZ.cplConversions.push({ staffId:s._id, staffName:s.name, days:1, reason:'PH not available' });
+      WIZ.cplConversions.push({ staffId:s._id, staffName:s.name, days:1, reason:'PH not available', month:WIZ.start.slice(0,7), createdAt:Date.now() });
       missing--;
     }
   });
 }
 
-/* ---------- Finalize ---------- */
+/* ============================================================
+   FINALIZE
+   ============================================================ */
 function finalizeGeneration(){
   setProg(95);
-  // Recompute off counts
   Object.keys(WIZ.offCount).forEach(k=>WIZ.offCount[k]=0);
   WIZ.dates.forEach(d=>{
     activeStaff().forEach(s=>{
@@ -1309,14 +1704,34 @@ function finalizeGeneration(){
 
   const staff = activeStaff();
   const offTarget = WIZ.offTarget;
-  const holidayDates = WIZ.dates.filter(d=>isHolidayDate(d));
 
   staff.forEach(s=>{
     if((WIZ.offCount[s._id]||0) !== offTarget)
       WIZ.warnings.push(`OFF mismatch: ${s.name} has ${WIZ.offCount[s._id]||0}, target ${offTarget}`);
-    const ph = WIZ.phCount[s._id] || 0;
-    if(holidayDates.length && ph===0 && WIZ.cplConversions.filter(c=>c.staffId===s._id).length===0)
-      WIZ.warnings.push(`No PH for ${s.name}`);
+  });
+
+  // Weekly OFF check
+  Object.keys(WIZ.weeklyLedger||{}).forEach(sid=>{
+    const s = STATE.staff[sid];
+    Object.entries(WIZ.weeklyLedger[sid]).forEach(([wk,w])=>{
+      if(w.given === 0) WIZ.warnings.push(`Weekly OFF missing: ${s?.name} week ${wk}`);
+    });
+  });
+
+  // Sunday compensation check
+  const sundays = WIZ.dates.filter(d=>isSunday(d) && !isHolidayDate(d));
+  sundays.forEach(sunday=>{
+    staff.forEach(s=>{
+      const cell = WIZ.grid[sunday][s._id];
+      if(cell === 'OFF' || ['PH','CL','SL','AL','ML','CPL','GH'].includes(cell)) return;
+      const wk = Math.floor((parseYMD(sunday) - parseYMD(WIZ.start)) / (7*86400000));
+      const weekDates = WIZ.weeks[wk] || [];
+      const offInWeek = weekDates.filter(d => WIZ.grid[d][s._id] === 'OFF').length;
+      if(offInWeek === 0){
+        const hasCPL = WIZ.cplConversions.some(c=>c.staffId===s._id && c.sundayDate===sunday);
+        if(!hasCPL) WIZ.warnings.push(`Sunday duty without compensation: ${s.name} (${sunday})`);
+      }
+    });
   });
 
   // Empty cells
@@ -1343,7 +1758,6 @@ function finalizeGeneration(){
 
 function wizFinishGeneration(){ setProg(100); renderWizPreview(); showWizStep(6); }
 
-/* ---------- Preview ---------- */
 function renderWizPreview(){
   const staff = activeStaff();
   const summary = `
@@ -1364,7 +1778,6 @@ function renderWizPreview(){
   }
   $('wizWarnings').innerHTML = wHtml;
 
-  // Grid
   let html = '<table class="roster-tbl"><thead><tr><th class="sticky">Staff</th>';
   WIZ.dates.forEach(d=>{ html += `<th>${d.slice(5)}</th>`; });
   html += '</tr></thead><tbody>';
@@ -1372,7 +1785,6 @@ function renderWizPreview(){
     html += `<tr><td class="sticky">${s.name}</td>`;
     WIZ.dates.forEach(d=>{
       const sh = WIZ.grid[d][s._id] || '';
-      const cls = sh.startsWith('cell-') ? sh : 'cell-'+sh;
       html += `<td class="cell-${sh||'X'}">${sh||'-'}</td>`;
     });
     html += '</tr>';
@@ -1381,7 +1793,9 @@ function renderWizPreview(){
   $('wizPreview').innerHTML = html;
 }
 
-/* ---------- Save ---------- */
+/* ============================================================
+   SAVE
+   ============================================================ */
 function wizSaveRoster(){
   if(WIZ.warnings.length){
     toast('Cannot save — '+WIZ.warnings.length+' warnings','err');
@@ -1393,10 +1807,7 @@ function wizSaveRoster(){
   const label = WIZ.start+' → '+WIZ.end;
 
   const updates = {};
-  updates['periods/'+pid] = {
-    start: WIZ.start, end: WIZ.end, label,
-    createdAt: Date.now(), seenBy: {}
-  };
+  updates['periods/'+pid] = { start: WIZ.start, end: WIZ.end, label, createdAt: Date.now(), seenBy: {} };
   updates['roster/'+pid] = WIZ.grid;
   Object.entries(WIZ.confirmedHolidays).forEach(([d,n])=>{ updates['holidays/'+d] = n; });
   WIZ.cplConversions.forEach((c,i)=>{
@@ -1437,7 +1848,6 @@ function renderRosterView(){
   const dates = Object.keys(grid).sort();
   if(!dates.length){ box.innerHTML = '<div class="muted small">Empty roster.</div>'; return; }
 
-  // Collect staff
   const staffIds = new Set();
   dates.forEach(d=>Object.keys(grid[d]||{}).forEach(id=>staffIds.add(id)));
   const staffArr = [...staffIds].map(id=>STATE.staff[id]||{_id:id,name:id});
@@ -1457,7 +1867,6 @@ function renderRosterView(){
   box.innerHTML = html;
 }
 
-/* ---------- Settings ---------- */
 function renderShifts(){
   const tbody = $('shiftBody'); if(!tbody) return;
   const codes = Object.keys(STATE.shifts||{});
@@ -1510,7 +1919,6 @@ function renderAudit(){
   }).join('');
 }
 
-/* Re-render roster when period selector changes */
 document.addEventListener('change', e=>{
   if(e.target && e.target.id==='rosterPeriodSel') renderRosterView();
 });
@@ -1521,7 +1929,6 @@ document.addEventListener('change', e=>{
    PART 6 — Final init, error guards, sanity checks
    ============================================================ */
 
-// Global error guard to keep F12 clean
 window.addEventListener('error', e=>{
   console.error('[KIH Global Error]', e.message, e.filename, e.lineno);
 });
@@ -1529,7 +1936,6 @@ window.addEventListener('unhandledrejection', e=>{
   console.error('[KIH Unhandled Promise]', e.reason);
 });
 
-// Sanity check: ensure weekly setup & limits loaded even if Firebase empty
 setTimeout(()=>{
   if(!Object.keys(STATE.weeklySetup||{}).length){ STATE.weeklySetup = DEFAULT_WEEKLY; renderWeekly(); }
   if(!Object.keys(STATE.leaveLimits||{}).length){ STATE.leaveLimits = DEFAULT_LIMITS; renderLimits(); }
