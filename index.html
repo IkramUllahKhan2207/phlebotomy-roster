@@ -7557,7 +7557,532 @@ window.saveStaffV2 = function(desId, id) {
 })();
 
 console.log('%c✅ Staff Form v2 loaded — Primary + Secondary shifts', 'color:#10B981;font-weight:bold;font-size:12px');
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN STEP 1 — Theme System (Light default)
+   Appsmith / Dribbble style
+   ═══════════════════════════════════════════════════════════ */
 
+/* ─── 1. THEME DEFINITIONS ──────────────────────────── */
+const THEME_SYSTEM = {
+  light: {
+    name: 'Light',
+    icon: '☀️',
+    vars: {
+      '--bg-0': '#FFFFFF',
+      '--bg-1': '#F9FAFB',
+      '--bg-2': '#F3F4F6',
+      '--bg-glass': '#FFFFFF',
+      '--bg-glass-2': '#F9FAFB',
+      '--bg-glass-3': '#F3F4F6',
+      '--border': '#E5E7EB',
+      '--border-2': '#D1D5DB',
+      '--border-3': '#9CA3AF',
+      '--text': '#111827',
+      '--text-muted': '#6B7280',
+      '--text-dim': '#9CA3AF'
+    }
+  },
+  dark: {
+    name: 'Dark',
+    icon: '🌙',
+    vars: {
+      '--bg-0': '#0F172A',
+      '--bg-1': '#1E293B',
+      '--bg-2': '#334155',
+      '--bg-glass': '#1E293B',
+      '--bg-glass-2': '#334155',
+      '--bg-glass-3': '#475569',
+      '--border': '#334155',
+      '--border-2': '#475569',
+      '--border-3': '#64748B',
+      '--text': '#F1F5F9',
+      '--text-muted': '#94A3B8',
+      '--text-dim': '#64748B'
+    }
+  },
+  amoled: {
+    name: 'AMOLED',
+    icon: '⬛',
+    vars: {
+      '--bg-0': '#000000',
+      '--bg-1': '#0A0A0A',
+      '--bg-2': '#1A1A1A',
+      '--bg-glass': '#0A0A0A',
+      '--bg-glass-2': '#1A1A1A',
+      '--bg-glass-3': '#2A2A2A',
+      '--border': '#1F1F1F',
+      '--border-2': '#2A2A2A',
+      '--border-3': '#404040',
+      '--text': '#FFFFFF',
+      '--text-muted': '#A3A3A3',
+      '--text-dim': '#737373'
+    }
+  }
+};
+
+/* ─── 2. ACCENT COLORS ──────────────────────────────── */
+const ACCENT_SYSTEM = {
+  teal:    { name: 'Teal',    hex: '#14B8A6', grad: 'linear-gradient(135deg,#14B8A6,#0D9488)', glow: 'rgba(20,184,166,0.25)' },
+  blue:    { name: 'Blue',    hex: '#3B82F6', grad: 'linear-gradient(135deg,#3B82F6,#2563EB)', glow: 'rgba(59,130,246,0.25)' },
+  indigo:  { name: 'Indigo',  hex: '#6366F1', grad: 'linear-gradient(135deg,#6366F1,#4F46E5)', glow: 'rgba(99,102,241,0.25)' },
+  emerald: { name: 'Emerald', hex: '#10B981', grad: 'linear-gradient(135deg,#10B981,#059669)', glow: 'rgba(16,185,129,0.25)' },
+  rose:    { name: 'Rose',    hex: '#F43F5E', grad: 'linear-gradient(135deg,#F43F5E,#E11D48)', glow: 'rgba(244,63,94,0.25)' },
+  amber:   { name: 'Amber',   hex: '#F59E0B', grad: 'linear-gradient(135deg,#F59E0B,#D97706)', glow: 'rgba(245,158,11,0.25)' }
+};
+
+/* ─── 3. APPLY FUNCTIONS ────────────────────────────── */
+window.applyThemeSystem = function(themeName) {
+  const theme = THEME_SYSTEM[themeName] || THEME_SYSTEM.light;
+  const root = document.documentElement;
+  Object.entries(theme.vars).forEach(([key, val]) => root.style.setProperty(key, val));
+  document.body.style.background = theme.vars['--bg-0'];
+  localStorage.setItem('kih_theme_system', themeName);
+  State.settings.theme = themeName;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme.vars['--bg-0'];
+};
+
+window.applyAccentSystem = function(accentName) {
+  const accent = ACCENT_SYSTEM[accentName] || ACCENT_SYSTEM.teal;
+  const root = document.documentElement;
+  root.style.setProperty('--primary', accent.hex);
+  root.style.setProperty('--primary-grad', accent.grad);
+  root.style.setProperty('--primary-glow', accent.glow);
+  localStorage.setItem('kih_accent_system', accentName);
+  State.settings.accent = accentName;
+};
+
+window.applyFontSizeSystem = function(size) {
+  const sizes = { xs: '13px', s: '14px', m: '15px', l: '16px', xl: '17px', xxl: '18px' };
+  document.documentElement.style.fontSize = sizes[size] || '15px';
+  localStorage.setItem('kih_fontsize_system', size);
+  State.settings.fontSize = size;
+};
+
+/* ─── 4. CLEAN PROFESSIONAL CSS ─────────────────────── */
+(function injectCleanCSS() {
+  if (document.getElementById('kih-clean-css')) return;
+  const style = document.createElement('style');
+  style.id = 'kih-clean-css';
+  style.textContent = `
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      background: var(--bg-0);
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    
+    /* ─── CARDS — CLEAN ─── */
+    .card {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before { display: none !important; }
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      border-color: var(--border-2);
+    }
+    
+    /* ─── CARD TITLE — NO GRADIENT ─── */
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      background: none !important;
+      -webkit-text-fill-color: var(--text) !important;
+      animation: none !important;
+      letter-spacing: -0.02em;
+    }
+    .card-sub { color: var(--text-muted); font-size: 13.5px; }
+    
+    /* ─── BUTTONS — SOLID ─── */
+    .btn-primary,
+    .btn-sm.btn-accent,
+    .big-btn {
+      background: var(--primary) !important;
+      background-image: none !important;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      animation: none !important;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after,
+    .btn-sm.btn-accent::after,
+    .big-btn::after { display: none !important; }
+    .btn-primary:hover,
+    .btn-sm.btn-accent:hover,
+    .big-btn:hover {
+      filter: brightness(1.08);
+      transform: none !important;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    .btn-primary:active,
+    .btn-sm.btn-accent:active,
+    .big-btn:active { transform: scale(0.98) !important; }
+    
+    /* ─── BIG BUTTONS ─── */
+    .big-btn-draw,
+    .big-btn-emergency {
+      padding: 18px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 10px;
+      animation: none !important;
+      background: var(--primary) !important;
+      background-image: none !important;
+    }
+    .big-btn-draw { background: #10B981 !important; }
+    .big-btn-emergency { background: #EF4444 !important; }
+    
+    /* ─── HEADER ─── */
+    .app-header {
+      background: var(--bg-0);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: none;
+      box-shadow: none;
+    }
+    .app-header::after { display: none !important; }
+    .header-logo {
+      background: var(--primary);
+      background-image: none !important;
+      border-radius: 8px;
+      box-shadow: none;
+    }
+    
+    /* ─── ICON BUTTONS ─── */
+    .icon-btn {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+      box-shadow: none;
+    }
+    .icon-btn:hover {
+      background: var(--bg-2) !important;
+      border-color: var(--border-2) !important;
+      color: var(--text) !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    /* ─── INPUTS ─── */
+    .input-group input,
+    .input-group textarea,
+    .input-group select,
+    .search-bar {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      transition: all 0.15s ease;
+      box-shadow: none;
+    }
+    .input-group input:focus,
+    .input-group textarea:focus,
+    .input-group select:focus,
+    .search-bar:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow) !important;
+      transform: none !important;
+    }
+    .input-group label { color: var(--text); font-weight: 500; font-size: 13px; }
+    
+    /* ─── BADGES ─── */
+    .badge {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      box-shadow: none !important;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    .badge-primary { background: var(--primary-glow); border-color: var(--primary); color: var(--primary); }
+    .badge-success { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #059669; }
+    .badge-danger { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #DC2626; }
+    .badge-warning { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: #D97706; }
+    
+    /* ─── BOTTOM NAV — CLEAN ─── */
+    .bottom-nav {
+      background: var(--bg-0);
+      border-top: 1px solid var(--border);
+      backdrop-filter: none;
+      box-shadow: none;
+      border-radius: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      transform: none;
+      width: 100%;
+      max-width: 100%;
+      padding: 6px 4px 10px;
+      height: auto;
+    }
+    .nav-item { color: var(--text-dim); border-radius: 8px; transition: all 0.15s ease; }
+    .nav-item.active {
+      background: var(--primary-glow) !important;
+      color: var(--primary);
+      box-shadow: none !important;
+      animation: none !important;
+    }
+    .nav-item.active::before { display: none !important; }
+    .nav-item.active .nav-icon { filter: none !important; }
+    
+    /* Hide bottom nav on desktop (sidebar already exists) */
+    @media (min-width: 1024px) {
+      .bottom-nav { display: none !important; }
+    }
+    
+    /* ─── STAT BOXES ─── */
+    .stat-box {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: all 0.15s ease;
+    }
+    .stat-box:hover {
+      transform: none !important;
+      box-shadow: none !important;
+      border-color: var(--border-2);
+    }
+    .stat-box .num {
+      background: none !important;
+      -webkit-text-fill-color: var(--text) !important;
+      color: var(--text);
+      filter: none !important;
+      font-weight: 700;
+    }
+    .stat-box .lbl { color: var(--text-muted); }
+    
+    /* ─── LIST ROWS ─── */
+    .list-row {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: all 0.15s ease;
+    }
+    .list-row:hover {
+      background: var(--bg-1);
+      transform: none !important;
+      box-shadow: none !important;
+      border-color: var(--border-2);
+    }
+    
+    /* ─── EMERGENCY CARDS ─── */
+    .emergency-card {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-left: 3px solid #EF4444;
+      border-radius: 10px;
+    }
+    .emergency-card:hover {
+      transform: none !important;
+      background: var(--bg-1);
+      box-shadow: none !important;
+    }
+    
+    /* ─── TABS ─── */
+    .tab {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+    .tab:hover {
+      background: var(--bg-2);
+      transform: none !important;
+      box-shadow: none !important;
+      border-color: var(--border-2);
+    }
+    .tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: none !important;
+    }
+    
+    /* ─── MODAL ─── */
+    .modal-sheet {
+      background: var(--bg-0);
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.15) !important;
+    }
+    .modal-header h2 { color: var(--text); font-weight: 600; }
+    .modal-close {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .modal-close:hover {
+      background: var(--bg-2);
+      color: var(--text);
+      transform: none !important;
+    }
+    
+    /* ─── TOAST ─── */
+    .toast {
+      background: var(--text);
+      color: var(--bg-0);
+      border: none;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15) !important;
+      font-weight: 500;
+      border-radius: 10px;
+    }
+    .toast.success { background: #10B981; color: white; }
+    .toast.error { background: #EF4444; color: white; }
+    .toast.warning { background: #F59E0B; color: white; }
+    
+    /* ─── PROGRESS BAR ─── */
+    .progress-bar { background: var(--bg-2); }
+    .progress-fill { background: var(--primary); box-shadow: none !important; }
+    .progress-fill::after { display: none !important; }
+    
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-1); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-3); }
+    
+    /* ─── DISABLE ALL SHINING EFFECTS ─── */
+    .card-title, .big-btn, .big-btn-draw, .big-btn-emergency,
+    .btn-primary, .btn-sm.btn-accent, .login-logo, .online-dot {
+      animation: none !important;
+      background-image: none !important;
+    }
+    .login-logo { box-shadow: 0 4px 16px var(--primary-glow) !important; }
+    
+    /* ─── LOGIN SCREEN ─── */
+    .login-screen { background: var(--bg-0); background-image: none; }
+    .login-card {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+      animation: none !important;
+    }
+    .login-card h1 {
+      background: none !important;
+      -webkit-text-fill-color: var(--text) !important;
+      color: var(--text);
+      font-weight: 700;
+    }
+    
+    /* ─── AVATAR ─── */
+    .user-avatar, .avatar {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .user-avatar:hover, .avatar:hover {
+      box-shadow: none !important;
+      transform: none !important;
+    }
+    
+    /* ─── DES HEADERS ─── */
+    .des-header { animation: none !important; }
+    .des-header::after { display: none !important; }
+    
+    /* ─── DISABLE CONTENT ANIMATIONS ─── */
+    .app-content > * {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+/* ─── 5. UPDATED DISPLAY SETTINGS MODAL ─────────────── */
+window.openDisplaySettings = function() {
+  const theme = State.settings.theme || 'light';
+  const accent = State.settings.accent || 'teal';
+  const fontSize = State.settings.fontSize || 'm';
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>🎨 Display & Theme</h2>
+      <button class="modal-close" onclick="openSettingsModal()">✕</button>
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">🎨 Theme</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      ${Object.entries(THEME_SYSTEM).map(([k, v]) => `
+        <button class="btn-sm ${theme === k ? 'btn-accent' : ''}" 
+                style="padding:14px 8px;flex-direction:column;justify-content:center;text-align:center;${theme === k ? '' : 'background:var(--bg-1);border:1px solid var(--border)'}"
+                onclick="applyThemeSystem('${k}');openDisplaySettings()">
+          <div style="font-size:20px;margin-bottom:4px">${v.icon}</div>
+          <div style="font-size:12px">${v.name}</div>
+        </button>
+      `).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">🌈 Accent Color</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      ${Object.entries(ACCENT_SYSTEM).map(([k, v]) => `
+        <button class="btn-sm"
+                style="padding:14px 8px;flex-direction:column;justify-content:center;text-align:center;background:${v.hex};color:white;border:2px solid ${accent === k ? 'white' : 'transparent'}"
+                onclick="applyAccentSystem('${k}');openDisplaySettings()">
+          <div style="font-size:18px;margin-bottom:4px">●</div>
+          <div style="font-size:11px">${v.name}</div>
+        </button>
+      `).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">🔤 Font Size</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px">
+      ${['xs','s','m','l','xl','xxl'].map(k => `
+        <button class="btn-sm ${fontSize === k ? 'btn-accent' : ''}" 
+                style="padding:10px 4px;justify-content:center;font-size:11px"
+                onclick="applyFontSizeSystem('${k}');openDisplaySettings()">
+          ${k.toUpperCase()}
+        </button>
+      `).join('')}
+    </div>
+    
+    <div style="display:flex;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
+      <button class="btn-sm btn-danger" style="flex:1;justify-content:center;padding:12px" onclick="resetAllThemes()">🔄 Reset</button>
+      <button class="btn-sm btn-accent" style="flex:2;justify-content:center;padding:12px" onclick="openSettingsModal()">Done</button>
+    </div>
+  `);
+};
+
+/* ─── 6. RESET ─────────────────────────────────────── */
+window.resetAllThemes = function() {
+  if (!confirm('Reset to default theme (Light)?')) return;
+  localStorage.removeItem('kih_theme_system');
+  localStorage.removeItem('kih_accent_system');
+  localStorage.removeItem('kih_fontsize_system');
+  applyThemeSystem('light');
+  applyAccentSystem('teal');
+  applyFontSizeSystem('m');
+  toast('Reset to default', 'success');
+  openDisplaySettings();
+};
+
+/* ─── 7. BOOT ──────────────────────────────────────── */
+(function bootThemeSystem() {
+  const theme = localStorage.getItem('kih_theme_system') || 'light';
+  const accent = localStorage.getItem('kih_accent_system') || 'teal';
+  const fontSize = localStorage.getItem('kih_fontsize_system') || 'm';
+  applyThemeSystem(theme);
+  applyAccentSystem(accent);
+  applyFontSizeSystem(fontSize);
+  console.log('%c✅ Step 1 loaded — Theme System (Light default)', 'color:#10B981;font-weight:bold;font-size:12px');
+})();
    
 </script>
 </body>
