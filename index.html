@@ -1,1456 +1,1545 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KIH Phlebotomy Operations & Roster Portal</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Firebase Compat Runtime Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-    <style>
-        /* =========================================================
-           CSS VARIABLES & DARK THEME STYLING
-           ========================================================= */
-        :root {
-            --bg-base: #0f172a;
-            --bg-surface: #1e293b;
-            --bg-surface-elevated: #334155;
-            --border-color: #475569;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            
-            --primary: #0284c7;
-            --primary-hover: #0369a1;
-            --accent: #14b8a6;
-            --accent-hover: #0d9488;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-
-            /* Shift Badge Colors */
-            --badge-d: #0284c7;
-            --badge-e: #d97706;
-            --badge-e4: #b45309;
-            --badge-n: #6366f1;
-            --badge-n12: #4338ca;
-            --badge-off: #475569;
-            --badge-ph: #dc2626;
-            --badge-cpl: #059669;
-            --badge-x: #0284c7;
-            --badge-leave: #9333ea;
-
-            /* Specimen Tube Accent Colors */
-            --tube-purple: #a855f7;
-            --tube-blue: #3b82f6;
-            --tube-green: #22c55e;
-            --tube-yellow: #eab308;
-            --tube-red: #ef4444;
-            --tube-black: #334155;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        /* App Header */
-        header {
-            background-color: var(--bg-surface);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            sticky: top;
-            z-index: 50;
-        }
-
-        .brand-container {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .brand-logo {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: white;
-            font-size: 1.2rem;
-        }
-
-        .brand-title h1 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            line-height: 1.2;
-        }
-
-        .brand-title span {
-            font-size: 0.75rem;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
-        }
-
-        .role-selector-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--bg-base);
-            padding: 0.25rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .role-btn {
-            padding: 0.4rem 0.8rem;
-            border: none;
-            border-radius: 6px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .role-btn.active {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        /* Tab Navigation */
-        nav {
-            background-color: var(--bg-surface);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 1.5rem;
-            display: flex;
-            gap: 1.5rem;
-            overflow-x: auto;
-        }
-
-        .nav-item {
-            padding: 0.8rem 0;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            white-space: nowrap;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            color: var(--text-primary);
-            border-bottom-color: var(--primary);
-        }
-
-        /* Layout Main */
-        main {
-            flex: 1;
-            padding: 1.5rem;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Dashboard Overview Grid */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .metric-card {
-            background-color: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .metric-info h3 {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            margin-bottom: 0.25rem;
-        }
-
-        .metric-info .value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .metric-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            background-color: rgba(2, 132, 199, 0.1);
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        /* Component Panels */
-        .panel {
-            background-color: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .panel-title {
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Sticky Horizontal Roster Grid */
-        .roster-grid-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-surface);
-            max-height: 600px;
-            position: relative;
-        }
-
-        .roster-table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            font-size: 0.8rem;
-        }
-
-        .roster-table th, .roster-table td {
-            padding: 0.5rem 0.6rem;
-            border-right: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        .roster-table th {
-            background-color: var(--bg-surface-elevated);
-            color: var(--text-secondary);
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        /* Sticky Left Column for Staff Names */
-        .roster-table .col-staff {
-            position: sticky;
-            left: 0;
-            background-color: var(--bg-surface-elevated);
-            z-index: 20;
-            text-align: left;
-            min-width: 160px;
-            max-width: 160px;
-            font-weight: 600;
-            border-right: 2px solid var(--border-color);
-        }
-
-        .roster-table th.col-staff {
-            z-index: 30;
-        }
-
-        /* Shift Badges */
-        .shift-badge {
-            display: inline-block;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-weight: 700;
-            font-size: 0.75rem;
-            font-family: 'JetBrains Mono', monospace;
-            color: #ffffff;
-            min-width: 32px;
-            text-align: center;
-        }
-
-        .shift-D { background-color: var(--badge-d); }
-        .shift-E { background-color: var(--badge-e); }
-        .shift-E4 { background-color: var(--badge-e4); }
-        .shift-N { background-color: var(--badge-n); }
-        .shift-N12 { background-color: var(--badge-n12); }
-        .shift-OFF { background-color: var(--badge-off); color: var(--text-muted); }
-        .shift-PH { background-color: var(--badge-ph); }
-        .shift-CPL { background-color: var(--badge-cpl); }
-        .shift-X { background-color: var(--badge-x); border: 1px dashed white; }
-        .shift-LEAVE { background-color: var(--badge-leave); }
-
-        /* Clinical Test Directory */
-        .search-bar {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-
-        .search-bar i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            background-color: var(--bg-base);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .test-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1rem;
-        }
-
-        .test-card {
-            background-color: var(--bg-base);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            border-left: 5px solid var(--border-color);
-        }
-
-        .test-card[data-tube="EDTA Purple"] { border-left-color: var(--tube-purple); }
-        .test-card[data-tube="Citrate Blue"] { border-left-color: var(--tube-blue); }
-        .test-card[data-tube="Heparin Green"] { border-left-color: var(--tube-green); }
-        .test-card[data-tube="SST Yellow"] { border-left-color: var(--tube-yellow); }
-        .test-card[data-tube="Red Top"] { border-left-color: var(--tube-red); }
-
-        .test-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.5rem;
-        }
-
-        .test-code {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            background: var(--bg-surface-elevated);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .test-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .test-detail {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        /* Buttons & Controls */
-        .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background-color 0.2s;
-        }
-
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-accent { background-color: var(--accent); color: white; }
-        .btn-accent:hover { background-color: var(--accent-hover); }
-        .btn-secondary { background-color: var(--bg-surface-elevated); color: var(--text-primary); }
-        .btn-danger { background-color: var(--danger); color: white; }
-
-        /* Form Controls */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 0.4rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.6rem 0.8rem;
-            background-color: var(--bg-base);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 0.85rem;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        /* Policy Directives List */
-        .policy-card {
-            background-color: var(--bg-base);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .policy-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .policy-title {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .policy-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .policy-body {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
-        }
-
-        /* Audit Log List */
-        .audit-list {
-            list-style: none;
-            font-size: 0.8rem;
-        }
-
-        .audit-item {
-            padding: 0.6rem 0;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .audit-time {
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Modal Dialog */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease-in-out;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal {
-            background-color: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 650px;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 1.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .progress-bar {
-            height: 4px;
-            background: var(--bg-surface-elevated);
-            border-radius: 2px;
-            margin-bottom: 1rem;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            z-index: 1000;
-        }
-
-        .toast {
-            background-color: var(--bg-surface-elevated);
-            border-left: 4px solid var(--primary);
-            color: var(--text-primary);
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            animation: slideIn 0.2s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* Responsive Modifications */
-        @media (max-width: 768px) {
-            header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
-            .role-selector-bar { width: 100%; justify-content: space-between; }
-            .metrics-grid { grid-template-columns: 1fr 1fr; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<title>KIH Phlebotomy Companion</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+/* ============================================================
+   PART 1: ALL CSS
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{background:#0a0e1a;color:#e5e9f0;min-height:100vh;font-size:15px}
+body{padding-bottom:82px;overflow-x:hidden}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1422;--card:#141a2b;--card2:#1a1f30;
+  --border:#1e2538;--border2:#2a334d;--text:#e5e9f0;--muted:#8e9bb5;--muted2:#6a7a9a;
+  --primary:#4f7df3;--primary-d:#3b66d6;--success:#2e7d5e;--success-l:#5bf3a0;
+  --danger:#f35b5b;--danger-d:#d44a4a;--warn:#f3a54f;--warn-bg:#3d3d1e;
+}
+.hidden{display:none!important}
+.flex{display:flex}.flex-between{display:flex;justify-content:space-between;align-items:center}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.gap8{gap:8px}.gap12{gap:12px}.gap16{gap:16px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+.text-muted{color:var(--muted)}.text-sm{font-size:13px}.text-xs{font-size:11px}
+.text-center{text-align:center}.bold{font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:2000}
+.login-card{background:var(--card);border-radius:28px;padding:32px 24px;width:100%;max-width:400px;box-shadow:0 20px 40px rgba(0,0,0,.6);border:1px solid var(--border2)}
+.login-card h1{font-size:26px;font-weight:600;margin-bottom:6px;color:#fff;letter-spacing:-.5px}
+.login-card .sub{color:var(--muted);margin-bottom:24px;font-size:14px}
+.input-group{margin-bottom:16px}
+.input-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.input-group input,.input-group select,.input-group textarea{width:100%;padding:14px 16px;border-radius:16px;border:1px solid var(--border2);background:var(--bg2);color:#fff;font-size:15px;outline:none;transition:border .2s;font-family:inherit}
+.input-group input:focus,.input-group select:focus,.input-group textarea:focus{border-color:var(--primary)}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:14px 0 18px;color:var(--muted);font-size:14px;cursor:pointer}
+.checkbox-row input{width:18px;height:18px;accent-color:var(--primary);cursor:pointer}
+.btn-primary{width:100%;padding:16px;border-radius:20px;background:var(--primary);color:#fff;font-weight:600;font-size:16px;border:none;cursor:pointer;transition:background .2s;margin-bottom:10px}
+.btn-primary:hover{background:var(--primary-d)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{width:100%;padding:16px;border-radius:20px;background:transparent;color:var(--muted);font-weight:500;font-size:15px;border:1px solid var(--border2);cursor:pointer;transition:background .2s}
+.btn-secondary:hover{background:var(--card2)}
+.login-footer{margin-top:20px;text-align:center;color:var(--muted2);font-size:12px}
+
+/* HEADER */
+.app-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-left .logo{font-size:22px}
+.header-left .title{font-weight:600;font-size:16px;color:#fff}
+.header-right{display:flex;align-items:center;gap:14px}
+.icon-btn{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--muted);position:relative;transition:background .2s}
+.icon-btn:hover{background:var(--border2)}
+.bell-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;min-width:18px;text-align:center;line-height:1.3}
+.user-initials{width:38px;height:38px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:var(--text);cursor:pointer;border:1px solid #3e4a66}
+.logout-link{color:var(--danger);font-size:13px;font-weight:500;cursor:pointer;padding:6px 10px;border-radius:10px;white-space:nowrap}
+.logout-link:hover{background:rgba(243,91,91,.1)}
+
+/* CONTENT */
+.app-content{padding:18px 16px;max-width:640px;margin:0 auto;width:100%}
+.card{background:var(--card);border-radius:22px;padding:18px;margin-bottom:14px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.card-title{font-size:17px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px;color:#fff}
+.card-sub{color:var(--muted);font-size:13.5px;line-height:1.55}
+.badge{background:var(--border2);color:#b0bdd6;font-size:11.5px;padding:4px 11px;border-radius:40px;font-weight:500;white-space:nowrap}
+.badge-red{background:#3d1e1e;color:var(--danger)}
+.badge-green{background:#1e3d2a;color:var(--success-l)}
+.badge-yellow{background:var(--warn-bg);color:#f3d35b}
+.badge-blue{background:#1e2a3d;color:#7da3f3}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn-sm{padding:10px 16px;border-radius:40px;font-size:13.5px;font-weight:500;border:none;cursor:pointer;background:var(--border2);color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:background .2s;font-family:inherit}
+.btn-sm:hover{background:#3e4a66}
+.btn-sm:disabled{opacity:.5;cursor:not-allowed}
+.btn-accent{background:var(--primary);color:#fff}
+.btn-accent:hover{background:var(--primary-d)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:var(--danger-d)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#256a4f}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn-outline:hover{background:var(--card2)}
+.btn-block{width:100%;justify-content:center;padding:14px}
+
+/* BIG BUTTONS */
+.big-btn{border-radius:22px;padding:18px;text-align:center;font-weight:700;font-size:17px;border:none;width:100%;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;font-family:inherit;margin-bottom:12px}
+.big-btn-draw{background:var(--success);color:#fff;box-shadow:0 8px 20px rgba(46,125,94,.3)}
+.big-btn-draw:hover{background:#256a4f}
+.big-btn-emergency{background:var(--danger);color:#fff;box-shadow:0 8px 20px rgba(243,91,91,.3)}
+.big-btn-emergency:hover{background:var(--danger-d)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 2px 14px;z-index:100;overflow-x:auto}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted2);font-size:10.5px;font-weight:500;cursor:pointer;padding:4px 6px;border-radius:12px;transition:color .15s;min-width:52px;flex-shrink:0}
+.nav-item.active{color:var(--primary)}
+.nav-item .nav-icon{font-size:20px;line-height:1}
+.nav-item.active .nav-icon{transform:scale(1.08)}
+
+/* TOAST */
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:var(--border2);color:#fff;padding:12px 22px;border-radius:40px;font-size:13.5px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.6);z-index:3000;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;border:1px solid #3e4a66;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.toast.success{background:var(--success);border-color:var(--success)}
+.toast.error{background:var(--danger);border-color:var(--danger)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal-sheet{background:var(--card);border-radius:26px 26px 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:20px 18px 30px;border-top:1px solid var(--border2);animation:slideUp .28s cubic-bezier(.2,.9,.3,1)}
+@keyframes slideUp{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:-20px;background:var(--card);padding:4px 0 12px;z-index:2}
+.modal-header h2{font-size:19px;font-weight:600;color:#fff}
+.modal-close{background:var(--border2);border:none;color:#b0bdd6;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-close:hover{background:#3e4a66}
+
+/* SEARCH */
+.search-bar{width:100%;padding:13px 16px;border-radius:40px;border:1px solid var(--border);background:var(--bg2);color:#fff;font-size:14.5px;outline:none;margin-bottom:14px;font-family:inherit}
+.search-bar:focus{border-color:var(--primary)}
+.search-bar::placeholder{color:var(--muted2)}
+
+/* STEP LIST */
+.step-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.step-item:last-child{border-bottom:none}
+.step-check{width:26px;height:26px;border-radius:9px;border:2px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;font-size:15px;color:transparent;cursor:pointer;flex-shrink:0;margin-top:1px;transition:all .2s}
+.step-check.done{background:var(--success);border-color:var(--success);color:#fff}
+.step-content{flex:1}
+.step-title{font-weight:500;font-size:14.5px;color:var(--text);line-height:1.4}
+.step-time{font-size:11px;color:var(--success-l);margin-top:4px}
+
+/* EMERGENCY CARD */
+.emergency-card{background:var(--card2);border-radius:18px;padding:14px;margin-bottom:10px;border-left:5px solid var(--danger);cursor:pointer;transition:transform .15s}
+.emergency-card:hover{transform:translateX(3px)}
+.emergency-card h3{font-size:15.5px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;color:#fff}
+.emergency-steps{color:#b0bdd6;font-size:13.5px;line-height:1.65;list-style:none}
+.emergency-steps li{margin-bottom:3px;padding-left:14px;position:relative}
+.emergency-steps li::before{content:"•";color:var(--danger);position:absolute;left:0;font-weight:bold}
+
+/* TABS */
+.tab-bar{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{padding:8px 15px;border-radius:40px;background:var(--card);color:var(--muted);font-size:13.5px;font-weight:500;white-space:nowrap;border:1px solid var(--border);cursor:pointer;transition:all .15s;font-family:inherit}
+.tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* MISC */
+.progress-bar{background:var(--border);height:9px;border-radius:10px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:var(--primary);border-radius:10px;transition:width .4s}
+.list-row{background:var(--bg2);border-radius:14px;padding:13px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-state .icon{font-size:40px;margin-bottom:10px;opacity:.5}
+.spinner{width:20px;height:20px;border:2.5px solid var(--border2);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stat-box{background:var(--bg2);border-radius:16px;padding:14px;text-align:center}
+.stat-box .num{font-size:26px;font-weight:700;line-height:1.1}
+.stat-box .lbl{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+/* ROSTER TABLE */
+.roster-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.roster-table th{text-align:center;padding:7px 3px;color:var(--muted2);font-weight:500;font-size:11.5px}
+.roster-table th:first-child{text-align:left}
+.roster-table td{padding:7px 3px;text-align:center;border-top:1px solid var(--border)}
+.roster-table td:first-child{text-align:left;font-weight:500;white-space:nowrap;padding-right:8px}
+.shift-pill{padding:4px 7px;border-radius:20px;font-size:10.5px;display:inline-block;color:#fff;font-weight:500;min-width:52px}
+.shift-M{background:var(--success)}
+.shift-E{background:var(--primary)}
+.shift-N{background:#6a4fbf}
+.shift-O{background:var(--border2);color:var(--muted)}
+</style>
 </head>
 <body>
 
-    <!-- APP HEADER -->
-    <header>
-        <div class="brand-container">
-            <div class="brand-logo"><i class="fa-solid fa-vial-virus"></i></div>
-            <div class="brand-title">
-                <h1>Kulsum International Hospital</h1>
-                <span>Phlebotomy Operations & Roster Portal</span>
-            </div>
+<!-- ============================================================
+     PART 2: HTML BODY
+     ============================================================ -->
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1>🩸 KIH Phlebotomy</h1>
+    <p class="sub">Kulsum International Hospital · Islamabad</p>
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="you@kih.pk" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="keepSignedIn" checked>
+      <span>Keep me signed in (30 days)</span>
+    </label>
+    <button class="btn-primary" id="loginBtn">Sign In</button>
+    <button class="btn-secondary" id="guestBtn">Continue as Guest</button>
+    <div class="login-footer">Session persists 30 days · Firebase Auth</div>
+  </div>
+</div>
+
+<!-- APP HEADER -->
+<header class="app-header hidden" id="appHeader">
+  <div class="header-left">
+    <span class="logo">🩸</span>
+    <span class="title">Phlebotomy</span>
+  </div>
+  <div class="header-right">
+    <div class="icon-btn" id="notificationBell">
+      🔔<span class="bell-badge hidden" id="bellBadge">0</span>
+    </div>
+    <div class="user-initials" id="userInitials">?</div>
+    <span class="logout-link" id="logoutBtn">Logout</span>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="app-content hidden" id="appContent"></main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav hidden" id="bottomNav">
+  <div class="nav-item active" data-tab="home"><span class="nav-icon">🏠</span><span>Home</span></div>
+  <div class="nav-item" data-tab="tests"><span class="nav-icon">🧪</span><span>Tests</span></div>
+  <div class="nav-item" data-tab="protocols"><span class="nav-icon">📋</span><span>Protocols</span></div>
+  <div class="nav-item" data-tab="roster"><span class="nav-icon">📅</span><span>Roster</span></div>
+  <div class="nav-item" data-tab="swap"><span class="nav-icon">🔄</span><span>Swap</span></div>
+  <div class="nav-item" data-tab="learn"><span class="nav-icon">📚</span><span>Learn</span></div>
+  <div class="nav-item" data-tab="attend"><span class="nav-icon">✅</span><span>Attend</span></div>
+  <div class="nav-item" data-tab="cpl"><span class="nav-icon">📈</span><span>CPL</span></div>
+  <div class="nav-item" data-tab="more"><span class="nav-icon">⋯</span><span>More</span></div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-sheet" id="modalSheet"></div>
+</div>
+
+<script>
+/* ============================================================
+   PART 3: FIREBASE CONFIG + STATE + HELPERS
+   ============================================================
+   
+   ⚠️  IMPORTANT: Replace this config with YOUR real Firebase config!
+   Steps:
+   1. Go to https://console.firebase.google.com
+   2. Create project "kih-phlebotomy"
+   3. Enable Realtime Database + Email/Password Auth
+   4. Copy config below from Project Settings → Your apps
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDemo_REPLACE_WITH_YOUR_REAL_KEY",
+  authDomain: "kih-phlebotomy.firebaseapp.com",
+  databaseURL: "https://kih-phlebotomy-default-rtdb.firebaseio.com",
+  projectId: "kih-phlebotomy",
+  storageBucket: "kih-phlebotomy.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000000000"
+};
+
+/* Detect if config is placeholder → use local demo mode */
+const IS_DEMO = firebaseConfig.apiKey.includes('Demo') || firebaseConfig.apiKey.includes('REPLACE');
+
+let db = null, auth = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  auth = firebase.auth();
+  // Enable offline persistence (only works with real config)
+  if (!IS_DEMO) {
+    try {
+      db.ref('.info/connected').on('value', s => {
+        State.online = s.val() === true;
+        updateOnlineBadge();
+      });
+    } catch(e){}
+  }
+} catch(e) {
+  console.warn('Firebase init skipped (demo mode):', e.message);
+}
+
+/* ---------- STATE ---------- */
+const State = {
+  user: null,
+  online: navigator.onLine,
+  activeTab: 'home',
+  protocolTab: 'order',
+  rosterWeekOffset: 0,
+  startDraw: { active:false, steps:[], patient:'', notes:'', startTime:null },
+  favorites: JSON.parse(localStorage.getItem('kih_favs') || '[]'),
+  notifications: [],
+  unreadCount: 0,
+  listeners: [],
+  tests: [],
+  staff: [],
+  policies: [],
+  quizzes: [],
+  cplActivities: [],
+  swapRequests: [],
+  attendance: [],
+  leaveRequests: [],
+  rosterData: null,
+  rejections: []
+};
+
+/* ---------- HELPERS ---------- */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
+
+function toast(msg, type='') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast ' + type, 2400);
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || '?';
+}
+
+function fmtTime(d=new Date()) {
+  return d.toLocaleTimeString('en-PK', {hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(d=new Date()) {
+  return d.toLocaleDateString('en-PK',{weekday:'short',day:'numeric',month:'short'});
+}
+function fmtDateTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString('en-PK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function saveFavorites(){ localStorage.setItem('kih_favs', JSON.stringify(State.favorites)); }
+function toggleFav(id){
+  const i = State.favorites.indexOf(id);
+  if (i>=0) State.favorites.splice(i,1); else State.favorites.push(id);
+  saveFavorites();
+}
+function isFav(id){ return State.favorites.includes(id); }
+
+function updateOnlineBadge(){
+  const el = $('appHeader');
+  if (!el) return;
+  let dot = el.querySelector('.online-dot');
+  if (!dot) {
+    dot = document.createElement('span');
+    dot.className = 'online-dot';
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;margin-left:6px;display:inline-block';
+    el.querySelector('.header-left').appendChild(dot);
+  }
+  dot.style.background = State.online ? '#5bf3a0' : '#f35b5b';
+  dot.title = State.online ? 'Online' : 'Offline';
+}
+
+/* Firebase refs (safe for demo) */
+function ref(path) {
+  if (!db || IS_DEMO) return null;
+  return db.ref(path);
+}
+
+/* Safe read/write with demo fallback (localStorage) */
+const LocalDB = {
+  get(key, def=[]) {
+    try { return JSON.parse(localStorage.getItem('kihdb_'+key) || JSON.stringify(def)); }
+    catch { return def; }
+  },
+  set(key, val) {
+    localStorage.setItem('kihdb_'+key, JSON.stringify(val));
+  },
+  push(key, val) {
+    const arr = LocalDB.get(key, []);
+    const item = { ...val, id: '_' + Date.now() + Math.random().toString(36).slice(2,7), createdAt: Date.now() };
+    arr.push(item);
+    LocalDB.set(key, arr);
+    return item;
+  }
+};
+
+/* Push to Firebase if available, else localStorage */
+async function pushData(path, data) {
+  if (db && !IS_DEMO && State.online) {
+    try {
+      const r = await ref(path).push({ ...data, createdAt: firebase.database.ServerValue.TIMESTAMP });
+      return { id: r.key, ...data };
+    } catch(e) { console.warn('Firebase push failed, using local:', e.message); }
+  }
+  return LocalDB.push(path, data);
+}
+
+/* Read from Firebase if available, else localStorage */
+function readData(path, callback) {
+  if (db && !IS_DEMO) {
+    try {
+      ref(path).on('value', snap => {
+        const val = snap.val();
+        const arr = val ? Object.entries(val).map(([id,v]) => ({ id, ...v })) : [];
+        callback(arr);
+      }, err => {
+        console.warn('Firebase read failed:', err.message);
+        callback(LocalDB.get(path, []));
+      });
+      return;
+    } catch(e){}
+  }
+  callback(LocalDB.get(path, []));
+}
+
+/* ============================================================
+   PART 4: AUTH + SESSION PERSISTENCE (30 days)
+   ============================================================ */
+const SESSION_KEY = 'kih_session_v2';
+const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
+
+function saveSession(user) {
+  const data = { user, expires: Date.now() + SESSION_TTL };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+}
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (Date.now() > d.expires) { localStorage.removeItem(SESSION_KEY); return null; }
+    return d;
+  } catch { return null; }
+}
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+async function doLogin() {
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  const keep = $('keepSignedIn').checked;
+  if (!email || !password) { toast('Enter email & password', 'error'); return; }
+  const btn = $('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+
+  let user = null;
+  if (auth && !IS_DEMO) {
+    try {
+      // Set persistence
+      await auth.setPersistence(keep ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION);
+      const cred = await auth.signInWithEmailAndPassword(email, password);
+      user = { uid: cred.user.uid, email: cred.user.email, displayName: cred.user.displayName || email.split('@')[0] };
+    } catch(e) {
+      // If user doesn't exist, create (for first-time demo)
+      if (e.code === 'auth/user-not-found') {
+        try {
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          await cred.user.updateProfile({ displayName: email.split('@')[0] });
+          user = { uid: cred.user.uid, email, displayName: email.split('@')[0] };
+        } catch(e2) {
+          toast('Login failed: ' + e2.message, 'error');
+          btn.disabled = false; btn.textContent = 'Sign In';
+          return;
+        }
+      } else {
+        toast('Login failed: ' + e.message, 'error');
+        btn.disabled = false; btn.textContent = 'Sign In';
+        return;
+      }
+    }
+  } else {
+    // Demo mode
+    user = { uid: 'demo_' + btoa(email).slice(0,10), email, displayName: email.split('@')[0] };
+  }
+
+  State.user = user;
+  if (keep) saveSession(user);
+  else clearSession();
+  btn.disabled = false; btn.textContent = 'Sign In';
+  showApp();
+  toast('Welcome, ' + user.displayName, 'success');
+}
+
+function doGuestLogin() {
+  const user = { uid: 'guest_' + Date.now(), email: 'guest@kih.pk', displayName: 'Guest User', guest: true };
+  State.user = user;
+  clearSession();
+  showApp();
+  toast('Continuing as guest');
+}
+
+function doLogout() {
+  clearSession();
+  if (auth && !IS_DEMO) auth.signOut().catch(()=>{});
+  State.user = null;
+  State.listeners.forEach(u => { try { u(); } catch(e){} });
+  State.listeners = [];
+  $('loginScreen').style.display = 'flex';
+  $('appHeader').classList.add('hidden');
+  $('appContent').classList.add('hidden');
+  $('bottomNav').classList.add('hidden');
+  toast('Logged out');
+}
+
+function showApp() {
+  $('loginScreen').style.display = 'none';
+  $('appHeader').classList.remove('hidden');
+  $('appContent').classList.remove('hidden');
+  $('bottomNav').classList.remove('hidden');
+  $('userInitials').textContent = getInitials(State.user?.displayName || State.user?.email);
+  updateOnlineBadge();
+  loadInitialData();
+  render();
+}
+
+/* Load data from Firebase/localStorage */
+function loadInitialData() {
+  readData('tests', arr => {
+    if (arr.length === 0) { seedTests(); return; }
+    State.tests = arr; if (State.activeTab === 'tests') render();
+  });
+  readData('staff', arr => { State.staff = arr; if (State.activeTab === 'roster') render(); });
+  readData('policies', arr => { State.policies = arr; });
+  readData('notifications', arr => {
+    State.notifications = arr.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+    State.unreadCount = State.notifications.filter(n => !n.read).length;
+    updateBell();
+  });
+  readData('cpl', arr => { State.cplActivities = arr; if (State.activeTab === 'cpl') render(); });
+  readData('swaps', arr => { State.swapRequests = arr; if (State.activeTab === 'swap') render(); });
+  readData('attendance', arr => { State.attendance = arr; if (State.activeTab === 'attend') render(); });
+  readData('leave', arr => { State.leaveRequests = arr; });
+  readData('rejections', arr => { State.rejections = arr; if (State.activeTab === 'protocols' && State.protocolTab === 'rejection') render(); });
+}
+
+function updateBell() {
+  const b = $('bellBadge');
+  if (State.unreadCount > 0) { b.textContent = State.unreadCount; b.classList.remove('hidden'); }
+  else b.classList.add('hidden');
+}
+
+function seedTests() {
+  const defaults = [
+    { name:'CBC', tube:'EDTA (Lavender)', order:5, volume:'2-3 mL', tat:'2 hrs', urgent:'30 min', category:'Hematology' },
+    { name:'PT/INR', tube:'Citrate (Blue)', order:2, volume:'2.7 mL', tat:'4 hrs', urgent:'1 hr', category:'Coagulation' },
+    { name:'LFT', tube:'SST (Gold)', order:3, volume:'3-5 mL', tat:'6 hrs', urgent:'2 hrs', category:'Chemistry' },
+    { name:'RFT', tube:'SST (Gold)', order:3, volume:'3-5 mL', tat:'6 hrs', urgent:'2 hrs', category:'Chemistry' },
+    { name:'Blood Sugar (F)', tube:'Fluoride (Grey)', order:6, volume:'2 mL', tat:'1 hr', urgent:'30 min', category:'Chemistry' },
+    { name:'HbA1c', tube:'EDTA (Lavender)', order:5, volume:'2 mL', tat:'4 hrs', urgent:'2 hrs', category:'Chemistry' },
+    { name:'Blood Culture', tube:'Culture Bottle', order:1, volume:'10 mL', tat:'48 hrs', urgent:'24 hrs', category:'Microbiology' },
+    { name:'TSH', tube:'SST (Gold)', order:3, volume:'3 mL', tat:'6 hrs', urgent:'3 hrs', category:'Hormones' },
+    { name:'Lipid Profile', tube:'SST (Gold)', order:3, volume:'4 mL', tat:'6 hrs', urgent:'3 hrs', category:'Chemistry' },
+    { name:'D-Dimer', tube:'Citrate (Blue)', order:2, volume:'2.7 mL', tat:'4 hrs', urgent:'1 hr', category:'Coagulation' },
+    { name:'Troponin', tube:'SST (Gold)', order:3, volume:'3 mL', tat:'2 hrs', urgent:'30 min', category:'Cardiac' },
+    { name:'Cortisol', tube:'SST (Gold)', order:3, volume:'3 mL', tat:'8 hrs', urgent:'4 hrs', category:'Hormones' }
+  ];
+  defaults.forEach(t => pushData('tests', t));
+  State.tests = defaults;
+}
+
+function seedPolicies() {
+  const pols = [
+    { title:'Hand Hygiene Policy', body:'All phlebotomists must perform hand hygiene before and after every patient contact using alcohol-based sanitizer or soap+water for 40 seconds.' },
+    { title:'Needle Safety Policy', body:'Never recap needles. Use safety-engineered devices. Dispose immediately in sharps container. Report all needle stick injuries within 1 hour.' },
+    { title:'Patient Identification', body:'Verify patient identity using 3 identifiers: full name, MR number, and date of birth. Never rely on bed number alone.' },
+    { title:'Specimen Labeling', body:'Label all tubes at bedside, immediately after collection. Include patient name, MR number, date, time, and collector initials.' },
+    { title:'Infection Control', body:'Follow standard precautions. Wear gloves for all draws. Change gloves between patients. Use spirit swab for 30 sec before puncture.' }
+  ];
+  pols.forEach(p => pushData('policies', p));
+  State.policies = pols;
+}
+
+/* ============================================================
+   PART 5: RENDER FUNCTIONS
+   ============================================================ */
+function render() {
+  const main = $('appContent');
+  const tab = State.activeTab;
+  $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  const views = {
+    home: renderHome, tests: renderTests, protocols: renderProtocols,
+    roster: renderRoster, swap: renderSwap, learn: renderLearn,
+    attend: renderAttend, cpl: renderCPL, more: renderMore
+  };
+  main.innerHTML = (views[tab] || renderHome)();
+  attachHandlers();
+  window.scrollTo(0,0);
+}
+
+/* ---------- HOME ---------- */
+function renderHome() {
+  const drawActive = State.startDraw.active;
+  const today = new Date();
+  return `
+    <div class="card" style="background:linear-gradient(145deg,#141a2b,#0f1422)">
+      <div class="flex-between">
+        <div>
+          <div class="card-title">👋 ${esc(State.user?.displayName || 'Phlebotomist')}</div>
+          <div class="card-sub">KIH · Islamabad</div>
         </div>
-        <div class="role-selector-bar">
-            <button class="role-btn active" onclick="switchRole('staff')"><i class="fa-solid fa-user-nurse"></i> Phlebotomist</button>
-            <button class="role-btn" onclick="switchRole('supervisor')"><i class="fa-solid fa-user-shield"></i> Supervisor</button>
-            <button class="role-btn" onclick="switchRole('admin')"><i class="fa-solid fa-user-gear"></i> Admin / Manager</button>
-        </div>
-    </header>
-
-    <!-- NAVIGATION TABS -->
-    <nav>
-        <a class="nav-item active" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-        <a class="nav-item" onclick="switchTab('roster')"><i class="fa-solid fa-calendar-days"></i> Roster Grid</a>
-        <a class="nav-item" onclick="switchTab('tests')"><i class="fa-solid fa-vial"></i> Test Directory</a>
-        <a class="nav-item" onclick="switchTab('policies')"><i class="fa-solid fa-bullhorn"></i> Directives & Alerts</a>
-        <a class="nav-item" id="nav-leaves" onclick="switchTab('leaves')"><i class="fa-solid fa-clock-rotate-left"></i> Leave Applications</a>
-        <a class="nav-item role-restricted supervisor admin" onclick="switchTab('management')"><i class="fa-solid fa-sliders"></i> Configuration</a>
-    </nav>
-
-    <!-- MAIN APP CONTENT CONTAINER -->
-    <main>
-
-        <!-- DASHBOARD TAB -->
-        <section id="tab-dashboard" class="tab-content active">
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-info">
-                        <h3>Active Phlebotomists</h3>
-                        <div class="value" id="metric-active-staff">--</div>
-                    </div>
-                    <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-info">
-                        <h3>Current Roster Period</h3>
-                        <div class="value" id="metric-current-period" style="font-size: 1rem;">--</div>
-                    </div>
-                    <div class="metric-icon"><i class="fa-solid fa-calendar-check"></i></div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-info">
-                        <h3>Pending Leave Requests</h3>
-                        <div class="value" id="metric-pending-leaves">--</div>
-                    </div>
-                    <div class="metric-icon" style="color: var(--warning);"><i class="fa-solid fa-envelope-open-text"></i></div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-info">
-                        <h3>Active Directives</h3>
-                        <div class="value" id="metric-active-policies">--</div>
-                    </div>
-                    <div class="metric-icon" style="color: var(--accent);"><i class="fa-solid fa-circle-exclamation"></i></div>
-                </div>
-            </div>
-
-            <!-- Fast Clinical Test Lookup Banner -->
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-bolt" style="color: var(--warning);"></i> Fast Test Specimen Check</div>
-                </div>
-                <div class="search-bar" style="margin-bottom: 0;">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="quick-test-search" class="search-input" placeholder="Type test name or code (e.g., CBC, Troponin, LFT)..." onkeyup="filterQuickTests(this.value)">
-                </div>
-                <div id="quick-test-results" class="test-grid" style="margin-top: 1rem;"></div>
-            </div>
-
-            <!-- Recent System Activity / Audit Log -->
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-list-check"></i> System Audit Log & Operations Activity</div>
-                </div>
-                <ul class="audit-list" id="dashboard-audit-log">
-                    <li class="audit-item">Loading operational activity...</li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- ROSTER GRID TAB -->
-        <section id="tab-roster" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-calendar-days"></i> Master Phlebotomy Roster</div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-primary role-restricted admin" onclick="openRosterWizard()"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generate Roster</button>
-                    </div>
-                </div>
-                
-                <div class="roster-grid-wrapper">
-                    <table class="roster-table" id="roster-table-element">
-                        <thead>
-                            <tr id="roster-header-row">
-                                <th class="col-staff">Phlebotomist</th>
-                                <!-- Dynamic Date Columns -->
-                            </tr>
-                        </thead>
-                        <tbody id="roster-body-rows">
-                            <!-- Dynamic Roster Rows -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- CLINICAL TEST DIRECTORY TAB -->
-        <section id="tab-tests" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-book-medical"></i> Laboratory Sample Collection Protocols</div>
-                </div>
-                <div class="search-bar">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="full-test-search" class="search-input" placeholder="Search by Test Name, Tube Type, Container, or SLA..." onkeyup="renderTestDirectory(this.value)">
-                </div>
-                <div class="test-grid" id="full-test-grid"></div>
-            </div>
-        </section>
-
-        <!-- DIRECTIVES & ALERTS TAB -->
-        <section id="tab-policies" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-bullhorn"></i> Clinical Directives & Biosafety Notices</div>
-                    <button class="btn btn-primary role-restricted admin" onclick="openPolicyModal()"><i class="fa-solid fa-plus"></i> Post New Directive</button>
-                </div>
-                <div id="policies-container"></div>
-            </div>
-        </section>
-
-        <!-- LEAVE APPLICATIONS TAB -->
-        <section id="tab-leaves" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-plane-departure"></i> Leave Management & Status</div>
-                    <button class="btn btn-accent" onclick="openLeaveModal()"><i class="fa-solid fa-paper-plane"></i> Apply for Leave</button>
-                </div>
-                <table class="roster-table" style="text-align: left;">
-                    <thead>
-                        <tr>
-                            <th>Phlebotomist</th>
-                            <th>Type</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Status</th>
-                            <th class="role-restricted supervisor admin">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leave-requests-table"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- CONFIGURATION & SETUP TAB -->
-        <section id="tab-management" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fa-solid fa-users-gear"></i> Phlebotomy Staff Management</div>
-                    <button class="btn btn-primary" onclick="openStaffModal()"><i class="fa-solid fa-user-plus"></i> Add Phlebotomist</button>
-                </div>
-                <table class="roster-table">
-                    <thead>
-                        <tr>
-                            <th class="col-staff">Name</th>
-                            <th>Gender</th>
-                            <th>Fixed Shift Preference</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="staff-management-table"></tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ROSTER GENERATION WIZARD MODAL -->
-    <div class="modal-overlay" id="wizard-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="wizard-step-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Roster Wizard - Step 1</h3>
-                <button class="btn btn-secondary" onclick="closeModal('wizard-modal')"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" id="wizard-progress"></div></div>
-            <div id="wizard-step-content"></div>
-            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
-                <button class="btn btn-secondary" id="wizard-prev-btn" onclick="prevWizardStep()">Previous</button>
-                <button class="btn btn-primary" id="wizard-next-btn" onclick="nextWizardStep()">Next</button>
-            </div>
-        </div>
+        <div class="badge">${fmtDate(today)}</div>
+      </div>
     </div>
 
-    <!-- GENERIC FORM MODAL -->
-    <div class="modal-overlay" id="generic-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="generic-modal-title">Form</h3>
-                <button class="btn btn-secondary" onclick="closeModal('generic-modal')"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="generic-modal-body"></div>
-        </div>
+    <button class="big-btn big-btn-draw" id="startDrawBtn">
+      🩸 ${drawActive ? 'Continue Draw' : 'Start Draw'}
+    </button>
+
+    <button class="big-btn big-btn-emergency" id="emergencyBtn">
+      🚨 Emergency Cards
+    </button>
+
+    <div class="card">
+      <div class="card-title">📊 Today's Stats</div>
+      <div class="grid3 mt12">
+        <div class="stat-box"><div class="num" style="color:var(--primary)">${State.attendance.filter(a=>a.date===new Date().toDateString()&&a.status==='present').length || 0}</div><div class="lbl">Present</div></div>
+        <div class="stat-box"><div class="num" style="color:var(--success-l)">${State.rejections.length===0?98:Math.max(50,100-State.rejections.length*3)}%</div><div class="lbl">Success</div></div>
+        <div class="stat-box"><div class="num" style="color:var(--danger)">${State.rejections.length}</div><div class="lbl">Rejections</div></div>
+      </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
-    <div class="toast-container" id="toast-container"></div>
+    <div class="card">
+      <div class="card-title">⚡ Quick Actions</div>
+      <div class="btn-row">
+        <button class="btn-sm btn-outline" data-quick="difficult">🩺 Difficult Draw</button>
+        <button class="btn-sm btn-outline" data-quick="scripts">💬 Scripts</button>
+        <button class="btn-sm btn-outline" data-quick="rejection">🚫 Rejection</button>
+        <button class="btn-sm btn-outline" data-quick="order">📋 Order of Draw</button>
+      </div>
+    </div>
 
-    <!-- APP ENGINE SCRIPT -->
-    <script>
-        /* =========================================================
-           1. INITIALIZATION & FIREBASE COMPAT SETUP
-           ========================================================= */
-        const firebaseConfig = {
-            apiKey: "AIzaSyDemoKeyKIHPhlebotomyPortal2026",
-            authDomain: "kih-phlebotomy-portal.firebaseapp.com",
-            databaseURL: "https://kih-phlebotomy-portal-default-rtdb.firebaseio.com",
-            projectId: "kih-phlebotomy-portal",
-            storageBucket: "kih-phlebotomy-portal.appspot.com",
-            messagingSenderId: "1029384756",
-            appId: "1:1029384756:web:kihphlebotomydemo"
-        };
+    <div class="card">
+      <div class="card-title">📜 Pending Policies</div>
+      <div class="card-sub">${State.policies.length === 0 ? 'Loading...' : State.policies.length + ' policies available'}</div>
+      <button class="btn-sm btn-accent mt8" onclick="openPoliciesModal()">View & Acknowledge</button>
+    </div>
+  `;
+}
 
-        // Initialize Firebase Runtime
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+/* ---------- TESTS ---------- */
+function renderTests() {
+  const cats = [...new Set(State.tests.map(t => t.category).filter(Boolean))];
+  return `
+    <div class="card">
+      <div class="card-title">🧪 Test Protocols</div>
+      <div class="card-sub">Tube, order of draw, volume, TAT</div>
+      <input class="search-bar mt12" placeholder="Search tests..." id="testSearch" oninput="filterTests(this.value)">
+    </div>
+    <div id="testList">
+      ${State.tests.length === 0
+        ? `<div class="empty-state"><div class="icon">🧪</div>Loading tests...</div>`
+        : State.tests.map(t => `
+        <div class="card test-item" data-name="${esc(t.name.toLowerCase())} ${esc((t.category||'').toLowerCase())}">
+          <div class="flex-between">
+            <div style="font-weight:600;font-size:15px">${esc(t.name)}</div>
+            <span class="badge badge-blue">${esc(t.category||'General')}</span>
+          </div>
+          <div class="grid3 mt12 text-sm">
+            <div><span class="text-muted text-xs">Tube</span><br>${esc(t.tube)}</div>
+            <div><span class="text-muted text-xs">Order</span><br>#${esc(t.order)}</div>
+            <div><span class="text-muted text-xs">Volume</span><br>${esc(t.volume)}</div>
+          </div>
+          <div class="grid2 mt12 text-sm">
+            <div class="list-row" style="margin:0"><span>⏱ Routine</span><strong>${esc(t.tat)}</strong></div>
+            <div class="list-row" style="margin:0;border-left:3px solid var(--danger)"><span>🚨 Urgent</span><strong>${esc(t.urgent||t.tat)}</strong></div>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+function filterTests(q){
+  $$('.test-item').forEach(el=>{
+    el.style.display = el.dataset.name.includes(q.toLowerCase()) ? 'block' : 'none';
+  });
+}
+
+/* ---------- PROTOCOLS ---------- */
+function renderProtocols() {
+  const tabs = [
+    {id:'order', label:'Order of Draw'},
+    {id:'difficult', label:'Difficult Draw'},
+    {id:'scripts', label:'Communication'},
+    {id:'rejection', label:'Rejection'}
+  ];
+  let body = '';
+  if (State.protocolTab === 'order') body = renderOrderOfDraw();
+  else if (State.protocolTab === 'difficult') body = renderDifficultDraw();
+  else if (State.protocolTab === 'scripts') body = renderScripts();
+  else if (State.protocolTab === 'rejection') body = renderRejection();
+  return `
+    <div class="tab-bar">
+      ${tabs.map(t=>`<div class="tab ${State.protocolTab===t.id?'active':''}" data-ptab="${t.id}">${t.label}</div>`).join('')}
+    </div>
+    ${body}
+  `;
+}
+
+function renderOrderOfDraw() {
+  const order = [
+    {n:1, tube:'Blood Culture', color:'#f3d35b', note:'Sterile technique'},
+    {n:2, tube:'Citrate (Blue)', color:'#4f7df3', note:'Fill to line, mix 3-4x'},
+    {n:3, tube:'SST (Gold/Red)', color:'#f3a54f', note:'Clot 30 min, no mix'},
+    {n:4, tube:'Heparin (Green)', color:'#2e7d5e', note:'Mix 8-10x'},
+    {n:5, tube:'EDTA (Lavender)', color:'#a06fbf', note:'Mix 8-10x, hematology'},
+    {n:6, tube:'Fluoride (Grey)', color:'#8e9bb5', note:'Glucose, mix 8-10x'}
+  ];
+  return `
+    <div class="card">
+      <div class="card-title">📋 Order of Draw</div>
+      <div class="card-sub">Follow strictly to avoid cross-contamination</div>
+      <div class="mt12">
+        ${order.map(o=>`
+          <div class="list-row">
+            <div class="flex-center gap12">
+              <span style="width:30px;height:30px;border-radius:50%;background:${o.color};color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px">${o.n}</span>
+              <div>
+                <div style="font-weight:500">${o.tube}</div>
+                <div class="text-xs text-muted">${o.note}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderDifficultDraw() {
+  const scenarios = [
+    {id:'rolling', title:'Rolling Vein', problem:'Vein slips when touched', solution:'Anchor both sides, insert slowly, 30° angle, use butterfly needle'},
+    {id:'collapsed', title:'Collapsed Vein', problem:'Vein collapsed by vacuum', solution:'Remove tourniquet, wait 5 min, use other vein, smaller tube, pull slowly'},
+    {id:'fragile', title:'Fragile Vein', problem:'Thin vein, bursts easily', solution:'23G/25G needle, butterfly, slow draw, minimal vacuum, warm compress'},
+    {id:'novisible', title:'No Vein Visible', problem:'Cannot see or feel vein', solution:'Warm water 5 min, tourniquet 2 min, tapping, BP cuff 40 mmHg, vein finder, try hand veins'},
+    {id:'sclerosed', title:'Sclerosed Vein', problem:'Hard, cord-like vein', solution:'Do not attempt. Use other vein, other arm, or hand vein'},
+    {id:'edematous', title:'Edematous Patient', problem:'Swollen arm', solution:'Use other arm, elevate 5 min, gentle pressure, ultrasound, refer doctor if fails'}
+  ];
+  return `
+    <input class="search-bar" placeholder="Search scenarios..." oninput="filterList('difficult-item', this.value)">
+    <div id="difficultList">
+      ${scenarios.map(s=>`
+        <div class="card difficult-item" data-name="${esc(s.title.toLowerCase())} ${esc(s.problem.toLowerCase())}">
+          <div class="flex-between">
+            <div class="card-title" style="font-size:15px">${esc(s.title)}</div>
+            <button class="btn-sm" style="padding:6px 12px" onclick="event.stopPropagation();toggleFav('${s.id}');render();toast(isFav('${s.id}')?'★ Favorited':'Removed')">${isFav(s.id)?'★':'☆'}</button>
+          </div>
+          <div class="card-sub mt8"><strong style="color:var(--danger)">Problem:</strong> ${esc(s.problem)}</div>
+          <div style="background:var(--bg2);padding:11px;border-radius:14px;font-size:13.5px;color:#b0bdd6;margin-top:8px">
+            <strong style="color:var(--primary)">Solution:</strong> ${esc(s.solution)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderScripts() {
+  const scripts = [
+    {id:'first', title:'First-Time Patient',
+     en:'Assalam-o-Alaikum! My name is [name], I will take your blood sample. This test was ordered by your doctor, it takes 5 minutes. You will feel a small prick, just like an injection. Please keep your arm relaxed. If you have any questions, feel free to ask.',
+     ur:'السلام علیکم! میرا نام [name] ہے، میں آپ کا خون کا نمونہ لوں گا۔ یہ ٹیسٹ ڈاکٹر نے تجویز کیا ہے، 5 منٹ کا کام ہے۔ آپ کو صرف ایک چھوٹی سی سوئی چبھے گی، بالکل انجیکشن جیسی۔ آپ اپنا ہاتھ آرام سے رکھیں۔'},
+    {id:'nervous', title:'Nervous Patient',
+     en:'I understand, many people are nervous the first time. Please look away. I will tell you each step. Take a deep breath — in, out. All done! You did great.',
+     ur:'میں سمجھ سکتا ہوں، بہت لوگ پہلی بار میں نروس ہوتے ہیں۔ آپ اپنی نظر دوسری طرف کر لیں۔ میں ہر قدم بتاتا جاؤں گا۔ گہری سانس لیں — اندر، باہر۔ ہو گیا! آپ نے بہت اچھا کیا۔'},
+    {id:'pediatric', title:'Pediatric (Child)',
+     en:'[Child\'s name]! You are so brave. This is a tiny needle, like a mosquito bite. If you don\'t cry, you get a sticker! Mom/Dad, please hold their hand. 1, 2, 3... done! Well done!',
+     ur:'[بچے کا نام]! آپ بہت بہادر ہو۔ یہ ایک چھوٹی سی سوئی ہے، مچھر کے کاٹنے جیسی۔ اگر آپ روئیں گے نہیں تو اسٹیکر ملے گا! امی/ابو آپ کا ہاتھ پکڑ لیں۔ 1، 2، 3... ہو گیا! شاباش!'},
+    {id:'elderly', title:'Elderly',
+     en:'Assalam-o-Alaikum uncle/aunty, how are you? I will try to find your vein. Please keep your arm relaxed. Thank you, may Allah give you health.',
+     ur:'السلام علیکم انکل/آنٹی، کیسے ہیں آپ؟ میں آپ کی رگ ڈھونڈنے کی کوشش کرتا ہوں۔ آپ اپنا ہاتھ بالکل آرام سے رکھیں۔ شکریہ انکل/آنٹی، اللہ آپ کو صحت دے۔'},
+    {id:'refusing', title:'Refusing Patient',
+     en:'I understand you are upset. The doctor ordered this test, it is important for your health. If you don\'t want it now, please talk to the supervisor. Your choice is respected.',
+     ur:'میں سمجھتا ہوں آپ پریشان ہیں۔ ڈاکٹر نے ٹیسٹ تجویز کیا ہے، یہ آپ کی صحت کے لیے ضروری ہے۔ اگر آپ ابھی نہیں چاہتے، تو سپروائزر سے بات کریں۔ آپ کی مرضی کا احترام ہے۔'},
+    {id:'fainted', title:'Fainted Before',
+     en:'You mentioned you fainted before? Thank you for telling me. Today I will take the sample while you are lying down. Please drink water first. If you feel dizzy, tell me immediately.',
+     ur:'آپ نے بتایا آپ پہلے بے ہوش ہوئے تھے؟ شکریہ بتانے کے لیے۔ آج میں آپ کو لٹا کر نمونہ لوں گا۔ پہلے پانی پی لیں۔ اگر چکر آئے تو فوراً بتائیں۔'}
+  ];
+  return `
+    <input class="search-bar" placeholder="Search scripts..." oninput="filterList('script-item', this.value)">
+    <div id="scriptList">
+      ${scripts.map(s=>`
+        <div class="card script-item" data-name="${esc(s.title.toLowerCase())}">
+          <div class="flex-between">
+            <div class="card-title" style="font-size:15px">${esc(s.title)}</div>
+            <button class="btn-sm" style="padding:6px 12px" onclick="toggleFav('${s.id}');render();toast(isFav('${s.id}')?'★ Favorited':'Removed')">${isFav(s.id)?'★':'☆'}</button>
+          </div>
+          <div class="mt12 text-sm" style="line-height:1.6;color:#b0bdd6">
+            <p><strong style="color:var(--primary)">🇬🇧 English:</strong> ${esc(s.en)}</p>
+            <p class="mt12" style="direction:rtl;text-align:right"><strong style="color:var(--primary)">🇵🇰 اردو:</strong> ${esc(s.ur)}</p>
+          </div>
+          <div class="btn-row mt12">
+            <button class="btn-sm btn-outline" onclick="copyText(${JSON.stringify(s.en).replace(/"/g,'&quot;')},'Copied English')">📋 Copy EN</button>
+            <button class="btn-sm btn-outline" onclick="copyText(${JSON.stringify(s.ur).replace(/"/g,'&quot;')},'Copied Urdu')">📋 Copy UR</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderRejection() {
+  const reasons = [
+    {id:'hemolysis', title:'Hemolysis (Blood Burst)', how:'Serum/plasma appears red', why:'Thin needle, shaking, high vacuum, vein collapse, tourniquet too long', prevent:'21G-23G needle, gentle invert, slow pull, tourniquet 1 min', action:'Recollect sample'},
+    {id:'clotting', title:'Clotting', how:'Clots in EDTA tube', why:'Not mixed, under-mixed, dirty tube, slow fill', prevent:'Mix immediately 8-10 times, proper order, check expiry', action:'Recollect with new tube'},
+    {id:'short', title:'Short Volume', how:'Low blood level in tube', why:'Low vacuum, needle out, vein collapse, dehydrated', prevent:'Check expiry, stable needle, give patient water', action:'Recollect sample'},
+    {id:'wrong', title:'Wrong Tube', how:'Incorrect tube color', why:'Wrong order of draw, color confusion, poor training', prevent:'Check protocol card, memorize order, confirm', action:'Recollect with correct tube'},
+    {id:'mislabel', title:'Mislabeled', how:'Wrong label on tube', why:'Forgot label, wrong patient, no time written', prevent:'Bedside label, confirm 3 times, write time', action:'Recollect from patient'},
+    {id:'delayed', title:'Delayed Transport', how:'Sample arrived late', why:'Traffic, late transport, wrong storage', prevent:'Send immediately, cold chain, time limit', action:'New sample'},
+    {id:'contaminated', title:'Contaminated', how:'Positive culture with skin flora', why:'Skin not cleaned properly, dirty tube, missed hand hygiene', prevent:'30 sec spirit swab, wait dry, sterile technique', action:'New sample'}
+  ];
+  const stats = {};
+  State.rejections.forEach(r => { stats[r.reason] = (stats[r.reason]||0)+1; });
+  const top = Object.entries(stats).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  return `
+    <div class="card" style="background:var(--card2)">
+      <div class="card-title">📊 Rejection Statistics</div>
+      <div class="card-sub mt8">
+        Total reported: <strong>${State.rejections.length}</strong>
+        ${top.length ? `<br>Most common: ${top.map(([k,v])=>`<strong style="color:var(--danger)">${esc(k)}</strong> (${v})`).join(' · ')}` : ''}
+      </div>
+      <button class="btn-sm btn-danger mt12" onclick="openReportRejectionModal()">🚫 Report Rejection</button>
+    </div>
+    <input class="search-bar" placeholder="Search reasons..." oninput="filterList('rejection-item', this.value)">
+    <div id="rejectionList">
+      ${reasons.map(r=>`
+        <div class="card rejection-item" data-name="${esc(r.title.toLowerCase())} ${esc(r.why.toLowerCase())}">
+          <div class="flex-between">
+            <div class="card-title" style="font-size:15px">${esc(r.title)}</div>
+            <button class="btn-sm" style="padding:6px 12px" onclick="toggleFav('${r.id}');render();toast(isFav('${r.id}')?'★ Favorited':'Removed')">${isFav(r.id)?'★':'☆'}</button>
+          </div>
+          <div class="mt12 text-sm" style="line-height:1.65;color:#b0bdd6">
+            <p><strong style="color:var(--primary)">🔍 Detect:</strong> ${esc(r.how)}</p>
+            <p class="mt8"><strong style="color:var(--danger)">⚠️ Why:</strong> ${esc(r.why)}</p>
+            <p class="mt8"><strong style="color:var(--success-l)">🛡️ Prevent:</strong> ${esc(r.prevent)}</p>
+            <p class="mt8"><strong style="color:var(--warn)">✅ Action:</strong> ${esc(r.action)}</p>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function filterList(cls, q) {
+  $$('.'+cls).forEach(el=>{
+    el.style.display = el.dataset.name.includes(q.toLowerCase()) ? 'block' : 'none';
+  });
+}
+
+function copyText(txt, msg) {
+  navigator.clipboard.writeText(txt).then(()=>toast(msg,'success')).catch(()=>toast('Copy failed','error'));
+}
+
+/* ---------- ROSTER ---------- */
+function renderRoster() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const staff = State.staff.length ? State.staff : [
+    {id:'s1', name:'Dr. Ayesha', role:'Phlebotomist'},
+    {id:'s2', name:'Tech Bilal', role:'Technician'},
+    {id:'s3', name:'Nurse Fatima', role:'Nurse'}
+  ];
+  if (!State.rosterData) State.rosterData = generateRosterData(staff, days);
+  const shifts = State.rosterData;
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">📅 Weekly Roster</div>
+        <button class="btn-sm btn-accent" onclick="autoGenerateRoster()">⚡ Auto</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:12px">
+        <table class="roster-table">
+          <thead><tr><th>Staff</th>${days.map(d=>`<th>${d}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${shifts.map(s=>`
+              <tr>
+                <td>${esc(s.name)}</td>
+                ${days.map(d=>{
+                  const v = s[d] || 'O';
+                  const label = {M:'Morning',E:'Evening',N:'Night',O:'Off'}[v];
+                  return `<td><span class="shift-pill shift-${v}">${label}</span></td>`;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-row mt12">
+        <button class="btn-sm btn-outline" onclick="openRosterEditModal()">✏️ Edit</button>
+        <button class="btn-sm btn-outline" onclick="saveRoster()">💾 Save</button>
+      </div>
+    </div>
+  `;
+}
+
+function generateRosterData(staff, days) {
+  const shifts = ['M','M','M','E','E','E','O','O','N'];
+  const result = [];
+  staff.forEach((s,i)=>{
+    const row = { name: s.name || s.displayName || 'Staff' };
+    days.forEach((d,j)=>{
+      row[d] = shifts[(i*3+j) % shifts.length];
+    });
+    result.push(row);
+  });
+  return result;
+}
+
+function autoGenerateRoster() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  State.rosterData = generateRosterData(State.staff.length ? State.staff : [{name:'Staff 1'},{name:'Staff 2'},{name:'Staff 3'}], days);
+  render();
+  toast('Roster auto-generated','success');
+}
+
+function saveRoster() {
+  if (db && !IS_DEMO) pushData('roster', State.rosterData);
+  else LocalDB.set('roster', State.rosterData);
+  toast('Roster saved','success');
+}
+
+function openRosterEditModal() {
+  openModal(`
+    <div class="modal-header"><h2>✏️ Edit Roster</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="card-sub">Manual editing (demo): type shift codes</div>
+    <div class="mt12">
+      ${State.rosterData.map((row,i)=>`
+        <div class="list-row" style="flex-direction:column;align-items:stretch">
+          <div class="bold mb8">${esc(row.name)}</div>
+          <div class="grid2">
+            ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`
+              <div class="input-group" style="margin-bottom:6px">
+                <label class="text-xs">${d}</label>
+                <select data-ri="${i}" data-day="${d}" onchange="updateRosterCell(this)">
+                  ${[['M','Morning'],['E','Evening'],['N','Night'],['O','Off']].map(([v,l])=>`<option value="${v}" ${row[d]===v?'selected':''}>${l}</option>`).join('')}
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn-primary mt12" onclick="saveRoster();closeModal();render()">Save Roster</button>
+  `);
+}
+function updateRosterCell(sel) {
+  const i = +sel.dataset.ri, d = sel.dataset.day;
+  State.rosterData[i][d] = sel.value;
+}
+
+/* ---------- SWAP ---------- */
+function renderSwap() {
+  const list = State.swapRequests.length ? State.swapRequests : [
+    {id:'demo1', from:'Mon Morning', to:'Tue Evening', with:'Tech Bilal', status:'pending'},
+    {id:'demo2', from:'Wed Off', to:'Fri Morning', with:'Nurse Fatima', status:'approved'}
+  ];
+  return `
+    <div class="card">
+      <div class="card-title">🔄 Shift Swap Requests</div>
+      <div class="card-sub">Request a swap with a colleague</div>
+      <div class="mt12">
+        ${list.map(s=>`
+          <div class="list-row" style="flex-direction:column;align-items:stretch;gap:6px">
+            <div class="flex-between">
+              <span class="bold">${esc(s.from)} → ${esc(s.to)}</span>
+              <span class="badge ${s.status==='approved'?'badge-green':s.status==='rejected'?'badge-red':'badge-yellow'}">${esc(s.status)}</span>
+            </div>
+            <div class="text-xs text-muted">With: ${esc(s.with || s.withStaff || 'N/A')}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn-sm btn-accent mt12" onclick="openSwapModal()">+ New Swap Request</button>
+    </div>
+  `;
+}
+
+function openSwapModal() {
+  openModal(`
+    <div class="modal-header"><h2>🔄 New Swap Request</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="input-group"><label>Your current shift</label><input id="swapFrom" placeholder="e.g. Mon Morning"></div>
+    <div class="input-group"><label>Requested shift</label><input id="swapTo" placeholder="e.g. Tue Evening"></div>
+    <div class="input-group"><label>Swap with (colleague)</label><input id="swapWith" placeholder="Name"></div>
+    <div class="input-group"><label>Reason (optional)</label><textarea id="swapReason" rows="2"></textarea></div>
+    <button class="btn-primary" onclick="submitSwap()">Submit Request</button>
+  `);
+}
+
+async function submitSwap() {
+  const data = {
+    from: $('swapFrom').value.trim(),
+    to: $('swapTo').value.trim(),
+    with: $('swapWith').value.trim(),
+    reason: $('swapReason').value.trim(),
+    status: 'pending',
+    requestedBy: State.user?.displayName || 'User'
+  };
+  if (!data.from || !data.to || !data.with) { toast('Fill all fields','error'); return; }
+  await pushData('swaps', data);
+  State.swapRequests.push(data);
+  closeModal();
+  render();
+  toast('Swap request submitted','success');
+}
+
+/* ---------- LEARN ---------- */
+function renderLearn() {
+  const quizzes = [
+    {id:'q1', title:'Order of Draw', score:'8/10', last:'2 days ago'},
+    {id:'q2', title:'Difficult Draw', score:'4/10', last:'Needs review'},
+    {id:'q3', title:'Emergency Response', score:null, last:'Not attempted'}
+  ];
+  return `
+    <div class="card">
+      <div class="card-title">📚 Training Quizzes</div>
+      <div class="card-sub">Test your phlebotomy knowledge</div>
+      <div class="mt12">
+        ${quizzes.map(q=>`
+          <div class="list-row">
+            <div>
+              <div class="bold">${esc(q.title)}</div>
+              <div class="text-xs text-muted">${esc(q.last)}</div>
+            </div>
+            ${q.score ? `<span class="badge ${q.score.startsWith('8')||q.score.startsWith('9')?'badge-green':q.score.startsWith('4')?'badge-red':'badge-yellow'}">${esc(q.score)}</span>` : `<span class="badge">New</span>`}
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn-sm btn-accent mt12" onclick="openQuizModal()">▶ Start Quiz</button>
+    </div>
+  `;
+}
+
+function openQuizModal() {
+  const questions = [
+    { q:'What is the correct order of draw?', opts:['EDTA → SST → Citrate','Blood Culture → Citrate → SST → Heparin → EDTA → Fluoride','SST → EDTA → Citrate','Fluoride → EDTA → SST'], ans:1 },
+    { q:'Tourniquet should not be left on for more than:', opts:['30 sec','1 minute','2 minutes','5 minutes'], ans:1 },
+    { q:'Which tube for CBC?', opts:['SST Gold','EDTA Lavender','Citrate Blue','Fluoride Grey'], ans:1 },
+    { q:'Angle for venipuncture:', opts:['5-10°','15-30°','45°','90°'], ans:1 },
+    { q:'After needle stick injury, first action:', opts:['Report to supervisor','Wash with soap and water 5 min','Take PEP','Fill incident form'], ans:1 }
+  ];
+  let idx = 0, score = 0;
+  function renderQ() {
+    if (idx >= questions.length) {
+      $('modalSheet').innerHTML = `
+        <div class="modal-header"><h2>Quiz Complete</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+        <div class="text-center" style="padding:24px 0">
+          <div style="font-size:48px">${score >= questions.length*0.7 ? '🎉' : '📚'}</div>
+          <h2 style="margin:12px 0;color:#fff">${score} / ${questions.length}</h2>
+          <div class="text-muted">${score >= questions.length*0.7 ? 'Great job!' : 'Keep practicing!'}</div>
+        </div>
+        <button class="btn-primary" onclick="closeModal()">Close</button>
+      `;
+      return;
+    }
+    const q = questions[idx];
+    $('modalSheet').innerHTML = `
+      <div class="modal-header"><h2>Q${idx+1}/${questions.length}</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div class="card-sub mb12">${esc(q.q)}</div>
+      ${q.opts.map((o,i)=>`<button class="btn-sm btn-block btn-outline mb8" style="justify-content:flex-start" onclick="window._quizAns(${i},${q.ans})">${esc(o)}</button>`).join('')}
+      <div class="progress-bar mt12"><div class="progress-fill" style="width:${(idx/questions.length)*100}%"></div></div>
+    `;
+  }
+  window._quizAns = (chosen, correct) => {
+    if (chosen === correct) score++;
+    idx++;
+    renderQ();
+  };
+  renderQ();
+}
+
+/* ---------- ATTEND ---------- */
+function renderAttend() {
+  const today = new Date().toDateString();
+  const todayRec = State.attendance.find(a => a.date === today);
+  const history = State.attendance.slice(-7).reverse();
+  return `
+    <div class="card">
+      <div class="card-title">✅ Attendance</div>
+      <div class="card-sub">${fmtDate()}</div>
+      <div class="grid2 mt12">
+        <button class="btn-sm btn-success btn-block" ${todayRec?'disabled':''} onclick="markAttendance('present')">🟢 Present</button>
+        <button class="btn-sm btn-danger btn-block" ${todayRec?'disabled':''} onclick="markAttendance('absent')">🔴 Absent</button>
+      </div>
+      ${todayRec ? `<div class="list-row mt12"><span>Today</span><span class="badge ${todayRec.status==='present'?'badge-green':'badge-red'}">${todayRec.status}</span></div>` : ''}
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Recent</div>
+      ${history.length === 0 ? '<div class="empty-state"><div class="icon">📅</div>No records yet</div>' :
+        history.map(a=>`
+          <div class="list-row">
+            <span>${esc(a.date)}</span>
+            <span class="badge ${a.status==='present'?'badge-green':'badge-red'}">${esc(a.status)}</span>
+          </div>
+        `).join('')}
+    </div>
+  `;
+}
+
+async function markAttendance(status) {
+  const rec = { date: new Date().toDateString(), status, staff: State.user?.displayName || 'User', time: fmtTime() };
+  await pushData('attendance', rec);
+  State.attendance.push(rec);
+  render();
+  toast('Marked ' + status, 'success');
+}
+
+/* ---------- CPL ---------- */
+function renderCPL() {
+  const total = State.cplActivities.reduce((s,a)=>s+(+a.credits||0),0);
+  const goal = 40;
+  const pct = Math.min(100, (total/goal)*100);
+  return `
+    <div class="card">
+      <div class="card-title">📈 CPL Tracker</div>
+      <div class="card-sub">Continuous Professional Learning</div>
+      <div class="flex-between mt12"><span>Credits earned</span><strong>${total} / ${goal}</strong></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="mt16">
+        ${State.cplActivities.length === 0 ? '<div class="empty-state"><div class="icon">📈</div>No activities yet</div>' :
+          State.cplActivities.map(a=>`
+            <div class="list-row">
+              <div>
+                <div class="bold">${esc(a.title)}</div>
+                <div class="text-xs text-muted">${a.date ? fmtDateTime(a.createdAt||Date.now()) : ''}</div>
+              </div>
+              <span class="badge badge-green">+${esc(a.credits)}</span>
+            </div>
+          `).join('')}
+      </div>
+      <button class="btn-sm btn-accent mt12" onclick="openAddCPLModal()">+ Add Activity</button>
+    </div>
+  `;
+}
+
+function openAddCPLModal() {
+  openModal(`
+    <div class="modal-header"><h2>+ CPL Activity</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="input-group"><label>Activity title</label><input id="cplTitle" placeholder="e.g. Infection Control Workshop"></div>
+    <div class="input-group"><label>Credits earned</label><input id="cplCredits" type="number" min="1" max="20" value="2"></div>
+    <div class="input-group"><label>Notes (optional)</label><textarea id="cplNotes" rows="2"></textarea></div>
+    <button class="btn-primary" onclick="submitCPL()">Add Activity</button>
+  `);
+}
+
+async function submitCPL() {
+  const title = $('cplTitle').value.trim();
+  const credits = +$('cplCredits').value;
+  if (!title || !credits) { toast('Fill fields','error'); return; }
+  const data = { title, credits, notes: $('cplNotes').value.trim(), staff: State.user?.displayName || 'User' };
+  await pushData('cpl', data);
+  State.cplActivities.push(data);
+  closeModal(); render();
+  toast('CPL added','success');
+}
+
+/* ---------- MORE ---------- */
+function renderMore() {
+  return `
+    <div class="card">
+      <div class="card-title">⋯ More</div>
+      <div class="mt12" style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-sm btn-outline btn-block" style="justify-content:flex-start" onclick="openStaffModal()">👥 Staff Management</button>
+        <button class="btn-sm btn-outline btn-block" style="justify-content:flex-start" onclick="openLeaveModal()">🏖️ Leave Management</button>
+        <button class="btn-sm btn-outline btn-block" style="justify-content:flex-start" onclick="openPoliciesModal()">📜 Policies & Acknowledgment</button>
+        <button class="btn-sm btn-outline btn-block" style="justify-content:flex-start" onclick="openTATModal()">⏱️ Report Timing (TAT)</button>
+        <button class="btn-sm btn-outline btn-block" style="justify-content:flex-start" onclick="openNotificationsModal()">🔔 Notifications</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">ℹ️ About</div>
+      <div class="card-sub">KIH Phlebotomy Companion v2.0<br>Single-file · Firebase ${IS_DEMO?'(Demo mode)':'(Live)'}<br>Offline: ${navigator.onLine?'Online':'Offline'}</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   PART 6: MODALS
+   ============================================================ */
+function openModal(html) {
+  $('modalSheet').innerHTML = html;
+  $('modalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  $('modalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+window.closeModal = closeModal;
+
+/* Start Draw Modal */
+function openStartDrawModal() {
+  const steps = [
+    'Verify order (test name, patient name)',
+    'Identify patient (name, MR number, DOB — 3 times)',
+    'Prepare equipment (needle, tube, cotton, spirit swab, bandage)',
+    'Hand hygiene (sanitizer, gloves)',
+    'Apply tourniquet (3-4 inch above, max 1 minute)',
+    'Select vein (antecubital area)',
+    'Clean site (spirit swab, circular, 30 sec)',
+    'Insert needle (15-30 degree angle)',
+    'Fill tubes (follow order of draw)',
+    'Remove tourniquet',
+    'Remove needle (cotton, pressure)',
+    'Label tube (patient name, time, initials)',
+    'Mix (invert 8-10 times)',
+    'Sit patient (5-10 min rest)',
+    'Send to lab (time stamp)'
+  ];
+  if (!State.startDraw.active || State.startDraw.steps.length === 0) {
+    State.startDraw.steps = steps.map((t,i)=>({id:i+1, text:t, done:false, time:null}));
+    State.startDraw.active = true;
+    State.startDraw.startTime = Date.now();
+  }
+  const done = State.startDraw.steps.filter(s=>s.done).length;
+  const pct = (done/steps.length)*100;
+  openModal(`
+    <div class="modal-header">
+      <h2>🩸 Start Draw</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Patient Name / MR Number</label>
+      <input id="drawPatient" placeholder="Patient name or MR#" value="${esc(State.startDraw.patient)}" oninput="State.startDraw.patient=this.value">
+    </div>
+    <div class="input-group">
+      <label>Notes (optional)</label>
+      <textarea id="drawNotes" rows="2" placeholder="Any special observations..." oninput="State.startDraw.notes=this.value">${esc(State.startDraw.notes)}</textarea>
+    </div>
+    <div class="flex-between mt12 mb8">
+      <span class="text-sm text-muted">Progress</span>
+      <strong class="text-sm">${done}/${steps.length}</strong>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div style="max-height:42vh;overflow-y:auto;margin-top:12px">
+      ${State.startDraw.steps.map((s,i)=>`
+        <div class="step-item">
+          <div class="step-check ${s.done?'done':''}" onclick="toggleDrawStep(${i})">✓</div>
+          <div class="step-content">
+            <div class="step-title">${i+1}. ${esc(s.text)}</div>
+            ${s.time?`<div class="step-time">✅ ${esc(s.time)}</div>`:''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-success" style="flex:1;justify-content:center" onclick="completeDraw()">✅ Complete Draw</button>
+      <button class="btn-sm btn-outline" onclick="closeModal()">Save & Close</button>
+    </div>
+  `);
+}
+
+function toggleDrawStep(i) {
+  const s = State.startDraw.steps[i];
+  s.done = !s.done;
+  s.time = s.done ? fmtTime() : null;
+  openStartDrawModal();
+}
+
+async function completeDraw() {
+  const done = State.startDraw.steps.filter(s=>s.done).length;
+  const total = State.startDraw.steps.length;
+  if (done < total) {
+    if (!confirm(`Only ${done}/${total} steps done. Complete anyway?`)) return;
+  }
+  const data = {
+    patient: State.startDraw.patient || 'Unknown',
+    staff: State.user?.displayName || 'Guest',
+    completedAt: Date.now(),
+    stepsDone: done,
+    totalSteps: total,
+    notes: State.startDraw.notes
+  };
+  await pushData('draws', data);
+  await pushData('notifications', { title:'Draw completed', body:`Patient: ${data.patient} (${done}/${total} steps)`, read:false, type:'draw' });
+  State.startDraw.active = false;
+  State.startDraw.steps = [];
+  State.startDraw.patient = '';
+  State.startDraw.notes = '';
+  closeModal();
+  render();
+  toast('✅ Sample collected!', 'success');
+}
+
+/* Emergency Modal */
+function openEmergencyModal() {
+  const cards = [
+    {id:'needle', title:'🩸 Needle Stick Injury', steps:['Wash immediately with soap + water (5 min)','Clean with alcohol','Notify supervisor within 1 hour','Fill incident form','Blood test (HIV, Hep B, Hep C)','Start PEP within 2 hours','Follow-up: 6 weeks, 3 months, 6 months']},
+    {id:'faint', title:'😵 Patient Fainting', steps:['Lay patient down (head low)','Elevate legs','Loosen tight clothes','Cold water on face','Ammonia smelling salts','If not recovered in 1 min → call 1122','Check blood sugar']},
+    {id:'hematoma', title:'🩹 Hematoma', steps:['Remove needle immediately','Firm pressure 5-10 min','Ice pack 15 min','Keep arm elevated','Rest patient','Warm compress after 24 hours','If severe → doctor']},
+    {id:'nerve', title:'🦵 Nerve Injury', steps:['Remove needle immediately','Ask patient: tingling, numbness, pain?','If yes → doctor immediately','Rest arm','Fill incident report','Follow-up in 48 hours']},
+    {id:'arterial', title:'💉 Arterial Puncture', steps:['Remove needle immediately','Firm pressure 5-10 min','Ice pack','Elevate arm','Monitor hematoma','Inform doctor']},
+    {id:'bleeding', title:'🩸 Continuous Bleeding', steps:['Apply pressure 5-10 min','Tight bandage','Elevate arm','If bleeding after 15 min → doctor','Ask about medications']}
+  ];
+  openModal(`
+    <div class="modal-header">
+      <h2>🚨 Emergency Cards</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <input class="search-bar" placeholder="Search emergency..." oninput="filterEmergency(this.value)">
+    <div id="emergencyList">
+      ${cards.map(c=>`
+        <div class="emergency-card emergency-item" data-name="${esc(c.title.toLowerCase())}">
+          <h3>${c.title}</h3>
+          <ul class="emergency-steps">
+            ${c.steps.map(s=>`<li>${esc(s)}</li>`).join('')}
+          </ul>
+        </div>
+      `).join('')}
+    </div>
+    <div class="btn-row mt12">
+      <button class="btn-sm btn-outline" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-sm btn-outline" onclick="shareEmergency()">📤 Share</button>
+    </div>
+  `);
+}
+function filterEmergency(q) {
+  $$('.emergency-item').forEach(el=>{
+    el.style.display = el.dataset.name.includes(q.toLowerCase()) ? 'block' : 'none';
+  });
+}
+function shareEmergency() {
+  if (navigator.share) navigator.share({title:'KIH Emergency Cards', text:'Emergency protocols for phlebotomy'});
+  else toast('Share not supported');
+}
+
+/* Report Rejection */
+function openReportRejectionModal() {
+  const reasons = ['Hemolysis','Clotting','Short Volume','Wrong Tube','Mislabeled','Delayed Transport','Contaminated','Other'];
+  openModal(`
+    <div class="modal-header"><h2>🚫 Report Rejection</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="input-group"><label>Patient / Sample ID</label><input id="rejPatient" placeholder="Patient name or sample ID"></div>
+    <div class="input-group"><label>Reason</label><select id="rejReason">${reasons.map(r=>`<option>${r}</option>`).join('')}</select></div>
+    <div class="input-group"><label>Details</label><textarea id="rejNotes" rows="2" placeholder="What happened?"></textarea></div>
+    <button class="btn-primary" onclick="submitRejection()">Submit Report</button>
+  `);
+}
+async function submitRejection() {
+  const patient = $('rejPatient').value.trim();
+  const reason = $('rejReason').value;
+  const notes = $('rejNotes').value.trim();
+  if (!patient) { toast('Enter patient ID','error'); return; }
+  const data = { patient, reason, notes, staff: State.user?.displayName || 'User' };
+  await pushData('rejections', data);
+  State.rejections.push(data);
+  closeModal();
+  if (State.activeTab === 'protocols') render();
+  toast('Rejection reported','success');
+}
+
+/* Staff Modal */
+function openStaffModal() {
+  openModal(`
+    <div class="modal-header"><h2>👥 Staff Management</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="input-group"><label>Name</label><input id="staffName" placeholder="Full name"></div>
+    <div class="input-group"><label>Role</label><select id="staffRole"><option>Phlebotomist</option><option>Technician</option><option>Nurse</option><option>Supervisor</option></select></div>
+    <div class="input-group"><label>Email</label><input id="staffEmail" type="email" placeholder="email@kih.pk"></div>
+    <button class="btn-primary" onclick="submitStaff()">Add Staff</button>
+    <div class="divider"></div>
+    <div class="card-title text-sm">Current Staff (${State.staff.length})</div>
+    ${State.staff.map(s=>`<div class="list-row"><span>${esc(s.name)}</span><span class="badge">${esc(s.role)}</span></div>`).join('') || '<div class="empty-state text-sm">No staff yet</div>'}
+  `);
+}
+async function submitStaff() {
+  const name = $('staffName').value.trim();
+  const role = $('staffRole').value;
+  const email = $('staffEmail').value.trim();
+  if (!name) { toast('Enter name','error'); return; }
+  const data = { name, role, email };
+  await pushData('staff', data);
+  State.staff.push(data);
+  openStaffModal();
+  toast('Staff added','success');
+}
+
+/* Leave Modal */
+function openLeaveModal() {
+  openModal(`
+    <div class="modal-header"><h2>🏖️ Leave Management</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="input-group"><label>From date</label><input id="leaveFrom" type="date"></div>
+    <div class="input-group"><label>To date</label><input id="leaveTo" type="date"></div>
+    <div class="input-group"><label>Type</label><select id="leaveType"><option>Annual</option><option>Sick</option><option>Emergency</option><option>Unpaid</option></select></div>
+    <div class="input-group"><label>Reason</label><textarea id="leaveReason" rows="2"></textarea></div>
+    <button class="btn-primary" onclick="submitLeave()">Request Leave</button>
+    <div class="divider"></div>
+    <div class="card-title text-sm">My Requests (${State.leaveRequests.length})</div>
+    ${State.leaveRequests.map(l=>`<div class="list-row"><span>${esc(l.from)} → ${esc(l.to)}</span><span class="badge badge-yellow">pending</span></div>`).join('') || '<div class="empty-state text-sm">No leave requests</div>'}
+  `);
+}
+async function submitLeave() {
+  const from = $('leaveFrom').value, to = $('leaveTo').value;
+  if (!from || !to) { toast('Select dates','error'); return; }
+  const data = { from, to, type: $('leaveType').value, reason: $('leaveReason').value.trim(), status:'pending', staff: State.user?.displayName || 'User' };
+  await pushData('leave', data);
+  State.leaveRequests.push(data);
+  openLeaveModal();
+  toast('Leave requested','success');
+}
+
+/* Policies Modal */
+function openPoliciesModal() {
+  if (State.policies.length === 0) { seedPolicies(); setTimeout(openPoliciesModal, 500); return; }
+  const ackd = JSON.parse(localStorage.getItem('kih_ack_policies') || '[]');
+  openModal(`
+    <div class="modal-header"><h2>📜 Policies</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    ${State.policies.map((p,i)=>`
+      <div class="card" style="margin-bottom:10px">
+        <div class="flex-between">
+          <div class="bold">${esc(p.title)}</div>
+          ${ackd.includes(p.title) ? '<span class="badge badge-green">✓ Acknowledged</span>' : '<span class="badge badge-yellow">Pending</span>'}
+        </div>
+        <div class="card-sub mt8">${esc(p.body)}</div>
+        ${!ackd.includes(p.title) ? `<button class="btn-sm btn-accent mt12" onclick="ackPolicy('${esc(p.title).replace(/'/g,"\\'")}')">✓ I Acknowledge</button>` : ''}
+      </div>
+    `).join('')}
+  `);
+}
+function ackPolicy(title) {
+  const ackd = JSON.parse(localStorage.getItem('kih_ack_policies') || '[]');
+  if (!ackd.includes(title)) ackd.push(title);
+  localStorage.setItem('kih_ack_policies', JSON.stringify(ackd));
+  openPoliciesModal();
+  toast('Policy acknowledged','success');
+}
+
+/* TAT Modal */
+function openTATModal() {
+  openModal(`
+    <div class="modal-header"><h2>⏱️ Report Timing (TAT)</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="card-sub mb12">Turnaround times by category</div>
+    ${[
+      {cat:'Hematology', routine:'2 hrs', urgent:'30 min'},
+      {cat:'Coagulation', routine:'4 hrs', urgent:'1 hr'},
+      {cat:'Chemistry', routine:'6 hrs', urgent:'2 hrs'},
+      {cat:'Microbiology', routine:'48 hrs', urgent:'24 hrs'},
+      {cat:'Hormones', routine:'8 hrs', urgent:'4 hrs'},
+      {cat:'Cardiac Markers', routine:'2 hrs', urgent:'30 min'}
+    ].map(t=>`
+      <div class="list-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div class="bold">${esc(t.cat)}</div>
+        <div class="flex-between text-sm">
+          <span>⏱ Routine: <strong>${esc(t.routine)}</strong></span>
+          <span>🚨 Urgent: <strong style="color:var(--danger)">${esc(t.urgent)}</strong></span>
+        </div>
+      </div>
+    `).join('')}
+  `);
+}
+
+/* Notifications Modal */
+function openNotificationsModal() {
+  const notifs = State.notifications.length ? State.notifications :
+    [{title:'Welcome to KIH Phlebotomy', body:'Your companion app is ready.', read:false, createdAt:Date.now()}];
+  // Mark all read
+  State.notifications.forEach(n=>n.read=true);
+  State.unreadCount = 0;
+  updateBell();
+  openModal(`
+    <div class="modal-header"><h2>🔔 Notifications</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    ${notifs.map(n=>`
+      <div class="list-row" style="flex-direction:column;align-items:stretch;gap:4px;${!n.read?'border-left:3px solid var(--primary)':''}">
+        <div class="flex-between">
+          <div class="bold text-sm">${esc(n.title)}</div>
+          <div class="text-xs text-muted">${n.createdAt?fmtDateTime(n.createdAt):''}</div>
+        </div>
+        <div class="text-xs text-muted">${esc(n.body||'')}</div>
+      </div>
+    `).join('')}
+  `);
+}
+
+/* ============================================================
+   PART 7: ROSTER ENGINE (done above)
+   ============================================================ */
+
+/* ============================================================
+   PART 8: BOOT + SYNC
+   ============================================================ */
+
+function attachHandlers() {
+  $$('.nav-item').forEach(el=>{
+    el.onclick = () => { State.activeTab = el.dataset.tab; render(); };
+  });
+  const sd = $('startDrawBtn'); if (sd) sd.onclick = openStartDrawModal;
+  const em = $('emergencyBtn'); if (em) em.onclick = openEmergencyModal;
+  $$('[data-quick]').forEach(el=>{
+    el.onclick = () => {
+      const q = el.dataset.quick;
+      State.activeTab = 'protocols';
+      State.protocolTab = q;
+      render();
+    };
+  });
+  $$('[data-ptab]').forEach(el=>{
+    el.onclick = () => { State.protocolTab = el.dataset.ptab; render(); };
+  });
+}
+
+/* Login/Logout listeners */
+$('loginBtn').onclick = doLogin;
+$('guestBtn').onclick = doGuestLogin;
+$('logoutBtn').onclick = doLogout;
+$('notificationBell').onclick = openNotificationsModal;
+$('loginPassword').addEventListener('keydown', e=>{ if (e.key==='Enter') doLogin(); });
+
+/* Modal overlay click to close */
+$('modalOverlay').addEventListener('click', e=>{ if (e.target === e.currentTarget) closeModal(); });
+
+/* Online/offline */
+window.addEventListener('online', ()=>{ State.online = true; updateOnlineBadge(); toast('Back online','success'); });
+window.addEventListener('offline', ()=>{ State.online = false; updateOnlineBadge(); toast('Offline mode','error'); });
+
+/* Boot */
+(function boot() {
+  // 1. Check localStorage session first
+  const s = loadSession();
+  if (s) {
+    State.user = s.user;
+    // Still verify with Firebase Auth if available
+    if (auth && !IS_DEMO) {
+      auth.onAuthStateChanged(u => {
+        if (u && !State.user) {
+          State.user = { uid:u.uid, email:u.email, displayName:u.displayName || u.email.split('@')[0] };
+          saveSession(State.user);
+          showApp();
         }
-        const db = firebase.database();
-
-        // Local In-Memory Operational State
-        const state = {
-            role: 'staff', // staff, supervisor, admin
-            staff: {},
-            shifts: {
-                'D': { label: 'Day (08:00 - 16:30)', gender: 'ANY', timing: '08:00-16:30' },
-                'E': { label: 'Evening (14:30 - 23:00)', gender: 'ANY', timing: '14:30-23:00' },
-                'E4': { label: 'Evening 4 (16:00 - 00:00)', gender: 'ANY', timing: '16:00-00:00' },
-                'N': { label: 'Night (23:00 - 08:00)', gender: 'MALE', timing: '23:00-08:00' },
-                'N12': { label: 'Night 12h (20:00 - 08:00)', gender: 'MALE', timing: '20:00-08:00' },
-                'OFF': { label: 'Day Off', gender: 'ANY', timing: '-' },
-                'PH': { label: 'Public Holiday', gender: 'ANY', timing: '-' },
-                'CPL': { label: 'Compensatory Paid Leave', gender: 'ANY', timing: '-' },
-                'X': { label: 'Standby Duty', gender: 'ANY', timing: 'On-Call' }
-            },
-            tests: [
-                { code: 'CBC', name: 'Complete Blood Count', tube: 'EDTA Purple', sla: '1 Hour', temp: 'Room Temp (20-25°C)', protocol: 'Invert gently 8-10 times immediately after collection. Do not shake.' },
-                { code: 'PT/INR', name: 'Prothrombin Time / INR', tube: 'Citrate Blue', sla: '1 Hour', temp: 'Room Temp (20-25°C)', protocol: 'Fill exactly to indicator line (9:1 blood ratio). Invert 3-4 times.' },
-                { code: 'LFT', name: 'Liver Function Tests', tube: 'SST Yellow', sla: '2 Hours', temp: 'Refrigerated (2-8°C)', protocol: 'Invert 5 times. Allow 30 mins complete clot formation before centrifuging.' },
-                { code: 'RFT', name: 'Renal Function Tests', tube: 'SST Yellow', sla: '2 Hours', temp: 'Refrigerated (2-8°C)', protocol: 'Invert 5 times. Ensure baseline hydration parameters recorded if STAT.' },
-                { code: 'BC', name: 'Blood Culture (Aerobic/Anaerobic)', tube: 'Culture Bottles', sla: '24-48 Hours', temp: 'Incubate / Room Temp', protocol: 'Strict aseptic preparation with Chlorhexidine. Clean bottle top with alcohol.' },
-                { code: 'TROP-I', name: 'Troponin I (Cardiac Marker)', tube: 'Heparin Green', sla: '30 Mins (STAT)', temp: 'Immediate Processing', protocol: 'Stat draw. Immediate hand transfer to core chemistry laboratory.' }
-            ],
-            policies: {},
-            leaves: {},
-            auditLogs: [],
-            rosters: {},
-            currentPeriodId: '2026-10',
-            wizardStep: 1,
-            wizardData: {
-                periodId: '',
-                startDate: '',
-                endDate: '',
-                weeklySetup: { D: 3, E: 2, N: 1, E4: 1 },
-                leaveLimits: { OFF: 2, Leave: 1 },
-                holidays: []
-            }
-        };
-
-        /* =========================================================
-           2. DOM EVENT LISTENERS & LIFECYCLE INITIALIZATION
-           ========================================================= */
-        document.addEventListener("DOMContentLoaded", () => {
-            setupFirebaseRealtimeListeners();
-            renderTestDirectory();
-            filterQuickTests('');
-        });
-
-        function setupFirebaseRealtimeListeners() {
-            // Realtime Sync for Staff
-            db.ref('staff').on('value', (snapshot) => {
-                state.staff = snapshot.val() || getSeedStaffData();
-                updateDashboardMetrics();
-                renderStaffTable();
-                renderRosterGrid();
-            });
-
-            // Realtime Sync for Directives/Policies
-            db.ref('policies').on('value', (snapshot) => {
-                state.policies = snapshot.val() || getSeedPoliciesData();
-                updateDashboardMetrics();
-                renderPolicies();
-            });
-
-            // Realtime Sync for Leaves
-            db.ref('leaves').on('value', (snapshot) => {
-                state.leaves = snapshot.val() || {};
-                updateDashboardMetrics();
-                renderLeavesTable();
-            });
-
-            // Realtime Sync for Roster Records
-            db.ref('roster').on('value', (snapshot) => {
-                state.rosters = snapshot.val() || {};
-                renderRosterGrid();
-            });
-
-            // Realtime Sync for Audit Logs
-            db.ref('auditLog').limitToLast(10).on('value', (snapshot) => {
-                const logsObj = snapshot.val() || {};
-                state.auditLogs = Object.values(logsObj).reverse();
-                renderAuditLog();
-            });
-        }
-
-        /* =========================================================
-           3. UI ROLE SWITCHING & NAVIGATION CONTROLS
-           ========================================================= */
-        function switchRole(newRole) {
-            state.role = newRole;
-            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-
-            // Toggle visibility for role-restricted elements
-            document.querySelectorAll('.role-restricted').forEach(el => {
-                if (el.classList.contains(newRole)) {
-                    el.style.display = '';
-                } else {
-                    el.style.display = 'none';
-                }
-            });
-
-            showToast(`Role switched to: ${newRole.toUpperCase()}`);
-            renderRosterGrid();
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-
-            event.currentTarget.classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-        }
-
-        /* =========================================================
-           4. CLINICAL TEST DIRECTORY ENGINE
-           ========================================================= */
-        function renderTestDirectory(query = '') {
-            const container = document.getElementById('full-test-grid');
-            container.innerHTML = '';
-            
-            const filtered = state.tests.filter(t => 
-                t.name.toLowerCase().includes(query.toLowerCase()) || 
-                t.code.toLowerCase().includes(query.toLowerCase()) ||
-                t.tube.toLowerCase().includes(query.toLowerCase())
-            );
-
-            filtered.forEach(test => {
-                container.appendChild(createTestCardElement(test));
-            });
-        }
-
-        function filterQuickTests(query) {
-            const container = document.getElementById('quick-test-results');
-            container.innerHTML = '';
-            if(!query.trim()) {
-                container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.8rem;">Type in search box above to immediately display test protocols...</p>';
-                return;
-            }
-
-            const filtered = state.tests.filter(t => 
-                t.name.toLowerCase().includes(query.toLowerCase()) || 
-                t.code.toLowerCase().includes(query.toLowerCase())
-            );
-
-            filtered.forEach(test => {
-                container.appendChild(createTestCardElement(test));
-            });
-        }
-
-        function createTestCardElement(test) {
-            const card = document.createElement('div');
-            card.className = 'test-card';
-            card.setAttribute('data-tube', test.tube);
-            card.innerHTML = `
-                <div class="test-header">
-                    <span class="test-title">${test.name}</span>
-                    <span class="test-code">${test.code}</span>
-                </div>
-                <div class="test-detail"><i class="fa-solid fa-vial"></i> <strong>Tube:</strong> ${test.tube}</div>
-                <div class="test-detail"><i class="fa-solid fa-stopwatch"></i> <strong>SLA:</strong> ${test.sla}</div>
-                <div class="test-detail"><i class="fa-solid fa-temperature-half"></i> <strong>Storage:</strong> ${test.temp}</div>
-                <div class="test-detail" style="margin-top:0.4rem; color: var(--text-primary);"><i class="fa-solid fa-notes-medical"></i> ${test.protocol}</div>
-            `;
-            return card;
-        }
-
-        /* =========================================================
-           5. SMART AUTO-ROSTER GENERATION ALGORITHM
-           ========================================================= */
-        function openRosterWizard() {
-            state.wizardStep = 1;
-            renderWizardStep();
-            document.getElementById('wizard-modal').classList.add('active');
-        }
-
-        function renderWizardStep() {
-            const titleEl = document.getElementById('wizard-step-title');
-            const contentEl = document.getElementById('wizard-step-content');
-            const progressEl = document.getElementById('wizard-progress');
-
-            progressEl.style.width = `${(state.wizardStep / 6) * 100}%`;
-
-            if (state.wizardStep === 1) {
-                titleEl.innerHTML = '<i class="fa-solid fa-calendar"></i> Step 1: Period Selection';
-                contentEl.innerHTML = `
-                    <div class="form-group">
-                        <label>Select Target Roster Period</label>
-                        <input type="month" id="wiz-period" class="form-control" value="2026-10">
-                    </div>
-                `;
-            } else if (state.wizardStep === 2) {
-                titleEl.innerHTML = '<i class="fa-solid fa-sliders"></i> Step 2: Daily Staffing Requirements';
-                contentEl.innerHTML = `
-                    <div class="form-row">
-                        <div class="form-group"><label>Day Shift (D) Count</label><input type="number" id="wiz-d" class="form-control" value="3"></div>
-                        <div class="form-group"><label>Evening Shift (E) Count</label><input type="number" id="wiz-e" class="form-control" value="2"></div>
-                        <div class="form-group"><label>Evening 4 (E4) Count</label><input type="number" id="wiz-e4" class="form-control" value="1"></div>
-                        <div class="form-group"><label>Night Shift (N) Count</label><input type="number" id="wiz-n" class="form-control" value="1"></div>
-                    </div>
-                `;
-            } else if (state.wizardStep === 3) {
-                titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Step 3: Off & Leave Capping Limits';
-                contentEl.innerHTML = `
-                    <div class="form-row">
-                        <div class="form-group"><label>Max OFF Days Allowed Per Day</label><input type="number" id="wiz-off-limit" class="form-control" value="2"></div>
-                        <div class="form-group"><label>Max Approved Leaves Per Day</label><input type="number" id="wiz-leave-limit" class="form-control" value="1"></div>
-                    </div>
-                `;
-            } else if (state.wizardStep === 4) {
-                titleEl.innerHTML = '<i class="fa-solid fa-star-of-life"></i> Step 4: Public Holiday Declarations';
-                contentEl.innerHTML = `
-                    <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom: 1rem;">Declare any gazetted public holidays within this schedule period.</p>
-                    <div class="form-group"><label>Holiday Date</label><input type="date" id="wiz-ph-date" class="form-control"></div>
-                    <div class="form-group"><label>Holiday Title</label><input type="text" id="wiz-ph-title" class="form-control" placeholder="e.g., Iqbal Day"></div>
-                `;
-            } else if (state.wizardStep === 5) {
-                titleEl.innerHTML = '<i class="fa-solid fa-list-check"></i> Step 5: Constraint Review';
-                contentEl.innerHTML = `
-                    <ul style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
-                        <li><i class="fa-solid fa-check text-success"></i> Rest Priority Rule: Automated OFF assignment following N/N12 shifts.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> Gender Restrictor Enforcement: Night shifts assigned strictly to male staff.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> Equal OFF Target: Equalization based on total period Sundays.</li>
-                    </ul>
-                `;
-            } else if (state.wizardStep === 6) {
-                titleEl.innerHTML = '<i class="fa-solid fa-bolt"></i> Step 6: Execute Generation';
-                contentEl.innerHTML = `<p style="font-size:0.9rem;">Ready to run zero-pause auto-resolution engine for period <strong>${state.wizardData.periodId || '2026-10'}</strong>?</p>`;
-            }
-        }
-
-        function nextWizardStep() {
-            if (state.wizardStep === 1) {
-                state.wizardData.periodId = document.getElementById('wiz-period').value;
-            } else if (state.wizardStep === 6) {
-                executeRosterGeneration();
-                closeModal('wizard-modal');
-                return;
-            }
-            state.wizardStep++;
-            renderWizardStep();
-        }
-
-        function prevWizardStep() {
-            if (state.wizardStep > 1) {
-                state.wizardStep--;
-                renderWizardStep();
-            }
-        }
-
-        function executeRosterGeneration() {
-            const periodId = state.wizardData.periodId || '2026-10';
-            const year = parseInt(periodId.split('-')[0]);
-            const month = parseInt(periodId.split('-')[1]) - 1;
-            
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const rosterMatrix = {};
-
-            const staffIds = Object.keys(state.staff);
-            if (staffIds.length === 0) {
-                showToast("Cannot generate roster: No staff profiles found.", "danger");
-                return;
-            }
-
-            // Core Auto-Resolution Generation Loop
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${periodId}-${String(day).padStart(2, '0')}`;
-                rosterMatrix[dateStr] = {};
-
-                let maleStaffIndex = 0;
-                
-                staffIds.forEach((sId, index) => {
-                    const staffMember = state.staff[sId];
-                    const prevDateStr = `${periodId}-${String(day - 1).padStart(2, '0')}`;
-                    const prevShift = day > 1 ? rosterMatrix[prevDateStr][sId] : null;
-
-                    // Rule 1: Rest Priority Rule (Night Shift -> Rest)
-                    if (prevShift === 'N' || prevShift === 'N12') {
-                        rosterMatrix[dateStr][sId] = 'OFF';
-                        return;
-                    }
-
-                    // Rule 2: Fixed Shift Override
-                    if (staffMember.fixedShift && staffMember.fixedShift !== 'NONE') {
-                        rosterMatrix[dateStr][sId] = staffMember.fixedShift;
-                        return;
-                    }
-
-                    // Rule 3: Gender Enforcer for Night Shifts
-                    if (index % 4 === 0 && staffMember.gender === 'MALE') {
-                        rosterMatrix[dateStr][sId] = 'N';
-                    } else if (index % 3 === 0) {
-                        rosterMatrix[dateStr][sId] = 'E';
-                    } else if (index % 5 === 0) {
-                        rosterMatrix[dateStr][sId] = 'OFF';
-                    } else {
-                        rosterMatrix[dateStr][sId] = 'D';
-                    }
-                });
-            }
-
-            // Save Generated Roster & Log Audit Event
-            db.ref(`roster/${periodId}`).set(rosterMatrix);
-            logAuditEvent(`Generated automated schedule roster matrix for Period ${periodId}`);
-            showToast(`Roster generated successfully for ${periodId}`);
-        }
-
-        /* =========================================================
-           6. RENDER ENGINE FOR ROSTER & DASHBOARD
-           ========================================================= */
-        function renderRosterGrid() {
-            const headerRow = document.getElementById('roster-header-row');
-            const tbody = document.getElementById('roster-body-rows');
-            
-            headerRow.innerHTML = '<th class="col-staff">Phlebotomist</th>';
-            tbody.innerHTML = '';
-
-            const periodId = state.currentPeriodId;
-            const periodData = state.rosters[periodId] || {};
-            const dates = Object.keys(periodData).sort();
-
-            if (dates.length === 0) {
-                // Render fallback structure if no matrix initialized
-                for (let d = 1; d <= 30; d++) {
-                    const th = document.createElement('th');
-                    th.innerText = `Oct ${d}`;
-                    headerRow.appendChild(th);
-                }
-                Object.values(state.staff).forEach(staff => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="col-staff">${staff.name}</td>` + '<td><span class="shift-badge shift-D">D</span></td>'.repeat(30);
-                    tbody.appendChild(tr);
-                });
-                return;
-            }
-
-            // Render Dates Column Headers
-            dates.forEach(dStr => {
-                const th = document.createElement('th');
-                const dayNum = dStr.split('-')[2];
-                th.innerText = `Day ${dayNum}`;
-                headerRow.appendChild(th);
-            });
-
-            // Render Staff Rows
-            Object.keys(state.staff).forEach(sId => {
-                const staff = state.staff[sId];
-                const tr = document.createElement('tr');
-                let rowHtml = `<td class="col-staff">${staff.name} <br><small style="color:var(--text-muted); font-size:0.65rem;">${staff.gender}</small></td>`;
-
-                dates.forEach(dStr => {
-                    const shiftCode = periodData[dStr][sId] || 'OFF';
-                    rowHtml += `<td><span class="shift-badge shift-${shiftCode}">${shiftCode}</span></td>`;
-                });
-
-                tr.innerHTML = rowHtml;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updateDashboardMetrics() {
-            document.getElementById('metric-active-staff').innerText = Object.keys(state.staff).length;
-            document.getElementById('metric-current-period').innerText = state.currentPeriodId;
-            document.getElementById('metric-pending-leaves').innerText = Object.values(state.leaves).filter(l => l.status === 'PENDING').length;
-            document.getElementById('metric-active-policies').innerText = Object.keys(state.policies).length;
-        }
-
-        function renderPolicies() {
-            const container = document.getElementById('policies-container');
-            container.innerHTML = '';
-
-            Object.keys(state.policies).forEach(pId => {
-                const policy = state.policies[pId];
-                const ackCount = (policy.acknowledgedBy || []).length;
-                const totalStaff = Object.keys(state.staff).length;
-
-                const card = document.createElement('div');
-                card.className = 'policy-card';
-                card.innerHTML = `
-                    <div class="policy-header">
-                        <span class="policy-title">${policy.title}</span>
-                        <span class="policy-meta">${policy.date}</span>
-                    </div>
-                    <div class="policy-body">${policy.content}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.75rem; color:var(--accent);"><i class="fa-solid fa-circle-check"></i> Compliance: ${ackCount}/${totalStaff} Acknowledged</span>
-                        <button class="btn btn-secondary" onclick="acknowledgePolicy('${pId}')"><i class="fa-solid fa-check"></i> Acknowledge</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function acknowledgePolicy(pId) {
-            const currentStaffId = "STF-101"; // Default active context
-            const policy = state.policies[pId];
-            const acks = policy.acknowledgedBy || [];
-
-            if (!acks.includes(currentStaffId)) {
-                acks.push(currentStaffId);
-                db.ref(`policies/${pId}/acknowledgedBy`).set(acks);
-                logAuditEvent(`Acknowledged Directive Directive ID: ${pId}`);
-                showToast("Directive acknowledged successfully.");
-            } else {
-                showToast("You have already acknowledged this directive.");
-            }
-        }
-
-        function renderStaffTable() {
-            const tbody = document.getElementById('staff-management-table');
-            tbody.innerHTML = '';
-
-            Object.keys(state.staff).forEach(sId => {
-                const staff = state.staff[sId];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="col-staff">${staff.name}</td>
-                    <td>${staff.gender}</td>
-                    <td>${staff.fixedShift || 'None'}</td>
-                    <td><span style="color:var(--success); font-weight:600;">Active</span></td>
-                    <td><button class="btn btn-danger" style="padding:0.2rem 0.5rem;" onclick="deleteStaff('${sId}')"><i class="fa-solid fa-trash"></i></button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function renderLeavesTable() {
-            const tbody = document.getElementById('leave-requests-table');
-            tbody.innerHTML = '';
-
-            Object.keys(state.leaves).forEach(lId => {
-                const leave = state.leaves[lId];
-                const staffName = state.staff[leave.staffId]?.name || leave.staffId;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${staffName}</td>
-                    <td>${leave.type}</td>
-                    <td>${leave.startDate}</td>
-                    <td>${leave.endDate}</td>
-                    <td><span class="shift-badge shift-${leave.status === 'APPROVED' ? 'CPL' : 'PH'}">${leave.status}</span></td>
-                    <td class="role-restricted supervisor admin">
-                        ${leave.status === 'PENDING' ? `
-                            <button class="btn btn-primary" style="padding:0.2rem 0.5rem;" onclick="updateLeaveStatus('${lId}', 'APPROVED')">Approve</button>
-                            <button class="btn btn-danger" style="padding:0.2rem 0.5rem;" onclick="updateLeaveStatus('${lId}', 'REJECTED')">Reject</button>
-                        ` : '-'}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updateLeaveStatus(lId, status) {
-            db.ref(`leaves/${lId}/status`).set(status);
-            logAuditEvent(`Updated Leave Application ${lId} state to ${status}`);
-            showToast(`Leave application ${status.toLowerCase()}`);
-        }
-
-        function renderAuditLog() {
-            const container = document.getElementById('dashboard-audit-log');
-            container.innerHTML = '';
-
-            state.auditLogs.forEach(log => {
-                const li = document.createElement('li');
-                li.className = 'audit-item';
-                li.innerHTML = `
-                    <span><strong style="color:var(--primary);">${log.user}:</strong> ${log.action}</span>
-                    <span class="audit-time">${log.timestamp}</span>
-                `;
-                container.appendChild(li);
-            });
-        }
-
-        function logAuditEvent(actionDetails) {
-            const newLogRef = db.ref('auditLog').push();
-            newLogRef.set({
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                user: state.role.toUpperCase(),
-                action: actionDetails
-            });
-        }
-
-        /* =========================================================
-           7. MODALS & DATA ENTRY DIALOGS
-           ========================================================= */
-        function openStaffModal() {
-            const body = document.getElementById('generic-modal-body');
-            document.getElementById('generic-modal-title').innerText = "Add New Phlebotomist";
-            body.innerHTML = `
-                <div class="form-group"><label>Full Name</label><input type="text" id="staff-name" class="form-control" placeholder="e.g., Muhammad Ali"></div>
-                <div class="form-group"><label>Gender</label><select id="staff-gender" class="form-control"><option value="MALE">Male</option><option value="FEMALE">Female</option></select></div>
-                <div class="form-group"><label>Fixed Shift Preference</label><select id="staff-shift" class="form-control"><option value="NONE">None (Rotational)</option><option value="D">Day (D)</option><option value="E">Evening (E)</option></select></div>
-                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="saveStaffProfile()">Save Phlebotomist</button>
-            `;
-            document.getElementById('generic-modal').classList.add('active');
-        }
-
-        function saveStaffProfile() {
-            const name = document.getElementById('staff-name').value;
-            const gender = document.getElementById('staff-gender').value;
-            const fixedShift = document.getElementById('staff-shift').value;
-
-            if (!name) return showToast("Please enter staff name", "danger");
-
-            const newId = `STF-${Math.floor(100 + Math.random() * 900)}`;
-            db.ref(`staff/${newId}`).set({ name, gender, fixedShift, active: true });
-            logAuditEvent(`Added new phlebotomist profile: ${name} (${newId})`);
-            closeModal('generic-modal');
-            showToast("Staff profile added.");
-        }
-
-        function deleteStaff(sId) {
-            db.ref(`staff/${sId}`).remove();
-            logAuditEvent(`Removed staff profile ${sId}`);
-            showToast("Staff profile removed.");
-        }
-
-        function openLeaveModal() {
-            const body = document.getElementById('generic-modal-body');
-            document.getElementById('generic-modal-title').innerText = "Apply for Leave";
-            body.innerHTML = `
-                <div class="form-group"><label>Phlebotomist</label><select id="leave-staff-id" class="form-control">${Object.keys(state.staff).map(id => `<option value="${id}">${state.staff[id].name}</option>`).join('')}</select></div>
-                <div class="form-group"><label>Leave Type</label><select id="leave-type" class="form-control"><option value="Casual Leave (CL)">Casual Leave (CL)</option><option value="Sick Leave (SL)">Sick Leave (SL)</option><option value="Annual Leave (AL)">Annual Leave (AL)</option></select></div>
-                <div class="form-group"><label>Start Date</label><input type="date" id="leave-start" class="form-control"></div>
-                <div class="form-group"><label>End Date</label><input type="date" id="leave-end" class="form-control"></div>
-                <button class="btn btn-accent" style="width:100%; margin-top:1rem;" onclick="submitLeaveRequest()">Submit Leave Request</button>
-            `;
-            document.getElementById('generic-modal').classList.add('active');
-        }
-
-        function submitLeaveRequest() {
-            const staffId = document.getElementById('leave-staff-id').value;
-            const type = document.getElementById('leave-type').value;
-            const startDate = document.getElementById('leave-start').value;
-            const endDate = document.getElementById('leave-end').value;
-
-            if (!startDate || !endDate) return showToast("Please select valid dates", "danger");
-
-            const newRef = db.ref('leaves').push();
-            newRef.set({ staffId, type, startDate, endDate, status: 'PENDING' });
-            logAuditEvent(`Submitted leave request for ${state.staff[staffId]?.name || staffId}`);
-            closeModal('generic-modal');
-            showToast("Leave request submitted.");
-        }
-
-        function openPolicyModal() {
-            const body = document.getElementById('generic-modal-body');
-            document.getElementById('generic-modal-title').innerText = "Post Operational Directive";
-            body.innerHTML = `
-                <div class="form-group"><label>Directive Title</label><input type="text" id="pol-title" class="form-control" placeholder="e.g., Blood Culture Aseptic Protocols"></div>
-                <div class="form-group"><label>Content / Guidelines</label><textarea id="pol-content" class="form-control" rows="4" placeholder="Detailed directive statement..."></textarea></div>
-                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="savePolicyDirective()">Publish Directive</button>
-            `;
-            document.getElementById('generic-modal').classList.add('active');
-        }
-
-        function savePolicyDirective() {
-            const title = document.getElementById('pol-title').value;
-            const content = document.getElementById('pol-content').value;
-
-            if (!title || !content) return showToast("Please complete directive fields", "danger");
-
-            const newRef = db.ref('policies').push();
-            newRef.set({ title, content, date: new Date().toISOString().split('T')[0], acknowledgedBy: [] });
-            logAuditEvent(`Published operational policy directive: ${title}`);
-            closeModal('generic-modal');
-            showToast("Policy directive published.");
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        /* =========================================================
-           8. FALLBACK SEED DATA
-           ========================================================= */
-        function getSeedStaffData() {
-            return {
-                'STF-101': { name: 'Tariq Mehmood', gender: 'MALE', fixedShift: 'NONE', active: true },
-                'STF-102': { name: 'Ayesha Khan', gender: 'FEMALE', fixedShift: 'D', active: true },
-                'STF-103': { name: 'Usman Ahmed', gender: 'MALE', fixedShift: 'NONE', active: true },
-                'STF-104': { name: 'Zainab Bibi', gender: 'FEMALE', fixedShift: 'NONE', active: true },
-                'STF-105': { name: 'Bilal Malik', gender: 'MALE', fixedShift: 'N', active: true }
-            };
-        }
-
-        function getSeedPoliciesData() {
-            return {
-                'POL-01': { title: 'Strict Order of Draw & Tube Inversion Protocols', content: 'Ensure Blood Culture bottles are drawn first, followed by Citrate Blue tubes. Mandatory 8-time inversion for EDTA Purple containers to prevent micro-clotting.', date: '2026-09-15', acknowledgedBy: ['STF-101'] },
-                'POL-02': { title: 'Stat Troponin-I Lab Transport SLA', content: 'All STAT Troponin-I samples collected from ER or ICU must be dispatched to Core Chem Section within 10 minutes of draw time.', date: '2026-09-17', acknowledgedBy: [] }
-            };
-        }
-    </script>
+      });
+    }
+    showApp();
+  } else if (auth && !IS_DEMO) {
+    // Check Firebase Auth persisted session
+    auth.onAuthStateChanged(u => {
+      if (u) {
+        State.user = { uid:u.uid, email:u.email, displayName:u.displayName || u.email.split('@')[0] };
+        saveSession(State.user);
+        showApp();
+      }
+    });
+  }
+  // else login screen stays visible
+
+  // Log demo mode warning
+  if (IS_DEMO) {
+    console.info('%c⚠️ KIH Phlebotomy running in DEMO mode (no Firebase). Data saved locally in browser.', 'color:#f3a54f;font-weight:bold;font-size:12px');
+    console.info('%cReplace firebaseConfig in index.html with real Firebase credentials for full functionality.', 'color:#8e9bb5;font-size:11px');
+  }
+})();
+</script>
 </body>
 </html>
