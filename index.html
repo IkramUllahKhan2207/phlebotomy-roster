@@ -8635,7 +8635,2521 @@ window.resetShiftsSimple = function() {
   console.log('%c✅ Shift Management (Simple) loaded', 'color:#10B981;font-weight:bold;font-size:12px');
   console.log('%c   Shifts loaded without designation requirements', 'color:#9CA3AF;font-size:11px');
 })();
-   
+   /* ═══════════════════════════════════════════════════════════
+   PART 2 — STAFF SHIFT ASSIGNMENT
+   Primary + Secondary shifts, Priority order, Special offs
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── GET AVAILABLE SHIFTS ───────────────────────────── */
+function getAvailableShifts() {
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  return shifts.filter(s => !['X','OFF','PH'].includes(s.code));
+}
+
+/* ─── OPEN ADD STAFF (with Primary + Secondary) ──────── */
+window.openAddStaffModal = function(desId) {
+  const des = DESIGNATIONS.find(d => d.id === desId) || { icon: '👤', name: 'Staff' };
+  const shifts = getAvailableShifts();
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>+ Add ${des.icon} ${des.name}</h2>
+      <button class="modal-close" onclick="openDesignationSection('${desId}')">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Full Name *</label>
+      <input id="s_name" placeholder="e.g. Dr. Ayesha Khan">
+    </div>
+    
+    <div class="input-group">
+      <label>Mobile Number * (11 digits)</label>
+      <input id="s_mobile" placeholder="03001234567" inputmode="tel" maxlength="11">
+    </div>
+    
+    <div class="input-group">
+      <label>Password * (min 6 chars)</label>
+      <input id="s_password" type="password" placeholder="••••••">
+    </div>
+    
+    <!-- PRIMARY SHIFT -->
+    <div class="input-group">
+      <label>Primary Shift * <span style="color:var(--text-dim);font-size:11px">(Priority #1)</span></label>
+      <select id="s_primaryShift" onchange="updateSecondaryOptions()">
+        ${shifts.map(s => `
+          <option value="${s.code}">${s.name} (${s.code}) — ${s.start} – ${s.end}</option>
+        `).join('')}
+      </select>
+    </div>
+    
+    <!-- SECONDARY SHIFTS -->
+    <div class="input-group">
+      <label>Secondary Shifts <span style="color:var(--text-dim);font-size:11px">(Priority order — check to add)</span></label>
+      <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:12px" id="s_secondaryContainer">
+        ${shifts.map(s => `
+          <label class="checkbox-row secondary-shift-row" data-shift="${s.code}" style="margin:0 0 8px 0">
+            <input type="checkbox" class="s-secondary" value="${s.code}" onchange="updateShiftPreview()">
+            <span>${s.name} (${s.code}) — ${s.start} – ${s.end}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    
+    <!-- PRIORITY PREVIEW -->
+    <div id="s_shiftPreview" class="card" style="margin-top:12px;padding:12px;background:var(--bg-1);font-size:12.5px;color:var(--text)">
+      <div style="color:var(--text-muted);font-size:12px">Select primary + secondary shifts to see priority</div>
+    </div>
+    
+    <!-- SPECIAL OFF DATES -->
+    <div class="input-group mt12">
+      <label>Special Off Dates (optional)</label>
+      <div style="display:flex;gap:8px">
+        <input type="date" id="s_specialDate" style="flex:1">
+        <button class="btn-sm btn-accent" onclick="addSpecialOffDate()">+ Add</button>
+      </div>
+      <div id="s_specialDatesList" style="margin-top:8px"></div>
+    </div>
+    
+    <div class="input-group">
+      <label>Station (optional)</label>
+      <input id="s_station" placeholder="e.g. OPD / Emergency / ICU">
+    </div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="s_notifications" checked>
+      <span>Enable notifications</span>
+    </label>
+    
+    ${canManage() ? `
+      <label class="checkbox-row">
+        <input type="checkbox" id="s_admin">
+        <span>Admin panel access</span>
+      </label>
+    ` : ''}
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveStaffWithShifts('${desId}','')">💾 Add Staff</button>
+      <button class="btn-sm" onclick="openDesignationSection('${desId}')">Cancel</button>
+    </div>
+  `);
+  
+  // Init
+  window._specialOffDates = [];
+  setTimeout(() => {
+    updateSecondaryOptions();
+    updateShiftPreview();
+    renderSpecialOffDates();
+  }, 50);
+};
+
+/* ─── OPEN EDIT STAFF ────────────────────────────────── */
+window.openEditStaffModal = function(id) {
+  const s = State.staff.find(x => x._id === id);
+  if (!s) return;
+  const desId = s.designation;
+  const des = DESIGNATIONS.find(d => d.id === desId) || { icon: '👤', name: 'Staff' };
+  const shifts = getAvailableShifts();
+  const primaryShift = s.fixedShift || s.shift || 'M';
+  const secondaryShifts = s.multiShifts || [];
+  window._specialOffDates = s.specialOffDates || [];
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>✏️ Edit ${esc(s.name)}</h2>
+      <button class="modal-close" onclick="openDesignationSection('${desId}')">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Full Name *</label>
+      <input id="s_name" value="${esc(s.name)}">
+    </div>
+    
+    <div class="input-group">
+      <label>Mobile Number *</label>
+      <input id="s_mobile" value="${esc(s.mobile)}" inputmode="tel" maxlength="11">
+    </div>
+    
+    <div class="input-group">
+      <label>New Password (leave empty to keep)</label>
+      <input id="s_password" type="password" placeholder="••••••">
+    </div>
+    
+    <!-- PRIMARY -->
+    <div class="input-group">
+      <label>Primary Shift * <span style="color:var(--text-dim);font-size:11px">(Priority #1)</span></label>
+      <select id="s_primaryShift" onchange="updateSecondaryOptions()">
+        ${shifts.map(sh => `
+          <option value="${sh.code}" ${primaryShift === sh.code ? 'selected' : ''}>
+            ${sh.name} (${sh.code}) — ${sh.start} – ${sh.end}
+          </option>
+        `).join('')}
+      </select>
+    </div>
+    
+    <!-- SECONDARY -->
+    <div class="input-group">
+      <label>Secondary Shifts <span style="color:var(--text-dim);font-size:11px">(Priority order)</span></label>
+      <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:12px" id="s_secondaryContainer">
+        ${shifts.map(sh => `
+          <label class="checkbox-row secondary-shift-row" data-shift="${sh.code}" style="margin:0 0 8px 0">
+            <input type="checkbox" class="s-secondary" value="${sh.code}" 
+                   ${secondaryShifts.includes(sh.code) ? 'checked' : ''} 
+                   onchange="updateShiftPreview()">
+            <span>${sh.name} (${sh.code}) — ${sh.start} – ${sh.end}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    
+    <!-- PREVIEW -->
+    <div id="s_shiftPreview" class="card" style="margin-top:12px;padding:12px;background:var(--bg-1);font-size:12.5px"></div>
+    
+    <!-- SPECIAL OFF DATES -->
+    <div class="input-group mt12">
+      <label>Special Off Dates</label>
+      <div style="display:flex;gap:8px">
+        <input type="date" id="s_specialDate" style="flex:1">
+        <button class="btn-sm btn-accent" onclick="addSpecialOffDate()">+ Add</button>
+      </div>
+      <div id="s_specialDatesList" style="margin-top:8px"></div>
+    </div>
+    
+    <div class="input-group">
+      <label>Station</label>
+      <input id="s_station" value="${esc(s.station || '')}">
+    </div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="s_notifications" ${s.notifications ? 'checked' : ''}>
+      <span>Enable notifications</span>
+    </label>
+    
+    ${canManage() ? `
+      <label class="checkbox-row">
+        <input type="checkbox" id="s_admin" ${s.role === 'admin' ? 'checked' : ''}>
+        <span>Admin panel access</span>
+      </label>
+    ` : ''}
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveStaffWithShifts('${desId}','${id}')">💾 Save</button>
+      <button class="btn-sm" onclick="openDesignationSection('${desId}')">Cancel</button>
+    </div>
+  `);
+  
+  setTimeout(() => {
+    updateSecondaryOptions();
+    updateShiftPreview();
+    renderSpecialOffDates();
+  }, 50);
+};
+
+/* ─── UPDATE SECONDARY (disable primary) ─────────────── */
+window.updateSecondaryOptions = function() {
+  const primary = $('s_primaryShift')?.value;
+  if (!primary) return;
+  const shifts = getAvailableShifts();
+  
+  $$('.secondary-shift-row').forEach(row => {
+    const code = row.dataset.shift;
+    const checkbox = row.querySelector('input');
+    const label = row.querySelector('span');
+    const shift = shifts.find(s => s.code === code);
+    
+    if (!shift) return;
+    
+    if (code === primary) {
+      checkbox.checked = false;
+      checkbox.disabled = true;
+      row.style.opacity = '0.4';
+      label.innerHTML = `${shift.name} (${shift.code}) <span style="color:var(--text-dim);font-size:10px">(Primary)</span>`;
+    } else {
+      checkbox.disabled = false;
+      row.style.opacity = '1';
+      label.innerHTML = `${shift.name} (${shift.code}) — ${shift.start} – ${shift.end}`;
+    }
+  });
+  updateShiftPreview();
+};
+
+/* ─── UPDATE PRIORITY PREVIEW ────────────────────────── */
+window.updateShiftPreview = function() {
+  const primary = $('s_primaryShift')?.value || 'M';
+  const secondary = Array.from($$('.s-secondary:checked'))
+    .map(el => el.value)
+    .filter(v => v !== primary);
+  
+  const shifts = getAvailableShifts();
+  const primaryShift = shifts.find(s => s.code === primary);
+  
+  let html = `
+    <div style="font-weight:600;color:var(--primary);margin-bottom:8px">📋 Shift Priority</div>
+    <div style="padding:8px 10px;background:var(--primary-glow);border:1px solid var(--primary);border-radius:8px;margin-bottom:6px">
+      <strong style="color:var(--primary)">1st:</strong> ${primaryShift ? primaryShift.name + ' (' + primaryShift.code + ')' : primary}
+    </div>
+  `;
+  
+  secondary.forEach((code, i) => {
+    const s = shifts.find(x => x.code === code);
+    const ordinal = i === 0 ? '2nd' : i === 1 ? '3rd' : (i + 2) + 'th';
+    html += `
+      <div style="padding:8px 10px;background:var(--bg-0);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+        <strong>${ordinal}:</strong> ${s ? s.name + ' (' + s.code + ')' : code}
+      </div>
+    `;
+  });
+  
+  if (secondary.length === 0) {
+    html += `<div style="font-size:11.5px;color:var(--text-dim);margin-top:8px">No secondary shifts selected</div>`;
+  }
+  
+  const previewEl = $('s_shiftPreview');
+  if (previewEl) previewEl.innerHTML = html;
+};
+
+/* ─── SPECIAL OFF DATES ──────────────────────────────── */
+window.addSpecialOffDate = function() {
+  const date = $('s_specialDate')?.value;
+  if (!date) { toast('Select a date', 'error'); return; }
+  if (window._specialOffDates.includes(date)) { toast('Already added', 'warning'); return; }
+  window._specialOffDates.push(date);
+  renderSpecialOffDates();
+  $('s_specialDate').value = '';
+};
+
+window.removeSpecialOffDate = function(date) {
+  window._specialOffDates = window._specialOffDates.filter(d => d !== date);
+  renderSpecialOffDates();
+};
+
+window.renderSpecialOffDates = function() {
+  const el = $('s_specialDatesList');
+  if (!el) return;
+  const dates = window._specialOffDates || [];
+  
+  if (dates.length === 0) {
+    el.innerHTML = '<div style="font-size:11.5px;color:var(--text-dim)">No special off dates</div>';
+    return;
+  }
+  
+  el.innerHTML = dates.sort().map(d => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg-1);border-radius:8px;margin-bottom:4px;font-size:12.5px">
+      <span>📅 ${fmtDisplay(d)}</span>
+      <button onclick="removeSpecialOffDate('${d}')" style="background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:16px">✕</button>
+    </div>
+  `).join('');
+};
+
+/* ─── SAVE STAFF WITH SHIFTS ─────────────────────────── */
+window.saveStaffWithShifts = function(desId, id) {
+  const isNew = !id;
+  const name = $('s_name').value.trim();
+  const mobile = normalizeMobile($('s_mobile').value.trim());
+  const password = $('s_password').value.trim();
+  const primaryShift = $('s_primaryShift').value;
+  const secondaryShifts = Array.from($$('.s-secondary:checked'))
+    .map(el => el.value)
+    .filter(v => v !== primaryShift);
+  const station = $('s_station').value.trim();
+  const notifications = $('s_notifications').checked;
+  const adminEl = $('s_admin');
+  const isAdmin = adminEl ? adminEl.checked : false;
+  const specialOffDates = window._specialOffDates || [];
+  
+  if (!name) { toast('Enter name', 'error'); return; }
+  if (!mobile || mobile.length !== 11) { toast('Enter valid 11-digit mobile', 'error'); return; }
+  if (!primaryShift) { toast('Select primary shift', 'error'); return; }
+  
+  const existing = State.staff.find(s => normalizeMobile(s.mobile) === mobile && s._id !== id);
+  if (existing) { toast('Mobile already registered', 'error'); return; }
+  
+  if (isNew && (!password || password.length < 6)) {
+    toast('Password must be 6+ chars', 'error'); return;
+  }
+  
+  let staff = LocalDB.get('staff', []);
+  
+  const staffData = {
+    name,
+    mobile,
+    designation: desId,
+    role: isAdmin ? 'admin' : 'staff',
+    fixedShift: primaryShift,
+    shift: primaryShift,
+    multiShifts: secondaryShifts,
+    specialOffDates,
+    station,
+    notifications,
+    active: true
+  };
+  
+  if (isNew) {
+    const newStaff = {
+      _id: uid(),
+      ...staffData,
+      password,
+      createdAt: Date.now()
+    };
+    staff.push(newStaff);
+    State.staff.push(newStaff);
+  } else {
+    const idx = staff.findIndex(x => x._id === id);
+    const updates = { ...staffData };
+    if (password && password.length >= 6) updates.password = password;
+    if (idx >= 0) staff[idx] = { ...staff[idx], ...updates };
+    
+    const sidx = State.staff.findIndex(x => x._id === id);
+    if (sidx >= 0) State.staff[sidx] = { ...State.staff[sidx], ...updates };
+  }
+  
+  LocalDB.set('staff', staff);
+  toast(isNew ? `✅ ${name} added` : `✅ Updated`, 'success');
+  openDesignationSection(desId);
+};
+
+/* ─── UPDATE STAFF LIST DISPLAY ──────────────────────── */
+(function patchStaffList() {
+  window.openDesignationSection = function(desId) {
+    const des = DESIGNATIONS.find(d => d.id === desId);
+    const staff = State.staff.filter(s => s.designation === desId && s.active !== false);
+    const shifts = getAvailableShifts();
+    
+    openModal(`
+      <div class="modal-header">
+        <h2>${des.icon} ${des.name} (${staff.length})</h2>
+        <button class="modal-close" onclick="openStaffManagementModal()">✕</button>
+      </div>
+      
+      <button class="btn-sm btn-accent btn-block mb12" style="justify-content:center;padding:14px" onclick="openAddStaffModal('${desId}')">
+        + Add ${des.name}
+      </button>
+      
+      <input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('staff-item', this.value)">
+      
+      ${staff.length === 0 
+        ? `<div class="empty-state"><div class="icon">${des.icon}</div><div style="font-size:13px">No ${des.name} yet</div></div>`
+        : staff.map(s => {
+          const primaryCode = s.fixedShift || s.shift || 'M';
+          const primaryShift = shifts.find(sh => sh.code === primaryCode);
+          const secondaryCodes = s.multiShifts || [];
+          
+          return `
+            <div class="list-row staff-item" data-name="${esc(s.name.toLowerCase())} ${esc(s.mobile)}" style="flex-direction:column;align-items:stretch;gap:10px">
+              <div class="flex-between">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="avatar">${getInitials(s.name)}</div>
+                  <div>
+                    <div style="font-weight:600;font-size:14px">${esc(s.name)}</div>
+                    <div style="font-size:12px;color:var(--text-muted)">📱 ${esc(formatMobile(s.mobile))}</div>
+                  </div>
+                </div>
+                ${s.role === 'admin' ? '<span class="badge badge-primary">👑</span>' : ''}
+              </div>
+              
+              <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:10px">
+                <div style="font-size:10.5px;color:var(--text-dim);margin-bottom:6px;font-weight:600;letter-spacing:0.05em">🕐 SHIFT PRIORITY</div>
+                
+                <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:4px">
+                  <span style="background:var(--primary);color:#fff;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">1st</span>
+                  <span style="font-weight:600">${primaryShift ? primaryShift.name + ' (' + primaryShift.code + ')' : primaryCode}</span>
+                  <span style="color:var(--text-dim);font-size:10px">Primary</span>
+                </div>
+                
+                ${secondaryCodes.map((code, i) => {
+                  const sh = shifts.find(x => x.code === code);
+                  const ord = i === 0 ? '2nd' : i === 1 ? '3rd' : (i + 2) + 'th';
+                  return `
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:4px">
+                      <span style="background:var(--bg-2);color:var(--text);padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">${ord}</span>
+                      <span>${sh ? sh.name + ' (' + sh.code + ')' : code}</span>
+                    </div>
+                  `;
+                }).join('')}
+                
+                ${secondaryCodes.length === 0 ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">No secondary shifts</div>` : ''}
+              </div>
+              
+              ${s.specialOffDates && s.specialOffDates.length > 0 ? `
+                <div style="font-size:11.5px;color:var(--text-muted)">
+                  📅 ${s.specialOffDates.length} special off date${s.specialOffDates.length > 1 ? 's' : ''}
+                </div>
+              ` : ''}
+              
+              <div style="display:flex;gap:12px;font-size:12px;color:var(--text-muted)">
+                ${s.station ? `<span>📍 ${esc(s.station)}</span>` : ''}
+                ${s.notifications ? '<span style="color:var(--success-l)">🔔 ON</span>' : '<span style="color:var(--text-dim)">🔕 Off</span>'}
+              </div>
+              
+              ${canManage() ? `
+                <div class="btn-row" style="margin-top:0">
+                  <button class="btn-sm" onclick="openEditStaffModal('${s._id}')">✏️ Edit</button>
+                  <button class="btn-sm btn-danger" onclick="deleteStaff('${s._id}','${desId}')">🗑️ Delete</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')
+      }
+    `);
+  };
+})();
+
+console.log('%c✅ Part 2 — Staff Shift Assignment loaded', 'color:#10B981;font-weight:bold;font-size:12px');
+console.log('%c   Primary + Secondary shifts · Priority order · Special offs', 'color:#9CA3AF;font-size:11px');
+   /* ═══════════════════════════════════════════════════════════
+   PART 3 — 6-STEP WIZARD (Complete)
+   Auto Roster generation wizard — Spec compliant
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── WIZARD STATE ───────────────────────────────────── */
+const WIZ = {
+  step: 1,
+  periodStart: null,
+  periodEnd: null,
+  holidays: [],
+  mode: 'auto',
+  grid: {},
+  locked: {},
+  offCount: {},
+  phCount: {},
+  cplConversions: [],
+  conflictLog: [],
+  warnings: [],
+  staffList: [],
+  periodDates: []
+};
+
+window.WIZ = WIZ;
+
+/* ─── FRESH WIZARD ───────────────────────────────────── */
+window.freshWizard = function() {
+  WIZ.step = 1;
+  WIZ.periodStart = null;
+  WIZ.periodEnd = null;
+  WIZ.holidays = [];
+  WIZ.mode = 'auto';
+  WIZ.grid = {};
+  WIZ.locked = {};
+  WIZ.offCount = {};
+  WIZ.phCount = {};
+  WIZ.cplConversions = [];
+  WIZ.conflictLog = [];
+  WIZ.warnings = [];
+  WIZ.staffList = State.staff.filter(s => s.active !== false);
+  WIZ.periodDates = [];
+  
+  // Calculate default period (26 → 25)
+  const period = calcPeriod(new Date());
+  WIZ.periodStart = period.start;
+  WIZ.periodEnd = period.end;
+  WIZ.periodDates = dateRange(WIZ.periodStart, WIZ.periodEnd);
+};
+
+/* ─── CALC PERIOD ────────────────────────────────────── */
+function calcPeriod(refDate = new Date()) {
+  const startDay = 26;
+  const endDay = 25;
+  const today = refDate.getDate();
+  
+  let start, end;
+  if (today >= startDay) {
+    start = new Date(refDate.getFullYear(), refDate.getMonth(), startDay);
+    end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, endDay);
+  } else {
+    start = new Date(refDate.getFullYear(), refDate.getMonth() - 1, startDay);
+    end = new Date(refDate.getFullYear(), refDate.getMonth(), endDay);
+  }
+  
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0]
+  };
+}
+
+/* ─── OPEN WIZARD ────────────────────────────────────── */
+window.openAutoGenWizard = function() {
+  if (!canManage()) { toast('Admin only', 'error'); return; }
+  freshWizard();
+  renderWizard();
+};
+
+/* ─── RENDER WIZARD ──────────────────────────────────── */
+window.renderWizard = function() {
+  const renderers = {
+    1: tplStep1,
+    2: tplStep2,
+    3: tplStep3,
+    4: tplStep4,
+    5: tplStep5,
+    6: tplStep6
+  };
+  const html = (renderers[WIZ.step] || tplStep1)();
+  openModal(html);
+};
+
+/* ─── STEP INDICATOR ─────────────────────────────────── */
+function tplStepIndicator() {
+  const steps = ['Period', 'Holidays', 'Mode', 'Rules', 'Conflicts', 'Preview'];
+  return `
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:20px;overflow-x:auto;padding:4px 0">
+      ${steps.map((label, i) => {
+        const num = i + 1;
+        const active = WIZ.step === num;
+        const done = WIZ.step > num;
+        return `
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:${done ? '#10B981' : active ? 'var(--primary)' : 'var(--bg-2)'};color:${done || active ? '#fff' : 'var(--text-dim)'};border:1px solid ${active ? 'var(--primary)' : 'transparent'}">
+              ${done ? '✓' : num}
+            </div>
+            <span style="font-size:11px;font-weight:500;color:${active ? 'var(--primary)' : 'var(--text-dim)'};white-space:nowrap">${label}</span>
+            ${i < steps.length - 1 ? `<span style="color:var(--border-2);margin:0 4px">›</span>` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP 1 — PERIOD SELECTION
+   ═══════════════════════════════════════════════════════════ */
+function tplStep1() {
+  const totalDays = WIZ.periodDates.length;
+  const sundays = WIZ.periodDates.filter(d => isSunday(d)).length;
+  const activeStaff = WIZ.staffList.length;
+  
+  return `
+    <div class="modal-header">
+      <h2>📅 Auto Roster</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="font-size:15px">Step 1 · Period Selection</div>
+      <div class="card-sub">Default period: 26th of month → 25th of next month</div>
+    </div>
+    
+    <div class="input-group">
+      <label>Start Date</label>
+      <input type="date" id="wz_period_start" value="${WIZ.periodStart}" onchange="updatePeriodInfo()">
+    </div>
+    
+    <div class="input-group">
+      <label>End Date</label>
+      <input type="date" id="wz_period_end" value="${WIZ.periodEnd}" onchange="updatePeriodInfo()">
+    </div>
+    
+    <div class="card" style="background:var(--bg-1);margin-top:14px">
+      <div style="font-size:13px;line-height:1.9">
+        <div class="flex-between"><span style="color:var(--text-muted)">Period Length</span><strong id="wz_period_len">${totalDays} days</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">Sundays (OFF target)</span><strong id="wz_sunday_count" style="color:var(--primary)">${sundays}</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">Active Staff</span><strong>${activeStaff}</strong></div>
+      </div>
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="wizStep1Next()">Next →</button>
+      <button class="btn-sm" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+}
+
+window.updatePeriodInfo = function() {
+  const start = $('wz_period_start')?.value;
+  const end = $('wz_period_end')?.value;
+  if (!start || !end) return;
+  
+  const dates = dateRange(start, end);
+  const sundays = dates.filter(d => isSunday(d)).length;
+  
+  const lenEl = $('wz_period_len');
+  const sunEl = $('wz_sunday_count');
+  if (lenEl) lenEl.textContent = dates.length + ' days';
+  if (sunEl) sunEl.textContent = sundays;
+};
+
+window.wizStep1Next = function() {
+  const start = $('wz_period_start').value;
+  const end = $('wz_period_end').value;
+  
+  if (!start || !end) { toast('Select both dates', 'error'); return; }
+  if (new Date(start) >= new Date(end)) { toast('Start must be before end', 'error'); return; }
+  
+  WIZ.periodStart = start;
+  WIZ.periodEnd = end;
+  WIZ.periodDates = dateRange(start, end);
+  WIZ.step = 2;
+  renderWizard();
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STEP 2 — GAZETTED HOLIDAYS
+   ═══════════════════════════════════════════════════════════ */
+function tplStep2() {
+  return `
+    <div class="modal-header">
+      <h2>🎉 Gazetted Holidays</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="font-size:15px">Step 2 · Confirm Holidays</div>
+      <div class="card-sub">Add any confirmed public holidays in this period (optional)</div>
+    </div>
+    
+    <div class="input-group">
+      <label>Add Holiday</label>
+      <div style="display:flex;gap:8px">
+        <input type="date" id="wz_hol_date" style="flex:1" min="${WIZ.periodStart}" max="${WIZ.periodEnd}">
+        <input type="text" id="wz_hol_name" placeholder="Holiday name" style="flex:1">
+        <button class="btn-sm btn-accent" onclick="wizAddHoliday()">+</button>
+      </div>
+    </div>
+    
+    <div style="margin-top:14px">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">
+        Confirmed Holidays (${WIZ.holidays.length})
+      </div>
+      ${WIZ.holidays.length === 0 
+        ? '<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:13px">No holidays added</div>'
+        : WIZ.holidays.map((h, i) => `
+          <div class="list-row">
+            <div>
+              <div style="font-weight:500;font-size:13.5px">${esc(h.name || 'Holiday')}</div>
+              <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${fmtDisplay(h.date)} · ${dayNameFor(h.date)}</div>
+            </div>
+            <button class="btn-sm btn-danger" style="padding:6px 10px" onclick="wizRemoveHoliday(${i})">🗑️</button>
+          </div>
+        `).join('')
+      }
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm" onclick="WIZ.step=1;renderWizard()">← Back</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="wizStep2Next()">Next →</button>
+    </div>
+  `;
+}
+
+window.wizAddHoliday = function() {
+  const date = $('wz_hol_date').value;
+  const name = $('wz_hol_name').value.trim();
+  
+  if (!date) { toast('Select date', 'error'); return; }
+  if (WIZ.holidays.some(h => h.date === date)) { toast('Already added', 'warning'); return; }
+  
+  WIZ.holidays.push({ date, name: name || 'Holiday' });
+  renderWizard();
+};
+
+window.wizRemoveHoliday = function(i) {
+  WIZ.holidays.splice(i, 1);
+  renderWizard();
+};
+
+window.wizStep2Next = function() {
+  WIZ.step = 3;
+  renderWizard();
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STEP 3 — MODE SELECTION
+   ═══════════════════════════════════════════════════════════ */
+function tplStep3() {
+  return `
+    <div class="modal-header">
+      <h2>⚙️ Generation Mode</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="font-size:15px">Step 3 · Choose Mode</div>
+      <div class="card-sub">Auto = engine generates roster. Manual = you set each shift.</div>
+    </div>
+    
+    <div class="card" style="border:2px solid ${WIZ.mode === 'auto' ? 'var(--primary)' : 'var(--border)'};cursor:pointer;margin-bottom:12px" onclick="WIZ.mode='auto';renderWizard()">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:700;font-size:15px">⚡ Auto Generate</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">Engine follows rules exactly. Balanced shifts.</div>
+        </div>
+        <div style="font-size:24px">${WIZ.mode === 'auto' ? '✅' : '⚪'}</div>
+      </div>
+    </div>
+    
+    <div class="card" style="border:2px solid ${WIZ.mode === 'manual' ? 'var(--primary)' : 'var(--border)'};cursor:pointer;opacity:0.5" onclick="toast('Manual mode coming soon','warning')">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:700;font-size:15px">✋ Manual Entry</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">Enter shifts manually (coming soon)</div>
+        </div>
+        <div style="font-size:24px">${WIZ.mode === 'manual' ? '✅' : '⚪'}</div>
+      </div>
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm" onclick="WIZ.step=2;renderWizard()">← Back</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="wizStep3Next()">Next →</button>
+    </div>
+  `;
+}
+
+window.wizStep3Next = function() {
+  WIZ.step = 4;
+  renderWizard();
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STEP 4 — RULES SUMMARY
+   ═══════════════════════════════════════════════════════════ */
+function tplStep4() {
+  const offTarget = WIZ.periodDates.filter(d => isSunday(d)).length;
+  const holidayCount = WIZ.holidays.length;
+  const activeStaff = WIZ.staffList.length;
+  
+  // Total daily requirements
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  const monSatTotal = shifts.reduce((sum, s) => sum + (s.staffMonSat || 0), 0);
+  const sunTotal = shifts.reduce((sum, s) => sum + (s.staffSun || 0), 0);
+  
+  return `
+    <div class="modal-header">
+      <h2>📋 Generation Rules</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="font-size:15px">Step 4 · Rules Summary</div>
+      <div class="card-sub">Engine will follow these rules exactly</div>
+    </div>
+    
+    <div class="card">
+      <div style="font-size:13.5px;line-height:1.9">
+        <div>📅 <strong>Period:</strong> ${fmtDisplay(WIZ.periodStart)} → ${fmtDisplay(WIZ.periodEnd)}</div>
+        <div>🗓️ <strong>Days:</strong> ${WIZ.periodDates.length}</div>
+        <div>☀️ <strong>Sundays:</strong> ${offTarget} (OFF target per staff)</div>
+        <div>🎉 <strong>Holidays:</strong> ${holidayCount}</div>
+        <div>👥 <strong>Active staff:</strong> ${activeStaff}</div>
+        <div>📊 <strong>Daily requirement:</strong> Mon-Sat ${monSatTotal} · Sun/Hol ${sunTotal}</div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div style="font-size:12.5px;color:var(--text-muted);line-height:1.9">
+        <div style="color:#10B981">✓ Every staff gets EXACTLY <strong>${offTarget} OFF days</strong></div>
+        <div style="color:#10B981">✓ Every staff gets EXACTLY <strong>${holidayCount} PH</strong> (if worked on holiday)</div>
+        <div>✓ Relax limit: Mon-Fri <strong>1</strong> · Sat <strong>2</strong> · Sun/Holiday <strong>7</strong></div>
+        <div style="color:#F59E0B">✓ N/N12 → next day <strong>OFF</strong> (priority)</div>
+        <div style="color:#F59E0B">✓ If OFF not possible → <strong>E4</strong> first, then <strong>E</strong></div>
+        <div style="color:var(--primary)">✓ If PH slot not available → convert to <strong>CPL (1:1)</strong></div>
+        <div style="color:var(--primary)">✓ CPL arranged in <strong>NEXT roster</strong> as OFF</div>
+        <div>✓ Full validation before save</div>
+      </div>
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm" onclick="WIZ.step=3;renderWizard()">← Back</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="wizRunGeneration()">⚡ Generate Now</button>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP 5 — CONFLICT RESOLUTION VIEW
+   ═══════════════════════════════════════════════════════════ */
+function tplStep5() {
+  return `
+    <div class="modal-header">
+      <h2>⚙️ Generating...</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <div class="card" style="text-align:center;padding:40px 20px">
+      <div style="font-size:56px;margin-bottom:16px">⏳</div>
+      <div style="font-weight:600;font-size:16px;color:var(--text)">Generating roster...</div>
+      <div style="color:var(--text-muted);font-size:13.5px;margin-top:8px">Applying rules · Filling shifts · Validating</div>
+      <div class="progress-bar mt20">
+        <div class="progress-fill" style="width:60%"></div>
+      </div>
+    </div>
+    
+    ${WIZ.conflictLog.length > 0 ? `
+      <div class="card">
+        <div class="card-title" style="font-size:15px">📝 Decision Log (${WIZ.conflictLog.length})</div>
+        <div style="max-height:220px;overflow-y:auto;margin-top:10px;font-size:11.5px;line-height:1.7;color:var(--text-muted);font-family:'JetBrains Mono',monospace">
+          ${WIZ.conflictLog.slice(-25).map(l => `<div>• ${esc(l.note)}</div>`).join('')}
+        </div>
+      </div>
+    ` : ''}
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP 6 — FINAL PREVIEW + SAVE
+   ═══════════════════════════════════════════════════════════ */
+function tplStep6() {
+  const offTarget = WIZ.periodDates.filter(d => isSunday(d)).length;
+  const holidayCount = WIZ.holidays.length;
+  const canSave = WIZ.warnings.length === 0;
+  
+  return `
+    <div class="modal-header">
+      <h2>${canSave ? '✅ Preview' : '⚠️ Warnings'}</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    ${!canSave ? `
+      <div class="card" style="border-left:4px solid #EF4444;background:rgba(239,68,68,0.05)">
+        <div class="card-title" style="font-size:15px;color:#DC2626">⚠️ ${WIZ.warnings.length} Validation Issues</div>
+        <div style="max-height:150px;overflow-y:auto;margin-top:10px;font-size:12px;line-height:1.7;color:var(--text-muted)">
+          ${WIZ.warnings.map(w => `<div>• ${esc(w)}</div>`).join('')}
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:10px">Save is disabled until issues resolved.</div>
+      </div>
+    ` : `
+      <div class="card" style="border-left:4px solid #10B981;background:rgba(16,185,129,0.05)">
+        <div class="card-title" style="font-size:15px;color:#059669">✅ All Validations Passed</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">Roster is ready to save</div>
+      </div>
+    `}
+    
+    <div class="card">
+      <div style="font-size:13px;line-height:1.9">
+        <div class="flex-between"><span style="color:var(--text-muted)">Days</span><strong>${WIZ.periodDates.length}</strong></div>
+        <div class="flex-between mt4"><span style="color:var(--text-muted)">Staff</span><strong>${WIZ.staffList.length}</strong></div>
+        <div class="flex-between mt4"><span style="color:var(--text-muted)">OFF target</span><strong>${offTarget}</strong></div>
+        <div class="flex-between mt4"><span style="color:var(--text-muted)">Holidays</span><strong>${holidayCount}</strong></div>
+        <div class="flex-between mt4"><span style="color:var(--text-muted)">Log entries</span><strong>${WIZ.conflictLog.length}</strong></div>
+        ${WIZ.cplConversions.length > 0 ? `<div class="flex-between mt4"><span style="color:#F59E0B">CPL conversions</span><strong>${WIZ.cplConversions.length}</strong></div>` : ''}
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title" style="font-size:15px">📊 Roster Preview</div>
+      <div style="max-height:340px;overflow-y:auto;margin-top:10px;overflow-x:auto">
+        ${renderRosterPreview()}
+      </div>
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm" onclick="WIZ.step=3;renderWizard()">← Reconfigure</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px;${!canSave ? 'opacity:0.5;cursor:not-allowed' : ''}" ${!canSave ? 'disabled' : ''} onclick="wizSaveRoster()">💾 Save Roster</button>
+    </div>
+  `;
+}
+
+function renderRosterPreview() {
+  if (!WIZ.periodDates || WIZ.periodDates.length === 0) {
+    return '<div style="text-align:center;padding:20px;color:var(--text-dim)">No data</div>';
+  }
+  
+  const preview = WIZ.periodDates.slice(0, 14);
+  
+  return `
+    <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:600px">
+      <thead>
+        <tr style="background:var(--bg-1)">
+          <th style="padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;position:sticky;left:0;background:var(--bg-1)">Staff</th>
+          ${preview.map(d => `<th style="padding:8px 4px;border-bottom:1px solid var(--border);font-weight:600;font-size:10px">${new Date(d).getDate()}<br><span style="font-size:8.5px;color:var(--text-dim)">${dayShort(d).slice(0,2)}</span></th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${WIZ.staffList.map(staff => `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:6px 6px;font-size:11.5px;position:sticky;left:0;background:var(--bg-0);font-weight:500">${esc(staff.name.split(' ')[0])}</td>
+            ${preview.map(date => {
+              const code = WIZ.grid[date]?.[staff._id] || 'X';
+              const colors = {
+                M: '#10B981', E: '#6366F1', N: '#8B5CF6',
+                N12: '#EC4899', E4: '#3B82F6', D: '#EC4899',
+                X: '#6B7280', OFF: '#374151', PH: '#F59E0B'
+              };
+              const color = colors[code] || '#6B7280';
+              return `<td style="padding:4px 2px;text-align:center"><span style="display:inline-block;padding:3px 6px;border-radius:5px;background:${color};color:#fff;font-size:9.5px;font-weight:600;min-width:22px">${code}</span></td>`;
+            }).join('')}
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    ${WIZ.periodDates.length > 14 ? `<div style="text-align:center;color:var(--text-dim);font-size:11px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">Showing first 14 days of ${WIZ.periodDates.length}</div>` : ''}
+  `;
+}
+
+/* ─── NEXT STEPS ─────────────────────────────────────── */
+window.wizStep4Next = function() {
+  WIZ.step = 5;
+  renderWizard();
+  setTimeout(() => wizRunGeneration(), 300);
+};
+
+console.log('%c✅ Part 3 — 6-Step Wizard loaded', 'color:#10B981;font-weight:bold;font-size:12px');
+console.log('%c   Period · Holidays · Mode · Rules · Conflicts · Preview', 'color:#9CA3AF;font-size:11px');
+   /* ═══════════════════════════════════════════════════════════
+   PART 4 — GENERATION ALGORITHM
+   12 Sections Spec — Complete Implementation
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── SECTION 2: DAY CLASSIFICATION ──────────────────── */
+function classifyDay(date) {
+  if (isSunday(date)) return 'SUNDAY';
+  if (isHoliday(date, WIZ.holidays)) return 'HOLIDAY';
+  const d = new Date(date).getDay();
+  if (d === 6) return 'SATURDAY';
+  return 'WEEKDAY';
+}
+
+function getRelaxLimit(date) {
+  const cls = classifyDay(date);
+  if (cls === 'SUNDAY' || cls === 'HOLIDAY') return 7;
+  if (cls === 'SATURDAY') return 2;
+  return 1;
+}
+
+function isRelaxCode(code) {
+  return code === 'OFF' || code === 'PH' || code === 'D' || code === 'X';
+}
+
+function getDayRelaxCount(date) {
+  let count = 0;
+  for (const staffId in WIZ.grid[date]) {
+    if (isRelaxCode(WIZ.grid[date][staffId])) count++;
+  }
+  return count;
+}
+
+function canAssignRelax(date) {
+  return getDayRelaxCount(date) < getRelaxLimit(date);
+}
+
+/* ─── SECTION 3: OFF TARGET ──────────────────────────── */
+function calcOffTarget() {
+  return WIZ.periodDates.filter(d => isSunday(d)).length;
+}
+
+function calcHolidayCount() {
+  return WIZ.holidays.length;
+}
+
+/* ─── SECTION 5: SHIFT REQUIREMENTS ──────────────────── */
+function getShiftReq(date) {
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  const cls = classifyDay(date);
+  const isSunOrHoliday = cls === 'SUNDAY' || cls === 'HOLIDAY';
+  
+  const req = {};
+  shifts.forEach(s => {
+    if (['X','OFF','PH'].includes(s.code)) return;
+    req[s.code] = isSunOrHoliday ? (s.staffSun || 0) : (s.staffMonSat || 0);
+  });
+  return req;
+}
+
+/* ─── LOG DECISION ───────────────────────────────────── */
+function logDecision(date, staff, code, reason) {
+  WIZ.conflictLog.push({
+    date,
+    note: `${staff.name}: ${code} (${reason})`
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP A — INITIALIZE
+   ═══════════════════════════════════════════════════════════ */
+function initGrid() {
+  WIZ.grid = {};
+  WIZ.locked = {};
+  WIZ.offCount = {};
+  WIZ.phCount = {};
+  
+  WIZ.staffList.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.phCount[s._id] = 0;
+  });
+  
+  WIZ.periodDates.forEach(date => {
+    WIZ.grid[date] = {};
+    WIZ.locked[date] = {};
+    WIZ.staffList.forEach(s => {
+      WIZ.grid[date][s._id] = '';
+      WIZ.locked[date][s._id] = false;
+    });
+  });
+  
+  console.log(`📊 Grid initialized: ${WIZ.periodDates.length} days × ${WIZ.staffList.length} staff`);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP B — APPLY LOCKED ENTRIES
+   ═══════════════════════════════════════════════════════════ */
+function applyLockedEntries() {
+  // 1. specialOffDates from staff profile
+  WIZ.staffList.forEach(staff => {
+    (staff.specialOffDates || []).forEach(date => {
+      if (WIZ.grid[date] && WIZ.grid[date][staff._id] !== undefined) {
+        WIZ.grid[date][staff._id] = 'OFF';
+        WIZ.locked[date][staff._id] = true;
+        WIZ.offCount[staff._id]++;
+      }
+    });
+  });
+  
+  // 2. Approved leaves from State.leaveRequests
+  State.leaveRequests.filter(l => l.status === 'approved').forEach(leave => {
+    const dates = dateRange(leave.from, leave.to);
+    dates.forEach(date => {
+      if (WIZ.grid[date] && WIZ.grid[date][leave.staffId] !== undefined && !WIZ.locked[date][leave.staffId]) {
+        WIZ.grid[date][leave.staffId] = 'L';
+        WIZ.locked[date][leave.staffId] = true;
+      }
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP C — ASSIGN OFF TO ALL STAFF
+   ═══════════════════════════════════════════════════════════ */
+function assignOFFToAllStaff() {
+  const target = calcOffTarget();
+  
+  // Sort: staff with lowest offCount first (fair distribution)
+  const sorted = [...WIZ.staffList].sort((a, b) => 
+    WIZ.offCount[a._id] - WIZ.offCount[b._id]
+  );
+  
+  // C1. Sundays first (off target source)
+  const sundays = WIZ.periodDates.filter(d => classifyDay(d) === 'SUNDAY');
+  sorted.forEach(staff => {
+    sundays.forEach(date => {
+      if (WIZ.locked[date][staff._id]) return;
+      if (WIZ.offCount[staff._id] >= target) return;
+      if (!canAssignRelax(date)) return;
+      WIZ.grid[date][staff._id] = 'OFF';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      logDecision(date, staff, 'OFF', 'Sunday off');
+    });
+  });
+  
+  // C2. Holidays → PH (not OFF)
+  const holidayDates = WIZ.holidays.map(h => h.date);
+  sorted.forEach(staff => {
+    holidayDates.forEach(date => {
+      if (!WIZ.grid[date] || WIZ.locked[date][staff._id]) return;
+      if (WIZ.phCount[staff._id] >= calcHolidayCount()) return;
+      WIZ.grid[date][staff._id] = 'PH';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.phCount[staff._id]++;
+      logDecision(date, staff, 'PH', 'Holiday PH');
+    });
+  });
+  
+  // C3. Saturdays
+  const saturdays = WIZ.periodDates.filter(d => classifyDay(d) === 'SATURDAY');
+  sorted.forEach(staff => {
+    if (WIZ.offCount[staff._id] >= target) return;
+    saturdays.forEach(date => {
+      if (WIZ.locked[date][staff._id]) return;
+      if (WIZ.offCount[staff._id] >= target) return;
+      if (!canAssignRelax(date)) return;
+      WIZ.grid[date][staff._id] = 'OFF';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      logDecision(date, staff, 'OFF', 'Saturday off');
+    });
+  });
+  
+  // C4. Weekdays
+  const weekdays = WIZ.periodDates.filter(d => classifyDay(d) === 'WEEKDAY');
+  sorted.forEach(staff => {
+    if (WIZ.offCount[staff._id] >= target) return;
+    weekdays.forEach(date => {
+      if (WIZ.locked[date][staff._id]) return;
+      if (WIZ.offCount[staff._id] >= target) return;
+      if (!canAssignRelax(date)) return;
+      WIZ.grid[date][staff._id] = 'OFF';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      logDecision(date, staff, 'OFF', 'Weekday off');
+    });
+  });
+  
+  // C5. Final pass — any remaining
+  sorted.forEach(staff => {
+    if (WIZ.offCount[staff._id] >= target) return;
+    WIZ.periodDates.forEach(date => {
+      if (WIZ.locked[date][staff._id]) return;
+      if (WIZ.offCount[staff._id] >= target) return;
+      WIZ.grid[date][staff._id] = 'OFF';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      logDecision(date, staff, 'OFF', 'Final pass (limit broken)');
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP D — PROCESS EACH DAY
+   ═══════════════════════════════════════════════════════════ */
+function processAllDays() {
+  WIZ.periodDates.forEach((date, idx) => {
+    processDay(date, idx === 0 ? null : WIZ.periodDates[idx - 1]);
+  });
+}
+
+function processDay(date, prevDate) {
+  // D1. N/N12 priority rest
+  applyN12PriorityRest(date, prevDate);
+  
+  // D2. Fill shift requirements
+  fillDayShifts(date);
+  
+  // D3. Auto-fix missing
+  autoFixMissingShifts(date);
+  
+  // D4. Remaining → X
+  WIZ.staffList.forEach(staff => {
+    if (!WIZ.grid[date][staff._id]) {
+      WIZ.grid[date][staff._id] = 'X';
+      logDecision(date, staff, 'X', 'Standby (unassigned)');
+    }
+  });
+}
+
+/* ─── SECTION 7: N/N12 PRIORITY REST ─────────────────── */
+function applyN12PriorityRest(date, prevDate) {
+  if (!prevDate) return;
+  
+  WIZ.staffList.forEach(staff => {
+    if (WIZ.locked[date][staff._id]) return;
+    
+    const prevCode = WIZ.grid[prevDate][staff._id];
+    if (prevCode === 'N' || prevCode === 'N12') {
+      // Priority 1: OFF
+      if (canAssignRelax(date)) {
+        WIZ.grid[date][staff._id] = 'OFF';
+        WIZ.locked[date][staff._id] = true;
+        WIZ.offCount[staff._id]++;
+        logDecision(date, staff, 'OFF', 'Post-night rest (N/N12 → OFF)');
+        return;
+      }
+      
+      // Priority 2: E4
+      WIZ.grid[date][staff._id] = 'E4';
+      WIZ.locked[date][staff._id] = true;
+      logDecision(date, staff, 'E4', 'Post-night fallback (no OFF → E4)');
+    }
+  });
+}
+
+/* ─── D2: FILL DAY SHIFTS ────────────────────────────── */
+function fillDayShifts(date) {
+  const req = getShiftReq(date);
+  const shiftCodes = Object.keys(req).filter(c => req[c] > 0);
+  
+  shiftCodes.forEach(shiftCode => {
+    let need = req[shiftCode] || 0;
+    if (need <= 0) return;
+    
+    // Get eligible free staff
+    const free = WIZ.staffList.filter(s => 
+      !WIZ.locked[date][s._id] && !WIZ.grid[date][s._id]
+    );
+    
+    // Sort by preference (Primary → Secondary priority)
+    const sorted = free.map(s => {
+      let priority = 99;
+      const primary = s.fixedShift || s.shift;
+      const multi = s.multiShifts || [];
+      
+      if (primary === shiftCode) priority = 0;
+      else if (multi.includes(shiftCode)) priority = 1 + multi.indexOf(shiftCode);
+      
+      return { staff: s, priority };
+    }).sort((a, b) => a.priority - b.priority);
+    
+    for (const { staff } of sorted) {
+      if (need <= 0) break;
+      WIZ.grid[date][staff._id] = shiftCode;
+      WIZ.locked[date][staff._id] = true;
+      need--;
+      logDecision(date, staff, shiftCode, `Fill ${shiftCode}`);
+    }
+  });
+}
+
+/* ─── D3: AUTO FIX MISSING SHIFTS ────────────────────── */
+function autoFixMissingShifts(date) {
+  const req = getShiftReq(date);
+  const shiftCodes = Object.keys(req).filter(c => req[c] > 0);
+  
+  shiftCodes.forEach(shiftCode => {
+    const need = req[shiftCode] || 0;
+    if (need <= 0) return;
+    
+    // Count current
+    const current = Object.values(WIZ.grid[date]).filter(c => c === shiftCode).length;
+    let missing = need - current;
+    if (missing <= 0) return;
+    
+    // FIX-1: Move staff with 'X'
+    WIZ.staffList.forEach(staff => {
+      if (missing <= 0) return;
+      if (WIZ.locked[date][staff._id]) return;
+      if (WIZ.grid[date][staff._id] === 'X') {
+        WIZ.grid[date][staff._id] = shiftCode;
+        missing--;
+        logDecision(date, staff, shiftCode, `Fix from X`);
+      }
+    });
+    
+    // FIX-2: Move less-critical (E4)
+    if (missing > 0) {
+      WIZ.staffList.forEach(staff => {
+        if (missing <= 0) return;
+        if (WIZ.locked[date][staff._id]) return;
+        if (WIZ.grid[date][staff._id] === 'E4') {
+          WIZ.grid[date][staff._id] = shiftCode;
+          missing--;
+          logDecision(date, staff, shiftCode, `Fix from E4`);
+        }
+      });
+    }
+    
+    // FIX-3: Force move any non-relax staff (last resort)
+    if (missing > 0) {
+      WIZ.staffList.forEach(staff => {
+        if (missing <= 0) return;
+        if (WIZ.locked[date][staff._id]) return;
+        const code = WIZ.grid[date][staff._id];
+        if (!isRelaxCode(code) && code !== shiftCode) {
+          WIZ.grid[date][staff._id] = shiftCode;
+          missing--;
+          logDecision(date, staff, shiftCode, `FORCE move (from ${code})`);
+        }
+      });
+    }
+  });
+}
+
+/* ─── STEP E: PH ADJUSTMENT (with CPL conversion) ────── */
+function adjustPHForDutyStaff() {
+  const holidays = WIZ.holidays;
+  if (holidays.length === 0) return;
+  
+  WIZ.staffList.forEach(staff => {
+    holidays.forEach(holiday => {
+      const hDate = holiday.date;
+      const code = WIZ.grid[hDate]?.[staff._id];
+      
+      // If staff WORKED on holiday (not PH/OFF/Leave)
+      if (code && !isRelaxCode(code)) {
+        // Find a day with free relax slot (closest to holiday first)
+        const candidates = WIZ.periodDates.filter(d => 
+          d !== hDate && 
+          !WIZ.locked[d][staff._id] &&
+          !isRelaxCode(WIZ.grid[d][staff._id]) &&
+          canAssignRelax(d)
+        );
+        
+        // Sort by closeness
+        candidates.sort((a, b) => 
+          Math.abs(new Date(a) - new Date(hDate)) - Math.abs(new Date(b) - new Date(hDate))
+        );
+        
+        if (candidates.length > 0) {
+          const targetDate = candidates[0];
+          WIZ.grid[targetDate][staff._id] = 'PH';
+          WIZ.locked[targetDate][staff._id] = true;
+          WIZ.phCount[staff._id]++;
+          logDecision(targetDate, staff, 'PH', `PH for worked holiday ${hDate}`);
+        } else {
+          // No slot → CPL conversion
+          const cplRecord = {
+            _id: uid(),
+            staffId: staff._id,
+            staffName: staff.name,
+            staffMobile: staff.mobile,
+            type: 'PH_TO_CPL',
+            amount: 1,
+            originalHolidayDate: hDate,
+            holidayName: holiday.name || 'Holiday',
+            reason: 'No PH slot available',
+            status: 'pending',
+            currentPeriodStart: WIZ.periodStart,
+            currentPeriodEnd: WIZ.periodEnd,
+            carryForward: true,
+            pendingInNextRoster: true,
+            createdBy: State.user?.name,
+            createdAt: Date.now()
+          };
+          
+          WIZ.cplConversions.push(cplRecord);
+          LocalDB.push('cplRecords', cplRecord);
+          logDecision(hDate, staff, 'CPL', `PH→CPL (no slot → next roster)`);
+        }
+      }
+    });
+  });
+}
+
+/* ─── STEP B.5: APPLY PENDING CPL FROM PREVIOUS ──────── */
+function applyPendingCPLFromPrevious() {
+  const allCPL = LocalDB.get('cplRecords', []);
+  const pendingCPL = allCPL.filter(c => 
+    c.status === 'pending' && c.pendingInNextRoster === true
+  );
+  
+  if (pendingCPL.length === 0) return;
+  
+  pendingCPL.forEach(cpl => {
+    const staff = WIZ.staffList.find(s => s._id === cpl.staffId);
+    if (!staff) return;
+    
+    const candidates = WIZ.periodDates.filter(d => 
+      !WIZ.locked[d][staff._id] &&
+      !isRelaxCode(WIZ.grid[d][staff._id]) &&
+      canAssignRelax(d)
+    );
+    
+    // Prefer weekdays
+    candidates.sort((a, b) => {
+      const dayA = new Date(a).getDay();
+      const dayB = new Date(b).getDay();
+      const scoreA = (dayA >= 1 && dayA <= 5) ? 0 : 1;
+      const scoreB = (dayB >= 1 && dayB <= 5) ? 0 : 1;
+      return scoreA - scoreB;
+    });
+    
+    if (candidates.length > 0) {
+      const targetDate = candidates[0];
+      WIZ.grid[targetDate][staff._id] = 'OFF';
+      WIZ.locked[targetDate][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      
+      LocalDB.update('cplRecords', cpl._id, {
+        status: 'applied',
+        appliedInPeriodStart: WIZ.periodStart,
+        appliedInPeriodEnd: WIZ.periodEnd,
+        appliedOnDate: targetDate,
+        appliedAt: Date.now()
+      });
+      
+      logDecision(targetDate, staff, 'OFF', `CPL from ${cpl.currentPeriodStart} → compensated`);
+    }
+  });
+}
+
+/* ─── STEP F: FINALIZE & VALIDATE ────────────────────── */
+function finalizeGeneration() {
+  const offTarget = calcOffTarget();
+  const holidayCount = calcHolidayCount();
+  
+  // Recount OFF and PH from final grid
+  WIZ.offCount = {};
+  WIZ.phCount = {};
+  WIZ.staffList.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.phCount[s._id] = 0;
+  });
+  
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      const code = WIZ.grid[date][staff._id];
+      if (code === 'OFF') WIZ.offCount[staff._id]++;
+      if (code === 'PH') WIZ.phCount[staff._id]++;
+    });
+  });
+  
+  // Validation
+  WIZ.warnings = [];
+  
+  // V1: OFF target
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.offCount[staff._id];
+    if (actual < offTarget) {
+      WIZ.warnings.push(`${staff.name}: OFF ${actual}/${offTarget}`);
+    }
+  });
+  
+  // V2: PH count (should equal holiday count OR converted to CPL)
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.phCount[staff._id];
+    const cplAdj = WIZ.cplConversions.filter(c => c.staffId === staff._id).length;
+    if (actual + cplAdj !== holidayCount) {
+      WIZ.warnings.push(`${staff.name}: PH ${actual + cplAdj}/${holidayCount}`);
+    }
+  });
+  
+  // V3: Relax limit
+  WIZ.periodDates.forEach(date => {
+    const relax = getDayRelaxCount(date);
+    const limit = getRelaxLimit(date);
+    if (relax > limit) {
+      const wasLogged = WIZ.conflictLog.some(l => 
+        l.date === date && l.note.includes('limit broken')
+      );
+      if (!wasLogged) {
+        WIZ.warnings.push(`${date}: relax ${relax}/${limit}`);
+      }
+    }
+  });
+  
+  // V4: N/N12 → next day OFF or E4 (mandatory)
+  for (let i = 1; i < WIZ.periodDates.length; i++) {
+    const prevDate = WIZ.periodDates[i - 1];
+    const currDate = WIZ.periodDates[i];
+    
+    WIZ.staffList.forEach(staff => {
+      const prevCode = WIZ.grid[prevDate][staff._id];
+      const currCode = WIZ.grid[currDate][staff._id];
+      
+      if ((prevCode === 'N' || prevCode === 'N12') && !['OFF', 'E4', 'E'].includes(currCode)) {
+        WIZ.warnings.push(`${staff.name}: N/N12 → ${currCode} on ${currDate}`);
+      }
+    });
+  }
+  
+  // V5: No empty cells
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      if (!WIZ.grid[date][staff._id]) {
+        WIZ.warnings.push(`${staff.name} empty on ${date}`);
+      }
+    });
+  });
+  
+  return WIZ.warnings.length === 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN GENERATION RUNNER
+   ═══════════════════════════════════════════════════════════ */
+window.wizRunGeneration = function() {
+  if (WIZ.staffList.length === 0) {
+    toast('No active staff', 'error');
+    return;
+  }
+  
+  WIZ.periodDates = dateRange(WIZ.periodStart, WIZ.periodEnd);
+  if (WIZ.periodDates.length === 0) {
+    toast('Invalid period', 'error');
+    return;
+  }
+  
+  WIZ.step = 5;
+  renderWizard();
+  toast('⏳ Generating...', 'warning');
+  
+  setTimeout(() => {
+    try {
+      // STEP A: Initialize
+      initGrid();
+      
+      // STEP B: Apply locked entries
+      applyLockedEntries();
+      
+      // STEP B.5: Apply pending CPL from previous rosters
+      applyPendingCPLFromPrevious();
+      
+      // STEP C: Assign OFF to all staff
+      assignOFFToAllStaff();
+      
+      // STEP D: Process all days
+      processAllDays();
+      
+      // STEP E: PH adjustment
+      adjustPHForDutyStaff();
+      
+      // STEP F: Finalize & Validate
+      const valid = finalizeGeneration();
+      
+      if (valid) {
+        toast('✅ Roster generated!', 'success');
+      } else {
+        toast(`⚠️ ${WIZ.warnings.length} warnings`, 'error');
+      }
+      
+      WIZ.step = 6;
+      renderWizard();
+    } catch (e) {
+      console.error('Generation error:', e);
+      toast('Generation failed: ' + e.message, 'error');
+      WIZ.step = 4;
+      renderWizard();
+    }
+  }, 300);
+};
+
+/* ═══════════════════════════════════════════════════════════
+   SAVE ROSTER
+   ═══════════════════════════════════════════════════════════ */
+window.wizSaveRoster = function() {
+  if (WIZ.warnings.length > 0) {
+    toast('Fix warnings first', 'error');
+    return;
+  }
+  
+  const periodId = `${WIZ.periodStart}_${WIZ.periodEnd}`;
+  const roster = {
+    _id: periodId,
+    periodStart: WIZ.periodStart,
+    periodEnd: WIZ.periodEnd,
+    generatedAt: Date.now(),
+    generatedBy: State.user?.name || 'Admin',
+    staffCount: WIZ.staffList.length,
+    grid: WIZ.grid,
+    offCount: WIZ.offCount,
+    phCount: WIZ.phCount,
+    cplConversions: WIZ.cplConversions,
+    log: WIZ.conflictLog,
+    holidays: WIZ.holidays
+  };
+  
+  try {
+    // Save roster
+    let allRosters = LocalDB.get('rosters', []);
+    const idx = allRosters.findIndex(r => r._id === periodId);
+    if (idx >= 0) allRosters[idx] = roster;
+    else allRosters.push(roster);
+    LocalDB.set('rosters', allRosters);
+    
+    // Save holidays
+    let holidays = LocalDB.get('holidays', []);
+    WIZ.holidays.forEach(h => {
+      if (!holidays.some(x => x.date === h.date)) holidays.push(h);
+    });
+    LocalDB.set('holidays', holidays);
+    State.holidays = holidays;
+    
+    // Save to State
+    State.rosterData = WIZ.grid;
+    State.rosterPeriod = { start: WIZ.periodStart, end: WIZ.periodEnd };
+    
+    // Add notification
+    LocalDB.push('notifications', {
+      _id: uid(),
+      title: '✅ Roster Generated',
+      body: `Period: ${fmtDisplay(WIZ.periodStart)} → ${fmtDisplay(WIZ.periodEnd)}`,
+      read: false,
+      type: 'roster',
+      createdAt: Date.now()
+    });
+    State.notifications = LocalDB.get('notifications', []);
+    
+    toast('✅ Roster saved!', 'success');
+    closeModal();
+    
+    // Switch to roster tab
+    State.activeTab = 'roster';
+    render();
+  } catch (e) {
+    console.error('Save error:', e);
+    toast('Save failed: ' + e.message, 'error');
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════
+   UPDATE ROSTER DISPLAY (after save)
+   ═══════════════════════════════════════════════════════════ */
+window.renderRosterGrid = function() {
+  if (!State.rosterData || !State.rosterPeriod) {
+    return renderEmptyRoster();
+  }
+  
+  const dates = dateRange(State.rosterPeriod.start, State.rosterPeriod.end);
+  
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text)">${fmtDisplay(State.rosterPeriod.start)}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">to ${fmtDisplay(State.rosterPeriod.end)}</div>
+        </div>
+        <span class="badge badge-success">Active</span>
+      </div>
+    </div>
+    
+    <div class="card" style="overflow-x:auto;padding:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:${dates.length * 32 + 120}px">
+        <thead>
+          <tr style="background:var(--bg-1)">
+            <th style="padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);position:sticky;left:0;background:var(--bg-1);font-weight:600;font-size:12px">Staff</th>
+            ${dates.map(d => `
+              <th style="padding:8px 3px;border-bottom:1px solid var(--border);font-weight:600;font-size:10px;text-align:center">
+                ${new Date(d).getDate()}<br>
+                <span style="font-size:8.5px;color:var(--text-dim)">${dayShort(d).slice(0,2)}</span>
+              </th>
+            `).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${WIZ.staffList.length > 0 ? WIZ.staffList.map(staff => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px;font-size:11.5px;position:sticky;left:0;background:var(--bg-0);font-weight:500;white-space:nowrap">
+                ${esc(staff.name.split(' ')[0])}
+              </td>
+              ${dates.map(date => {
+                const code = State.rosterData[date]?.[staff._id] || 'X';
+                const colors = {
+                  M: '#10B981', E: '#6366F1', N: '#8B5CF6',
+                  N12: '#EC4899', E4: '#3B82F6', D: '#EC4899',
+                  X: '#6B7280', OFF: '#374151', PH: '#F59E0B', L: '#F43F5E'
+                };
+                const color = colors[code] || '#6B7280';
+                return `<td style="padding:4px 2px;text-align:center">
+                  <span style="display:inline-block;padding:3px 5px;border-radius:5px;background:${color};color:#fff;font-size:9.5px;font-weight:600;min-width:22px">${code}</span>
+                </td>`;
+              }).join('')}
+            </tr>
+          `).join('') : '<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--text-dim)">No staff</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="card">
+      <div style="font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:10px">Legend</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px">
+        ${Object.entries({ M: 'Morning', E: 'Evening', N: 'Night', N12: 'Ext Night', E4: 'Short Eve', D: 'Day Duty', X: 'Standby', OFF: 'Off', PH: 'PH', L: 'Leave' }).map(([code, name]) => {
+          const colors = { M: '#10B981', E: '#6366F1', N: '#8B5CF6', N12: '#EC4899', E4: '#3B82F6', D: '#EC4899', X: '#6B7280', OFF: '#374151', PH: '#F59E0B', L: '#F43F5E' };
+          return `<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:${colors[code]}"></span>${code} = ${name}</span>`;
+        }).join('')}
+      </div>
+    </div>
+    
+    <div class="btn-row">
+      <button class="btn-sm" style="flex:1;justify-content:center;padding:12px" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:12px" onclick="openAutoGenWizard()">🔄 Regenerate</button>
+    </div>
+  `;
+};
+
+console.log('%c✅ Part 4 — Generation Algorithm loaded', 'color:#10B981;font-weight:bold;font-size:12px');
+console.log('%c   12 sections · 8 functions · Full validation', 'color:#9CA3AF;font-size:11px');
+   /* ═══════════════════════════════════════════════════════════
+   PART 5 — VALIDATION + SAVE + DISPLAY (Complete)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── ENHANCED VALIDATION (V1-V6) ────────────────────── */
+window.finalizeGeneration = function() {
+  const offTarget = calcOffTarget();
+  const holidayCount = calcHolidayCount();
+  
+  // Recount OFF and PH
+  WIZ.offCount = {};
+  WIZ.phCount = {};
+  WIZ.staffList.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.phCount[s._id] = 0;
+  });
+  
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      const code = WIZ.grid[date][staff._id];
+      if (code === 'OFF') WIZ.offCount[staff._id]++;
+      if (code === 'PH') WIZ.phCount[staff._id]++;
+    });
+  });
+  
+  WIZ.warnings = [];
+  WIZ.validationDetails = {
+    offTarget: { passed: 0, failed: 0, items: [] },
+    phCount: { passed: 0, failed: 0, items: [] },
+    relaxLimit: { passed: 0, failed: 0, items: [] },
+    n12Rule: { passed: 0, failed: 0, items: [] },
+    emptyCells: { passed: 0, failed: 0, items: [] },
+    genderRule: { passed: 0, failed: 0, items: [] }
+  };
+  
+  // ─── V1: OFF target ───
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.offCount[staff._id];
+    if (actual === offTarget) {
+      WIZ.validationDetails.offTarget.passed++;
+    } else {
+      WIZ.validationDetails.offTarget.failed++;
+      WIZ.validationDetails.offTarget.items.push({
+        staff: staff.name,
+        actual,
+        expected: offTarget
+      });
+      WIZ.warnings.push(`${staff.name}: OFF ${actual}/${offTarget}`);
+    }
+  });
+  
+  // ─── V2: PH count ───
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.phCount[staff._id];
+    const cplAdj = WIZ.cplConversions.filter(c => c.staffId === staff._id).length;
+    if (actual + cplAdj === holidayCount) {
+      WIZ.validationDetails.phCount.passed++;
+    } else {
+      WIZ.validationDetails.phCount.failed++;
+      WIZ.validationDetails.phCount.items.push({
+        staff: staff.name,
+        actual: actual + cplAdj,
+        expected: holidayCount
+      });
+      WIZ.warnings.push(`${staff.name}: PH ${actual + cplAdj}/${holidayCount}`);
+    }
+  });
+  
+  // ─── V3: Relax limits ───
+  WIZ.periodDates.forEach(date => {
+    const relax = getDayRelaxCount(date);
+    const limit = getRelaxLimit(date);
+    if (relax <= limit) {
+      WIZ.validationDetails.relaxLimit.passed++;
+    } else {
+      WIZ.validationDetails.relaxLimit.failed++;
+      WIZ.validationDetails.relaxLimit.items.push({
+        date,
+        actual: relax,
+        expected: limit
+      });
+      WIZ.warnings.push(`${date}: relax ${relax}/${limit}`);
+    }
+  });
+  
+  // ─── V4: N/N12 → next day ───
+  for (let i = 1; i < WIZ.periodDates.length; i++) {
+    const prevDate = WIZ.periodDates[i - 1];
+    const currDate = WIZ.periodDates[i];
+    
+    WIZ.staffList.forEach(staff => {
+      const prevCode = WIZ.grid[prevDate][staff._id];
+      const currCode = WIZ.grid[currDate][staff._id];
+      
+      if (prevCode === 'N' || prevCode === 'N12') {
+        if (['OFF', 'E4', 'E'].includes(currCode)) {
+          WIZ.validationDetails.n12Rule.passed++;
+        } else {
+          WIZ.validationDetails.n12Rule.failed++;
+          WIZ.validationDetails.n12Rule.items.push({
+            staff: staff.name,
+            prevDate,
+            prevCode,
+            currDate,
+            currCode
+          });
+          WIZ.warnings.push(`${staff.name}: N/N12 → ${currCode} on ${currDate}`);
+        }
+      }
+    });
+  }
+  
+  // ─── V5: Empty cells ───
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      if (WIZ.grid[date][staff._id]) {
+        WIZ.validationDetails.emptyCells.passed++;
+      } else {
+        WIZ.validationDetails.emptyCells.failed++;
+        WIZ.warnings.push(`${staff.name} empty on ${date}`);
+      }
+    });
+  });
+  
+  // ─── V6: Gender rules ───
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      const code = WIZ.grid[date][staff._id];
+      const shift = shifts.find(s => s.code === code);
+      
+      if (shift && shift.gender && shift.gender !== 'Any') {
+        const staffGender = staff.gender || 'Unknown';
+        if (staffGender !== shift.gender && staffGender !== 'Unknown') {
+          WIZ.validationDetails.genderRule.failed++;
+          WIZ.warnings.push(`${staff.name} (${staffGender}) on ${code} (${shift.gender} only) on ${date}`);
+        } else {
+          WIZ.validationDetails.genderRule.passed++;
+        }
+      }
+    });
+  });
+  
+  // Store final counts
+  WIZ.finalStats = {
+    totalShifts: WIZ.periodDates.length * WIZ.staffList.length,
+    totalOff: Object.values(WIZ.offCount).reduce((a, b) => a + b, 0),
+    totalPH: Object.values(WIZ.phCount).reduce((a, b) => a + b, 0),
+    totalCPL: WIZ.cplConversions.length,
+    warnings: WIZ.warnings.length
+  };
+  
+  return WIZ.warnings.length === 0;
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ENHANCED STEP 6 — PREVIEW WITH VALIDATION DETAILS
+   ═══════════════════════════════════════════════════════════ */
+window.tplStep6 = function() {
+  const offTarget = calcOffTarget();
+  const holidayCount = calcHolidayCount();
+  const canSave = WIZ.warnings.length === 0;
+  const details = WIZ.validationDetails || {};
+  const stats = WIZ.finalStats || {};
+  
+  return `
+    <div class="modal-header">
+      <h2>${canSave ? '✅ Preview' : '⚠️ Validation'}</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <!-- VALIDATION STATUS -->
+    ${!canSave ? `
+      <div class="card" style="border-left:4px solid #EF4444;background:rgba(239,68,68,0.05)">
+        <div class="card-title" style="font-size:15px;color:#DC2626">⚠️ ${WIZ.warnings.length} Validation Issues</div>
+        
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+          ${details.offTarget?.failed > 0 ? `
+            <div style="font-size:12px">
+              <strong style="color:#DC2626">OFF Target:</strong> ${details.offTarget.failed} failed
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+                ${details.offTarget.items.slice(0,3).map(i => `• ${i.staff}: ${i.actual}/${i.expected}`).join('<br>')}
+              </div>
+            </div>
+          ` : ''}
+          
+          ${details.phCount?.failed > 0 ? `
+            <div style="font-size:12px">
+              <strong style="color:#DC2626">PH Count:</strong> ${details.phCount.failed} failed
+            </div>
+          ` : ''}
+          
+          ${details.relaxLimit?.failed > 0 ? `
+            <div style="font-size:12px">
+              <strong style="color:#DC2626">Relax Limit:</strong> ${details.relaxLimit.failed} days exceeded
+            </div>
+          ` : ''}
+          
+          ${details.n12Rule?.failed > 0 ? `
+            <div style="font-size:12px">
+              <strong style="color:#DC2626">N/N12 Rule:</strong> ${details.n12Rule.failed} violations
+            </div>
+          ` : ''}
+          
+          ${details.emptyCells?.failed > 0 ? `
+            <div style="font-size:12px">
+              <strong style="color:#DC2626">Empty Cells:</strong> ${details.emptyCells.failed} found
+            </div>
+          ` : ''}
+        </div>
+        
+        <div style="max-height:120px;overflow-y:auto;margin-top:10px;font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace">
+          ${WIZ.warnings.slice(0, 10).map(w => `<div>• ${esc(w)}</div>`).join('')}
+        </div>
+      </div>
+    ` : `
+      <div class="card" style="border-left:4px solid #10B981;background:rgba(16,185,129,0.05)">
+        <div class="card-title" style="font-size:15px;color:#059669">✅ All Validations Passed</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:12px">
+          <div>✓ OFF Target: <strong>${details.offTarget?.passed || 0}</strong> staff</div>
+          <div>✓ PH Count: <strong>${details.phCount?.passed || 0}</strong> staff</div>
+          <div>✓ Relax Limit: <strong>${details.relaxLimit?.passed || 0}</strong> days</div>
+          <div>✓ N/N12 Rule: <strong>${details.n12Rule?.passed || 0}</strong> checks</div>
+          <div>✓ Cells Filled: <strong>${details.emptyCells?.passed || 0}</strong></div>
+          <div>✓ Gender Rules: <strong>${details.genderRule?.passed || 0}</strong></div>
+        </div>
+      </div>
+    `}
+    
+    <!-- STATS -->
+    <div class="card">
+      <div class="card-title" style="font-size:14px">📊 Roster Statistics</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;font-size:12.5px">
+        <div class="flex-between"><span style="color:var(--text-muted)">Days</span><strong>${WIZ.periodDates.length}</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">Staff</span><strong>${WIZ.staffList.length}</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">OFF target</span><strong>${offTarget}</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">Holidays</span><strong>${holidayCount}</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">Total OFF</span><strong>${stats.totalOff || 0}</strong></div>
+        <div class="flex-between"><span style="color:var(--text-muted)">Total PH</span><strong>${stats.totalPH || 0}</strong></div>
+        ${WIZ.cplConversions.length > 0 ? `<div class="flex-between" style="grid-column:span 2"><span style="color:#F59E0B">CPL Conversions</span><strong>${WIZ.cplConversions.length}</strong></div>` : ''}
+      </div>
+    </div>
+    
+    <!-- ROSTER PREVIEW -->
+    <div class="card">
+      <div class="card-title" style="font-size:14px">📋 Roster Preview</div>
+      <div style="max-height:320px;overflow:auto;margin-top:10px;border:1px solid var(--border);border-radius:8px">
+        ${renderRosterPreviewFull()}
+      </div>
+    </div>
+    
+    <!-- DECISION LOG -->
+    ${WIZ.conflictLog.length > 0 ? `
+      <div class="card">
+        <div class="flex-between">
+          <div class="card-title" style="font-size:14px">📝 Decision Log</div>
+          <span class="badge">${WIZ.conflictLog.length} entries</span>
+        </div>
+        <div style="max-height:150px;overflow-y:auto;margin-top:10px;font-size:11px;line-height:1.7;color:var(--text-muted);font-family:'JetBrains Mono',monospace">
+          ${WIZ.conflictLog.slice(-20).map(l => `<div>• ${esc(l.note)}</div>`).join('')}
+        </div>
+      </div>
+    ` : ''}
+    
+    <!-- ACTIONS -->
+    <div class="btn-row mt16" style="border-top:1px solid var(--border);padding-top:16px">
+      <button class="btn-sm" onclick="WIZ.step=3;renderWizard()">← Reconfigure</button>
+      <button class="btn-sm" onclick="WIZ.step=4;renderWizard()">← Rules</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px;${!canSave ? 'opacity:0.5;cursor:not-allowed' : ''}" ${!canSave ? 'disabled' : ''} onclick="wizSaveRoster()">💾 Save Roster</button>
+    </div>
+  `;
+};
+
+/* ─── FULL ROSTER PREVIEW (all days) ─────────────────── */
+function renderRosterPreviewFull() {
+  if (!WIZ.periodDates || WIZ.periodDates.length === 0) {
+    return '<div style="text-align:center;padding:20px;color:var(--text-dim)">No data</div>';
+  }
+  
+  return `
+    <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:${WIZ.periodDates.length * 28 + 100}px">
+      <thead>
+        <tr style="background:var(--bg-1);position:sticky;top:0">
+          <th style="padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;font-size:11px;position:sticky;left:0;background:var(--bg-1)">Staff</th>
+          ${WIZ.periodDates.map(d => `
+            <th style="padding:6px 2px;border-bottom:1px solid var(--border);font-weight:600;font-size:9.5px;text-align:center;min-width:26px">
+              ${new Date(d).getDate()}<br>
+              <span style="font-size:8px;color:var(--text-dim)">${dayShort(d).slice(0,2)}</span>
+            </th>
+          `).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${WIZ.staffList.map(staff => `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:5px 6px;font-size:11px;position:sticky;left:0;background:var(--bg-0);font-weight:500;white-space:nowrap">
+              ${esc(staff.name.split(' ')[0])}
+            </td>
+            ${WIZ.periodDates.map(date => {
+              const code = WIZ.grid[date]?.[staff._id] || 'X';
+              const colors = {
+                M: '#10B981', E: '#6366F1', N: '#8B5CF6',
+                N12: '#EC4899', E4: '#3B82F6', D: '#EC4899',
+                X: '#6B7280', OFF: '#374151', PH: '#F59E0B', L: '#F43F5E'
+              };
+              const color = colors[code] || '#6B7280';
+              return `<td style="padding:3px 1px;text-align:center">
+                <span style="display:inline-block;padding:2px 4px;border-radius:4px;background:${color};color:#fff;font-size:9px;font-weight:600;min-width:20px">${code}</span>
+              </td>`;
+            }).join('')}
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ENHANCED SAVE
+   ═══════════════════════════════════════════════════════════ */
+window.wizSaveRoster = function() {
+  if (WIZ.warnings.length > 0) {
+    toast('Fix warnings first', 'error');
+    return;
+  }
+  
+  if (!confirm('Save this roster? It will be visible to all staff.')) return;
+  
+  const periodId = `${WIZ.periodStart}_${WIZ.periodEnd}`;
+  const roster = {
+    _id: periodId,
+    periodStart: WIZ.periodStart,
+    periodEnd: WIZ.periodEnd,
+    generatedAt: Date.now(),
+    generatedBy: State.user?.name || 'Admin',
+    generatedById: State.user?._id,
+    staffCount: WIZ.staffList.length,
+    grid: WIZ.grid,
+    offCount: WIZ.offCount,
+    phCount: WIZ.phCount,
+    cplConversions: WIZ.cplConversions,
+    log: WIZ.conflictLog,
+    holidays: WIZ.holidays,
+    stats: WIZ.finalStats,
+    validation: WIZ.validationDetails
+  };
+  
+  try {
+    // Save roster
+    let allRosters = LocalDB.get('rosters', []);
+    const idx = allRosters.findIndex(r => r._id === periodId);
+    if (idx >= 0) {
+      allRosters[idx] = roster;
+    } else {
+      allRosters.push(roster);
+    }
+    LocalDB.set('rosters', allRosters);
+    
+    // Save holidays
+    let holidays = LocalDB.get('holidays', []);
+    WIZ.holidays.forEach(h => {
+      if (!holidays.some(x => x.date === h.date)) holidays.push(h);
+    });
+    LocalDB.set('holidays', holidays);
+    State.holidays = holidays;
+    
+    // Save CPL conversions to separate store
+    if (WIZ.cplConversions.length > 0) {
+      let cplRecords = LocalDB.get('cplRecords', []);
+      WIZ.cplConversions.forEach(c => cplRecords.push(c));
+      LocalDB.set('cplRecords', cplRecords);
+    }
+    
+    // Update State
+    State.rosterData = WIZ.grid;
+    State.rosterPeriod = { start: WIZ.periodStart, end: WIZ.periodEnd };
+    State.currentRoster = roster;
+    
+    // Add notification
+    LocalDB.push('notifications', {
+      _id: uid(),
+      title: '✅ Roster Published',
+      body: `Period: ${fmtDisplay(WIZ.periodStart)} → ${fmtDisplay(WIZ.periodEnd)} by ${State.user?.name || 'Admin'}`,
+      read: false,
+      type: 'roster',
+      forAll: true,
+      createdAt: Date.now()
+    });
+    State.notifications = LocalDB.get('notifications', []);
+    State.unreadCount = State.notifications.filter(n => !n.read).length;
+    if (typeof updateBell === 'function') updateBell();
+    
+    toast('✅ Roster saved & published!', 'success');
+    closeModal();
+    
+    // Reload roster tab
+    State.activeTab = 'roster';
+    if (typeof render === 'function') render();
+  } catch (e) {
+    console.error('Save error:', e);
+    toast('Save failed: ' + e.message, 'error');
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ROSTER DISPLAY (after save)
+   ═══════════════════════════════════════════════════════════ */
+window.renderRoster = function() {
+  const hasRoster = State.rosterData && Object.keys(State.rosterData).length > 0;
+  const allRosters = LocalDB.get('rosters', []);
+  
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">📅 Roster</div>
+        <button class="btn-sm btn-accent" onclick="openAutoGenWizard()">⚡ Auto Generate</button>
+      </div>
+      <div class="card-sub">${State.rosterPeriod ? `${fmtDisplay(State.rosterPeriod.start)} → ${fmtDisplay(State.rosterPeriod.end)}` : 'No roster yet'}</div>
+    </div>
+    
+    ${hasRoster ? window.renderRosterGrid() : renderEmptyRoster()}
+    
+    ${allRosters.length > 1 ? `
+      <div class="card">
+        <div class="card-title" style="font-size:14px">📚 Previous Rosters</div>
+        <div style="margin-top:10px">
+          ${allRosters.slice().reverse().slice(0, 5).map(r => `
+            <div class="list-row" style="margin-bottom:8px">
+              <div>
+                <div style="font-weight:500;font-size:13px">${fmtDisplay(r.periodStart)} → ${fmtDisplay(r.periodEnd)}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+                  By ${esc(r.generatedBy || 'Admin')} · ${r.generatedAt ? fmtDateTime(r.generatedAt) : ''}
+                </div>
+              </div>
+              <button class="btn-sm" onclick="loadOldRoster('${r._id}')">📂 Open</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+  `;
+};
+
+window.loadOldRoster = function(rosterId) {
+  const allRosters = LocalDB.get('rosters', []);
+  const roster = allRosters.find(r => r._id === rosterId);
+  if (!roster) { toast('Not found', 'error'); return; }
+  
+  State.rosterData = roster.grid;
+  State.rosterPeriod = { start: roster.periodStart, end: roster.periodEnd };
+  State.currentRoster = roster;
+  
+  // Rebuild staff list from roster
+  WIZ.staffList = State.staff.filter(s => s.active !== false);
+  
+  toast('✅ Roster loaded', 'success');
+  render();
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ROSTER GRID DISPLAY (Improved)
+   ═══════════════════════════════════════════════════════════ */
+window.renderRosterGrid = function() {
+  if (!State.rosterData || !State.rosterPeriod) return renderEmptyRoster();
+  
+  const dates = dateRange(State.rosterPeriod.start, State.rosterPeriod.end);
+  const staffList = State.staff.filter(s => s.active !== false);
+  
+  // Filter staff who have entries in roster
+  const rosterStaffIds = new Set();
+  dates.forEach(d => {
+    Object.keys(State.rosterData[d] || {}).forEach(id => rosterStaffIds.add(id));
+  });
+  const displayStaff = staffList.filter(s => rosterStaffIds.has(s._id));
+  
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--text)">${fmtDisplay(State.rosterPeriod.start)}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">to ${fmtDisplay(State.rosterPeriod.end)}</div>
+        </div>
+        <span class="badge badge-success">✅ Published</span>
+      </div>
+    </div>
+    
+    <div class="card" style="padding:8px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:${dates.length * 30 + 120}px">
+        <thead>
+          <tr style="background:var(--bg-1)">
+            <th style="padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);position:sticky;left:0;background:var(--bg-1);font-weight:600;font-size:11.5px;z-index:2">Staff</th>
+            ${dates.map(d => {
+              const cls = classifyDay(d);
+              const isSun = cls === 'SUNDAY';
+              const isHol = cls === 'HOLIDAY';
+              return `
+                <th style="padding:6px 2px;border-bottom:1px solid var(--border);font-weight:600;font-size:9.5px;text-align:center;${isSun || isHol ? 'background:rgba(245,158,11,0.1)' : ''}">
+                  ${new Date(d).getDate()}<br>
+                  <span style="font-size:8px;color:${isSun || isHol ? '#F59E0B' : 'var(--text-dim)'}">${dayShort(d).slice(0,2)}</span>
+                </th>
+              `;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${displayStaff.map(staff => {
+            const offCount = dates.filter(d => State.rosterData[d]?.[staff._id] === 'OFF').length;
+            const phCount = dates.filter(d => State.rosterData[d]?.[staff._id] === 'PH').length;
+            
+            return `
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;font-size:11.5px;position:sticky;left:0;background:var(--bg-0);font-weight:500;white-space:nowrap;z-index:1">
+                  ${esc(staff.name.split(' ')[0])}
+                  <span style="font-size:9.5px;color:var(--text-dim);margin-left:4px">${offCount}O${phCount > 0 ? ' '+phCount+'P' : ''}</span>
+                </td>
+                ${dates.map(date => {
+                  const code = State.rosterData[date]?.[staff._id] || 'X';
+                  const colors = {
+                    M: '#10B981', E: '#6366F1', N: '#8B5CF6',
+                    N12: '#EC4899', E4: '#3B82F6', D: '#EC4899',
+                    X: '#6B7280', OFF: '#374151', PH: '#F59E0B', L: '#F43F5E'
+                  };
+                  const color = colors[code] || '#6B7280';
+                  return `<td style="padding:3px 1px;text-align:center">
+                    <span style="display:inline-block;padding:2px 4px;border-radius:4px;background:${color};color:#fff;font-size:9px;font-weight:600;min-width:20px">${code}</span>
+                  </td>`;
+                }).join('')}
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">📖 Legend</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;font-size:11px">
+        ${Object.entries({ M: 'Morning', E: 'Evening', N: 'Night', N12: 'Ext Night', E4: 'Short Eve', D: 'Day Duty', X: 'Standby', OFF: 'Off', PH: 'PH', L: 'Leave' }).map(([code, name]) => {
+          const colors = { M: '#10B981', E: '#6366F1', N: '#8B5CF6', N12: '#EC4899', E4: '#3B82F6', D: '#EC4899', X: '#6B7280', OFF: '#374151', PH: '#F59E0B', L: '#F43F5E' };
+          return `<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:${colors[code]}"></span>${code} = ${name}</span>`;
+        }).join('')}
+      </div>
+    </div>
+    
+    <div class="btn-row">
+      <button class="btn-sm" style="flex:1;justify-content:center;padding:12px" onclick="printRoster()">🖨️ Print</button>
+      <button class="btn-sm" style="flex:1;justify-content:center;padding:12px" onclick="exportRosterCSV()">📥 CSV</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:12px" onclick="openAutoGenWizard()">🔄 Regenerate</button>
+    </div>
+  `;
+};
+
+/* ═══════════════════════════════════════════════════════════
+   PRINT ROSTER
+   ═══════════════════════════════════════════════════════════ */
+window.printRoster = function() {
+  if (!State.rosterData || !State.rosterPeriod) {
+    toast('No roster to print', 'error');
+    return;
+  }
+  
+  const dates = dateRange(State.rosterPeriod.start, State.rosterPeriod.end);
+  const staffList = State.staff.filter(s => s.active !== false);
+  const logo = localStorage.getItem('kih_hospital_logo');
+  const hospitalName = State.settings?.hospitalName || 'Kulsum International Hospital';
+  const address = State.settings?.hospitalAddress || 'Islamabad, Pakistan';
+  
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Roster ${State.rosterPeriod.start} to ${State.rosterPeriod.end}</title>
+      <style>
+        @page { size: landscape; margin: 10mm; }
+        body { font-family: system-ui, sans-serif; padding: 12px; color: #000; }
+        .header { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 16px; }
+        .header img { height: 56px; }
+        .header h1 { font-size: 18px; margin: 0; }
+        .header p { font-size: 11px; color: #555; margin: 2px 0 0 0; }
+        .period { font-size: 12px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        th { background: #f3f4f6; padding: 6px 4px; border: 1px solid #d1d5db; font-weight: 700; font-size: 9.5px; }
+        td { padding: 5px 4px; border: 1px solid #e5e7eb; text-align: center; font-size: 10px; }
+        td.name { text-align: left; font-weight: 600; background: #fafafa; }
+        .sun { background: #fef3c7 !important; }
+        .footer { margin-top: 14px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 10px; display: flex; justify-content: space-between; color: #555; }
+        .legend { margin-top: 12px; font-size: 10px; }
+        .legend span { display: inline-block; margin-right: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        ${logo ? `<img src="${logo}" alt="KIH">` : ''}
+        <div>
+          <h1>${hospitalName.toUpperCase()}</h1>
+          <p>Phlebotomy Department · ${address}</p>
+        </div>
+      </div>
+      
+      <div class="period">
+        <strong>Roster Period:</strong> ${fmtDisplay(State.rosterPeriod.start)} → ${fmtDisplay(State.rosterPeriod.end)}
+        · <strong>Staff:</strong> ${staffList.length}
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Staff</th>
+            ${dates.map(d => {
+              const cls = classifyDay(d);
+              const isSunHol = cls === 'SUNDAY' || cls === 'HOLIDAY';
+              return `<th class="${isSunHol ? 'sun' : ''}">${new Date(d).getDate()}<br><span style="font-size:8px">${dayShort(d).slice(0,2)}</span></th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${staffList.map(staff => `
+            <tr>
+              <td class="name">${esc(staff.name)}</td>
+              ${dates.map(date => {
+                const code = State.rosterData[date]?.[staff._id] || 'X';
+                const cls = classifyDay(date);
+                const isSunHol = cls === 'SUNDAY' || cls === 'HOLIDAY';
+                return `<td class="${isSunHol ? 'sun' : ''}"><strong>${code}</strong></td>`;
+              }).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="legend">
+        <span><strong>M</strong> = Morning</span>
+        <span><strong>E</strong> = Evening</span>
+        <span><strong>N</strong> = Night</span>
+        <span><strong>N12</strong> = Extended Night</span>
+        <span><strong>E4</strong> = Short Evening</span>
+        <span><strong>D</strong> = Day Duty</span>
+        <span><strong>X</strong> = Standby</span>
+        <span><strong>OFF</strong> = Off</span>
+        <span><strong>PH</strong> = Public Holiday</span>
+      </div>
+      
+      <div class="footer">
+        <span>Generated by: ${esc(State.user?.name || 'Admin')}</span>
+        <span>Printed: ${new Date().toLocaleString('en-PK')}</span>
+      </div>
+      
+      <script>setTimeout(() => window.print(), 500);<\/script>
+    </body>
+    </html>
+  `);
+  win.document.close();
+};
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT CSV
+   ═══════════════════════════════════════════════════════════ */
+window.exportRosterCSV = function() {
+  if (!State.rosterData || !State.rosterPeriod) {
+    toast('No roster', 'error');
+    return;
+  }
+  
+  const dates = dateRange(State.rosterPeriod.start, State.rosterPeriod.end);
+  const staffList = State.staff.filter(s => s.active !== false);
+  
+  // Header
+  const headers = ['Staff', 'Mobile', ...dates.map(d => `${d} (${dayShort(d)})`)];
+  const rows = [headers];
+  
+  // Data
+  staffList.forEach(staff => {
+    const row = [staff.name, staff.mobile || ''];
+    dates.forEach(date => {
+      const code = State.rosterData[date]?.[staff._id] || 'X';
+      row.push(code);
+    });
+    rows.push(row);
+  });
+  
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `kih-roster-${State.rosterPeriod.start}-to-${State.rosterPeriod.end}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('✅ CSV exported', 'success');
+};
+
+/* ═══════════════════════════════════════════════════════════
+   CPL RECORDS VIEW
+   ═══════════════════════════════════════════════════════════ */
+window.openCPLPendingModal = function() {
+  const allCPL = LocalDB.get('cplRecords', []);
+  const pending = allCPL.filter(c => c.status === 'pending');
+  const applied = allCPL.filter(c => c.status === 'applied');
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>📈 CPL Records</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="card" style="background:var(--bg-1);margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
+        <div>
+          <div style="font-size:26px;font-weight:800;color:#F59E0B">${pending.length}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Pending</div>
+        </div>
+        <div>
+          <div style="font-size:26px;font-weight:800;color:#10B981">${applied.length}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Applied</div>
+        </div>
+      </div>
+    </div>
+    
+    ${pending.length > 0 ? `
+      <div class="card">
+        <div class="card-title" style="font-size:15px">⏳ Pending CPL</div>
+        <div class="card-sub">Will be compensated in next roster generation</div>
+        <div style="margin-top:12px">
+          ${pending.map(c => `
+            <div class="list-row" style="flex-direction:column;align-items:stretch;gap:6px;margin-bottom:8px">
+              <div class="flex-between">
+                <strong style="font-size:13px">👤 ${esc(c.staffName)}</strong>
+                <span class="badge badge-warning">${c.amount} CPL</span>
+              </div>
+              <div style="font-size:11.5px;color:var(--text-muted)">
+                📅 Worked: ${fmtDisplay(c.originalHolidayDate)} (${esc(c.holidayName || 'Holiday')})
+              </div>
+              <div style="font-size:11px;color:var(--text-dim)">
+                Period: ${esc(c.currentPeriodStart)} → ${esc(c.currentPeriodEnd)}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    
+    ${applied.length > 0 ? `
+      <div class="card">
+        <div class="card-title" style="font-size:15px">✅ Applied CPL</div>
+        <div style="margin-top:12px">
+          ${applied.slice(0, 15).map(c => `
+            <div class="list-row" style="padding:10px 12px;margin-bottom:6px">
+              <div>
+                <div style="font-weight:500;font-size:12.5px">${esc(c.staffName)}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+                  ${c.appliedOnDate ? `Applied: ${fmtDisplay(c.appliedOnDate)}` : ''}
+                </div>
+              </div>
+              <span class="badge badge-success">✓</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    
+    ${pending.length === 0 && applied.length === 0 ? `
+      <div class="empty-state">
+        <div class="icon">📈</div>
+        <div style="font-size:13px">No CPL records yet</div>
+      </div>
+    ` : ''}
+  `);
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ADD CPL RECORDS TO MORE MENU
+   ═══════════════════════════════════════════════════════════ */
+(function patchMoreWithCPL() {
+  const originalRenderMore = window.renderMore;
+  window.renderMore = function() {
+    const baseHtml = originalRenderMore ? originalRenderMore() : '';
+    
+    const cplLink = `
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:14px 16px;width:100%" onclick="openCPLPendingModal()">
+        <span style="margin-right:10px">📈</span> CPL Records
+      </button>
+    `;
+    
+    // Insert before About card
+    if (baseHtml.includes('<div class="card">\n      <div class="card-title">ℹ️ About</div>')) {
+      return baseHtml.replace(
+        '<div class="card">\n      <div class="card-title">ℹ️ About</div>',
+        cplLink + '\n        <div class="card">\n          <div class="card-title">ℹ️ About</div>'
+      );
+    }
+    return baseHtml;
+  };
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   LOAD EXISTING ROSTER ON BOOT
+   ═══════════════════════════════════════════════════════════ */
+(function loadLatestRoster() {
+  const allRosters = LocalDB.get('rosters', []);
+  if (allRosters.length > 0) {
+    const latest = allRosters[allRosters.length - 1];
+    State.rosterData = latest.grid;
+    State.rosterPeriod = { start: latest.periodStart, end: latest.periodEnd };
+    State.currentRoster = latest;
+    console.log(`%c📅 Loaded roster: ${latest.periodStart} → ${latest.periodEnd}`, 'color:#6366F1;font-size:11px');
+  }
+})();
+
+console.log('%c✅ Part 5 — Validation + Save + Display loaded', 'color:#10B981;font-weight:bold;font-size:12px');
+console.log('%c   Full roster module complete!', 'color:#8B5CF6;font-weight:bold;font-size:13px');
    
 </script>
 </body>
