@@ -1069,10 +1069,109 @@ h4{font-size:15px}
 </style>
 </head>
 <body>
-<!-- PART 2 comes next -->
-   <body>
-<!-- PART 2 comes next -->
-      <!-- ═══ END PART 2 ═══ -->
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🩸</div>
+    <h1>KIH Phlebotomy</h1>
+    <p class="subtitle">Kulsum International Hospital · Islamabad</p>
+    
+    <div class="input-group">
+      <label>Mobile Number</label>
+      <input type="tel" id="loginMobile" placeholder="03001234567" autocomplete="tel" inputmode="tel" maxlength="11">
+    </div>
+    
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="keepSignedIn" checked>
+      <span>Keep me signed in (30 days)</span>
+    </label>
+    
+    <button class="btn-primary" id="loginBtn">
+      <span>🔓</span>
+      <span>Sign In</span>
+    </button>
+    
+    <button class="btn-secondary" id="guestBtn">👤 Continue as Guest</button>
+    
+    <div class="login-footer">Session persists 30 days · Demo Mode</div>
+  </div>
+</div>
+
+<!-- ═══ APP HEADER ═══ -->
+<header class="app-header hidden" id="appHeader">
+  <div class="header-left">
+    <div class="header-logo">🩸</div>
+    <div class="header-title">Phlebotomy</div>
+    <span class="online-dot" id="onlineDot"></span>
+  </div>
+  <div class="header-right">
+    <div class="icon-btn" id="notificationBell" title="Notifications">
+      🔔
+      <span class="bell-badge hidden" id="bellBadge">0</span>
+    </div>
+    <div class="user-avatar" id="userAvatar" title="Profile">?</div>
+    <span class="logout-link" id="logoutBtn">Logout</span>
+  </div>
+</header>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="app-content hidden" id="appContent"></main>
+
+<!-- ═══ BOTTOM NAVIGATION ═══ -->
+<nav class="bottom-nav hidden" id="bottomNav">
+  <div class="nav-item active" data-tab="home">
+    <span class="nav-icon">🏠</span>
+    <span>Home</span>
+  </div>
+  <div class="nav-item" data-tab="tests">
+    <span class="nav-icon">🧪</span>
+    <span>Tests</span>
+  </div>
+  <div class="nav-item" data-tab="protocols">
+    <span class="nav-icon">📋</span>
+    <span>Protocols</span>
+  </div>
+  <div class="nav-item" data-tab="roster">
+    <span class="nav-icon">📅</span>
+    <span>Roster</span>
+  </div>
+  <div class="nav-item" data-tab="swap">
+    <span class="nav-icon">🔄</span>
+    <span>Swap</span>
+  </div>
+  <div class="nav-item" data-tab="learn">
+    <span class="nav-icon">📚</span>
+    <span>Learn</span>
+  </div>
+  <div class="nav-item" data-tab="attend">
+    <span class="nav-icon">✅</span>
+    <span>Attend</span>
+  </div>
+  <div class="nav-item" data-tab="cpl">
+    <span class="nav-icon">📈</span>
+    <span>CPL</span>
+  </div>
+  <div class="nav-item" data-tab="more">
+    <span class="nav-icon">⋯</span>
+    <span>More</span>
+  </div>
+</nav>
+
+<!-- ═══ TOAST NOTIFICATION ═══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══ MODAL OVERLAY ═══ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-sheet" id="modalSheet"></div>
+</div>
+
+<script>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
