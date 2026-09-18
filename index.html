@@ -5937,6 +5937,1266 @@ window.openStartDrawModal = function() {
 };
 
 console.log('%c✅ Master Patch v1 loaded — Sab changes applied', 'color:#10B981;font-weight:bold;font-size:12px');
+   /* ═══════════════════════════════════════════════════════════
+   MASTER PATCH PART A — Shining Effects + Display v2
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── A1. SHINING EFFECTS (26 CSS Animations) ────────── */
+(function injectShiningCSS() {
+  if (document.getElementById('kih-shining')) return;
+  const style = document.createElement('style');
+  style.id = 'kih-shining';
+  style.textContent = `
+    .card{position:relative;overflow:hidden;transition:all .35s cubic-bezier(.4,0,.2,1)}
+    .card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.08) 45%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.08) 55%,transparent 100%);transition:left .7s ease;pointer-events:none;z-index:1}
+    .card:hover::before{left:100%}
+    .btn-primary,.btn-sm.btn-accent,.big-btn{position:relative;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1)}
+    .btn-primary::after,.btn-sm.btn-accent::after,.big-btn::after{content:'';position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;background:rgba(255,255,255,.35);transform:translate(-50%,-50%);transition:width .6s ease,height .6s ease,opacity .6s ease;opacity:0;pointer-events:none}
+    .btn-primary:active::after,.btn-sm.btn-accent:active::after,.big-btn:active::after{width:300px;height:300px;opacity:1;transition:0s}
+    .btn-primary:hover,.btn-sm.btn-accent:hover{transform:translateY(-2px);box-shadow:0 12px 28px var(--primary-glow),0 0 0 1px rgba(255,255,255,.1),inset 0 1px 0 rgba(255,255,255,.2)}
+    .big-btn:hover{transform:translateY(-3px);filter:brightness(1.08)}
+    @keyframes shimmerSlide{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .btn-primary,.btn-sm.btn-accent{background-size:200% 100%!important;animation:shimmerSlide 3s linear infinite}
+    .big-btn-draw{background:linear-gradient(90deg,#059669 0%,#10B981 25%,#34D399 50%,#10B981 75%,#059669 100%)!important;background-size:200% 100%!important;animation:shimmerSlide 3s linear infinite}
+    .big-btn-emergency{background:linear-gradient(90deg,#DC2626 0%,#EF4444 25%,#F87171 50%,#EF4444 75%,#DC2626 100%)!important;background-size:200% 100%!important;animation:shimmerSlide 3s linear infinite}
+    @keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+    .big-btn-draw{animation:floatSoft 3s ease-in-out infinite,shimmerSlide 3s linear infinite}
+    .big-btn-emergency{animation:floatSoft 3s ease-in-out infinite .5s,shimmerSlide 3s linear infinite}
+    @keyframes cardTitleShine{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .card-title{background:linear-gradient(90deg,#F9FAFB 0%,#FFFFFF 45%,#A5B4FC 50%,#FFFFFF 55%,#F9FAFB 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:cardTitleShine 5s linear infinite}
+    .app-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--primary),transparent);opacity:.6;animation:headerGlow 3s ease-in-out infinite}
+    @keyframes headerGlow{0%,100%{opacity:.3}50%{opacity:.8}}
+    .nav-item.active{background:rgba(99,102,241,.15)!important;box-shadow:0 0 20px rgba(99,102,241,.3),inset 0 1px 0 rgba(255,255,255,.1);animation:navPulse 2s ease-in-out infinite}
+    @keyframes navPulse{0%,100%{box-shadow:0 0 20px rgba(99,102,241,.3)}50%{box-shadow:0 0 30px rgba(99,102,241,.5)}}
+    .nav-item.active .nav-icon{filter:drop-shadow(0 0 6px var(--primary))}
+    .icon-btn:hover{background:rgba(99,102,241,.15)!important;border-color:var(--primary)!important;box-shadow:0 0 20px rgba(99,102,241,.3);transform:translateY(-1px)}
+    .stat-box:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 24px rgba(99,102,241,.2)}
+    .stat-box .num{background:var(--primary-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 8px var(--primary-glow))}
+    .badge-primary{box-shadow:0 0 12px rgba(99,102,241,.4)}.badge-success{box-shadow:0 0 12px rgba(16,185,129,.4)}.badge-danger{box-shadow:0 0 12px rgba(239,68,68,.4)}.badge-warning{box-shadow:0 0 12px rgba(245,158,11,.4)}
+    @keyframes logoGlow{0%,100%{box-shadow:0 8px 32px var(--primary-glow),0 0 60px var(--primary-glow);transform:scale(1)}50%{box-shadow:0 8px 40px var(--primary-glow),0 0 80px var(--primary-glow);transform:scale(1.05)}}
+    .login-logo{animation:logoGlow 3s ease-in-out infinite!important}
+    .input-group input:focus,.input-group textarea:focus,.input-group select:focus,.search-bar:focus{box-shadow:0 0 0 4px rgba(99,102,241,.15),0 0 20px rgba(99,102,241,.2)!important;transform:translateY(-1px)}
+    .list-row{transition:all .25s cubic-bezier(.4,0,.2,1)}
+    .list-row:hover{transform:translateX(4px);box-shadow:0 8px 24px rgba(0,0,0,.3),inset 3px 0 0 var(--primary)}
+    .emergency-card:hover{transform:translateX(6px) scale(1.01);box-shadow:0 12px 32px rgba(239,68,68,.3),inset 3px 0 0 var(--danger)}
+    .avatar:hover,.user-avatar:hover{box-shadow:0 0 20px var(--primary-glow);border-color:var(--primary)!important;transform:scale(1.08)}
+    .tab:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(99,102,241,.15)}
+    .tab.active{box-shadow:0 4px 16px var(--primary-glow),inset 0 1px 0 rgba(255,255,255,.2)}
+    .modal-sheet{box-shadow:0 -20px 60px rgba(0,0,0,.6),0 0 40px rgba(99,102,241,.15),inset 0 1px 0 rgba(255,255,255,.08)!important}
+    .progress-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);background-size:200% 100%;animation:shimmerSlide 2s linear infinite}
+    .toast{box-shadow:0 20px 40px rgba(0,0,0,.5),0 0 30px rgba(99,102,241,.2)!important}
+    .step-check.done{animation:checkPulse .5s ease-out}
+    @keyframes checkPulse{0%{transform:scale(.8)}50%{transform:scale(1.15);box-shadow:0 0 20px var(--success-l)}100%{transform:scale(1)}}
+    .online-dot{animation:onlinePulse 2s ease-in-out infinite}
+    @keyframes onlinePulse{0%,100%{box-shadow:0 0 8px var(--success-l);opacity:1}50%{box-shadow:0 0 20px var(--success-l);opacity:.7}}
+    .app-content{animation:pageSlideIn .4s cubic-bezier(.4,0,.2,1)}
+    @keyframes pageSlideIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+    .des-header{position:relative;overflow:hidden}
+    .des-header::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:desHeaderShine 3s ease-in-out infinite}
+    @keyframes desHeaderShine{0%{left:-100%}50%{left:100%}100%{left:100%}}
+    .login-card{box-shadow:0 20px 40px rgba(0,0,0,.5),0 0 60px rgba(99,102,241,.15)!important}
+    @keyframes typeIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+    .app-content>*{animation:typeIn .4s ease-out backwards}
+    .app-content>*:nth-child(1){animation-delay:.05s}
+    .app-content>*:nth-child(2){animation-delay:.1s}
+    .app-content>*:nth-child(3){animation-delay:.15s}
+    .app-content>*:nth-child(4){animation-delay:.2s}
+    .app-content>*:nth-child(5){animation-delay:.25s}
+    .app-content>*:nth-child(6){animation-delay:.3s}
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  `;
+  document.head.appendChild(style);
+})();
+
+/* ─── A2. SCROLL TO TOP BUTTON ───────────────────────── */
+(function addScrollTopButton() {
+  if (document.getElementById('scrollTopBtn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'scrollTopBtn';
+  btn.style.cssText = 'position:fixed;bottom:100px;right:20px;width:48px;height:48px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 0 30px rgba(99,102,241,.5);cursor:pointer;border:none;z-index:99;transition:all .3s';
+  btn.innerHTML = '↑';
+  btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.body.appendChild(btn);
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        btn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+})();
+
+/* ─── A3. DISPLAY v2 — THEMES + ACCENTS + BG ─────────── */
+const THEMES_V2 = {
+  dark:    { name: 'Dark',    bg: '#0B0F1A', text: '#F9FAFB' },
+  amoled:  { name: 'AMOLED',  bg: '#000000', text: '#FFFFFF' },
+  light:   { name: 'Light',   bg: '#F3F4F6', text: '#111827' },
+  auto:    { name: 'Auto',    bg: null, text: null }
+};
+const ACCENTS_V2 = {
+  indigo:  { name: 'Indigo',  grad: 'linear-gradient(135deg,#6366F1,#8B5CF6)' },
+  cyan:    { name: 'Cyan',    grad: 'linear-gradient(135deg,#06B6D4,#3B82F6)' },
+  emerald: { name: 'Emerald', grad: 'linear-gradient(135deg,#10B981,#059669)' },
+  pink:    { name: 'Pink',    grad: 'linear-gradient(135deg,#EC4899,#DB2777)' },
+  orange:  { name: 'Orange',  grad: 'linear-gradient(135deg,#F59E0B,#EF4444)' },
+  red:     { name: 'Red',     grad: 'linear-gradient(135deg,#EF4444,#DC2626)' },
+  teal:    { name: 'Teal',    grad: 'linear-gradient(135deg,#14B8A6,#0D9488)' },
+  purple:  { name: 'Purple',  grad: 'linear-gradient(135deg,#8B5CF6,#6D28D9)' }
+};
+const FONTSIZES = { xs:'13px', s:'14px', m:'15px', l:'16px', xl:'17px', xxl:'18px' };
+const BG_PRESETS = {
+  none:   { name: 'None',   css: 'none' },
+  ocean:  { name: 'Ocean',  css: 'linear-gradient(135deg,#0B0F1A 0%,#1E3A8A 50%,#0B0F1A 100%)' },
+  sunset: { name: 'Sunset', css: 'linear-gradient(135deg,#0B0F1A 0%,#7C2D12 50%,#0B0F1A 100%)' },
+  space:  { name: 'Space',  css: 'radial-gradient(circle at 20% 20%,#1E1B4B 0%,#0B0F1A 70%)' },
+  forest: { name: 'Forest', css: 'linear-gradient(135deg,#0B0F1A 0%,#064E3B 50%,#0B0F1A 100%)' },
+  cherry: { name: 'Cherry', css: 'linear-gradient(135deg,#0B0F1A 0%,#831843 50%,#0B0F1A 100%)' }
+};
+
+window.applyThemeV2 = function(themeName) {
+  const t = THEMES_V2[themeName];
+  if (!t) return;
+  if (themeName === 'auto') {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const actual = isDark ? THEMES_V2.dark : THEMES_V2.light;
+    document.documentElement.style.setProperty('--bg-0', actual.bg);
+    document.documentElement.style.setProperty('--text', actual.text);
+    document.body.style.background = actual.bg;
+  } else {
+    document.documentElement.style.setProperty('--bg-0', t.bg);
+    document.documentElement.style.setProperty('--text', t.text);
+    document.body.style.background = t.bg;
+  }
+  localStorage.setItem('kih_theme_v2', themeName);
+  State.settings.theme = themeName;
+};
+
+window.applyAccentV2 = function(accentName) {
+  const a = ACCENTS_V2[accentName];
+  if (!a) return;
+  document.documentElement.style.setProperty('--primary-grad', a.grad);
+  localStorage.setItem('kih_accent_v2', accentName);
+  State.settings.accent = accentName;
+};
+
+window.applyFontSizeV2 = function(size) {
+  document.documentElement.style.fontSize = FONTSIZES[size] || '15px';
+  localStorage.setItem('kih_fontsize_v2', size);
+  State.settings.fontSize = size;
+};
+
+window.applyFontFamily = function(family) {
+  const families = {
+    inter: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+    jetbrains: "'JetBrains Mono', monospace",
+    system: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif"
+  };
+  document.body.style.fontFamily = families[family] || families.inter;
+  localStorage.setItem('kih_fontfamily', family);
+  State.settings.fontFamily = family;
+};
+
+window.applyBackgroundFile = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { toast('Image too large (max 3MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      localStorage.setItem('kih_bg_image', e.target.result);
+      applyBackgroundCSS(e.target.result);
+      toast('Background applied', 'success');
+      openDisplaySettings();
+    } catch (err) { toast('Storage full', 'error'); }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.applyBackgroundUrl = function(url) {
+  if (!url || !url.startsWith('http')) { toast('Invalid URL', 'error'); return; }
+  localStorage.setItem('kih_bg_image', url);
+  applyBackgroundCSS(url);
+  toast('Background applied', 'success');
+  openDisplaySettings();
+};
+
+window.applyBackgroundPreset = function(presetId) {
+  const preset = BG_PRESETS[presetId];
+  if (!preset) return;
+  if (presetId === 'none') {
+    localStorage.removeItem('kih_bg_image');
+    localStorage.removeItem('kih_bg_preset');
+    document.body.style.backgroundImage = 'none';
+    document.body.style.background = 'var(--bg-0)';
+    toast('Background removed', 'success');
+  } else {
+    localStorage.setItem('kih_bg_preset', presetId);
+    localStorage.removeItem('kih_bg_image');
+    document.body.style.background = preset.css;
+    document.body.style.backgroundAttachment = 'fixed';
+    toast(`${preset.name} applied`, 'success');
+  }
+  openDisplaySettings();
+};
+
+function applyBackgroundCSS(url) {
+  document.body.style.backgroundImage = `url('${url}')`;
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundAttachment = 'fixed';
+  document.body.style.backgroundRepeat = 'no-repeat';
+}
+
+window.applyDensity = function(density) {
+  const d = { compact:'13px', comfortable:'16px', spacious:'20px' };
+  document.documentElement.style.setProperty('--density-padding', d[density] || '16px');
+  localStorage.setItem('kih_density', density);
+  State.settings.density = density;
+  toast('Density updated', 'success');
+};
+
+window.applyAnimations = function(mode) {
+  let el = document.getElementById('kih-anim-style');
+  if (!el) { el = document.createElement('style'); el.id = 'kih-anim-style'; document.head.appendChild(el); }
+  const styles = { full:'', minimal:'*{transition-duration:.05s!important;animation:none!important}', off:'*{transition:none!important;animation:none!important}' };
+  el.textContent = styles[mode] || '';
+  localStorage.setItem('kih_animations', mode);
+  State.settings.animations = mode;
+  toast(`Animations: ${mode}`, 'success');
+};
+
+window.applySound = function(on) {
+  localStorage.setItem('kih_sound', on ? 'on' : 'off');
+  State.settings.sound = on;
+  toast(`Sound ${on ? 'ON' : 'OFF'}`, 'success');
+};
+
+window.applyVibration = function(on) {
+  localStorage.setItem('kih_vibration', on ? 'on' : 'off');
+  State.settings.vibration = on;
+  if (on && navigator.vibrate) navigator.vibrate(50);
+  toast(`Vibration ${on ? 'ON' : 'OFF'}`, 'success');
+};
+
+window.resetDisplaySettings = function() {
+  if (!confirm('Reset all display settings?')) return;
+  ['kih_theme_v2','kih_accent_v2','kih_fontsize_v2','kih_fontfamily','kih_bg_image','kih_bg_preset','kih_density','kih_animations','kih_sound','kih_vibration'].forEach(k => localStorage.removeItem(k));
+  document.body.style.background = '';
+  document.body.style.backgroundImage = '';
+  document.body.style.fontFamily = '';
+  document.documentElement.style.fontSize = '15px';
+  toast('Reset complete', 'success');
+  setTimeout(() => location.reload(), 800);
+};
+
+window.openDisplaySettings = function() {
+  const theme = State.settings.theme || 'dark';
+  const accent = State.settings.accent || 'indigo';
+  const fontSize = State.settings.fontSize || 'm';
+  const fontFamily = State.settings.fontFamily || 'inter';
+  const density = State.settings.density || 'comfortable';
+  const animations = State.settings.animations || 'full';
+  const sound = State.settings.sound !== false;
+  const vibration = State.settings.vibration !== false;
+  const bgImage = localStorage.getItem('kih_bg_image');
+  const bgPreset = localStorage.getItem('kih_bg_preset') || 'none';
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>
+        <button onclick="openSettingsModal()" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;margin-right:8px">←</button>
+        🎨 Display & Theme
+      </h2>
+      <button class="modal-close" onclick="openSettingsModal()">✕</button>
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🎨 Theme</div>
+    <div class="btn-row" style="margin-bottom:16px">
+      ${Object.entries(THEMES_V2).map(([k,v]) => `<button class="btn-sm ${theme===k?'btn-accent':''}" onclick="applyThemeV2('${k}');openDisplaySettings()">${v.name}</button>`).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🌈 Accent Color</div>
+    <div class="btn-row" style="margin-bottom:16px">
+      ${Object.entries(ACCENTS_V2).map(([k,v]) => `<button class="btn-sm ${accent===k?'btn-accent':''}" onclick="applyAccentV2('${k}');openDisplaySettings()">${v.name}</button>`).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🔤 Font Size</div>
+    <div class="btn-row" style="margin-bottom:16px">
+      ${Object.entries(FONTSIZES).map(([k,v]) => `<button class="btn-sm ${fontSize===k?'btn-accent':''}" onclick="applyFontSizeV2('${k}');openDisplaySettings()">${k.toUpperCase()}</button>`).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🔠 Font Family</div>
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn-sm ${fontFamily==='inter'?'btn-accent':''}" onclick="applyFontFamily('inter');openDisplaySettings()">Inter</button>
+      <button class="btn-sm ${fontFamily==='jetbrains'?'btn-accent':''}" onclick="applyFontFamily('jetbrains');openDisplaySettings()">Mono</button>
+      <button class="btn-sm ${fontFamily==='system'?'btn-accent':''}" onclick="applyFontFamily('system');openDisplaySettings()">System</button>
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🖼️ Background</div>
+    <div style="background:var(--bg-glass);border:1px solid var(--border-2);border-radius:14px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Presets</div>
+      <div class="btn-row" style="margin:0">
+        ${Object.entries(BG_PRESETS).map(([k,v]) => `<button class="btn-sm ${bgPreset===k&&!bgImage?'btn-accent':''}" onclick="applyBackgroundPreset('${k}')">${v.name}</button>`).join('')}
+      </div>
+    </div>
+    
+    <div style="background:var(--bg-glass);border:1px solid var(--border-2);border-radius:14px;padding:12px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Custom Image ${bgImage ? '✓ Set' : ''}</div>
+      <input type="file" id="bgFileInput" accept="image/*" style="display:none" onchange="applyBackgroundFile(this)">
+      <button class="btn-sm btn-block mb8" style="justify-content:center" onclick="document.getElementById('bgFileInput').click()">📁 Choose from PC / 📱 Mobile</button>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="bgUrlInput" placeholder="Or paste image URL..." style="flex:1;padding:10px;background:var(--bg-glass-2);border:1px solid var(--border-2);border-radius:10px;color:var(--text);font-size:12.5px">
+        <button class="btn-sm" onclick="applyBackgroundUrl(document.getElementById('bgUrlInput').value)">Set</button>
+      </div>
+      ${bgImage ? `<button class="btn-sm btn-danger btn-block mt8" onclick="applyBackgroundPreset('none')">🗑️ Remove</button>` : ''}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">📐 Density</div>
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn-sm ${density==='compact'?'btn-accent':''}" onclick="applyDensity('compact');openDisplaySettings()">Compact</button>
+      <button class="btn-sm ${density==='comfortable'?'btn-accent':''}" onclick="applyDensity('comfortable');openDisplaySettings()">Comfortable</button>
+      <button class="btn-sm ${density==='spacious'?'btn-accent':''}" onclick="applyDensity('spacious');openDisplaySettings()">Spacious</button>
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🎬 Animations</div>
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn-sm ${animations==='full'?'btn-accent':''}" onclick="applyAnimations('full');openDisplaySettings()">Full</button>
+      <button class="btn-sm ${animations==='minimal'?'btn-accent':''}" onclick="applyAnimations('minimal');openDisplaySettings()">Minimal</button>
+      <button class="btn-sm ${animations==='off'?'btn-accent':''}" onclick="applyAnimations('off');openDisplaySettings()">Off</button>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">🔊 Sound</div>
+        <div class="btn-row" style="margin:0">
+          <button class="btn-sm ${sound?'btn-accent':''}" onclick="applySound(true);openDisplaySettings()">On</button>
+          <button class="btn-sm ${!sound?'btn-accent':''}" onclick="applySound(false);openDisplaySettings()">Off</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">📳 Vibration</div>
+        <div class="btn-row" style="margin:0">
+          <button class="btn-sm ${vibration?'btn-accent':''}" onclick="applyVibration(true);openDisplaySettings()">On</button>
+          <button class="btn-sm ${!vibration?'btn-accent':''}" onclick="applyVibration(false);openDisplaySettings()">Off</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="btn-row mt16" style="border-top:1px solid var(--border);padding-top:16px">
+      <button class="btn-sm btn-danger" onclick="resetDisplaySettings()">🔄 Reset</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="openSettingsModal()">← Back to Settings</button>
+    </div>
+  `);
+};
+
+(function loadDisplaySettings() {
+  const theme = localStorage.getItem('kih_theme_v2') || 'dark';
+  const accent = localStorage.getItem('kih_accent_v2') || 'indigo';
+  const fontSize = localStorage.getItem('kih_fontsize_v2') || 'm';
+  const fontFamily = localStorage.getItem('kih_fontfamily') || 'inter';
+  const density = localStorage.getItem('kih_density') || 'comfortable';
+  const animations = localStorage.getItem('kih_animations') || 'full';
+  const bgImage = localStorage.getItem('kih_bg_image');
+  const bgPreset = localStorage.getItem('kih_bg_preset');
+  
+  if (theme) applyThemeV2(theme);
+  if (accent) applyAccentV2(accent);
+  if (fontSize) applyFontSizeV2(fontSize);
+  if (fontFamily) applyFontFamily(fontFamily);
+  if (density) applyDensity(density);
+  if (animations) applyAnimations(animations);
+  
+  if (bgImage) applyBackgroundCSS(bgImage);
+  else if (bgPreset && bgPreset !== 'none') {
+    const preset = BG_PRESETS[bgPreset];
+    if (preset) { document.body.style.background = preset.css; document.body.style.backgroundAttachment = 'fixed'; }
+  }
+})();
+
+console.log('%c✅ PART A loaded — Shining + Display v2', 'color:#10B981;font-weight:bold;font-size:12px');
+/* ═══════════════════════════════════════════════════════════
+   MASTER PATCH PART B — Desktop Sidebar + Hospital Logo
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── B1. DESKTOP SIDEBAR LAYOUT ─────────────────────── */
+(function injectSidebarCSS() {
+  if (document.getElementById('kih-sidebar-css')) return;
+  const style = document.createElement('style');
+  style.id = 'kih-sidebar-css';
+  style.textContent = `
+    @media (min-width: 1024px) {
+      body { padding-bottom: 0 !important; }
+      .app-header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+        padding: 14px 28px !important;
+        background: rgba(11,15,26,0.95);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+      }
+      .bottom-nav { display: none !important; }
+      
+      .kih-sidebar {
+        display: flex !important;
+        position: fixed; top: 66px; left: 0; bottom: 0; width: 240px;
+        background: linear-gradient(180deg, rgba(15,20,34,0.98), rgba(11,15,26,1));
+        border-right: 1px solid var(--border);
+        flex-direction: column; padding: 20px 12px;
+        z-index: 90; overflow-y: auto;
+      }
+      .kih-sidebar-logo {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px 20px; border-bottom: 1px solid var(--border);
+        margin-bottom: 12px;
+      }
+      .kih-sidebar-logo-icon {
+        width: 40px; height: 40px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--primary-grad); border-radius: 12px;
+        font-size: 20px; box-shadow: 0 4px 16px var(--primary-glow);
+        overflow: hidden;
+      }
+      .kih-sidebar-logo-text { font-size: 15px; font-weight: 700; line-height: 1.2; }
+      .kih-sidebar-logo-text small { display: block; font-size: 10.5px; font-weight: 400; color: var(--text-muted); margin-top: 2px; }
+      
+      .kih-sidebar-nav { display: flex; flex-direction: column; gap: 3px; }
+      .kih-nav-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 11px 14px; border-radius: 12px;
+        color: var(--text-muted); font-size: 14px; font-weight: 500;
+        cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative; overflow: hidden;
+      }
+      .kih-nav-item:hover { background: rgba(99,102,241,0.08); color: var(--text); transform: translateX(3px); }
+      .kih-nav-item.active {
+        background: var(--primary-grad); color: white;
+        box-shadow: 0 6px 20px var(--primary-glow);
+      }
+      .kih-nav-item.active::before {
+        content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+        width: 3px; height: 60%; background: white; border-radius: 0 4px 4px 0;
+        box-shadow: 0 0 12px white;
+      }
+      .kih-nav-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+      .kih-nav-label { flex: 1; }
+      .kih-nav-badge {
+        background: var(--danger); color: white; font-size: 10px; font-weight: 700;
+        padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+      }
+      
+      .kih-sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+      .kih-user-card {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px; background: var(--bg-glass);
+        border: 1px solid var(--border-2); border-radius: 14px; margin-bottom: 8px;
+      }
+      .kih-user-avatar {
+        width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+        background: var(--primary-grad); border-radius: 50%;
+        font-weight: 700; font-size: 13px; color: white; flex-shrink: 0;
+      }
+      .kih-user-info { flex: 1; min-width: 0; }
+      .kih-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .kih-user-role { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+      .kih-logout-btn {
+        display: flex; align-items: center; gap: 10px;
+        padding: 11px 14px; border-radius: 12px;
+        color: var(--danger-l); font-size: 13.5px; font-weight: 500;
+        cursor: pointer; transition: all 0.2s;
+        background: transparent; border: 1px solid rgba(239,68,68,0.2);
+      }
+      .kih-logout-btn:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.4); }
+      
+      .app-content {
+        margin-left: 240px !important;
+        margin-top: 66px !important;
+        max-width: calc(100% - 240px) !important;
+        width: calc(100% - 240px) !important;
+        padding: 24px 32px !important;
+        min-height: calc(100vh - 66px) !important;
+        display: block !important;
+      }
+      .app-content > * { grid-column: unset !important; }
+      .app-content .card { max-width: 1200px; }
+      
+      @media (min-width: 1400px) {
+        .app-content { padding: 32px 48px !important; }
+        #testList, #difficultList, #scriptList, #rejectionList {
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 16px !important;
+        }
+        #testList .card, #difficultList .card,
+        #scriptList .card, #rejectionList .card { margin-bottom: 0 !important; }
+      }
+      
+      .app-header .header-left { margin-left: 240px; padding-left: 0; }
+      .app-header .header-logo { display: none; }
+      .app-header .header-title { font-size: 15px; }
+    }
+    @media (max-width: 1023px) {
+      .kih-sidebar { display: none !important; }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+function buildSidebar() {
+  if (document.getElementById('kihSidebar')) return;
+  if (window.innerWidth < 1024) return;
+  
+  const logo = localStorage.getItem('kih_hospital_logo');
+  const user = State.user || {};
+  const userInitials = getInitials(user.name || 'User');
+  const userRole = user.role === 'admin' ? '👑 Admin' : '👤 Staff';
+  
+  const tabs = [
+    { id: 'home', icon: '🏠', label: 'Home' },
+    { id: 'tests', icon: '🧪', label: 'Tests' },
+    { id: 'protocols', icon: '📋', label: 'Protocols' },
+    { id: 'roster', icon: '📅', label: 'Roster' },
+    { id: 'swap', icon: '🔄', label: 'Swap' },
+    { id: 'learn', icon: '📚', label: 'Learn' },
+    { id: 'attend', icon: '✅', label: 'Attendance' },
+    { id: 'cpl', icon: '📈', label: 'CPL Tracker' },
+    { id: 'more', icon: '⋯', label: 'More' }
+  ];
+  
+  const sidebar = document.createElement('aside');
+  sidebar.id = 'kihSidebar';
+  sidebar.className = 'kih-sidebar';
+  sidebar.innerHTML = `
+    <div class="kih-sidebar-logo">
+      <div class="kih-sidebar-logo-icon">
+        ${logo ? `<img src="${logo}" style="width:100%;height:100%;object-fit:contain">` : '🩸'}
+      </div>
+      <div class="kih-sidebar-logo-text">
+        KIH Phlebotomy
+        <small>Companion v3.0</small>
+      </div>
+    </div>
+    <nav class="kih-sidebar-nav">
+      ${tabs.map(t => `
+        <div class="kih-nav-item ${State.activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">
+          <span class="kih-nav-icon">${t.icon}</span>
+          <span class="kih-nav-label">${t.label}</span>
+        </div>
+      `).join('')}
+    </nav>
+    <div class="kih-sidebar-footer">
+      <div class="kih-user-card">
+        <div class="kih-user-avatar">${userInitials}</div>
+        <div class="kih-user-info">
+          <div class="kih-user-name">${esc(user.name || 'User')}</div>
+          <div class="kih-user-role">${userRole}</div>
+        </div>
+      </div>
+      <button class="kih-logout-btn" onclick="doLogout()">
+        <span>🚪</span>
+        <span>Logout</span>
+      </button>
+    </div>
+  `;
+  document.body.insertBefore(sidebar, document.body.firstChild);
+  sidebar.querySelectorAll('.kih-nav-item').forEach(el => {
+    el.onclick = () => {
+      State.activeTab = el.dataset.tab;
+      sidebar.querySelectorAll('.kih-nav-item').forEach(x => 
+        x.classList.toggle('active', x.dataset.tab === State.activeTab)
+      );
+      render();
+    };
+  });
+}
+
+(function patchRender() {
+  const originalRender = window.render;
+  window.render = function() {
+    if (originalRender) originalRender();
+    const sidebar = document.getElementById('kihSidebar');
+    if (sidebar) {
+      sidebar.querySelectorAll('.kih-nav-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.tab === State.activeTab);
+      });
+    }
+  };
+})();
+
+(function handleResize() {
+  function check() {
+    if (window.innerWidth >= 1024) {
+      if (!document.getElementById('kihSidebar')) buildSidebar();
+    } else {
+      const sb = document.getElementById('kihSidebar');
+      if (sb) sb.remove();
+    }
+  }
+  setTimeout(check, 100);
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(check, 250);
+  });
+})();
+
+(function patchShowApp() {
+  const originalShowApp = window.showApp;
+  window.showApp = function() {
+    if (originalShowApp) originalShowApp();
+    setTimeout(() => {
+      if (window.innerWidth >= 1024) buildSidebar();
+    }, 150);
+  };
+})();
+
+/* ─── B2. HOSPITAL LOGO UPLOAD ───────────────────────── */
+window.uploadHospitalLogo = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 500 * 1024) { toast('Logo too large (max 500 KB)', 'error'); return; }
+  if (!file.type.startsWith('image/')) { toast('Please select an image', 'error'); return; }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      localStorage.setItem('kih_hospital_logo', e.target.result);
+      applyHospitalLogo();
+      toast('✅ Logo uploaded!', 'success');
+      openHospitalModal();
+    } catch (err) { toast('Storage full', 'error'); }
+  };
+  reader.readAsDataURL(file);
+};
+
+function applyHospitalLogo() {
+  const logo = localStorage.getItem('kih_hospital_logo');
+  if (!logo) return;
+  
+  const loginLogo = document.querySelector('.login-logo');
+  if (loginLogo) {
+    loginLogo.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:contain;border-radius:16px" alt="KIH">`;
+  }
+  const headerLogo = document.querySelector('.header-logo');
+  if (headerLogo) {
+    headerLogo.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:contain" alt="KIH">`;
+  }
+  const sidebarLogoIcon = document.querySelector('.kih-sidebar-logo-icon');
+  if (sidebarLogoIcon) {
+    sidebarLogoIcon.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:contain" alt="KIH">`;
+  }
+  window._kihLogo = logo;
+}
+
+function getPrintHeader(title = 'Phlebotomy Department') {
+  const logo = localStorage.getItem('kih_hospital_logo');
+  const hospitalName = State.settings?.hospitalName || 'Kulsum International Hospital';
+  const address = State.settings?.hospitalAddress || 'Islamabad, Pakistan';
+  
+  if (logo) {
+    return `
+      <div class="header" style="display:flex;align-items:center;justify-content:center;gap:16px;border-bottom:2px solid #000;padding-bottom:14px;margin-bottom:20px">
+        <img src="${logo}" style="height:64px;width:auto" alt="KIH">
+        <div style="text-align:left">
+          <h1 style="font-size:20px;margin:0;color:#000">${hospitalName.toUpperCase()}</h1>
+          <p style="font-size:12px;color:#555;margin:4px 0 0 0">${title}</p>
+          <p style="font-size:11px;color:#666;margin:2px 0 0 0">${address}</p>
+        </div>
+      </div>
+    `;
+  }
+  return `
+    <div class="header" style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px">
+      <h1 style="font-size:20px;margin-bottom:4px">${hospitalName.toUpperCase()}</h1>
+      <p style="font-size:12px;color:#555">${title} · ${address}</p>
+    </div>
+  `;
+}
+
+window.openHospitalModal = function() {
+  const s = State.settings;
+  const hasLogo = !!localStorage.getItem('kih_hospital_logo');
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>🏥 Hospital Info</h2>
+      <button class="modal-close" onclick="openSettingsModal()">✕</button>
+    </div>
+    
+    <div style="text-align:center;padding:16px 0;background:var(--bg-glass);border:1px solid var(--border-2);border-radius:16px;margin-bottom:16px">
+      ${hasLogo 
+        ? `<img src="${localStorage.getItem('kih_hospital_logo')}" style="max-width:180px;max-height:80px;object-fit:contain" alt="KIH">`
+        : `<div style="color:var(--text-dim);font-size:13px;padding:20px 0">
+             <div style="font-size:36px;margin-bottom:6px">🏥</div>
+             No logo uploaded yet
+           </div>`
+      }
+    </div>
+    
+    <div class="input-group">
+      <label>Hospital Logo</label>
+      <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="uploadHospitalLogo(this)">
+      <button class="btn-sm btn-accent btn-block" style="justify-content:center;padding:12px" onclick="document.getElementById('logoInput').click()">
+        ${hasLogo ? '🔄 Change Logo' : '📤 Upload Logo'}
+      </button>
+      ${hasLogo ? `<button class="btn-sm btn-danger btn-block mt8" style="justify-content:center;padding:10px" onclick="removeHospitalLogo()">🗑️ Remove Logo</button>` : ''}
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;text-align:center">PNG or JPG · Max 500 KB · 400×150 px</div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div class="input-group">
+      <label>Hospital Name</label>
+      <input id="h_name" value="${esc(s.hospitalName)}">
+    </div>
+    <div class="input-group">
+      <label>Address</label>
+      <input id="h_addr" value="${esc(s.hospitalAddress)}">
+    </div>
+    <div class="input-group">
+      <label>Phone</label>
+      <input id="h_phone" value="${esc(s.hospitalPhone)}">
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveHospital()">💾 Save</button>
+      <button class="btn-sm" onclick="openSettingsModal()">Cancel</button>
+    </div>
+  `);
+};
+
+window.removeHospitalLogo = function() {
+  if (!confirm('Remove hospital logo?')) return;
+  localStorage.removeItem('kih_hospital_logo');
+  const loginLogo = document.querySelector('.login-logo');
+  if (loginLogo) loginLogo.textContent = '🩸';
+  const headerLogo = document.querySelector('.header-logo');
+  if (headerLogo) headerLogo.textContent = '🩸';
+  const sidebarLogoIcon = document.querySelector('.kih-sidebar-logo-icon');
+  if (sidebarLogoIcon) sidebarLogoIcon.textContent = '🩸';
+  toast('Logo removed', 'success');
+  openHospitalModal();
+};
+
+(function applyLogoOnBoot() {
+  setTimeout(() => applyHospitalLogo(), 400);
+})();
+
+(function patchApplyLogo() {
+  const originalApplyLogo = window.applyHospitalLogo;
+  window.applyHospitalLogo = function() {
+    if (originalApplyLogo) originalApplyLogo();
+    const sidebar = document.getElementById('kihSidebar');
+    if (sidebar) { sidebar.remove(); buildSidebar(); }
+  };
+})();
+
+console.log('%c✅ PART B loaded — Sidebar + Logo', 'color:#10B981;font-weight:bold;font-size:12px');
+   /* ═══════════════════════════════════════════════════════════
+   MASTER PATCH PART C — Roster Rules + CPL + Technologist
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── C1. ROSTER RULES v2 (N/N12 → OFF/E4/E, PH → CPL) ── */
+
+window.applyN12PriorityRest = function(date, prevDate) {
+  if (!prevDate) return;
+  WIZ.staffList.forEach(staff => {
+    if (WIZ.locked[date][staff._id]) return;
+    const prevCode = WIZ.grid[prevDate][staff._id];
+    if (prevCode === 'N' || prevCode === 'N12') {
+      // Priority 1: OFF
+      if (canAssignRelax(date)) {
+        WIZ.grid[date][staff._id] = 'OFF';
+        WIZ.locked[date][staff._id] = true;
+        WIZ.offCount[staff._id]++;
+        logDecision(date, staff, 'OFF', 'Post-night rest (N/N12 → OFF)');
+        return;
+      }
+      // Priority 2: E4
+      if (!WIZ.grid[date][staff._id]) {
+        WIZ.grid[date][staff._id] = 'E4';
+        WIZ.locked[date][staff._id] = true;
+        logDecision(date, staff, 'E4', 'Post-night fallback (no OFF → E4)');
+        return;
+      }
+      // Priority 3: E
+      WIZ.grid[date][staff._id] = 'E';
+      WIZ.locked[date][staff._id] = true;
+      logDecision(date, staff, 'E', 'Post-night fallback (no OFF/E4 → E)');
+    }
+  });
+};
+
+window.adjustPHForDutyStaff = function() {
+  const holidays = WIZ.holidays;
+  if (holidays.length === 0) return;
+  
+  WIZ.staffList.forEach(staff => {
+    holidays.forEach(holiday => {
+      const hDate = holiday.date;
+      const code = WIZ.grid[hDate]?.[staff._id];
+      if (code && !isRelaxCode(code)) {
+        const candidates = WIZ.periodDates.filter(d => 
+          d !== hDate && !WIZ.locked[d][staff._id] &&
+          !isRelaxCode(WIZ.grid[d][staff._id]) && canAssignRelax(d)
+        );
+        candidates.sort((a, b) => 
+          Math.abs(new Date(a) - new Date(hDate)) - Math.abs(new Date(b) - new Date(hDate))
+        );
+        if (candidates.length > 0) {
+          const targetDate = candidates[0];
+          WIZ.grid[targetDate][staff._id] = 'PH';
+          WIZ.locked[targetDate][staff._id] = true;
+          WIZ.phCount[staff._id]++;
+          logDecision(targetDate, staff, 'PH', `PH for worked holiday ${hDate}`);
+        } else {
+          const cplRecord = {
+            _id: uid(), staffId: staff._id, staffName: staff.name,
+            staffMobile: staff.mobile, designation: staff.designation,
+            type: 'PH_TO_CPL', amount: 1,
+            originalHolidayDate: hDate, holidayName: holiday.name || 'Holiday',
+            reason: 'No PH slot in current period',
+            status: 'pending',
+            currentPeriodStart: WIZ.periodStart, currentPeriodEnd: WIZ.periodEnd,
+            carryForward: true, pendingInNextRoster: true,
+            createdBy: State.user?.name, createdAt: Date.now()
+          };
+          WIZ.cplConversions.push(cplRecord);
+          LocalDB.push('cplRecords', cplRecord);
+          logDecision(hDate, staff, 'CPL', `PH→CPL (no slot) → next roster`);
+        }
+      }
+    });
+  });
+};
+
+window.applyPendingCPLFromPrevious = function() {
+  const allCPL = LocalDB.get('cplRecords', []);
+  const pendingCPL = allCPL.filter(c => c.status === 'pending' && c.pendingInNextRoster === true);
+  if (pendingCPL.length === 0) return;
+  
+  pendingCPL.forEach(cpl => {
+    const staff = WIZ.staffList.find(s => s._id === cpl.staffId);
+    if (!staff) return;
+    const candidates = WIZ.periodDates.filter(d => 
+      !WIZ.locked[d][staff._id] &&
+      !isRelaxCode(WIZ.grid[d][staff._id]) && canAssignRelax(d)
+    );
+    candidates.sort((a, b) => {
+      const dayA = new Date(a).getDay();
+      const dayB = new Date(b).getDay();
+      const scoreA = (dayA >= 1 && dayA <= 5) ? 0 : 1;
+      const scoreB = (dayB >= 1 && dayB <= 5) ? 0 : 1;
+      return scoreA - scoreB;
+    });
+    if (candidates.length > 0) {
+      const targetDate = candidates[0];
+      WIZ.grid[targetDate][staff._id] = 'OFF';
+      WIZ.locked[targetDate][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      LocalDB.update('cplRecords', cpl._id, {
+        status: 'applied',
+        appliedInPeriodStart: WIZ.periodStart,
+        appliedInPeriodEnd: WIZ.periodEnd,
+        appliedOnDate: targetDate, appliedAt: Date.now()
+      });
+      logDecision(targetDate, staff, 'OFF', `CPL from ${cpl.currentPeriodStart} → compensated`);
+    }
+  });
+};
+
+window.wizStartGeneration = function() {
+  if (WIZ.staffList.length === 0) { toast('No active staff', 'error'); return; }
+  WIZ.periodDates = getPeriodDates(WIZ.periodStart, WIZ.periodEnd);
+  if (WIZ.periodDates.length === 0) { toast('Invalid period', 'error'); return; }
+  toast('⏳ Generating roster...', 'warning');
+  setTimeout(() => {
+    try {
+      initGrid();
+      applyLockedEntries();
+      applyPendingCPLFromPrevious();
+      assignOFFToAllStaff();
+      processAllDays();
+      adjustPHForDutyStaff();
+      const valid = finalizeGeneration();
+      toast(valid ? '✅ Roster generated!' : `⚠️ ${WIZ.warnings.length} warnings`, valid ? 'success' : 'error');
+      WIZ.step = 6;
+      renderWizard();
+    } catch (e) {
+      console.error('Generation error:', e);
+      toast('Generation failed: ' + e.message, 'error');
+    }
+  }, 100);
+};
+
+window.finalizeGeneration = function() {
+  const offTarget = calcOffTarget();
+  const holidayCount = calcHolidayCount();
+  WIZ.offCount = {}; WIZ.phCount = {};
+  WIZ.staffList.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; });
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      const code = WIZ.grid[date][staff._id];
+      if (code === 'OFF') WIZ.offCount[staff._id]++;
+      if (code === 'PH') WIZ.phCount[staff._id]++;
+    });
+  });
+  WIZ.warnings = [];
+  
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.offCount[staff._id];
+    const cplComp = WIZ.cplConversions.filter(c => c.staffId === staff._id && c.type === 'PH_TO_CPL').length;
+    if (actual < offTarget) WIZ.warnings.push(`${staff.name}: OFF ${actual}/${offTarget}`);
+    const phActual = WIZ.phCount[staff._id];
+    const phCpl = WIZ.cplConversions.filter(c => c.staffId === staff._id && c.type === 'PH_TO_CPL').length;
+    if (phActual + phCpl !== holidayCount) WIZ.warnings.push(`${staff.name}: PH ${phActual + phCpl}/${holidayCount}`);
+  });
+  
+  WIZ.periodDates.forEach(date => {
+    const relax = getDayRelaxCount(date);
+    const limit = getRelaxLimit(date);
+    if (relax > limit) WIZ.warnings.push(`${date}: relax ${relax}/${limit}`);
+  });
+  
+  for (let i = 1; i < WIZ.periodDates.length; i++) {
+    const prevDate = WIZ.periodDates[i - 1];
+    const currDate = WIZ.periodDates[i];
+    WIZ.staffList.forEach(staff => {
+      const prevCode = WIZ.grid[prevDate][staff._id];
+      const currCode = WIZ.grid[currDate][staff._id];
+      if ((prevCode === 'N' || prevCode === 'N12') && !['OFF', 'E4', 'E'].includes(currCode)) {
+        WIZ.warnings.push(`${staff.name}: N/N12 → ${currCode} on ${currDate}`);
+      }
+    });
+  }
+  
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      if (!WIZ.grid[date][staff._id]) WIZ.warnings.push(`${staff.name} empty on ${date}`);
+    });
+  });
+  return WIZ.warnings.length === 0;
+};
+
+/* ─── C2. CPL RECORDS VIEW ───────────────────────────── */
+window.openCPLPendingModal = function() {
+  const allCPL = LocalDB.get('cplRecords', []);
+  const pending = allCPL.filter(c => c.status === 'pending');
+  const applied = allCPL.filter(c => c.status === 'applied');
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>📈 CPL Records</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="card" style="background:var(--bg-glass-2);margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
+        <div>
+          <div style="font-size:24px;font-weight:800;color:var(--warning)">${pending.length}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Pending</div>
+        </div>
+        <div>
+          <div style="font-size:24px;font-weight:800;color:var(--success-l)">${applied.length}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Applied</div>
+        </div>
+      </div>
+    </div>
+    
+    ${pending.length > 0 ? `
+      <div class="card">
+        <div class="card-title" style="font-size:15px">⏳ Pending CPL</div>
+        <div class="mt12">
+          ${pending.map(c => `
+            <div class="list-row" style="flex-direction:column;align-items:stretch;gap:6px">
+              <div class="flex-between">
+                <div style="font-weight:600;font-size:13px">👤 ${esc(c.staffName)}</div>
+                <span class="badge badge-warning">${c.amount} CPL</span>
+              </div>
+              <div style="font-size:11.5px;color:var(--text-muted)">
+                📅 Worked: ${esc(c.originalHolidayDate)} (${esc(c.holidayName)})
+              </div>
+              <div style="font-size:11px;color:var(--text-dim)">
+                Period: ${esc(c.currentPeriodStart)} → ${esc(c.currentPeriodEnd)}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    
+    ${applied.length > 0 ? `
+      <div class="card">
+        <div class="card-title" style="font-size:15px">✅ Applied CPL</div>
+        <div class="mt12">
+          ${applied.slice(0, 10).map(c => `
+            <div class="list-row" style="padding:10px 12px">
+              <div>
+                <div style="font-weight:500;font-size:12.5px">${esc(c.staffName)}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+                  ${c.appliedOnDate ? `Applied on ${esc(c.appliedOnDate)}` : ''}
+                </div>
+              </div>
+              <span class="badge badge-success">✓</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    
+    ${pending.length === 0 && applied.length === 0 ? `
+      <div class="empty-state">
+        <div class="icon">📈</div>
+        <div style="font-size:13px">No CPL records yet</div>
+      </div>
+    ` : ''}
+  `);
+};
+
+/* ─── C3. STEP 4 RULES SUMMARY (naye rules) ─────────── */
+window.tplStep4 = function() {
+  const offTarget = WIZ.periodDates.filter(d => isSunday(d)).length;
+  const holidayCount = WIZ.holidays.length;
+  const allCPL = LocalDB.get('cplRecords', []);
+  const pendingCPL = allCPL.filter(c => c.status === 'pending' && c.pendingInNextRoster).length;
+  
+  return `
+    <div class="modal-header">
+      <h2>📋 Generation Rules</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${tplStepIndicator()}
+    
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="font-size:15px">Step 4 · Rules Summary</div>
+      <div class="card-sub">Engine will follow these rules exactly</div>
+    </div>
+    
+    <div class="card">
+      <div style="font-size:13.5px;line-height:1.9">
+        <div>📅 <strong>Period:</strong> ${fmtDisplay(WIZ.periodStart)} → ${fmtDisplay(WIZ.periodEnd)}</div>
+        <div>🗓️ <strong>Days:</strong> ${WIZ.periodDates.length}</div>
+        <div>☀️ <strong>Sundays:</strong> ${offTarget} (OFF target)</div>
+        <div>🎉 <strong>Holidays:</strong> ${holidayCount}</div>
+        <div>👥 <strong>Staff:</strong> ${State.staff.filter(s => s.active !== false).length}</div>
+        ${pendingCPL > 0 ? `<div style="color:var(--warning)">⏳ <strong>Pending CPL:</strong> ${pendingCPL}</div>` : ''}
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:12.5px;color:var(--text-muted);line-height:1.9">
+        <div style="color:var(--success-l)">✓ Every staff gets EXACTLY <strong>${offTarget} OFF days</strong></div>
+        <div style="color:var(--success-l)">✓ Every staff gets EXACTLY <strong>${holidayCount} PH</strong></div>
+        <div>✓ Relax: Mon-Fri <strong>1</strong> · Sat <strong>2</strong> · Sun/Holiday <strong>7</strong></div>
+        <div style="color:var(--warning)">✓ N/N12 → next day <strong>OFF</strong> (priority)</div>
+        <div style="color:var(--warning)">✓ If OFF not possible → <strong>E4</strong> first, then <strong>E</strong></div>
+        <div style="color:var(--primary)">✓ PH no slot → <strong>CPL (1:1)</strong> → next roster</div>
+        <div>✓ Full validation before save</div>
+      </div>
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm" onclick="WIZ.step=3;renderWizard()">← Back</button>
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="wizRunGeneration()">⚡ Generate Now</button>
+    </div>
+  `;
+};
+
+/* ─── C4. TECHNOLOGIST SECTION (More Menu) ───────────── */
+(function patchMoreScreenWithTechnologist() {
+  const originalRenderMore = window.renderMore;
+  window.renderMore = function() {
+    const baseHtml = originalRenderMore ? originalRenderMore() : '';
+    
+    // Add Tech section + CPL records link before About card
+    const insertBeforeAbout = `
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:14px 16px;width:100%" onclick="openTechnologistSection()">
+        <span style="margin-right:10px">🔬</span> Technologist Lab Protocols
+      </button>
+      
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:14px 16px;width:100%" onclick="openCPLPendingModal()">
+        <span style="margin-right:10px">📈</span> CPL Records
+      </button>
+    `;
+    
+    if (baseHtml.includes('<div class="card">\n      <div class="card-title">ℹ️ About</div>')) {
+      return baseHtml.replace(
+        '<div class="card">\n      <div class="card-title">ℹ️ About</div>',
+        insertBeforeAbout + '\n        <div class="card">\n          <div class="card-title">ℹ️ About</div>'
+      );
+    }
+    return baseHtml;
+  };
+})();
+
+window.openTechnologistSection = function() {
+  openModal(`
+    <div class="modal-header">
+      <h2>🔬 Technologist Lab Protocols</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="card" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05))">
+      <div class="card-title" style="font-size:15px">🔬 Lab Section</div>
+      <div class="card-sub">Protocols for Technologists — Sample processing, QC, equipment</div>
+    </div>
+    
+    <div class="tab-bar" style="margin-bottom:16px">
+      <div class="tab active" data-ttab="processing" onclick="switchTechTab('processing')">🧪 Processing</div>
+      <div class="tab" data-ttab="qc" onclick="switchTechTab('qc')">📊 QC</div>
+      <div class="tab" data-ttab="equipment" onclick="switchTechTab('equipment')">🔧 Equipment</div>
+      <div class="tab" data-ttab="safety" onclick="switchTechTab('safety')">🛡️ Safety</div>
+    </div>
+    
+    <div id="techContent">${renderTechProcessing()}</div>
+  `);
+};
+
+function switchTechTab(tab) {
+  document.querySelectorAll('[data-ttab]').forEach(el => {
+    el.classList.toggle('active', el.dataset.ttab === tab);
+  });
+  const content = document.getElementById('techContent');
+  if (!content) return;
+  
+  const renderers = {
+    processing: renderTechProcessing,
+    qc: renderTechQC,
+    equipment: renderTechEquipment,
+    safety: renderTechSafety
+  };
+  content.innerHTML = (renderers[tab] || renderTechProcessing)();
+}
+
+window.switchTechTab = switchTechTab;
+
+function renderTechProcessing() {
+  return `
+    <div class="card">
+      <div class="card-title" style="font-size:15px">🧪 Sample Processing</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.9;margin-top:10px">
+        <p><strong style="color:var(--primary)">1. Sample Receiving</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Verify sample label matches request</li>
+          <li>Check specimen integrity</li>
+          <li>Record arrival time</li>
+          <li>Reject if hemolyzed/clotted/short volume</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">2. Centrifugation</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>1500-2000 × g for 10 min (serum/plasma)</li>
+          <li>Balance tubes equally</li>
+          <li>Let tubes clot 30 min before spin (SST)</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">3. Aliquoting</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Label aliquot tubes with patient info</li>
+          <li>Avoid hemolysis during transfer</li>
+          <li>Store at appropriate temperature</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">4. Storage</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>2-8°C: Short-term (24-48 hrs)</li>
+          <li>-20°C: Medium-term (1 month)</li>
+          <li>-80°C: Long-term (6+ months)</li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+function renderTechQC() {
+  return `
+    <div class="card">
+      <div class="card-title" style="font-size:15px">📊 Quality Control</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.9;margin-top:10px">
+        <p><strong style="color:var(--primary)">Daily QC</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Run normal + abnormal control</li>
+          <li>Check Levey-Jennings chart</li>
+          <li>Verify within ±2 SD</li>
+          <li>Document in QC log</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">Westgard Rules</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>1-2s Warning rule</li>
+          <li>1-3s Rejection rule</li>
+          <li>2-2s Rejection rule</li>
+          <li>R-4s Random error</li>
+          <li>4-1s Systematic error</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">Calibration</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Calibrate per manufacturer schedule</li>
+          <li>Record calibration values</li>
+          <li>Verify with control after calibration</li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+function renderTechEquipment() {
+  return `
+    <div class="card">
+      <div class="card-title" style="font-size:15px">🔧 Equipment Protocols</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.9;margin-top:10px">
+        <p><strong style="color:var(--primary)">Centrifuge</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Balance tubes before run</li>
+          <li>Daily cleaning</li>
+          <li>Monthly maintenance log</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">Analyzer</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Daily startup wash</li>
+          <li>Weekly probe cleaning</li>
+          <li>Monthly cuvette check</li>
+          <li>Quarterly PM service</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">Refrigerator</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Daily temp log (2-8°C)</li>
+          <li>Weekly frost check</li>
+          <li>Alarm system check monthly</li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+function renderTechSafety() {
+  return `
+    <div class="card">
+      <div class="card-title" style="font-size:15px">🛡️ Lab Safety</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.9;margin-top:10px">
+        <p><strong style="color:var(--primary)">PPE</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Gloves — all sample handling</li>
+          <li>Lab coat — always</li>
+          <li>Safety glasses — splash risk</li>
+          <li>Face shield — aerosol risk</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">Biohazard Handling</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Use biosafety cabinet for aerosols</li>
+          <li>Decontaminate spills with 10% bleach</li>
+          <li>Sharps in designated container</li>
+          <li>Autoclave biohazard waste</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:var(--primary)">Chemical Safety</strong></p>
+        <ul style="padding-left:20px;margin:6px 0">
+          <li>Read MSDS before use</li>
+          <li>Fume hood for volatile chemicals</li>
+          <li>Chemical spill kit accessible</li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+console.log('%c✅ PART C loaded — Roster + CPL + Technologist', 'color:#10B981;font-weight:bold;font-size:12px');
+console.log('%c🎉 MASTER PATCH COMPLETE — All 3 parts loaded', 'color:#8B5CF6;font-weight:bold;font-size:14px');
 </script>
 </body>
 </html>
