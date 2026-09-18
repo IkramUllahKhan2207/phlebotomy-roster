@@ -7197,6 +7197,373 @@ function renderTechSafety() {
 
 console.log('%c✅ PART C loaded — Roster + CPL + Technologist', 'color:#10B981;font-weight:bold;font-size:12px');
 console.log('%c🎉 MASTER PATCH COMPLETE — All 3 parts loaded', 'color:#8B5CF6;font-weight:bold;font-size:14px');
+   /* ═══════════════════════════════════════════════════════════
+   STAFF FORM v2 — Primary + Secondary Shifts + Priority
+   ═══════════════════════════════════════════════════════════ */
+
+const SHIFT_OPTIONS = [
+  { id: 'Morning',   label: 'Morning (08:00–16:00)' },
+  { id: 'Evening',   label: 'Evening (16:00–00:00)' },
+  { id: 'Night',     label: 'Night (00:00–08:00)' },
+  { id: 'Rotating',  label: 'Rotating (any shift)' }
+];
+
+/* ─── OPEN ADD STAFF ─────────────────────────────────── */
+window.openAddStaffModal = function(desId) {
+  const des = DESIGNATIONS.find(d => d.id === desId);
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>+ Add ${des.icon} ${des.name}</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Full Name *</label>
+      <input id="s_name" placeholder="e.g. Dr. Ayesha Khan">
+    </div>
+    
+    <div class="input-group">
+      <label>Mobile Number * (11 digits)</label>
+      <input id="s_mobile" placeholder="03001234567" inputmode="tel" maxlength="11">
+    </div>
+    
+    <div class="input-group">
+      <label>Password * (min 6 chars)</label>
+      <input id="s_password" type="password" placeholder="••••••">
+    </div>
+    
+    <!-- PRIMARY SHIFT -->
+    <div class="input-group">
+      <label>Primary Shift * <span style="color:var(--text-dim);font-size:11px">(Main — Priority #1)</span></label>
+      <select id="s_primaryShift" onchange="updateSecondaryOptions()">
+        ${SHIFT_OPTIONS.map(s => `<option value="${s.id}">${s.label}</option>`).join('')}
+      </select>
+    </div>
+    
+    <!-- SECONDARY SHIFTS -->
+    <div class="input-group">
+      <label>Secondary Shifts <span style="color:var(--text-dim);font-size:11px">(Priority order)</span></label>
+      <div style="background:var(--bg-glass);border:1px solid var(--border-2);border-radius:14px;padding:12px" id="s_secondaryContainer">
+        ${SHIFT_OPTIONS.map(s => `
+          <label class="checkbox-row secondary-shift-row" data-shift="${s.id}" style="margin:0 0 8px 0">
+            <input type="checkbox" class="s-secondary" value="${s.id}" onchange="updateShiftPreview()">
+            <span>${s.label}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    
+    <!-- PRIORITY PREVIEW -->
+    <div id="s_shiftPreview" class="card" style="margin-top:12px;padding:12px;background:var(--bg-glass-2);font-size:12.5px">
+      <div style="color:var(--text-muted);font-size:12px">Select primary + secondary shifts to see priority preview</div>
+    </div>
+    
+    <div class="input-group mt12">
+      <label>Station (optional)</label>
+      <input id="s_station" placeholder="e.g. OPD / Emergency / ICU">
+    </div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="s_notifications" checked>
+      <span>Enable notifications</span>
+    </label>
+    
+    ${canManage() ? `
+      <label class="checkbox-row">
+        <input type="checkbox" id="s_admin">
+        <span>Admin panel access</span>
+      </label>
+    ` : ''}
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveStaffV2('${desId}','')">💾 Add Staff</button>
+      <button class="btn-sm" onclick="openDesignationSection('${desId}')">Cancel</button>
+    </div>
+  `);
+  
+  setTimeout(() => {
+    updateSecondaryOptions();
+    updateShiftPreview();
+  }, 50);
+};
+
+/* ─── OPEN EDIT STAFF ────────────────────────────────── */
+window.openEditStaffModal = function(id) {
+  const s = State.staff.find(x => x._id === id);
+  if (!s) return;
+  const desId = s.designation;
+  const primaryShift = s.fixedShift || s.shift || 'Morning';
+  const secondaryShifts = s.multiShifts || [];
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>✏️ Edit ${esc(s.name)}</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Full Name *</label>
+      <input id="s_name" value="${esc(s.name)}">
+    </div>
+    
+    <div class="input-group">
+      <label>Mobile Number *</label>
+      <input id="s_mobile" value="${esc(s.mobile)}" inputmode="tel" maxlength="11">
+    </div>
+    
+    <div class="input-group">
+      <label>New Password (leave empty to keep)</label>
+      <input id="s_password" type="password" placeholder="••••••">
+    </div>
+    
+    <!-- PRIMARY -->
+    <div class="input-group">
+      <label>Primary Shift * <span style="color:var(--text-dim);font-size:11px">(Priority #1)</span></label>
+      <select id="s_primaryShift" onchange="updateSecondaryOptions()">
+        ${SHIFT_OPTIONS.map(sh => `<option value="${sh.id}" ${primaryShift === sh.id ? 'selected' : ''}>${sh.label}</option>`).join('')}
+      </select>
+    </div>
+    
+    <!-- SECONDARY -->
+    <div class="input-group">
+      <label>Secondary Shifts <span style="color:var(--text-dim);font-size:11px">(Priority order)</span></label>
+      <div style="background:var(--bg-glass);border:1px solid var(--border-2);border-radius:14px;padding:12px" id="s_secondaryContainer">
+        ${SHIFT_OPTIONS.map(sh => `
+          <label class="checkbox-row secondary-shift-row" data-shift="${sh.id}" style="margin:0 0 8px 0">
+            <input type="checkbox" class="s-secondary" value="${sh.id}" ${secondaryShifts.includes(sh.id) ? 'checked' : ''} onchange="updateShiftPreview()">
+            <span>${sh.label}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    
+    <!-- PREVIEW -->
+    <div id="s_shiftPreview" class="card" style="margin-top:12px;padding:12px;background:var(--bg-glass-2);font-size:12.5px"></div>
+    
+    <div class="input-group mt12">
+      <label>Station</label>
+      <input id="s_station" value="${esc(s.station || '')}">
+    </div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="s_notifications" ${s.notifications ? 'checked' : ''}>
+      <span>Enable notifications</span>
+    </label>
+    
+    ${canManage() ? `
+      <label class="checkbox-row">
+        <input type="checkbox" id="s_admin" ${s.role === 'admin' ? 'checked' : ''}>
+        <span>Admin panel access</span>
+      </label>
+    ` : ''}
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveStaffV2('${desId}','${id}')">💾 Save</button>
+      <button class="btn-sm" onclick="openDesignationSection('${desId}')">Cancel</button>
+    </div>
+  `);
+  
+  setTimeout(() => {
+    updateSecondaryOptions();
+    updateShiftPreview();
+  }, 50);
+};
+
+/* ─── UPDATE SECONDARY (disable primary) ─────────────── */
+window.updateSecondaryOptions = function() {
+  const primary = $('s_primaryShift')?.value;
+  if (!primary) return;
+  
+  $$('.secondary-shift-row').forEach(row => {
+    const shift = row.dataset.shift;
+    const checkbox = row.querySelector('input');
+    const label = row.querySelector('span');
+    
+    if (shift === primary) {
+      checkbox.checked = false;
+      checkbox.disabled = true;
+      row.style.opacity = '0.4';
+      label.innerHTML = `${SHIFT_OPTIONS.find(s => s.id === shift).label} <span style="color:var(--text-dim);font-size:10px">(Primary)</span>`;
+    } else {
+      checkbox.disabled = false;
+      row.style.opacity = '1';
+      label.innerHTML = SHIFT_OPTIONS.find(s => s.id === shift).label;
+    }
+  });
+  updateShiftPreview();
+};
+
+/* ─── UPDATE PRIORITY PREVIEW ────────────────────────── */
+window.updateShiftPreview = function() {
+  const primary = $('s_primaryShift')?.value || 'Morning';
+  const secondary = Array.from($$('.s-secondary:checked'))
+    .map(el => el.value)
+    .filter(v => v !== primary);
+  
+  const primaryDes = SHIFT_OPTIONS.find(s => s.id === primary);
+  
+  let html = `
+    <div style="font-weight:600;color:var(--primary);margin-bottom:8px">📋 Shift Priority Preview</div>
+    <div style="padding:6px 10px;background:rgba(99,102,241,0.12);border-radius:8px;margin-bottom:4px">
+      <strong>1st (Primary):</strong> ${primaryDes ? primaryDes.label : primary}
+    </div>
+  `;
+  
+  secondary.forEach((shift, i) => {
+    const s = SHIFT_OPTIONS.find(x => x.id === shift);
+    const ordinal = i === 0 ? '2nd' : i === 1 ? '3rd' : (i + 2) + 'th';
+    html += `
+      <div style="padding:6px 10px;background:var(--bg-glass);border-radius:8px;margin-bottom:4px">
+        <strong>${ordinal} (Secondary):</strong> ${s ? s.label : shift}
+      </div>
+    `;
+  });
+  
+  if (secondary.length === 0) {
+    html += `<div style="font-size:11.5px;color:var(--text-dim);margin-top:8px">No secondary shifts selected</div>`;
+  }
+  
+  const previewEl = $('s_shiftPreview');
+  if (previewEl) previewEl.innerHTML = html;
+};
+
+/* ─── SAVE STAFF V2 ──────────────────────────────────── */
+window.saveStaffV2 = function(desId, id) {
+  const isNew = !id;
+  const name = $('s_name').value.trim();
+  const mobile = normalizeMobile($('s_mobile').value.trim());
+  const password = $('s_password').value.trim();
+  const primaryShift = $('s_primaryShift').value;
+  const secondaryShifts = Array.from($$('.s-secondary:checked'))
+    .map(el => el.value)
+    .filter(v => v !== primaryShift);
+  const station = $('s_station').value.trim();
+  const notifications = $('s_notifications').checked;
+  const adminEl = $('s_admin');
+  const isAdmin = adminEl ? adminEl.checked : false;
+  
+  if (!name) { toast('Enter name', 'error'); return; }
+  if (!mobile || mobile.length !== 11) { toast('Enter valid 11-digit mobile', 'error'); return; }
+  if (!primaryShift) { toast('Select primary shift', 'error'); return; }
+  
+  const existing = State.staff.find(s => normalizeMobile(s.mobile) === mobile && s._id !== id);
+  if (existing) { toast('Mobile already registered', 'error'); return; }
+  
+  if (isNew && (!password || password.length < 6)) {
+    toast('Password must be 6+ chars', 'error'); return;
+  }
+  
+  let staff = LocalDB.get('staff', []);
+  
+  const staffData = {
+    name, mobile, designation: desId,
+    role: isAdmin ? 'admin' : 'staff',
+    fixedShift: primaryShift,
+    shift: primaryShift,
+    multiShifts: secondaryShifts,
+    station, notifications, active: true
+  };
+  
+  if (isNew) {
+    const newStaff = { _id: uid(), ...staffData, password, createdAt: Date.now() };
+    staff.push(newStaff);
+    State.staff.push(newStaff);
+  } else {
+    const idx = staff.findIndex(x => x._id === id);
+    const updates = { ...staffData };
+    if (password && password.length >= 6) updates.password = password;
+    if (idx >= 0) staff[idx] = { ...staff[idx], ...updates };
+    
+    const sidx = State.staff.findIndex(x => x._id === id);
+    if (sidx >= 0) State.staff[sidx] = { ...State.staff[sidx], ...updates };
+  }
+  
+  LocalDB.set('staff', staff);
+  toast(isNew ? `✅ ${name} added` : `✅ Updated`, 'success');
+  openDesignationSection(desId);
+};
+
+/* ─── SHOW SHIFT PRIORITY IN STAFF LIST ──────────────── */
+(function patchDesignationSection() {
+  const original = window.openDesignationSection;
+  window.openDesignationSection = function(desId) {
+    const des = DESIGNATIONS.find(d => d.id === desId);
+    const staff = State.staff.filter(s => s.designation === desId && s.active !== false);
+    
+    openModal(`
+      <div class="modal-header">
+        <h2>${des.icon} ${des.name} (${staff.length})</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      
+      <button class="btn-sm btn-accent btn-block mb12" onclick="openAddStaffModal('${desId}')">+ Add ${des.name}</button>
+      <input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('staff-item', this.value)">
+      
+      ${staff.length === 0 
+        ? `<div class="empty-state"><div class="icon">${des.icon}</div><div style="font-size:13px">No ${des.name} yet</div></div>`
+        : staff.map(s => {
+          const primary = s.fixedShift || s.shift || 'Morning';
+          const secondary = s.multiShifts || [];
+          return `
+            <div class="list-row staff-item" data-name="${esc(s.name.toLowerCase())} ${esc(s.mobile)}" style="flex-direction:column;align-items:stretch;gap:10px">
+              <div class="flex-between">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="avatar">${getInitials(s.name)}</div>
+                  <div>
+                    <div style="font-weight:600;font-size:14px">${esc(s.name)}</div>
+                    <div style="font-size:12px;color:var(--text-muted)">📱 ${esc(formatMobile(s.mobile))}</div>
+                  </div>
+                </div>
+                ${s.role === 'admin' ? '<span class="badge badge-primary">👑</span>' : ''}
+              </div>
+              
+              <div style="background:var(--bg-glass);border-radius:10px;padding:10px">
+                <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600">🕐 SHIFT PRIORITY</div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:4px">
+                  <span style="background:var(--primary);color:#fff;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">1st</span>
+                  <span style="font-weight:600">${esc(primary)}</span>
+                  <span style="color:var(--text-dim);font-size:10px">(Primary)</span>
+                </div>
+                ${secondary.map((sh, i) => {
+                  const ord = i === 0 ? '2nd' : i === 1 ? '3rd' : (i + 2) + 'th';
+                  return `
+                    <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:4px">
+                      <span style="background:var(--bg-glass-2);color:var(--text);padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">${ord}</span>
+                      <span>${esc(sh)}</span>
+                    </div>
+                  `;
+                }).join('')}
+                ${secondary.length === 0 ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">No secondary shifts</div>` : ''}
+              </div>
+              
+              <div style="display:flex;gap:12px;font-size:12px;color:var(--text-muted)">
+                ${s.station ? `<span>📍 ${esc(s.station)}</span>` : ''}
+                ${s.notifications ? '<span style="color:var(--success-l)">🔔 ON</span>' : '<span style="color:var(--text-dim)">🔕 Off</span>'}
+              </div>
+              
+              ${canManage() ? `
+                <div class="btn-row" style="margin-top:0">
+                  <button class="btn-sm" onclick="openEditStaffModal('${s._id}')">✏️ Edit</button>
+                  <button class="btn-sm btn-danger" onclick="deleteStaff('${s._id}','${desId}')">🗑️ Delete</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')
+      }
+    `);
+  };
+})();
+
+console.log('%c✅ Staff Form v2 loaded — Primary + Secondary shifts', 'color:#10B981;font-weight:bold;font-size:12px');
+Line 7559: console.log('%c✅ Staff Form v2 loaded...', ...);
+Line 7560: (khali)
+Line 7561: (khali — yahan redesign patch aayega)
+Line 7562: </script>
+Line 7563: </body>
+Line 7564: </html>
+   
 </script>
 </body>
 </html>
