@@ -5391,6 +5391,552 @@ window.renderRosterGrid = function() {
 /* ═══════════════════════════════════════════════════════════
    END PART 5B — FILE COMPLETE
    ═══════════════════════════════════════════════════════════ */
+   /* ═══════════════════════════════════════════════════════════
+   MASTER PATCH v1 — Saare Changes
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── 1. RESPONSIVE LAYOUT (Desktop Fix) ─────────────── */
+(function injectResponsiveCSS(){
+  if (document.getElementById('kih-responsive')) return;
+  const style = document.createElement('style');
+  style.id = 'kih-responsive';
+  style.textContent = `
+    .app-content{max-width:100% !important;padding:20px 24px;margin:0 auto}
+    @media (max-width:640px){.app-content{padding:16px 14px}}
+    @media (min-width:641px) and (max-width:1023px){
+      .app-content{max-width:900px;padding:20px 28px}
+      .bottom-nav{max-width:700px}
+    }
+    @media (min-width:1024px){
+      body{padding-bottom:20px}
+      .app-header{padding:16px 40px}
+      .app-content{
+        max-width:1400px;padding:24px 40px;
+        display:grid;grid-template-columns:repeat(12,1fr);
+        gap:20px;align-items:start
+      }
+      .app-content > *{grid-column:span 12;margin-bottom:0}
+      .app-content > .big-btn{grid-column:span 6;margin-bottom:0}
+      #testList,#difficultList,#scriptList,#rejectionList{
+        display:grid;grid-template-columns:repeat(2,1fr);
+        gap:16px;grid-column:span 12
+      }
+      #testList .card,#difficultList .card,
+      #scriptList .card,#rejectionList .card{margin-bottom:0}
+      .modal-sheet{max-width:720px;border-radius:24px;margin-bottom:24px}
+      .bottom-nav{max-width:800px;height:74px;bottom:20px;border-radius:28px}
+      .nav-item{min-width:70px;font-size:12px}
+      .nav-item .nav-icon{font-size:22px}
+      ::-webkit-scrollbar{width:8px}
+    }
+    @media (min-width:1440px){
+      .app-content{max-width:1600px}
+      #testList,#difficultList,#scriptList,#rejectionList{
+        grid-template-columns:repeat(3,1fr)
+      }
+      .app-content > .big-btn{grid-column:span 4}
+      .modal-sheet{max-width:800px}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+/* ─── 2. NEW HOME SCREEN (No Start Draw) ─────────────── */
+window.renderHome = function() {
+  const today = new Date();
+  const des = DESIGNATIONS.find(d => d.id === State.user?.designation);
+  const desBadge = des ? `<span class="badge badge-primary">${des.icon} ${des.name}</span>` : '';
+  const todayStr = today.toDateString();
+  
+  // Recent notifications (top 3)
+  const recentNotifs = State.notifications
+    .slice()
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .slice(0, 3);
+  
+  // Pending swaps count
+  const pendingSwaps = State.swapRequests.filter(s => s.status === 'pending').length;
+  
+  // Today present count
+  const todayPresent = State.attendance.filter(a => a.date === todayStr && a.status === 'present').length;
+  
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div class="card-title">👋 ${esc(State.user?.name || 'User')}</div>
+          <div class="card-sub">${fmtDate(today)}</div>
+        </div>
+        ${desBadge}
+      </div>
+    </div>
+    
+    <button class="big-btn" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);box-shadow:0 8px 24px rgba(99,102,241,0.4)" onclick="State.activeTab='protocols';render()">
+      📋 Protocols & Knowledge
+    </button>
+    
+    <button class="big-btn big-btn-emergency" onclick="openEmergencyModal()">
+      🚨 Emergency Cards
+    </button>
+    
+    <div class="card">
+      <div class="card-title">📊 Today's Overview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+        <div class="stat-box">
+          <div class="num" style="color:var(--success-l)">${todayPresent}</div>
+          <div class="lbl">Present</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" style="color:var(--primary)">${State.staff.filter(s => s.active !== false).length}</div>
+          <div class="lbl">Staff</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" style="color:var(--warning)">${pendingSwaps}</div>
+          <div class="lbl">Pending</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">🔔 Recent Notifications</div>
+        <button class="btn-sm" onclick="openNotificationsModal()">View All</button>
+      </div>
+      ${recentNotifs.length === 0 
+        ? '<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:13px">No notifications yet</div>'
+        : recentNotifs.map(n => `
+          <div class="list-row" style="margin-top:8px">
+            <div>
+              <div style="font-weight:500;font-size:13.5px">${esc(n.title)}</div>
+              <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${esc(n.body || '')}</div>
+            </div>
+            ${n.createdAt ? `<span style="font-size:10.5px;color:var(--text-dim)">${fmtDateTime(n.createdAt)}</span>` : ''}
+          </div>
+        `).join('')
+      }
+    </div>
+    
+    <div class="card">
+      <div class="card-title">⚡ Quick Access</div>
+      <div class="btn-row">
+        <button class="btn-sm" onclick="State.activeTab='roster';render()">📅 Roster</button>
+        <button class="btn-sm" onclick="State.activeTab='swap';render()">🔄 Swap</button>
+        <button class="btn-sm" onclick="State.activeTab='attend';render()">✅ Attendance</button>
+        <button class="btn-sm" onclick="State.activeTab='learn';render()">📚 Learn</button>
+        <button class="btn-sm" onclick="openHistoryFormsModal()">📁 Forms</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">📢 Send Notification</div>
+      <div class="card-sub">Notify staff via WhatsApp</div>
+      <button class="btn-sm btn-accent mt12" onclick="openSendNotificationModal()">📤 Send New Notification</button>
+    </div>
+  `;
+};
+
+/* ─── 3. HISTORY FORMS — Patient fields REMOVED ──────── */
+window.openHistoryFormsModal = function() {
+  const forms = State.historyForms || [];
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>📁 History Forms</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    ${canManage() ? `<button class="btn-sm btn-accent btn-block mb12" onclick="openUploadHistoryTemplateModal()">+ Upload New Template</button>` : ''}
+    
+    <input class="search-bar" placeholder="🔍 Search by name..." oninput="filterItems('history-form-item', this.value)">
+    
+    ${forms.length === 0 
+      ? '<div class="empty-state"><div class="icon">📁</div><div style="font-size:13px">No templates yet</div></div>'
+      : forms.map(f => `
+        <div class="list-row history-form-item" data-name="${esc((f.name || '').toLowerCase())} ${esc((f.category || '').toLowerCase())}" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="flex-between">
+            <div style="font-weight:600;font-size:14px">📄 ${esc(f.name)}</div>
+            <span class="badge">${esc(f.category || 'General')}</span>
+          </div>
+          ${f.description ? `<div style="font-size:12.5px;color:var(--text-muted)">${esc(f.description)}</div>` : ''}
+          <div style="font-size:11px;color:var(--text-dim)">${f.createdAt ? fmtDateTime(f.createdAt) : ''}${f.fileSize ? ` · ${(f.fileSize / 1024).toFixed(0)} KB` : ''}</div>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn-sm" onclick="downloadHistoryForm('${f._id}')">📥 Download</button>
+            <button class="btn-sm btn-accent" onclick="printHistoryForm('${f._id}')">🖨️ Print</button>
+            ${canManage() ? `<button class="btn-sm btn-danger" onclick="deleteHistoryForm('${f._id}')">🗑️ Delete</button>` : ''}
+          </div>
+        </div>
+      `).join('')
+    }
+  `);
+};
+
+window.openUploadHistoryTemplateModal = function() {
+  openModal(`
+    <div class="modal-header">
+      <h2>📤 Upload Template</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Form Name *</label>
+      <input id="ht_name" placeholder="e.g. Patient History Form">
+    </div>
+    
+    <div class="input-group">
+      <label>Description (optional)</label>
+      <input id="ht_desc" placeholder="Standard KIH patient history">
+    </div>
+    
+    <div class="input-group">
+      <label>Category</label>
+      <select id="ht_category">
+        <option>Patient Forms</option>
+        <option>Consent Forms</option>
+        <option>Lab Requests</option>
+        <option>Checklists</option>
+        <option>Instructions</option>
+      </select>
+    </div>
+    
+    <div class="input-group">
+      <label>Select File * (PDF, JPG, PNG — Max 5MB)</label>
+      <input type="file" id="ht_file" accept="image/*,.pdf" style="padding:12px">
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveHistoryTemplate()">💾 Save Template</button>
+      <button class="btn-sm" onclick="openHistoryFormsModal()">Cancel</button>
+    </div>
+  `);
+};
+
+window.saveHistoryTemplate = function() {
+  const name = $('ht_name').value.trim();
+  const description = $('ht_desc').value.trim();
+  const category = $('ht_category').value;
+  const fileInput = $('ht_file');
+  
+  if (!name) { toast('Enter form name', 'error'); return; }
+  if (!fileInput.files || !fileInput.files[0]) { toast('Select a file', 'error'); return; }
+  
+  const file = fileInput.files[0];
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'error'); return; }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const form = {
+      _id: uid(),
+      name, description, category,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      fileData: e.target.result,
+      uploadedBy: State.user?.name || 'Admin',
+      createdAt: Date.now()
+    };
+    
+    try {
+      LocalDB.push('historyForms', form);
+      State.historyForms.push(form);
+      toast('Template saved', 'success');
+      openHistoryFormsModal();
+    } catch (err) {
+      toast('Storage full — file too large', 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.downloadHistoryForm = function(id) {
+  const form = State.historyForms.find(f => f._id === id);
+  if (!form) { toast('Not found', 'error'); return; }
+  const a = document.createElement('a');
+  a.href = form.fileData;
+  a.download = form.fileName || (form.name + '.pdf');
+  a.click();
+  toast('Downloading...', 'success');
+};
+
+window.printHistoryForm = function(id) {
+  const form = State.historyForms.find(f => f._id === id);
+  if (!form) { toast('Not found', 'error'); return; }
+  
+  const win = window.open('', '_blank');
+  const isPDF = form.fileType === 'application/pdf';
+  
+  win.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>Print — ${form.name}</title>
+    <style>
+      @page { margin: 12mm; }
+      body { font-family: system-ui, sans-serif; padding: 20px; }
+      .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+      .header h1 { font-size: 20px; margin-bottom: 4px; }
+      .header p { font-size: 12px; color: #555; }
+      .meta { background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+      .content { text-align: center; }
+      .content img { max-width: 100%; height: auto; }
+      .content iframe { width: 100%; height: 90vh; border: none; }
+      .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #ccc; font-size: 11px; color: #666; display: flex; justify-content: space-between; }
+    </style></head>
+    <body>
+      <div class="header">
+        <h1>KULSUM INTERNATIONAL HOSPITAL</h1>
+        <p>Phlebotomy Department · Islamabad</p>
+      </div>
+      <div class="meta">
+        <div><strong>Form:</strong> ${form.name}</div>
+        ${form.description ? `<div><strong>Description:</strong> ${form.description}</div>` : ''}
+        <div><strong>Category:</strong> ${form.category}</div>
+      </div>
+      <div class="content">
+        ${isPDF ? `<iframe src="${form.fileData}"></iframe>` : `<img src="${form.fileData}" onload="setTimeout(()=>window.print(),400)">`}
+      </div>
+      <div class="footer">
+        <span>Printed by: ${State.user?.name || 'User'}</span>
+        <span>Printed on: ${new Date().toLocaleString('en-PK')}</span>
+      </div>
+      <script>${isPDF ? 'window.onload = () => setTimeout(() => window.print(), 800);' : ''}<\/script>
+    </body></html>
+  `);
+  win.document.close();
+};
+
+window.deleteHistoryForm = function(id) {
+  if (!confirm('Delete this template?')) return;
+  LocalDB.remove('historyForms', id);
+  State.historyForms = State.historyForms.filter(f => f._id !== id);
+  toast('Template deleted', 'success');
+  openHistoryFormsModal();
+};
+
+/* ─── 4. SEND NOTIFICATION MODAL (WhatsApp) ──────────── */
+window.openSendNotificationModal = function() {
+  const staffList = State.staff.filter(s => s.active !== false && !s.guest);
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>📤 Send Notification</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Title *</label>
+      <input id="sn_title" placeholder="e.g. TAT Update">
+    </div>
+    
+    <div class="input-group">
+      <label>Message *</label>
+      <textarea id="sn_body" rows="3" placeholder="e.g. CBC test ki TAT 2hrs se 1.5hrs kar di gayi hai"></textarea>
+    </div>
+    
+    <div class="input-group">
+      <label>Type</label>
+      <select id="sn_type">
+        <option value="info">ℹ️ Info</option>
+        <option value="important">⚠️ Important</option>
+        <option value="emergency">🚨 Emergency</option>
+        <option value="announcement">🎉 Announcement</option>
+      </select>
+    </div>
+    
+    <div class="input-group">
+      <label>Send to *</label>
+      <div style="background:var(--bg-glass);border:1px solid var(--border-2);border-radius:14px;padding:12px;max-height:200px;overflow-y:auto">
+        <label class="checkbox-row" style="margin:0 0 8px 0">
+          <input type="checkbox" id="sn_all" onchange="toggleAllRecipients(this.checked)">
+          <span style="font-weight:600">📢 All Staff (${staffList.length})</span>
+        </label>
+        <div class="divider" style="margin:8px 0"></div>
+        ${staffList.map(s => {
+          const des = DESIGNATIONS.find(d => d.id === s.designation);
+          return `
+            <label class="checkbox-row" style="margin:0 0 6px 0">
+              <input type="checkbox" class="sn-recipient" value="${s._id}" data-mobile="${esc(s.mobile)}" data-name="${esc(s.name)}">
+              <span>${des ? des.icon : '👤'} ${esc(s.name)} <span style="color:var(--text-dim);font-size:12px">${esc(formatMobile(s.mobile))}</span></span>
+            </label>
+          `;
+        }).join('')}
+      </div>
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="sendNotification()">📤 Send</button>
+      <button class="btn-sm" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+};
+
+window.toggleAllRecipients = function(checked) {
+  $$('.sn-recipient').forEach(el => el.checked = checked);
+};
+
+window.sendNotification = function() {
+  const title = $('sn_title').value.trim();
+  const body = $('sn_body').value.trim();
+  const type = $('sn_type').value;
+  
+  if (!title || !body) { toast('Fill title and message', 'error'); return; }
+  
+  const recipients = Array.from($$('.sn-recipient:checked')).map(el => ({
+    id: el.value,
+    mobile: el.dataset.mobile,
+    name: el.dataset.name
+  }));
+  
+  if (recipients.length === 0) { toast('Select at least one recipient', 'error'); return; }
+  
+  // Save in-app notification
+  LocalDB.push('notifications', {
+    _id: uid(),
+    title,
+    body,
+    type,
+    recipients: recipients.map(r => r.id),
+    sentBy: State.user?.name || 'Admin',
+    createdAt: Date.now(),
+    read: false
+  });
+  
+  // Trigger WhatsApp clicks for each recipient
+  recipients.forEach((r, i) => {
+    setTimeout(() => {
+      const mobile = normalizeMobile(r.mobile);
+      const fullMobile = mobile.startsWith('0') ? '92' + mobile.slice(1) : mobile;
+      const message = `*🏥 KIH Phlebotomy*\n\n*${title}*\n\n${body}\n\n_Sent by: ${State.user?.name || 'Admin'}_`;
+      const url = `https://wa.me/${fullMobile}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    }, i * 500); // 500ms delay between each
+  });
+  
+  toast(`Sending to ${recipients.length} staff via WhatsApp`, 'success');
+  closeModal();
+  
+  // Reload data
+  State.notifications = LocalDB.get('notifications', []);
+  State.unreadCount = State.notifications.filter(n => !n.read).length;
+  updateBell();
+  render();
+};
+
+/* ─── 5. THEME + FONT SIZE SETTINGS ──────────────────── */
+const THEMES = {
+  dark: { name: 'Dark', bg: '#0B0F1A', text: '#F9FAFB' },
+  amoled: { name: 'AMOLED', bg: '#000000', text: '#FFFFFF' },
+  light: { name: 'Light', bg: '#F3F4F6', text: '#111827' }
+};
+
+const ACCENTS = {
+  indigo: { name: 'Indigo', grad: 'linear-gradient(135deg,#6366F1,#8B5CF6)' },
+  cyan: { name: 'Cyan', grad: 'linear-gradient(135deg,#06B6D4,#3B82F6)' },
+  emerald: { name: 'Emerald', grad: 'linear-gradient(135deg,#10B981,#059669)' },
+  pink: { name: 'Pink', grad: 'linear-gradient(135deg,#EC4899,#DB2777)' }
+};
+
+window.applyTheme = function(themeName) {
+  const t = THEMES[themeName] || THEMES.dark;
+  document.documentElement.style.setProperty('--bg-0', t.bg);
+  document.documentElement.style.setProperty('--text', t.text);
+  document.body.style.background = t.bg;
+  localStorage.setItem('kih_theme', themeName);
+  State.settings.theme = themeName;
+};
+
+window.applyAccent = function(accentName) {
+  const a = ACCENTS[accentName] || ACCENTS.indigo;
+  document.documentElement.style.setProperty('--primary-grad', a.grad);
+  localStorage.setItem('kih_accent', accentName);
+  State.settings.accent = accentName;
+};
+
+window.applyFontSize = function(size) {
+  const sizes = { small: '14px', medium: '15px', large: '16px', xlarge: '17px' };
+  document.documentElement.style.fontSize = sizes[size] || '15px';
+  localStorage.setItem('kih_fontsize', size);
+  State.settings.fontSize = size;
+};
+
+window.openDisplaySettings = function() {
+  const theme = State.settings.theme || 'dark';
+  const accent = State.settings.accent || 'indigo';
+  const fontSize = State.settings.fontSize || 'medium';
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>🎨 Display & Theme</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">Theme</div>
+    <div class="btn-row">
+      ${Object.entries(THEMES).map(([k, v]) => `
+        <button class="btn-sm ${theme === k ? 'btn-accent' : ''}" onclick="applyTheme('${k}');openDisplaySettings()">${v.name}</button>
+      `).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin:16px 0 8px 0">Accent Color</div>
+    <div class="btn-row">
+      ${Object.entries(ACCENTS).map(([k, v]) => `
+        <button class="btn-sm ${accent === k ? 'btn-accent' : ''}" onclick="applyAccent('${k}');openDisplaySettings()">${v.name}</button>
+      `).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:600;margin:16px 0 8px 0">Font Size</div>
+    <div class="btn-row">
+      <button class="btn-sm ${fontSize === 'small' ? 'btn-accent' : ''}" onclick="applyFontSize('small');openDisplaySettings()">Small</button>
+      <button class="btn-sm ${fontSize === 'medium' ? 'btn-accent' : ''}" onclick="applyFontSize('medium');openDisplaySettings()">Medium</button>
+      <button class="btn-sm ${fontSize === 'large' ? 'btn-accent' : ''}" onclick="applyFontSize('large');openDisplaySettings()">Large</button>
+      <button class="btn-sm ${fontSize === 'xlarge' ? 'btn-accent' : ''}" onclick="applyFontSize('xlarge');openDisplaySettings()">XL</button>
+    </div>
+    
+    <button class="btn-sm btn-accent btn-block mt16" onclick="closeModal()">Done</button>
+  `);
+};
+
+// Override Settings modal
+window.openSettingsModal = function() {
+  openModal(`
+    <div class="modal-header">
+      <h2>⚙️ Settings & Setup</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:16px" onclick="openProfileModal()">
+        <span style="margin-right:10px">👤</span> My Profile
+      </button>
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:16px" onclick="openChangePasswordModal()">
+        <span style="margin-right:10px">🔑</span> Change Password
+      </button>
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:16px" onclick="openDisplaySettings()">
+        <span style="margin-right:10px">🎨</span> Display & Theme
+      </button>
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:16px" onclick="openHospitalModal()">
+        <span style="margin-right:10px">🏥</span> Hospital Info
+      </button>
+      <button class="btn-sm btn-block" style="justify-content:flex-start;padding:16px" onclick="openDataModal()">
+        <span style="margin-right:10px">📊</span> Data Management
+      </button>
+    </div>
+  `);
+};
+
+/* ─── 6. LOAD SAVED THEME ON BOOT ────────────────────── */
+(function loadSavedTheme(){
+  const theme = localStorage.getItem('kih_theme');
+  const accent = localStorage.getItem('kih_accent');
+  const fontSize = localStorage.getItem('kih_fontsize');
+  if (theme) applyTheme(theme);
+  if (accent) applyAccent(accent);
+  if (fontSize) applyFontSize(fontSize);
+})();
+
+/* ─── 7. REMOVE Start Draw button references ─────────── */
+window.openStartDrawModal = function() {
+  toast('Start Draw is disabled — no patient data stored', 'warning');
+};
+
+console.log('%c✅ Master Patch v1 loaded — Sab changes applied', 'color:#10B981;font-weight:bold;font-size:12px');
 </script>
 </body>
 </html>
