@@ -8083,6 +8083,559 @@ window.resetAllThemes = function() {
   applyFontSizeSystem(fontSize);
   console.log('%c✅ Step 1 loaded — Theme System (Light default)', 'color:#10B981;font-weight:bold;font-size:12px');
 })();
+   /* ═══════════════════════════════════════════════════════════
+   SHIFT MANAGEMENT — Simple (No Designation)
+   ═══════════════════════════════════════════════════════════ */
+
+const DEFAULT_SHIFTS_SIMPLE = [
+  {
+    _id: 'sh_M',
+    code: 'M',
+    name: 'Morning',
+    start: '08:00',
+    end: '16:00',
+    duration: 8,
+    color: '#10B981',
+    gender: 'Any',
+    staffMonSat: 5,
+    staffSun: 3,
+    isSpecial: false,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_E',
+    code: 'E',
+    name: 'Evening',
+    start: '16:00',
+    end: '00:00',
+    duration: 8,
+    color: '#6366F1',
+    gender: 'Any',
+    staffMonSat: 3,
+    staffSun: 3,
+    isSpecial: false,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_N',
+    code: 'N',
+    name: 'Night',
+    start: '00:00',
+    end: '08:00',
+    duration: 8,
+    color: '#8B5CF6',
+    gender: 'Any',
+    staffMonSat: 2,
+    staffSun: 2,
+    isSpecial: false,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_N12',
+    code: 'N12',
+    name: 'Extended Night',
+    start: '20:00',
+    end: '08:00',
+    duration: 12,
+    color: '#EC4899',
+    gender: 'Any',
+    staffMonSat: 0,
+    staffSun: 0,
+    isSpecial: true,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_E4',
+    code: 'E4',
+    name: 'Short Evening',
+    start: '16:00',
+    end: '20:00',
+    duration: 4,
+    color: '#F59E0B',
+    gender: 'Any',
+    staffMonSat: 0,
+    staffSun: 0,
+    isSpecial: true,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_D',
+    code: 'D',
+    name: 'Day Duty',
+    start: '08:00',
+    end: '16:00',
+    duration: 8,
+    color: '#F43F5E',
+    gender: 'Female',
+    staffMonSat: 0,
+    staffSun: 0,
+    isSpecial: true,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_X',
+    code: 'X',
+    name: 'Standby',
+    start: '-',
+    end: '-',
+    duration: 0,
+    color: '#6B7280',
+    gender: 'Any',
+    staffMonSat: 0,
+    staffSun: 0,
+    isSpecial: false,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_OFF',
+    code: 'OFF',
+    name: 'Off',
+    start: '-',
+    end: '-',
+    duration: 0,
+    color: '#374151',
+    gender: 'Any',
+    staffMonSat: 0,
+    staffSun: 0,
+    isSpecial: false,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  },
+  {
+    _id: 'sh_PH',
+    code: 'PH',
+    name: 'Public Holiday',
+    start: '-',
+    end: '-',
+    duration: 0,
+    color: '#F59E0B',
+    gender: 'Any',
+    staffMonSat: 0,
+    staffSun: 0,
+    isSpecial: false,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  }
+];
+
+/* ─── LOAD / SAVE ────────────────────────────────────── */
+window.loadShiftsSimple = function() {
+  let shifts = LocalDB.get('shiftsSimple', []);
+  if (shifts.length === 0) {
+    shifts = JSON.parse(JSON.stringify(DEFAULT_SHIFTS_SIMPLE));
+    LocalDB.set('shiftsSimple', shifts);
+  }
+  State.shiftsSimple = shifts;
+  return shifts;
+};
+
+window.saveShiftsSimple = function(shifts) {
+  LocalDB.set('shiftsSimple', shifts);
+  State.shiftsSimple = shifts;
+};
+
+/* ─── OPEN SHIFT MANAGEMENT ──────────────────────────── */
+window.openShiftManagement = function() {
+  if (!canManage()) { toast('Admin only', 'error'); return; }
+  
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>⚙️ Shift Management</h2>
+      <button class="modal-close" onclick="openManageContentModal()">✕</button>
+    </div>
+    
+    <div style="background:var(--bg-1);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12.5px;color:var(--text-muted);line-height:1.5">
+      Configure shift timings, colors, gender rule, and staff count per day. These settings power the Auto Roster.
+    </div>
+    
+    <button class="btn-sm btn-accent btn-block mb12" style="justify-content:center;padding:14px" onclick="openAddShiftModal()">
+      + Add New Shift
+    </button>
+    
+    ${shifts.map(s => `
+      <div class="list-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px;margin-bottom:8px">
+        <div class="flex-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:12px;height:12px;border-radius:50%;background:${s.color}"></div>
+            <div>
+              <div style="font-weight:600;font-size:14px;color:var(--text)">
+                ${esc(s.name)} 
+                <span style="color:var(--text-dim);font-size:11px">(${esc(s.code)})</span>
+                ${s.isSpecial ? '<span class="badge badge-warning" style="font-size:9px;padding:2px 6px;margin-left:4px">SPECIAL</span>' : ''}
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px">
+                ${s.start !== '-' ? `🕐 ${esc(s.start)} – ${esc(s.end)} · ${s.duration}h` : 'No fixed timing'}
+                ${s.gender !== 'Any' ? ` · ${s.gender} only` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        ${!['X','OFF','PH'].includes(s.code) ? `
+          <div style="background:var(--bg-1);border-radius:8px;padding:10px;font-size:12px;display:flex;gap:16px">
+            <div><span style="color:var(--text-dim)">Mon-Sat:</span> <strong style="color:var(--primary)">${s.staffMonSat} staff</strong></div>
+            <div><span style="color:var(--text-dim)">Sun/Hol:</span> <strong style="color:var(--primary)">${s.staffSun} staff</strong></div>
+          </div>
+        ` : ''}
+        
+        ${s.extendedDuty && s.extendedDuty.length > 0 ? `
+          <div style="font-size:11.5px;color:var(--text-muted)">
+            🔗 Extended: ${s.extendedDuty.join(', ')}
+          </div>
+        ` : ''}
+        
+        ${canManage() ? `
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn-sm" onclick="openEditShiftModal('${s._id}')">✏️ Edit</button>
+            <button class="btn-sm btn-danger" onclick="deleteShiftSimple('${s._id}')">🗑️ Delete</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('')}
+    
+    <div class="btn-row mt12">
+      <button class="btn-sm" style="flex:1;justify-content:center;padding:12px" onclick="resetShiftsSimple()">
+        🔄 Reset to Defaults
+      </button>
+    </div>
+  `);
+};
+
+/* ─── ADD NEW SHIFT ──────────────────────────────────── */
+window.openAddShiftModal = function() {
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  const usedCodes = shifts.map(s => s.code).join(', ');
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>+ Add New Shift</h2>
+      <button class="modal-close" onclick="openShiftManagement()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Shift Code * (unique, e.g. M, E, N)</label>
+      <input id="sh_code" placeholder="e.g. E2" maxlength="5" style="text-transform:uppercase">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Used: ${usedCodes}</div>
+    </div>
+    
+    <div class="input-group">
+      <label>Shift Name *</label>
+      <input id="sh_name" placeholder="e.g. Extended Evening">
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="input-group">
+        <label>Start Time</label>
+        <input id="sh_start" type="time" value="08:00">
+      </div>
+      <div class="input-group">
+        <label>End Time</label>
+        <input id="sh_end" type="time" value="16:00">
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label>Color</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="sh_color_row">
+        ${['#10B981','#6366F1','#8B5CF6','#EC4899','#3B82F6','#F59E0B','#EF4444','#6B7280'].map((c, i) => `
+          <div class="sh-color-option" data-color="${c}" onclick="selectShiftColor('${c}')" style="width:36px;height:36px;border-radius:8px;background:${c};cursor:pointer;border:3px solid ${i === 0 ? 'var(--text)' : 'transparent'}"></div>
+        `).join('')}
+      </div>
+      <input type="hidden" id="sh_color" value="#10B981">
+    </div>
+    
+    <div class="input-group">
+      <label>Gender Rule</label>
+      <select id="sh_gender">
+        <option>Any</option>
+        <option>Male</option>
+        <option>Female</option>
+      </select>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">📊 Staff Requirements</div>
+    
+    <div class="input-group">
+      <label>Mon-Sat (staff needed)</label>
+      <input id="sh_staffMon" type="number" min="0" max="50" value="0">
+    </div>
+    
+    <div class="input-group">
+      <label>Sun / Holiday (staff needed)</label>
+      <input id="sh_staffSun" type="number" min="0" max="50" value="0">
+    </div>
+    
+    <div class="divider"></div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="sh_special">
+      <span>Special Shift (N12, E4, D — on-demand only)</span>
+    </label>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="saveNewShift()">💾 Save</button>
+      <button class="btn-sm" onclick="openShiftManagement()">Cancel</button>
+    </div>
+  `);
+};
+
+window.selectShiftColor = function(color) {
+  document.querySelectorAll('.sh-color-option').forEach(el => {
+    el.style.border = el.dataset.color === color ? '3px solid var(--text)' : '3px solid transparent';
+  });
+  $('sh_color').value = color;
+};
+
+/* ─── SAVE NEW SHIFT ─────────────────────────────────── */
+window.saveNewShift = function() {
+  const code = $('sh_code').value.trim().toUpperCase();
+  const name = $('sh_name').value.trim();
+  const start = $('sh_start').value;
+  const end = $('sh_end').value;
+  const color = $('sh_color').value;
+  const gender = $('sh_gender').value;
+  const staffMonSat = parseInt($('sh_staffMon').value) || 0;
+  const staffSun = parseInt($('sh_staffSun').value) || 0;
+  const isSpecial = $('sh_special').checked;
+  
+  if (!code) { toast('Enter shift code', 'error'); return; }
+  if (!name) { toast('Enter shift name', 'error'); return; }
+  if (!/^[A-Z0-9]{1,5}$/.test(code)) { toast('Code: 1-5 letters/numbers only', 'error'); return; }
+  
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  if (shifts.find(s => s.code === code)) {
+    toast('Code already exists', 'error');
+    return;
+  }
+  
+  const startH = parseInt(start.split(':')[0]);
+  const endH = parseInt(end.split(':')[0]);
+  const duration = endH > startH ? endH - startH : (24 - startH) + endH;
+  
+  const newShift = {
+    _id: 'sh_' + code + '_' + Date.now(),
+    code, name, start, end, duration, color, gender,
+    staffMonSat, staffSun, isSpecial,
+    extendedDuty: [],
+    active: true,
+    createdAt: Date.now()
+  };
+  
+  shifts.push(newShift);
+  saveShiftsSimple(shifts);
+  
+  toast(`✅ ${name} added`, 'success');
+  openShiftManagement();
+};
+
+/* ─── EDIT SHIFT ─────────────────────────────────────── */
+window.openEditShiftModal = function(id) {
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  const s = shifts.find(x => x._id === id);
+  if (!s) { toast('Not found', 'error'); return; }
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>✏️ Edit ${esc(s.name)}</h2>
+      <button class="modal-close" onclick="openShiftManagement()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Shift Code *</label>
+      <input id="sh_code" value="${esc(s.code)}" maxlength="5" style="text-transform:uppercase">
+    </div>
+    
+    <div class="input-group">
+      <label>Shift Name *</label>
+      <input id="sh_name" value="${esc(s.name)}">
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="input-group">
+        <label>Start Time</label>
+        <input id="sh_start" type="time" value="${s.start !== '-' ? s.start : '08:00'}">
+      </div>
+      <div class="input-group">
+        <label>End Time</label>
+        <input id="sh_end" type="time" value="${s.end !== '-' ? s.end : '16:00'}">
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label>Color</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="sh_color_row">
+        ${['#10B981','#6366F1','#8B5CF6','#EC4899','#3B82F6','#F59E0B','#EF4444','#6B7280'].map(c => `
+          <div class="sh-color-option" data-color="${c}" onclick="selectShiftColor('${c}')" style="width:36px;height:36px;border-radius:8px;background:${c};cursor:pointer;border:3px solid ${c === s.color ? 'var(--text)' : 'transparent'}"></div>
+        `).join('')}
+      </div>
+      <input type="hidden" id="sh_color" value="${s.color}">
+    </div>
+    
+    <div class="input-group">
+      <label>Gender Rule</label>
+      <select id="sh_gender">
+        ${['Any','Male','Female'].map(g => `<option ${s.gender === g ? 'selected' : ''}>${g}</option>`).join('')}
+      </select>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">📊 Staff Requirements</div>
+    
+    <div class="input-group">
+      <label>Mon-Sat (staff needed)</label>
+      <input id="sh_staffMon" type="number" min="0" max="50" value="${s.staffMonSat}">
+    </div>
+    
+    <div class="input-group">
+      <label>Sun / Holiday (staff needed)</label>
+      <input id="sh_staffSun" type="number" min="0" max="50" value="${s.staffSun}">
+    </div>
+    
+    <div class="divider"></div>
+    
+    <label class="checkbox-row">
+      <input type="checkbox" id="sh_special" ${s.isSpecial ? 'checked' : ''}>
+      <span>Special Shift (on-demand only)</span>
+    </label>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:14px" onclick="updateShift('${id}')">💾 Save Changes</button>
+      <button class="btn-sm btn-danger" onclick="deleteShiftSimple('${id}')">🗑️ Delete</button>
+    </div>
+  `);
+};
+
+window.updateShift = function(id) {
+  const shifts = State.shiftsSimple || loadShiftsSimple();
+  const idx = shifts.findIndex(x => x._id === id);
+  if (idx === -1) return;
+  
+  const code = $('sh_code').value.trim().toUpperCase();
+  const name = $('sh_name').value.trim();
+  const start = $('sh_start').value;
+  const end = $('sh_end').value;
+  const color = $('sh_color').value;
+  const gender = $('sh_gender').value;
+  const staffMonSat = parseInt($('sh_staffMon').value) || 0;
+  const staffSun = parseInt($('sh_staffSun').value) || 0;
+  const isSpecial = $('sh_special').checked;
+  
+  if (!code || !name) { toast('Fill required fields', 'error'); return; }
+  
+  // Check duplicate code (excluding self)
+  if (shifts.find(s => s.code === code && s._id !== id)) {
+    toast('Code already exists', 'error');
+    return;
+  }
+  
+  const startH = parseInt(start.split(':')[0]);
+  const endH = parseInt(end.split(':')[0]);
+  const duration = endH > startH ? endH - startH : (24 - startH) + endH;
+  
+  shifts[idx] = {
+    ...shifts[idx],
+    code, name, start, end, duration, color, gender,
+    staffMonSat, staffSun, isSpecial,
+    updatedAt: Date.now()
+  };
+  
+  saveShiftsSimple(shifts);
+  toast('✅ Updated', 'success');
+  openShiftManagement();
+};
+
+window.deleteShiftSimple = function(id) {
+  if (!confirm('Delete this shift?')) return;
+  let shifts = State.shiftsSimple || loadShiftsSimple();
+  shifts = shifts.filter(x => x._id !== id);
+  saveShiftsSimple(shifts);
+  toast('Deleted', 'success');
+  openShiftManagement();
+};
+
+window.resetShiftsSimple = function() {
+  if (!confirm('Reset all shifts to default? Custom shifts will be lost.')) return;
+  const defaults = JSON.parse(JSON.stringify(DEFAULT_SHIFTS_SIMPLE));
+  saveShiftsSimple(defaults);
+  toast('✅ Reset to defaults', 'success');
+  openShiftManagement();
+};
+
+/* ─── ADD TO MANAGE CONTENT ──────────────────────────── */
+(function patchManageContent() {
+  window.openManageContentModal = function() {
+    if (!canManage()) { toast('Admin only', 'error'); return; }
+    const shifts = State.shiftsSimple || loadShiftsSimple();
+    
+    openModal(`
+      <div class="modal-header">
+        <h2>⚙️ Manage Content</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn-sm btn-block" style="justify-content:space-between;padding:16px;background:var(--primary-glow);border:1px solid var(--primary)" onclick="openShiftManagement()">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">⚙️</span> <strong>Shift Management</strong></span>
+          <span style="color:var(--primary)">${shifts.length} →</span>
+        </button>
+        
+        <button class="btn-sm btn-block" style="justify-content:space-between;padding:16px" onclick="openManageList('tests','🧪 Tests')">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">🧪</span> Tests</span>
+          <span style="color:var(--text-dim)">${State.tests.length} →</span>
+        </button>
+        
+        <button class="btn-sm btn-block" style="justify-content:space-between;padding:16px" onclick="openManageList('emergency','🚨 Emergency Cards')">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">🚨</span> Emergency Cards</span>
+          <span style="color:var(--text-dim)">${State.emergencyCards.length} →</span>
+        </button>
+        
+        <button class="btn-sm btn-block" style="justify-content:space-between;padding:16px" onclick="openManageList('difficult','🩺 Difficult Draw')">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">🩺</span> Difficult Draw</span>
+          <span style="color:var(--text-dim)">${State.difficultDraws.length} →</span>
+        </button>
+        
+        <button class="btn-sm btn-block" style="justify-content:space-between;padding:16px" onclick="openManageList('scripts','💬 Scripts')">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">💬</span> Scripts</span>
+          <span style="color:var(--text-dim)">${State.scripts.length} →</span>
+        </button>
+        
+        <button class="btn-sm btn-block" style="justify-content:space-between;padding:16px" onclick="openManageList('policies','📜 Policies')">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">📜</span> Policies</span>
+          <span style="color:var(--text-dim)">${State.policies.length} →</span>
+        </button>
+      </div>
+    `);
+  };
+})();
+
+/* ─── BOOT ───────────────────────────────────────────── */
+(function bootShifts() {
+  loadShiftsSimple();
+  console.log('%c✅ Shift Management (Simple) loaded', 'color:#10B981;font-weight:bold;font-size:12px');
+  console.log('%c   Shifts loaded without designation requirements', 'color:#9CA3AF;font-size:11px');
+})();
+   
    
 </script>
 </body>
