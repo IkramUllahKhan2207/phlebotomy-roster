@@ -3656,28 +3656,6 @@ function autoFixMissingShifts(date) {
   });
 }
 
-/* POINT 22-23: X trigger — 2+ staff absent */
-function assignXIfNeeded(date) {
-  const absentCount = Object.values(WIZ.grid[date]).filter(c => isRelaxCode(c)).length;
-  if (absentCount < 2) return;  // Trigger: 2+
-  
-  // Check if any X already
-  const xCount = countCode(date, 'X');
-  if (xCount > 0) return;
-  
-  // Assign 1 X to a free staff (male only for N-cover backup)
-  const free = WIZ.staffList.filter(s => 
-    !WIZ.locked[date][s._id] && 
-    !WIZ.grid[date][s._id]
-  );
-  
-  if (free.length > 0) {
-    const staff = free[0];
-    WIZ.grid[date][staff._id] = 'X';
-    WIZ.locked[date][staff._id] = true;
-    logDecision(date, staff, 'X', `${absentCount} staff absent → X assigned`);
-  }
-}
 
 /* ═══ STEP E: PH ADJUSTMENT ═══ */
 function adjustPHForDutyStaff() {
