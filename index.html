@@ -10843,6 +10843,158 @@ console.log('%c✅ Permanent Login Fix installed', 'color:#10B981;font-weight:bo
 })();
 
 console.log('%c✅✅✅ PERMANENT AUTH FIX — Login + Logout + Auto-login ready!', 'color:#10B981;font-weight:bold;font-size:13px;background:#0B0F1A;padding:4px 8px;border-radius:4px');
+/* ═══════════════════════════════════════════════════════════
+   PERMANENT AUTO-LOGIN — Hamesha Administrator
+   Ye fix: Session check + Auto-login as Admin
+   ═══════════════════════════════════════════════════════════ */
+
+(function permanentAutoAdmin() {
+  const ADMIN = {
+    _id: 'admin_default',
+    name: 'Administrator',
+    mobile: '03001234567',
+    password: 'admin123',
+    designation: 'sr',
+    role: 'admin',
+    fixedShift: 'Morning',
+    shift: 'Morning',
+    station: 'OPD',
+    notifications: true,
+    active: true,
+    createdAt: Date.now()
+  };
+  
+  // ─── AGAR GUEST HAI TO ADMIN KAR DO ────────────────────
+  function forceAdminSession() {
+    try {
+      const raw = localStorage.getItem('kih_session_v3');
+      if (raw) {
+        const session = JSON.parse(raw);
+        const u = session.user || {};
+        
+        // Agar guest ya User hai → Admin banao
+        if (u.guest === true || u.role !== 'admin' || u.name === 'User' || u.name === 'Guest User') {
+          session.user = ADMIN;
+          localStorage.setItem('kih_session_v3', JSON.stringify(session));
+          if (window.State) window.State.user = ADMIN;
+          console.log('✅ Guest session converted to Admin');
+        }
+      }
+    } catch (e) {
+      console.log('Session check skipped:', e.message);
+    }
+  }
+  
+  // ─── AGAR SESSION NAHI HAI TO ADMIN BANAO ──────────────
+  function ensureAdminSession() {
+    const raw = localStorage.getItem('kih_session_v3');
+    if (!raw) {
+      // Naya admin session banao
+      const session = { user: ADMIN, expires: Date.now() + 30*24*60*60*1000 };
+      localStorage.setItem('kih_session_v3', JSON.stringify(session));
+      if (window.State) window.State.user = ADMIN;
+      console.log('✅ Admin session created');
+    }
+  }
+  
+  // ─── STAFF DB MEIN ADMIN ENSURE KARO ───────────────────
+  function ensureAdminInStaff() {
+    try {
+      let staff = JSON.parse(localStorage.getItem('kih_db_staff') || '[]');
+      const hasAdmin = staff.some(s => s.mobile === '03001234567' && s.role === 'admin');
+      if (!hasAdmin) {
+        staff = staff.filter(s => s.mobile !== '03001234567');
+        staff.push(ADMIN);
+        localStorage.setItem('kih_db_staff', JSON.stringify(staff));
+        console.log('✅ Admin added to staff');
+      }
+    } catch (e) {
+      localStorage.setItem('kih_db_staff', JSON.stringify([ADMIN]));
+    }
+  }
+  
+  // ─── ON PAGE LOAD ──────────────────────────────────────
+  function init() {
+    forceAdminSession();
+    ensureAdminSession();
+    ensureAdminInStaff();
+    
+    // Agar app already shown hai aur naam "User" hai → reload
+    const avatar = document.getElementById('userAvatar');
+    if (avatar && window.State?.user) {
+      const u = window.State.user;
+      if (u.guest === true || u.name === 'User' || u.name === 'Guest User') {
+        console.log('🔄 Reloading as Administrator...');
+        location.reload();
+      }
+    }
+    
+    console.log('✅ Permanent Admin Fix active');
+  }
+  
+  // DOM ready hone par
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  
+  // Login button aur logout button ko permanent fix karo
+  setTimeout(() => {
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const guestBtn = document.getElementById('guestBtn');
+    
+    if (loginBtn) {
+      loginBtn.onclick = function(e) {
+        if (e) e.preventDefault();
+        const mobile = document.getElementById('loginMobile')?.value.replace(/\D/g,'') || '';
+        const password = document.getElementById('loginPassword')?.value || '';
+        
+        const staff = JSON.parse(localStorage.getItem('kih_db_staff') || '[]');
+        const user = staff.find(s => s.mobile === mobile && s.password === password);
+        
+        if (!user) {
+          alert('❌ Invalid mobile or password\n\nUse:\nMobile: 03001234567\nPassword: admin123');
+          return;
+        }
+        
+        localStorage.setItem('kih_session_v3', JSON.stringify({
+          user: user,
+          expires: Date.now() + 30*24*60*60*1000
+        }));
+        
+        if (window.State) window.State.user = user;
+        location.reload();
+      };
+    }
+    
+    if (guestBtn) {
+      guestBtn.onclick = function(e) {
+        if (e) e.preventDefault();
+        // Guest bhi admin ban jayega (temporary)
+        localStorage.setItem('kih_session_v3', JSON.stringify({
+          user: ADMIN,
+          expires: Date.now() + 30*24*60*60*1000
+        }));
+        location.reload();
+      };
+    }
+    
+    if (logoutBtn) {
+      logoutBtn.onclick = function(e) {
+        if (e) e.preventDefault();
+        if (!confirm('Logout?')) return;
+        localStorage.removeItem('kih_session_v3');
+        location.reload();
+      };
+    }
+    
+    console.log('✅ Login/Logout/Guest handlers attached');
+  }, 1000);
+})();
+
+console.log('%c✅✅✅ PERMANENT ADMIN FIX LOADED', 'color:#10B981;font-weight:bold;font-size:14px;background:#000;padding:6px 10px;border-radius:4px');
    
 </script>
 </body>
