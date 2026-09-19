@@ -3694,6 +3694,7 @@ function adjustPHForDutyStaff() {
 }
 
 /* ═══ STEP F: FINALIZE + VALIDATE (STRICT) ═══ */
+/* ═══ PATCH 2: STRICT OFF VALIDATION ═══ */
 function finalizeGeneration() {
   const offTarget = calcOffTarget();
   const holidayCount = calcHolidayCount();
@@ -3710,7 +3711,93 @@ function finalizeGeneration() {
   });
   
   WIZ.warnings = [];
+  WIZ.validationDetails = {
+    offTarget: { passed: 0, failed: 0, items: [] },
+    phCount: { passed: 0, failed: 0, items: [] },
+    relaxLimit: { passed: 0, failed: 0, items: [] },
+    n12Rule: { passed: 0, failed: 0, items: [] },
+    emptyCells: { passed: 0, failed: 0, items: [] },
+    genderRule: { passed: 0, failed: 0, items: [] }
+  };
   
+  // V1: OFF target — STRICT
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.offCount[staff._id];
+    const expected = offTarget;
+    if (actual === expected) {
+      WIZ.validationDetails.offTarget.passed++;
+    } else if (actual > expected) {
+      WIZ.validationDetails.offTarget.failed++;
+      WIZ.warnings.push(`${staff.name}: EXTRA OFF ${actual}/${expected} — not allowed`);
+    } else {
+      WIZ.validationDetails.offTarget.failed++;
+      WIZ.warnings.push(`${staff.name}: OFF kam ${actual}/${expected}`);
+    }
+  });
+  
+  // V2: PH count
+  WIZ.staffList.forEach(staff => {
+    const actual = WIZ.phCount[staff._id];
+    const cplAdj = WIZ.cplConversions.filter(c => c.staffId === staff._id).length;
+    if (actual + cplAdj === holidayCount) WIZ.validationDetails.phCount.passed++;
+    else WIZ.warnings.push(`${staff.name}: PH ${actual + cplAdj}/${holidayCount}`);
+  });
+  
+  // V3: Relax limit
+  WIZ.periodDates.forEach(date => {
+    const relax = getDayRelaxCount(date);
+    const limit = getRelaxLimit(date);
+    if (relax <= limit) WIZ.validationDetails.relaxLimit.passed++;
+    else WIZ.warnings.push(`${date}: relax ${relax}/${limit}`);
+  });
+  
+  // V4: N/N12 next day
+  for (let i = 1; i < WIZ.periodDates.length; i++) {
+    const prevDate = WIZ.periodDates[i - 1];
+    const currDate = WIZ.periodDates[i];
+    WIZ.staffList.forEach(staff => {
+      const prevCode = WIZ.grid[prevDate][staff._id];
+      const currCode = WIZ.grid[currDate][staff._id];
+      if (prevCode === 'N' || prevCode === 'N12') {
+        if (['OFF', 'M', 'D', 'X', 'E4', 'E'].includes(currCode)) WIZ.validationDetails.n12Rule.passed++;
+        else WIZ.warnings.push(`${staff.name}: N/N12 → ${currCode} on ${currDate}`);
+      }
+    });
+  }
+  
+  // V5: Empty cells
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      if (WIZ.grid[date][staff._id]) WIZ.validationDetails.emptyCells.passed++;
+      else WIZ.warnings.push(`${staff.name} empty on ${date}`);
+    });
+  });
+  
+  // V6: Female N/N12 — STRICT
+  WIZ.periodDates.forEach(date => {
+    WIZ.staffList.forEach(staff => {
+      if (staff.gender === 'Female') {
+        const code = WIZ.grid[date][staff._id];
+        if (code === 'N' || code === 'N12') {
+          WIZ.validationDetails.genderRule.failed++;
+          WIZ.warnings.push(`${staff.name} (Female) on ${code} — not allowed`);
+        } else {
+          WIZ.validationDetails.genderRule.passed++;
+        }
+      }
+    });
+  });
+  
+  WIZ.finalStats = {
+    totalShifts: WIZ.periodDates.length * WIZ.staffList.length,
+    totalOff: Object.values(WIZ.offCount).reduce((a, b) => a + b, 0),
+    totalPH: Object.values(WIZ.phCount).reduce((a, b) => a + b, 0),
+    totalCPL: WIZ.cplConversions.length,
+    warnings: WIZ.warnings.length
+  };
+  
+  return WIZ.warnings.length === 0;
+}
   // V1: OFF target STRICT (POINT 3 & 20)
   WIZ.staffList.forEach(staff => {
     const actual = WIZ.offCount[staff._id];
