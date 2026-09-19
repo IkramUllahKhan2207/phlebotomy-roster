@@ -3419,55 +3419,49 @@ function applyLockedEntries() {
 function assignOFFToAllStaff() {
   const target = calcOffTarget();
   
-  // Sort: lowest offCount first
-  const sorted = [...WIZ.staffList].sort((a, b) => WIZ.offCount[a._id] - WIZ.offCount[b._id]);
+  const sorted = [...WIZ.staffList].sort((a, b) => 
+    WIZ.offCount[a._id] - WIZ.offCount[b._id]
+  );
   
-  // ═══ POINT 6 & 21: Female staff equal Sunday OFF distribution (round-robin) ═══
   const females = sorted.filter(s => s.gender === 'Female');
+  const males = sorted.filter(s => s.gender === 'Male');
   const sundays = WIZ.periodDates.filter(d => classifyDay(d) === 'SUNDAY');
   
+  // Female Sunday round-robin
   if (females.length > 0 && sundays.length > 0) {
     const startIdx = State.sundayIndex || 0;
     sundays.forEach((date, i) => {
-      // Rotate female index
       const fIdx = (startIdx + i) % females.length;
       const staff = females[fIdx];
       if (WIZ.locked[date][staff._id]) return;
       if (!canAssignRelax(date)) return;
+      if (WIZ.offCount[staff._id] >= target) return;
       WIZ.grid[date][staff._id] = 'OFF';
       WIZ.locked[date][staff._id] = true;
       WIZ.offCount[staff._id]++;
-      logDecision(date, staff, 'OFF', 'Sunday off (female rotation)');
     });
-    // Save next index
     State.sundayIndex = (startIdx + sundays.length) % Math.max(1, females.length);
     LocalDB.set('sundayIndex', State.sundayIndex);
   }
   
-  // Also assign Sundays to male staff (round-robin)
-  const males = sorted.filter(s => s.gender === 'Male');
+  // Male Sunday round-robin
   if (males.length > 0 && sundays.length > 0) {
-    const startIdx = LocalDB.get('sundayIndexMale', 0);
+    const mStartIdx = State.sundayIndexMale || 0;
     sundays.forEach((date, i) => {
-      if (WIZ.locked[date] && WIZ.grid[date]) {
-        // Check if any male already assigned
-        const already = males.find(m => WIZ.locked[date][m._id] && WIZ.grid[date][m._id] === 'OFF');
-        if (already) return;
-      }
-      const mIdx = (startIdx + i) % males.length;
+      const mIdx = (mStartIdx + i) % males.length;
       const staff = males[mIdx];
       if (WIZ.locked[date][staff._id]) return;
-      if (WIZ.offCount[staff._id] >= target) return;
       if (!canAssignRelax(date)) return;
+      if (WIZ.offCount[staff._id] >= target) return;
       WIZ.grid[date][staff._id] = 'OFF';
       WIZ.locked[date][staff._id] = true;
       WIZ.offCount[staff._id]++;
-      logDecision(date, staff, 'OFF', 'Sunday off');
     });
-    LocalDB.set('sundayIndexMale', (startIdx + sundays.length) % Math.max(1, males.length));
+    State.sundayIndexMale = (mStartIdx + sundays.length) % Math.max(1, males.length);
+    LocalDB.set('sundayIndexMale', State.sundayIndexMale);
   }
   
-  // C2. Holidays → PH
+  // Holidays → PH
   const holidayDates = WIZ.holidays.map(h => h.date);
   sorted.forEach(staff => {
     holidayDates.forEach(date => {
@@ -3476,11 +3470,10 @@ function assignOFFToAllStaff() {
       WIZ.grid[date][staff._id] = 'PH';
       WIZ.locked[date][staff._id] = true;
       WIZ.phCount[staff._id]++;
-      logDecision(date, staff, 'PH', 'Holiday');
     });
   });
   
-  // C3. Saturdays
+  // Saturdays
   const saturdays = WIZ.periodDates.filter(d => classifyDay(d) === 'SATURDAY');
   sorted.forEach(staff => {
     if (WIZ.offCount[staff._id] >= target) return;
@@ -3491,39 +3484,35 @@ function assignOFFToAllStaff() {
       WIZ.grid[date][staff._id] = 'OFF';
       WIZ.locked[date][staff._id] = true;
       WIZ.offCount[staff._id]++;
-      logDecision(date, staff, 'OFF', 'Saturday off');
     });
   });
   
-  // C4. Weekdays — STRICT (POINT 3 & 20: never exceed target)
+  // Weekdays
   const weekdays = WIZ.periodDates.filter(d => classifyDay(d) === 'WEEKDAY');
   sorted.forEach(staff => {
     if (WIZ.offCount[staff._id] >= target) return;
     weekdays.forEach(date => {
       if (WIZ.locked[date][staff._id]) return;
-      if (WIZ.offCount[staff._id] >= target) return;  // POINT 3 strict
+      if (WIZ.offCount[staff._id] >= target) return;
       if (!canAssignRelax(date)) return;
       WIZ.grid[date][staff._id] = 'OFF';
       WIZ.locked[date][staff._id] = true;
       WIZ.offCount[staff._id]++;
-      logDecision(date, staff, 'OFF', 'Weekday off');
     });
   });
   
-  // C5. Final pass — STRICT: no extra OFF
+  // Final pass — STRICT
   sorted.forEach(staff => {
     if (WIZ.offCount[staff._id] >= target) return;
     WIZ.periodDates.forEach(date => {
       if (WIZ.locked[date][staff._id]) return;
-      if (WIZ.offCount[staff._id] >= target) return;  // POINT 3
+      if (WIZ.offCount[staff._id] >= target) return;
       WIZ.grid[date][staff._id] = 'OFF';
       WIZ.locked[date][staff._id] = true;
       WIZ.offCount[staff._id]++;
-      logDecision(date, staff, 'OFF', 'Final pass');
     });
   });
 }
-
 /* ═══ STEP D: PROCESS DAYS ═══ */
 function processAllDays() {
   WIZ.periodDates.forEach((date, idx) => {
@@ -3545,22 +3534,77 @@ function processDay(date, prevDate) {
 }
 
 /* POINT 9: N/N12 ke baad — OFF → M → D → X → E4 → E */
+/* ═══ PATCH 3: N/N12 PRIORITY REST ═══
+   Priority: OFF → M → D → X → E4 → E
+   E4 and E are LAST resort only.
+*/
 function applyN12PriorityRest(date, prevDate) {
   if (!prevDate) return;
+  
   WIZ.staffList.forEach(staff => {
     if (WIZ.locked[date][staff._id]) return;
+    
     const prevCode = WIZ.grid[prevDate][staff._id];
-    if (prevCode === 'N' || prevCode === 'N12') {
-      // Priority 1: OFF
-      if (canAssignRelax(date) && WIZ.offCount[staff._id] < calcOffTarget()) {
-        WIZ.grid[date][staff._id] = 'OFF';
-        WIZ.locked[date][staff._id] = true;
-        WIZ.offCount[staff._id]++;
-        logDecision(date, staff, 'OFF', 'Post N/N12 → OFF');
-        return;
-      }
-      // Priority 2: M
-      const req = getShiftReq(date);
+    if (prevCode !== 'N' && prevCode !== 'N12') return;
+    
+    const req = getShiftReq(date);
+    const offTarget = calcOffTarget();
+    
+    // ─── Priority 1: OFF ───
+    if (canAssignRelax(date) && WIZ.offCount[staff._id] < offTarget) {
+      WIZ.grid[date][staff._id] = 'OFF';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      logDecision(date, staff, 'OFF', 'Post N/N12 → OFF (priority 1)');
+      return;
+    }
+    
+    // ─── Priority 2: M (Morning) ───
+    const mNeed = req.M || 0;
+    const mHave = countCode(date, 'M');
+    if (mNeed > mHave) {
+      WIZ.grid[date][staff._id] = 'M';
+      WIZ.locked[date][staff._id] = true;
+      logDecision(date, staff, 'M', 'Post N/N12 → M (priority 2, OFF full)');
+      return;
+    }
+    
+    // ─── Priority 3: D (Day) ───
+    const dNeed = req.D || 0;
+    const dHave = countCode(date, 'D');
+    if (dNeed > dHave) {
+      WIZ.grid[date][staff._id] = 'D';
+      WIZ.locked[date][staff._id] = true;
+      logDecision(date, staff, 'D', 'Post N/N12 → D (priority 3)');
+      return;
+    }
+    
+    // ─── Priority 4: X (Standby) — but NOT on Sunday/Holiday ───
+    if (!isSunday(date) && !isHoliday(date, WIZ.holidays)) {
+      WIZ.grid[date][staff._id] = 'X';
+      WIZ.locked[date][staff._id] = true;
+      logDecision(date, staff, 'X', 'Post N/N12 → X (priority 4)');
+      return;
+    }
+    
+    // ─── Priority 5: E4 (LAST RESORT) ───
+    // Only if E4 requirement has space
+    const e4Need = req.E4 || 0;
+    const e4Have = countCode(date, 'E4');
+    if (e4Need > e4Have && staff.gender === 'Male') {
+      WIZ.grid[date][staff._id] = 'E4';
+      WIZ.locked[date][staff._id] = true;
+      logDecision(date, staff, 'E4', 'Post N/N12 → E4 (priority 5, LAST RESORT)');
+      return;
+    }
+    
+    // ─── Priority 6: E (VERY LAST) ───
+    // If nothing else, assign E (will be caught by validation)
+    WIZ.grid[date][staff._id] = 'E';
+    WIZ.locked[date][staff._id] = true;
+    logDecision(date, staff, 'E', 'Post N/N12 → E (priority 6, FORCED)');
+  });
+}
       if ((req.M || 0) > countCode(date, 'M')) {
         WIZ.grid[date][staff._id] = 'M';
         WIZ.locked[date][staff._id] = true;
@@ -4587,6 +4631,140 @@ function buildSidebar() {
   console.log('%c🔐 Login: 03001234567 / admin123', 'color:#6B7280;font-size:11px');
 })();
 </script>
+   /* ═══ PATCH 5: COMBINE OFF (ADMIN APPROVAL) ═══ */
+
+function openCombineOFFModal() {
+  if (!canManage()) { toast('Admin only', 'error'); return; }
+  
+  const approvals = LocalDB.get('combineOFF', []);
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>🔗 Combine OFF Approvals</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div style="background:var(--bg-1);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12.5px;color:var(--text-muted);line-height:1.5">
+      Combine OFF = multiple days off together. <strong>Only with Admin approval.</strong>
+    </div>
+    
+    <button class="btn-sm btn-accent btn-block mb12" style="justify-content:center;padding:12px" onclick="openAddCombineOFFModal()">
+      + New Combine OFF Approval
+    </button>
+    
+    ${approvals.length === 0 
+      ? '<div class="empty-state"><div class="icon">🔗</div><div>No combine OFF approvals</div></div>'
+      : approvals.map(a => `
+        <div class="list-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="flex-between">
+            <div style="font-weight:600;font-size:14px">👤 ${esc(a.staffName)}</div>
+            <span class="badge badge-primary">${a.days} days</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted)">
+            📅 ${esc(a.fromDate)} → ${esc(a.toDate)}
+          </div>
+          <div style="font-size:11.5px;color:var(--text-dim)">
+            📝 ${esc(a.reason || 'No reason')}
+          </div>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn-sm btn-danger" onclick="deleteCombineOFF('${a._id}')">🗑️ Remove</button>
+          </div>
+        </div>
+      `).join('')
+    }
+  `);
+}
+
+function openAddCombineOFFModal() {
+  const staffList = State.staff.filter(s => s.active !== false && s.role !== 'admin');
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>+ Add Combine OFF</h2>
+      <button class="modal-close" onclick="openCombineOFFModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Staff *</label>
+      <select id="co_staff">
+        <option value="">Select...</option>
+        ${staffList.map(s => `<option value="${s._id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join('')}
+      </select>
+    </div>
+    
+    <div class="input-group">
+      <label>From Date *</label>
+      <input type="date" id="co_from">
+    </div>
+    
+    <div class="input-group">
+      <label>To Date *</label>
+      <input type="date" id="co_to">
+    </div>
+    
+    <div class="input-group">
+      <label>Reason</label>
+      <input id="co_reason" placeholder="e.g. Family wedding">
+    </div>
+    
+    <div class="btn-row mt16">
+      <button class="btn-sm btn-accent" style="flex:1;justify-content:center;padding:12px" onclick="saveCombineOFF()">💾 Approve</button>
+      <button class="btn-sm" onclick="openCombineOFFModal()">Cancel</button>
+    </div>
+  `);
+}
+
+function saveCombineOFF() {
+  const staffSelect = $('co_staff');
+  const staffId = staffSelect.value;
+  const staffName = staffSelect.options[staffSelect.selectedIndex]?.dataset?.name || '';
+  const fromDate = $('co_from').value;
+  const toDate = $('co_to').value;
+  const reason = $('co_reason').value.trim();
+  
+  if (!staffId || !fromDate || !toDate) { toast('Fill required fields', 'error'); return; }
+  if (new Date(fromDate) > new Date(toDate)) { toast('Invalid date range', 'error'); return; }
+  
+  const days = Math.ceil((new Date(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24)) + 1;
+  
+  LocalDB.push('combineOFF', {
+    _id: uid(), staffId, staffName, fromDate, toDate, days, reason,
+    approvedBy: State.user?.name || 'Admin', approvedAt: Date.now()
+  });
+  
+  toast(`✅ Combine OFF approved for ${staffName} (${days} days)`, 'success');
+  openCombineOFFModal();
+}
+
+function deleteCombineOFF(id) {
+  if (!confirm('Remove this approval?')) return;
+  LocalDB.remove('combineOFF', id);
+  toast('Removed', 'success');
+  openCombineOFFModal();
+}
+
+function applyCombineOFFApprovals() {
+  const approvals = LocalDB.get('combineOFF', []);
+  if (approvals.length === 0) return;
+  
+  approvals.forEach(approval => {
+    const staff = WIZ.staffList.find(s => s._id === approval.staffId);
+    if (!staff) return;
+    
+    const dates = dateRange(approval.fromDate, approval.toDate);
+    dates.forEach(date => {
+      if (!WIZ.grid[date]) return;
+      if (WIZ.locked[date][staff._id]) return;
+      
+      WIZ.grid[date][staff._id] = 'OFF';
+      WIZ.locked[date][staff._id] = true;
+      WIZ.offCount[staff._id]++;
+      logDecision(date, staff, 'OFF', `Combine OFF approved (${approval.days} days)`);
+    });
+  });
+}
+
+console.log('%c✅ Patch 5 loaded — Combine OFF Admin Approval', 'color:#8B5CF6;font-weight:bold;font-size:12px');
 </body>
 </html>
    
