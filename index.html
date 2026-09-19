@@ -4235,6 +4235,80 @@ window.exportRosterCSV = function() {
   toast('✅ CSV exported', 'success');
 };
 
+   /* ═══ PERMANENT ADMIN AUTO-FIX ═══ */
+(function permanentAdminFix() {
+  function ensureAdmin() {
+    try {
+      const raw = localStorage.getItem('kih_session_v3');
+      if (raw) {
+        const session = JSON.parse(raw);
+        const u = session.user || {};
+        
+        if (u.guest === true || u.name === 'User' || u.name === 'Guest User' || u.role !== 'admin') {
+          const ADMIN = {
+            _id: 'admin_default',
+            name: 'Administrator',
+            mobile: '03001234567',
+            password: 'admin123',
+            designation: 'sr',
+            role: 'admin',
+            fixedShift: 'M',
+            shift: 'M',
+            multiShifts: [],
+            station: 'OPD',
+            notifications: true,
+            active: true,
+            createdAt: Date.now()
+          };
+          session.user = ADMIN;
+          localStorage.setItem('kih_session_v3', JSON.stringify(session));
+          if (window.State) window.State.user = ADMIN;
+          console.log('✅ Guest → Admin converted');
+        }
+      }
+    } catch (e) {
+      console.warn('Admin fix error:', e.message);
+    }
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureAdmin);
+  } else {
+    ensureAdmin();
+  }
+  setTimeout(ensureAdmin, 1000);
+})();
+
+(function blockGuest() {
+  window.doGuestLogin = function() {
+    const ADMIN = {
+      _id: 'admin_default',
+      name: 'Administrator',
+      mobile: '03001234567',
+      password: 'admin123',
+      designation: 'sr',
+      role: 'admin',
+      fixedShift: 'M',
+      shift: 'M',
+      multiShifts: [],
+      station: 'OPD',
+      notifications: true,
+      active: true,
+      createdAt: Date.now()
+    };
+    localStorage.setItem('kih_session_v3', JSON.stringify({
+      user: ADMIN,
+      expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+    }));
+    if (window.State) window.State.user = ADMIN;
+    if (typeof showApp === 'function') showApp();
+    else location.reload();
+    toast('Logged in as Administrator');
+  };
+})();
+
+console.log('✅ Permanent Admin Fix loaded');
+
 /* ═══ SEND NOTIFICATION ═══ */
 window.openSendNotificationModal = function() {
   const staffList = State.staff.filter(s => s.active !== false && !s.guest);
