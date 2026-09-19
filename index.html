@@ -10412,6 +10412,162 @@ window.getShiftReq = function(date) {
   console.log('%c✅ 3-Category Shift Requirements loaded', 'color:#10B981;font-weight:bold;font-size:12px');
   console.log('%c   Mon-Fri · Saturday · Sunday/Holiday', 'color:#9CA3AF;font-size:11px');
 })();
+   /* ═══════════════════════════════════════════════════════════
+   PERMANENT LOGIN FIX — Auto-attach handlers on boot
+   ═══════════════════════════════════════════════════════════ */
+
+(function permanentLoginFix() {
+  function attachLoginHandlers() {
+    const loginBtn = document.getElementById('loginBtn');
+    const guestBtn = document.getElementById('guestBtn');
+    const mobileInput = document.getElementById('loginMobile');
+    const passwordInput = document.getElementById('loginPassword');
+    
+    if (!loginBtn || !guestBtn) {
+      // Retry if elements not ready
+      setTimeout(attachLoginHandlers, 200);
+      return;
+    }
+    
+    // Avoid double-attach
+    if (loginBtn.dataset.handlerAttached === 'true') return;
+    
+    // Attach login handler
+    loginBtn.onclick = async function(e) {
+      if (e) e.preventDefault();
+      console.log('🖱️ Sign In clicked');
+      
+      const mobile = (mobileInput?.value || '').replace(/\D/g, '');
+      const password = passwordInput?.value || '';
+      const keep = document.getElementById('keepSignedIn')?.checked;
+      
+      if (!mobile || mobile.length < 10) {
+        toast('Enter valid mobile number', 'error');
+        return;
+      }
+      if (!password) {
+        toast('Enter password', 'error');
+        return;
+      }
+      
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span>⏳</span><span>Signing in...</span>';
+      
+      // Get staff
+      let staffList = [];
+      try {
+        staffList = JSON.parse(localStorage.getItem('kih_db_staff') || '[]');
+      } catch (err) {
+        staffList = [];
+      }
+      
+      // Seed default admin if empty
+      if (staffList.length === 0) {
+        staffList = [{
+          _id: 'admin_default',
+          name: 'Administrator',
+          mobile: '03001234567',
+          password: 'admin123',
+          designation: 'sr',
+          role: 'admin',
+          shift: 'Morning',
+          station: 'OPD',
+          notifications: true,
+          active: true,
+          createdAt: Date.now()
+        }];
+        localStorage.setItem('kih_db_staff', JSON.stringify(staffList));
+      }
+      
+      // Find user
+      const user = staffList.find(s => 
+        (s.mobile || '').replace(/\D/g, '') === mobile &&
+        s.password === password &&
+        s.active !== false
+      );
+      
+      if (!user) {
+        toast('Invalid mobile or password', 'error');
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<span>🔓</span><span>Sign In</span>';
+        return;
+      }
+      
+      // Save session
+      const session = {
+        user: user,
+        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+      };
+      
+      if (keep !== false) {
+        localStorage.setItem('kih_session_v3', JSON.stringify(session));
+      }
+      
+      // Set state
+      if (window.State) {
+        window.State.user = user;
+      }
+      
+      // Show app
+      setTimeout(() => {
+        if (typeof showApp === 'function') {
+          showApp();
+        } else {
+          location.reload();
+        }
+        toast(`Welcome, ${user.name}!`, 'success');
+      }, 300);
+    };
+    
+    // Attach guest handler
+    guestBtn.onclick = function(e) {
+      if (e) e.preventDefault();
+      console.log('🖱️ Guest clicked');
+      
+      const guest = {
+        _id: 'guest_' + Date.now(),
+        name: 'Guest User',
+        mobile: '0000000000',
+        designation: 'phleb',
+        role: 'staff',
+        guest: true,
+        active: true
+      };
+      
+      localStorage.setItem('kih_session_v3', JSON.stringify({
+        user: guest,
+        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+      }));
+      
+      if (window.State) {
+        window.State.user = guest;
+      }
+      
+      if (typeof showApp === 'function') {
+        showApp();
+      } else {
+        location.reload();
+      }
+    };
+    
+    loginBtn.dataset.handlerAttached = 'true';
+    guestBtn.dataset.handlerAttached = 'true';
+    console.log('✅ Login handlers attached permanently');
+  }
+  
+  // Try immediately
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachLoginHandlers);
+  } else {
+    attachLoginHandlers();
+  }
+  
+  // Also retry after 500ms and 1.5s (in case of delayed load)
+  setTimeout(attachLoginHandlers, 500);
+  setTimeout(attachLoginHandlers, 1500);
+})();
+
+console.log('%c✅ Permanent Login Fix installed', 'color:#10B981;font-weight:bold;font-size:12px');
    
 </script>
 </body>
