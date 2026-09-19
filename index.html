@@ -10568,6 +10568,281 @@ window.getShiftReq = function(date) {
 })();
 
 console.log('%c✅ Permanent Login Fix installed', 'color:#10B981;font-weight:bold;font-size:12px');
+/* ═══════════════════════════════════════════════════════════
+   PERMANENT AUTH FIX — Complete (Login + Logout + Auto-login)
+   Ye patch SAB KUCH handle karta hai. Baar baar kaam karega.
+   ═══════════════════════════════════════════════════════════ */
+
+(function permanentAuth() {
+  const ADMIN_KEY = 'kih_db_staff';
+  const SESSION_KEY = 'kih_session_v3';
+  const TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+  
+  // ─── DEFAULT ADMIN ────────────────────────────────────
+  const DEFAULT_ADMIN = {
+    _id: 'admin_default',
+    name: 'Administrator',
+    mobile: '03001234567',
+    password: 'admin123',
+    designation: 'sr',
+    role: 'admin',
+    fixedShift: 'Morning',
+    shift: 'Morning',
+    station: 'OPD',
+    notifications: true,
+    active: true,
+    createdAt: Date.now()
+  };
+  
+  // ─── ENSURE ADMIN EXISTS ──────────────────────────────
+  function ensureAdmin() {
+    try {
+      let staff = JSON.parse(localStorage.getItem(ADMIN_KEY) || '[]');
+      const hasAdmin = staff.some(s => s.mobile === '03001234567' && s.role === 'admin');
+      
+      if (!hasAdmin) {
+        // Remove any non-admin entries with same mobile
+        staff = staff.filter(s => s.mobile !== '03001234567');
+        staff.push(DEFAULT_ADMIN);
+        localStorage.setItem(ADMIN_KEY, JSON.stringify(staff));
+        console.log('✅ Admin ensured in storage');
+      }
+      return staff;
+    } catch (e) {
+      localStorage.setItem(ADMIN_KEY, JSON.stringify([DEFAULT_ADMIN]));
+      return [DEFAULT_ADMIN];
+    }
+  }
+  
+  // ─── CLEAR SESSION ────────────────────────────────────
+  function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem('kih_session_v2');
+    localStorage.removeItem('kih_session');
+    if (window.State) {
+      window.State.user = null;
+      window.State.session = null;
+    }
+  }
+  
+  // ─── SAVE SESSION ─────────────────────────────────────
+  function saveSession(user) {
+    const session = { user, expires: Date.now() + TTL };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    if (window.State) {
+      window.State.user = user;
+      window.State.session = session;
+    }
+  }
+  
+  // ─── GET SESSION ──────────────────────────────────────
+  function getSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (Date.now() > s.expires) {
+        clearSession();
+        return null;
+      }
+      return s;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // ─── LOGIN ────────────────────────────────────────────
+  async function doLoginNow() {
+    const mobileInput = document.getElementById('loginMobile');
+    const passwordInput = document.getElementById('loginPassword');
+    const keepCheck = document.getElementById('keepSignedIn');
+    const btn = document.getElementById('loginBtn');
+    
+    const mobile = (mobileInput?.value || '').replace(/\D/g, '');
+    const password = passwordInput?.value || '';
+    
+    if (!mobile || mobile.length < 10) {
+      if (typeof toast === 'function') toast('Enter valid mobile number', 'error');
+      else alert('Enter valid mobile number');
+      return;
+    }
+    if (!password) {
+      if (typeof toast === 'function') toast('Enter password', 'error');
+      else alert('Enter password');
+      return;
+    }
+    
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span><span>Signing in...</span>';
+    }
+    
+    const staff = ensureAdmin();
+    const user = staff.find(s => 
+      (s.mobile || '').replace(/\D/g, '') === mobile &&
+      s.password === password &&
+      s.active !== false
+    );
+    
+    if (!user) {
+      if (typeof toast === 'function') toast('Invalid mobile or password', 'error');
+      else alert('Invalid mobile or password\n\nUse: 03001234567 / admin123');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔓</span><span>Sign In</span>';
+      }
+      return;
+    }
+    
+    // Save session
+    if (keepCheck && keepCheck.checked) {
+      saveSession(user);
+    } else {
+      clearSession();
+      if (window.State) window.State.user = user;
+    }
+    
+    // Show app
+    if (typeof showApp === 'function') {
+      showApp();
+      if (typeof toast === 'function') toast(`Welcome, ${user.name}!`, 'success');
+    } else {
+      location.reload();
+    }
+  }
+  
+  // ─── GUEST ────────────────────────────────────────────
+  function doGuestNow() {
+    const guest = {
+      _id: 'guest_' + Date.now(),
+      name: 'Guest User',
+      mobile: '0000000000',
+      designation: 'phleb',
+      role: 'staff',
+      guest: true,
+      active: true
+    };
+    clearSession();
+    if (window.State) window.State.user = guest;
+    if (typeof showApp === 'function') showApp();
+    else location.reload();
+  }
+  
+  // ─── LOGOUT ───────────────────────────────────────────
+  function doLogoutNow() {
+    if (!confirm('Logout from app?')) return;
+    
+    clearSession();
+    
+    // Hide app, show login
+    const loginScreen = document.getElementById('loginScreen');
+    const appHeader = document.getElementById('appHeader');
+    const appContent = document.getElementById('appContent');
+    const bottomNav = document.getElementById('bottomNav');
+    const sidebar = document.getElementById('kihSidebar');
+    
+    if (loginScreen) loginScreen.style.display = 'flex';
+    if (appHeader) appHeader.classList.add('hidden');
+    if (appContent) appContent.classList.add('hidden');
+    if (bottomNav) bottomNav.classList.add('hidden');
+    if (sidebar) sidebar.remove();
+    
+    // Reset form
+    const mobileInput = document.getElementById('loginMobile');
+    const passwordInput = document.getElementById('loginPassword');
+    if (mobileInput) mobileInput.value = '03001234567';
+    if (passwordInput) passwordInput.value = '';
+    
+    if (typeof toast === 'function') toast('Logged out', 'success');
+  }
+  
+  // ─── ATTACH HANDLERS (Retries if needed) ──────────────
+  function attachHandlers() {
+    // Login
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn && loginBtn.dataset.authAttached !== 'true') {
+      loginBtn.onclick = function(e) { if (e) e.preventDefault(); doLoginNow(); };
+      loginBtn.dataset.authAttached = 'true';
+    }
+    
+    // Guest
+    const guestBtn = document.getElementById('guestBtn');
+    if (guestBtn && guestBtn.dataset.authAttached !== 'true') {
+      guestBtn.onclick = function(e) { if (e) e.preventDefault(); doGuestNow(); };
+      guestBtn.dataset.authAttached = 'true';
+    }
+    
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn && logoutBtn.dataset.authAttached !== 'true') {
+      logoutBtn.onclick = function(e) { if (e) e.preventDefault(); doLogoutNow(); };
+      logoutBtn.dataset.authAttached = 'true';
+    }
+  }
+  
+  // ─── AUTO-LOGIN ON PAGE LOAD ─────────────────────────
+  function autoLogin() {
+    const session = getSession();
+    if (session && session.user) {
+      if (window.State) window.State.user = session.user;
+      if (typeof showApp === 'function') showApp();
+      console.log('✅ Auto-logged in as:', session.user.name);
+      return true;
+    }
+    return false;
+  }
+  
+  // ─── INIT ─────────────────────────────────────────────
+  function init() {
+    ensureAdmin();
+    attachHandlers();
+    
+    // If session exists, auto-login (bypass login screen)
+    const session = getSession();
+    if (session && session.user) {
+      // Wait for showApp to be available
+      let tries = 0;
+      const tryAutoLogin = setInterval(() => {
+        tries++;
+        if (typeof showApp === 'function') {
+          clearInterval(tryAutoLogin);
+          if (window.State) window.State.user = session.user;
+          showApp();
+          console.log('✅ Auto-login success:', session.user.name);
+        }
+        if (tries > 30) clearInterval(tryAutoLogin);
+      }, 100);
+    } else {
+      // Ensure login screen visible
+      const loginScreen = document.getElementById('loginScreen');
+      if (loginScreen) loginScreen.style.display = 'flex';
+    }
+    
+    console.log('✅ Permanent Auth Fix ready');
+  }
+  
+  // Run
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  
+  // Retry attach in case elements load late
+  setTimeout(init, 500);
+  setTimeout(init, 1500);
+  setTimeout(init, 3000);
+  
+  // Expose functions globally
+  window.doLoginNow = doLoginNow;
+  window.doGuestNow = doGuestNow;
+  window.doLogoutNow = doLogoutNow;
+  window.clearSession = clearSession;
+  window.saveSession = saveSession;
+  window.getSession = getSession;
+})();
+
+console.log('%c✅✅✅ PERMANENT AUTH FIX — Login + Logout + Auto-login ready!', 'color:#10B981;font-weight:bold;font-size:13px;background:#0B0F1A;padding:4px 8px;border-radius:4px');
    
 </script>
 </body>
