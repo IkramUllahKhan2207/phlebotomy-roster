@@ -1,1074 +1,2825 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kulsum International Hospital - Phlebotomy Department Roster Management</title>
-  <!-- Firebase Compat SDK for real-time DB & Auth support -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <style>
-    :root {
-      --primary: #0284c7;
-      --primary-dark: #0369a1;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text-muted: #64748b;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background: var(--bg); color: var(--text); line-height: 1.5; padding-bottom: 60px; }
-    header { background: #ffffff; border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .logo-badge { background: #e0f2fe; color: var(--primary); font-weight: 800; font-size: 18px; padding: 6px 14px; border-radius: 8px; }
-    .nav-tabs { display: flex; gap: 8px; background: #ffffff; border-bottom: 1px solid var(--border); padding: 8px 24px; overflow-x: auto; }
-    .nav-btn { padding: 8px 16px; border: none; background: none; border-radius: 6px; font-weight: 600; cursor: pointer; color: var(--text-muted); font-size: 14px; }
-    .nav-btn.active { background: #e0f2fe; color: var(--primary); }
-    .container { max-width: 1400px; margin: 24px auto; padding: 0 16px; }
-    .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; transition: background 0.15s; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-secondary { background: #f1f5f9; color: #334155; }
-    .btn-secondary:hover { background: #e2e8f0; }
-    .btn-danger { background: #ef4444; color: #fff; }
-    .btn-success { background: #10b981; color: #fff; }
-    .table-container { overflow-x: auto; margin-top: 16px; border: 1px solid var(--border); border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; }
-    th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; z-index: 2; }
-    th.sunday-th { background: #fee2e2; color: #991b1b; }
-    th.holiday-th { background: #f3e8ff; color: #6b21a8; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; text-align: center; min-width: 32px; }
-    .badge-M { background: #e0f2fe; color: #0369a1; }
-    .badge-E { background: #ffedd5; color: #c2410c; }
-    .badge-N { background: #e0e7ff; color: #4338ca; }
-    .badge-N12 { background: #ede9fe; color: #6d28d9; }
-    .badge-E4 { background: #fef3c7; color: #b45309; }
-    .badge-D { background: #d1fae5; color: #047857; }
-    .badge-X { background: #f1f5f9; color: #475569; }
-    .badge-OFF { background: #fee2e2; color: #b91c1c; font-weight: 800; }
-    .badge-PH { background: #f3e8ff; color: #7e22ce; font-weight: 800; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
-    .modal-content { background: #fff; border-radius: 12px; width: 90%; max-width: 750px; max-height: 90vh; overflow-y: auto; padding: 24px; }
-    .step-indicator { display: flex; gap: 8px; margin-bottom: 20px; }
-    .step-dot { flex: 1; height: 6px; border-radius: 3px; background: #e2e8f0; }
-    .step-dot.active { background: var(--primary); }
-    .log-terminal { background: #0f172a; color: #f8fafc; font-family: monospace; font-size: 12px; padding: 12px; border-radius: 6px; max-height: 250px; overflow-y: auto; }
-    .log-item { margin-bottom: 4px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>KIH Phlebotomy · Companion</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   KIH PHLEBOTOMY COMPANION v4.0 — COMPLETE CSS
+   ═══════════════════════════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg-0:#FFFFFF;
+  --bg-1:#F9FAFB;
+  --bg-2:#F3F4F6;
+  --border:#E5E7EB;
+  --border-2:#D1D5DB;
+  --text:#111827;
+  --text-muted:#6B7280;
+  --text-dim:#9CA3AF;
+  --primary:#14B8A6;
+  --primary-d:#0D9488;
+  --primary-grad:linear-gradient(135deg,#14B8A6,#0D9488);
+  --primary-glow:rgba(20,184,166,0.25);
+  --success:#10B981;
+  --success-l:#34D399;
+  --danger:#EF4444;
+  --danger-l:#F87171;
+  --warning:#F59E0B;
+  --warning-l:#FBBF24;
+  --radius:12px;
+  --radius-lg:16px;
+  --radius-xl:24px;
+  --nav-h:70px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+  --shadow:0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg:0 12px 32px rgba(0,0,0,0.12);
+}
+
+html,body{
+  background:var(--bg-0);
+  color:var(--text);
+  min-height:100vh;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+body{padding-bottom:calc(var(--nav-h) + 20px)}
+
+/* UTILITY */
+.hidden{display:none !important}
+.flex{display:flex}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.gap8{gap:8px}.gap12{gap:12px}.gap16{gap:16px}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+.text-sm{font-size:13px}.text-xs{font-size:11px}
+.text-muted{color:var(--text-muted)}
+.text-center{text-align:center}
+.bold{font-weight:600}
+.num-mono{font-family:'JetBrains Mono',monospace}
+
+/* LOGIN */
+.login-screen{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;z-index:2000;
+  background:var(--bg-0);
+}
+.login-card{
+  width:100%;max-width:400px;
+  background:var(--bg-0);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+  padding:32px 24px;
+  box-shadow:var(--shadow-lg);
+}
+.login-logo{
+  width:72px;height:72px;
+  margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:38px;
+  background:var(--primary);
+  border-radius:20px;
+  color:#fff;
+  overflow:hidden;
+}
+.login-logo img{width:100%;height:100%;object-fit:contain}
+.login-card h1{
+  font-size:24px;font-weight:700;
+  text-align:center;
+  margin-bottom:6px;
+}
+.login-card .subtitle{
+  text-align:center;
+  color:var(--text-muted);
+  font-size:13.5px;
+  margin-bottom:24px;
+}
+.input-group{margin-bottom:16px}
+.input-group label{
+  display:block;font-size:13px;font-weight:500;
+  margin-bottom:6px;
+}
+.input-group input,
+.input-group select,
+.input-group textarea{
+  width:100%;padding:12px 14px;
+  background:var(--bg-0);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--text);font-size:14px;font-family:inherit;
+  outline:none;transition:all .15s ease;
+}
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px var(--primary-glow);
+}
+.input-group input::placeholder,
+.input-group textarea::placeholder{color:var(--text-dim)}
+.checkbox-row{
+  display:flex;align-items:center;gap:10px;
+  margin:14px 0 18px;
+  color:var(--text-muted);font-size:14px;
+  cursor:pointer;user-select:none;
+}
+.checkbox-row input[type="checkbox"]{
+  width:18px;height:18px;
+  accent-color:var(--primary);cursor:pointer;
+}
+.btn-primary{
+  width:100%;padding:14px;
+  background:var(--primary);
+  color:#fff;font-size:15px;font-weight:600;
+  border:none;border-radius:var(--radius);
+  cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .15s ease;
+}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-primary:active{transform:scale(0.98)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{
+  width:100%;padding:14px;
+  background:transparent;color:var(--text-muted);
+  font-size:14px;font-weight:500;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  cursor:pointer;font-family:inherit;
+  margin-top:10px;transition:all .15s ease;
+}
+.btn-secondary:hover{background:var(--bg-1);color:var(--text)}
+.login-footer{
+  margin-top:20px;text-align:center;
+  color:var(--text-dim);font-size:12px;
+}
+
+/* HEADER */
+.app-header{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;
+  background:var(--bg-0);
+  border-bottom:1px solid var(--border);
+}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-logo{
+  width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  background:var(--primary);border-radius:8px;
+  color:#fff;overflow:hidden;
+}
+.header-logo img{width:100%;height:100%;object-fit:contain}
+.header-title{font-size:15px;font-weight:700}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--success-l)}
+.header-right{display:flex;align-items:center;gap:8px}
+.icon-btn{
+  width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg-1);border:1px solid var(--border);
+  border-radius:8px;color:var(--text-muted);
+  font-size:16px;cursor:pointer;
+  position:relative;transition:all .15s ease;
+}
+.icon-btn:hover{background:var(--bg-2);color:var(--text)}
+.bell-badge{
+  position:absolute;top:-4px;right:-4px;
+  min-width:16px;height:16px;padding:0 4px;
+  background:var(--danger);color:#fff;
+  font-size:9px;font-weight:700;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+}
+.user-avatar{
+  width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:50%;font-size:13px;font-weight:700;
+  cursor:pointer;color:var(--text);
+}
+.logout-link{
+  color:var(--danger);font-size:13px;font-weight:500;
+  cursor:pointer;padding:8px 10px;border-radius:8px;
+}
+.logout-link:hover{background:rgba(239,68,68,0.08)}
+
+/* CONTENT */
+.app-content{
+  padding:16px;
+  max-width:100%;
+  margin:0 auto;
+}
+
+/* CARDS */
+.card{
+  background:var(--bg-0);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:18px;margin-bottom:14px;
+  box-shadow:var(--shadow-sm);
+  transition:all .15s ease;
+}
+.card:hover{box-shadow:var(--shadow);border-color:var(--border-2)}
+.card-title{
+  font-size:16px;font-weight:600;
+  margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-sub{color:var(--text-muted);font-size:13.5px;line-height:1.5}
+
+/* BADGES */
+.badge{
+  display:inline-flex;align-items:center;
+  padding:3px 10px;background:var(--bg-2);
+  border:1px solid var(--border);border-radius:20px;
+  font-size:11.5px;font-weight:500;
+  color:var(--text-muted);white-space:nowrap;
+}
+.badge-primary{background:rgba(20,184,166,0.1);border-color:rgba(20,184,166,0.3);color:var(--primary)}
+.badge-success{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#059669}
+.badge-danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#DC2626}
+.badge-warning{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#D97706}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn-sm{
+  padding:8px 14px;
+  background:var(--bg-1);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);
+  font-size:13px;font-weight:500;
+  font-family:inherit;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all .15s ease;white-space:nowrap;
+}
+.btn-sm:hover{background:var(--bg-2);border-color:var(--border-2)}
+.btn-sm:active{transform:scale(0.97)}
+.btn-sm:disabled{opacity:0.5;cursor:not-allowed}
+.btn-accent{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-accent:hover{filter:brightness(1.08)}
+.btn-success{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#059669}
+.btn-success:hover{background:rgba(16,185,129,0.2)}
+.btn-danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#DC2626}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.btn-block{width:100%;justify-content:center;padding:12px}
+
+/* BIG BUTTONS */
+.big-btn{
+  width:100%;padding:18px;border:none;
+  border-radius:var(--radius-lg);
+  font-family:inherit;font-size:16px;font-weight:600;
+  color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:12px;transition:all .15s ease;
+  background:var(--primary);
+}
+.big-btn:hover{filter:brightness(1.08)}
+.big-btn:active{transform:scale(0.98)}
+.big-btn-draw{background:#10B981}
+.big-btn-emergency{background:#EF4444}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg-0);border-top:1px solid var(--border);
+  display:flex;justify-content:space-around;
+  padding:6px 4px 10px;z-index:100;
+  overflow-x:auto;
+}
+.nav-item{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  padding:6px 6px;min-width:52px;
+  color:var(--text-dim);font-size:10px;font-weight:500;
+  cursor:pointer;border-radius:8px;
+  transition:all .15s ease;flex-shrink:0;
+}
+.nav-item .nav-icon{font-size:20px;line-height:1}
+.nav-item.active{color:var(--primary);background:rgba(20,184,166,0.1)}
+
+/* TOAST */
+.toast{
+  position:fixed;top:70px;left:50%;
+  transform:translateX(-50%) translateY(-20px);
+  min-width:240px;max-width:90vw;
+  padding:12px 18px;
+  background:var(--text);color:var(--bg-0);
+  border-radius:10px;font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadow-lg);z-index:3000;
+  opacity:0;pointer-events:none;
+  transition:all .2s ease;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:#10B981;color:#fff}
+.toast.error{background:#EF4444;color:#fff}
+.toast.warning{background:#F59E0B;color:#fff}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);
+  z-index:1000;display:none;
+  align-items:flex-end;justify-content:center;
+}
+.modal-overlay.active{display:flex}
+.modal-sheet{
+  width:100%;max-width:640px;max-height:92vh;
+  overflow-y:auto;background:var(--bg-0);
+  border-radius:20px 20px 0 0;
+  padding:20px 18px 30px;
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0.8}to{transform:translateY(0);opacity:1}}
+.modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:16px;
+}
+.modal-header h2{font-size:18px;font-weight:600;flex:1}
+.modal-close{
+  width:36px;height:36px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg-1);border:1px solid var(--border);
+  border-radius:50%;color:var(--text-muted);
+  font-size:16px;cursor:pointer;font-family:inherit;
+}
+.modal-close:hover{background:var(--bg-2);color:var(--text)}
+
+/* SEARCH */
+.search-bar{
+  width:100%;padding:11px 14px;
+  background:var(--bg-0);border:1px solid var(--border);
+  border-radius:40px;color:var(--text);
+  font-size:13.5px;font-family:inherit;
+  outline:none;margin-bottom:12px;
+}
+.search-bar:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+
+/* TABS */
+.tab-bar{
+  display:flex;gap:6px;overflow-x:auto;
+  padding:4px 0 10px;margin-bottom:8px;
+  scrollbar-width:none;
+}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{
+  padding:8px 14px;
+  background:var(--bg-1);border:1px solid var(--border);
+  border-radius:40px;color:var(--text-muted);
+  font-size:13px;font-weight:500;
+  font-family:inherit;cursor:pointer;
+  white-space:nowrap;
+}
+.tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* PROGRESS */
+.progress-bar{
+  height:6px;background:var(--bg-2);
+  border-radius:6px;overflow:hidden;margin:8px 0;
+}
+.progress-fill{
+  height:100%;background:var(--primary);
+  border-radius:6px;transition:width .3s ease;
+}
+
+/* LIST */
+.list-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:12px 14px;
+  background:var(--bg-0);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:8px;
+  transition:all .15s ease;
+}
+.list-row:hover{background:var(--bg-1);border-color:var(--border-2)}
+
+/* STAT */
+.stat-box{
+  background:var(--bg-1);border:1px solid var(--border);
+  border-radius:12px;padding:14px 10px;text-align:center;
+}
+.stat-box .num{font-size:24px;font-weight:700;line-height:1.1}
+.stat-box .lbl{font-size:11px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.05em}
+
+/* STEP */
+.step-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.step-item:last-child{border-bottom:none}
+.step-check{
+  width:24px;height:24px;flex-shrink:0;
+  border:2px solid var(--border-2);border-radius:8px;
+  background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:transparent;cursor:pointer;
+}
+.step-check.done{background:var(--success);border-color:var(--success);color:#fff}
+.step-content{flex:1}
+.step-title{font-size:14px;font-weight:500}
+.step-time{font-size:11px;color:var(--success);margin-top:3px}
+
+/* EMERGENCY */
+.emergency-card{
+  background:var(--bg-0);border:1px solid var(--border);
+  border-left:3px solid #EF4444;
+  border-radius:10px;padding:14px;margin-bottom:10px;
+}
+.emergency-card h3{font-size:15px;font-weight:600;margin-bottom:8px}
+.emergency-steps{list-style:none;color:var(--text-muted);font-size:13px;line-height:1.6}
+.emergency-steps li{padding-left:14px;position:relative;margin-bottom:4px}
+.emergency-steps li::before{content:'●';position:absolute;left:0;color:#EF4444;font-size:7px;top:6px}
+
+/* EMPTY */
+.empty-state{
+  text-align:center;padding:30px 16px;
+  color:var(--text-muted);
+}
+.empty-state .icon{font-size:40px;margin-bottom:10px;opacity:0.4}
+
+/* AVATAR */
+.avatar{
+  width:38px;height:38px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:50%;font-weight:600;font-size:13px;
+}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* ROSTER TABLE */
+.roster-table{width:100%;border-collapse:collapse;font-size:11px}
+.roster-table th{padding:8px 4px;color:var(--text-dim);font-weight:600;font-size:10px;text-transform:uppercase;text-align:center}
+.roster-table th:first-child{text-align:left}
+.roster-table td{padding:6px 4px;text-align:center;border-top:1px solid var(--border);font-size:11px}
+.roster-table td:first-child{text-align:left;font-weight:500;white-space:nowrap}
+.shift-pill{display:inline-block;padding:3px 6px;border-radius:5px;font-size:9.5px;font-weight:600;color:#fff;min-width:22px}
+.shift-M{background:#10B981}
+.shift-E{background:#6366F1}
+.shift-N{background:#8B5CF6}
+.shift-N12{background:#EC4899}
+.shift-E4{background:#3B82F6}
+.shift-D{background:#F43F5E}
+.shift-D2{background:#F43F5E}
+.shift-X{background:#6B7280}
+.shift-OFF{background:#374151}
+.shift-PH{background:#F59E0B}
+.shift-CPL{background:#8B5CF6}
+.shift-EL{background:#EC4899}
+.shift-CL{background:#14B8A6}
+.shift-ME{background:#DC2626}
+.shift-EN{background:#7C3AED}
+.shift-DX{background:#8B5CF6}
+.shift-XE{background:#F59E0B}
+.shift-MX{background:#10B981}
+
+/* DESKTOP */
+@media (min-width:1024px){
+  body{padding-bottom:0}
+  .app-header{padding:12px 24px}
+  .bottom-nav{display:none !important}
+  .app-content{
+    margin-left:220px !important;
+    max-width:calc(100% - 220px) !important;
+    width:calc(100% - 220px) !important;
+    padding:20px 28px !important;
+  }
+  .app-header .header-left{margin-left:220px}
+  .app-header .header-logo{display:none}
+  .kih-sidebar{
+    display:flex !important;
+    position:fixed;top:60px;left:0;bottom:0;width:220px;
+    background:var(--bg-0);border-right:1px solid var(--border);
+    flex-direction:column;padding:16px 10px;
+    z-index:90;overflow-y:auto;
+  }
+  .kih-sidebar-logo{
+    display:flex;align-items:center;gap:10px;
+    padding:6px 10px 16px;border-bottom:1px solid var(--border);
+    margin-bottom:10px;
+  }
+  .kih-sidebar-logo-icon{
+    width:36px;height:36px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--primary);border-radius:8px;
+    font-size:18px;color:#fff;overflow:hidden;
+  }
+  .kih-sidebar-logo-icon img{width:100%;height:100%;object-fit:contain}
+  .kih-sidebar-logo-text{font-size:14px;font-weight:700;line-height:1.2}
+  .kih-sidebar-logo-text small{display:block;font-size:10px;font-weight:400;color:var(--text-muted);margin-top:1px}
+  .kih-sidebar-nav{display:flex;flex-direction:column;gap:2px}
+  .kih-nav-item{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 12px;border-radius:8px;
+    color:var(--text-muted);font-size:13.5px;font-weight:500;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .kih-nav-item:hover{background:var(--bg-1);color:var(--text)}
+  .kih-nav-item.active{background:var(--primary);color:#fff}
+  .kih-nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+  .kih-nav-label{flex:1}
+  .kih-sidebar-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--border)}
+  .kih-user-card{
+    display:flex;align-items:center;gap:10px;
+    padding:10px;background:var(--bg-1);
+    border:1px solid var(--border);border-radius:10px;margin-bottom:6px;
+  }
+  .kih-user-avatar{
+    width:32px;height:32px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--primary);border-radius:50%;
+    font-weight:600;font-size:12px;color:#fff;flex-shrink:0;
+  }
+  .kih-user-info{flex:1;min-width:0}
+  .kih-user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kih-user-role{font-size:10px;color:var(--text-muted);margin-top:1px}
+  .kih-logout-btn{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 12px;border-radius:8px;
+    color:var(--danger);font-size:12.5px;font-weight:500;
+    cursor:pointer;background:transparent;
+    border:1px solid rgba(239,68,68,0.2);
+    width:100%;font-family:inherit;
+  }
+  .kih-logout-btn:hover{background:rgba(239,68,68,0.08)}
+}
+@media (max-width:1023px){.kih-sidebar{display:none !important}}
+@media (max-width:400px){
+  .app-content{padding:12px}
+  .card{padding:14px}
+}
+</style>
 </head>
 <body>
 
-  <header>
-    <div style="display: flex; align-items: center; gap: 14px;">
-      <div class="logo-badge">KIH</div>
-      <div>
-        <h1 style="font-size: 18px; font-weight: 800; color: #0f172a;">Kulsum International Hospital</h1>
-        <p style="font-size: 13px; color: var(--text-muted);">Phlebotomy Department • Islamabad</p>
-      </div>
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo" id="loginLogo">🩸</div>
+    <h1>KIH Phlebotomy</h1>
+    <p class="subtitle">Kulsum International Hospital · Islamabad</p>
+    <div class="input-group">
+      <label>Mobile Number</label>
+      <input type="tel" id="loginMobile" placeholder="03001234567" autocomplete="tel" inputmode="tel" maxlength="11" value="03001234567">
     </div>
-    <div style="display: flex; gap: 10px;">
-      <button class="btn btn-primary" onclick="openAutoGenWizard()">⚡ Auto Roster Wizard</button>
-      <button class="btn btn-secondary" onclick="exportExcel()">📥 Export Roster</button>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
     </div>
-  </header>
-
-  <nav class="nav-tabs">
-    <button class="nav-btn active" onclick="switchTab('roster')">📅 Roster Grid</button>
-    <button class="nav-btn" onclick="switchTab('daily')">🕒 Daily View</button>
-    <button class="nav-btn" onclick="switchTab('staff')">👥 Staff (12)</button>
-    <button class="nav-btn" onclick="switchTab('rules')">⚖️ Business Rules</button>
-    <button class="nav-btn" onclick="switchTab('audit')">📜 Audit Log</button>
-  </nav>
-
-  <main class="container">
-    <!-- Active Period Banner -->
-    <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <span style="font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase;">Active Roster Period</span>
-        <h2 id="periodLabel" style="font-size: 20px; font-weight: 700;">Loading period...</h2>
-      </div>
-      <div style="display: flex; gap: 12px; font-size: 13px;">
-        <div><strong>Total Staff:</strong> <span id="staffCountLabel">12</span></div>
-        <div><strong>Sunday Count:</strong> <span id="sunCountLabel">0</span></div>
-        <div><strong>OFF Target:</strong> <span id="offTargetLabel" style="color: #b91c1c; font-weight: bold;">0</span></div>
-        <div><strong>Status:</strong> <span id="statusBadge" class="badge badge-M">Draft</span></div>
-      </div>
-    </div>
-
-    <!-- Roster Grid Section -->
-    <section id="rosterSection" class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="font-size: 16px; font-weight: 700;">Monthly Shift Schedule</h3>
-        <span style="font-size: 12px; color: var(--text-muted);">Click any shift code to manually adjust</span>
-      </div>
-      <div class="table-container">
-        <table id="rosterTable">
-          <!-- Populated by JS -->
-        </table>
-      </div>
-    </section>
-
-    <!-- Daily View Section -->
-    <section id="dailySection" class="card" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 16px; font-weight: 700;">Daily Duty & Staffing Inspector</h3>
-        <input type="date" id="dailyDateSelect" onchange="renderDailyView()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
-      </div>
-      <div id="dailyInspectorContent"></div>
-    </section>
-
-    <!-- Staff Section -->
-    <section id="staffSection" class="card" style="display: none;">
-      <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Active Phlebotomy Roster Staff (12 Members)</h3>
-      <div id="staffListContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;"></div>
-    </section>
-
-    <!-- Rules Section -->
-    <section id="rulesSection" class="card" style="display: none;">
-      <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">KIH Mandatory Scheduling Rules</h3>
-      <ul style="font-size: 14px; line-height: 1.8; padding-left: 20px;">
-        <li><strong>OFF Target:</strong> Exactly equal to number of Sundays in period. Not more, not less.</li>
-        <li><strong>Relax Limits:</strong> Mon–Fri max 1; Saturday max 2; Sunday max 7; Gazetted Holiday max 7.</li>
-        <li><strong>Gender Rules:</strong> Female staff cannot be assigned N, N12, or E4. D (Gynee) is open.</li>
-        <li><strong>N/N12 Rest Rule:</strong> After night duty (N or N12), next day must be OFF or fallback E.</li>
-        <li><strong>Permanent Fixed Shift:</strong> Tasleem Fatima is permanently on E shift.</li>
-        <li><strong>Public Holiday (PH):</strong> Staff working on Gazetted Holiday receive compensatory PH or 1:1 CPL.</li>
-      </ul>
-    </section>
-
-    <!-- Audit Log Section -->
-    <section id="auditSection" class="card" style="display: none;">
-      <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">System Audit Trail</h3>
-      <div id="auditContainer"></div>
-    </section>
-  </main>
-
-  <!-- Wizard Modal Container -->
-  <div id="wizardModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 id="wizTitle" style="font-size: 18px; font-weight: 800;">Auto Roster Generation Wizard</h3>
-        <button onclick="closeWizard()" style="border: none; background: none; font-size: 20px; cursor: pointer;">✕</button>
-      </div>
-      <div class="step-indicator">
-        <div id="dot1" class="step-dot active"></div>
-        <div id="dot2" class="step-dot"></div>
-        <div id="dot3" class="step-dot"></div>
-        <div id="dot4" class="step-dot"></div>
-        <div id="dot5" class="step-dot"></div>
-        <div id="dot6" class="step-dot"></div>
-      </div>
-      <div id="wizBody">
-        <!-- Step content injected dynamically -->
-      </div>
-    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="keepSignedIn" checked>
+      <span>Keep me signed in (30 days)</span>
+    </label>
+    <button class="btn-primary" id="loginBtn"><span>🔓</span><span>Sign In</span></button>
+    <button class="btn-secondary" id="guestBtn">👤 Continue as Guest</button>
+    <div class="login-footer">Session persists 30 days · Demo Mode</div>
   </div>
+</div>
 
-  <script>
-    // State initialization
-    const STATE = {
-      staff: [
-  {
-    "_id": "staff_1",
-    "name": "Noreen Akhtar",
-    "gender": "Female",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-101",
-    "mobile": "+92-300-1110001",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "D",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_2",
-    "name": "Syed Sajid Hussain Shah",
-    "gender": "Male",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-102",
-    "mobile": "+92-300-1110002",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "N",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_3",
-    "name": "Habiba Fiaz",
-    "gender": "Female",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-103",
-    "mobile": "+92-300-1110003",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "D",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_4",
-    "name": "Qurat Ul Ain",
-    "gender": "Female",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-104",
-    "mobile": "+92-300-1110004",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "D",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_5",
-    "name": "Donia Bashir",
-    "gender": "Female",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-105",
-    "mobile": "+92-300-1110005",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "D",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_6",
-    "name": "Sheryar Khan",
-    "gender": "Male",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-106",
-    "mobile": "+92-300-1110006",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "E4",
-      "N12"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_7",
-    "name": "Waqas Aziz",
-    "gender": "Male",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-107",
-    "mobile": "+92-300-1110007",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "N12",
-      "N"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_8",
-    "name": "Bushra Safeer Awan",
-    "gender": "Female",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-108",
-    "mobile": "+92-300-1110008",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "D",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_9",
-    "name": "Asim Ali",
-    "gender": "Male",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-109",
-    "mobile": "+92-300-1110009",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "E4",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_10",
-    "name": "Muhammad Zakria",
-    "gender": "Male",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-110",
-    "mobile": "+92-300-1110010",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "N",
-      "X"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_11",
-    "name": "Imran Mubarak Abbasi",
-    "gender": "Male",
-    "designation": "Phlebotomist",
-    "employeeId": "KIH-PH-111",
-    "mobile": "+92-300-1110011",
-    "fixedShift": null,
-    "multiShifts": [
-      "M",
-      "E",
-      "N12",
-      "E4"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  },
-  {
-    "_id": "staff_12",
-    "name": "Tasleem Fatima",
-    "gender": "Female",
-    "designation": "Senior Phlebotomist",
-    "employeeId": "KIH-PH-112",
-    "mobile": "+92-300-1110012",
-    "fixedShift": "E",
-    "multiShifts": [
-      "E"
-    ],
-    "specialOffDates": [],
-    "active": true,
-    "archived": false,
-    "sundayOffCount": 0
-  }
-],
-      period: {
-  "id": "2026-08-26_2026-09-25",
-  "startDate": "2026-08-26",
-  "endDate": "2026-09-25",
-  "sundayCount": 4,
-  "holidays": [],
-  "offTarget": 4,
-  "status": "Approved",
-  "version": 1,
-  "createdAt": "2026-09-21T10:39:57.396Z",
-  "approvedAt": "2026-09-21T10:39:57.396Z",
-  "approvedBy": "System Auto-Init"
-},
-      grid: {
-  "2026-08-26": {
-    "staff_1": "OFF",
-    "staff_2": "E",
-    "staff_3": "D",
-    "staff_4": "E",
-    "staff_5": "E",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "M",
-    "staff_12": "E"
-  },
-  "2026-08-27": {
-    "staff_1": "M",
-    "staff_2": "OFF",
-    "staff_3": "D",
-    "staff_4": "E",
-    "staff_5": "E",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-08-28": {
-    "staff_1": "D",
-    "staff_2": "M",
-    "staff_3": "OFF",
-    "staff_4": "E",
-    "staff_5": "E",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-08-29": {
-    "staff_1": "D",
-    "staff_2": "OFF",
-    "staff_3": "M",
-    "staff_4": "E",
-    "staff_5": "X",
-    "staff_6": "OFF",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "E4",
-    "staff_10": "M",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-08-30": {
-    "staff_1": "OFF",
-    "staff_2": "OFF",
-    "staff_3": "OFF",
-    "staff_4": "OFF",
-    "staff_5": "OFF",
-    "staff_6": "M",
-    "staff_7": "E",
-    "staff_8": "OFF",
-    "staff_9": "M",
-    "staff_10": "N",
-    "staff_11": "E",
-    "staff_12": "OFF"
-  },
-  "2026-08-31": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "OFF",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-01": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "OFF",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-02": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "OFF",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "E4",
-    "staff_10": "E",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-03": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "M",
-    "staff_7": "OFF",
-    "staff_8": "M",
-    "staff_9": "E4",
-    "staff_10": "E",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-04": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "M",
-    "staff_7": "N12",
-    "staff_8": "OFF",
-    "staff_9": "E4",
-    "staff_10": "M",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-05": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "M",
-    "staff_7": "OFF",
-    "staff_8": "OFF",
-    "staff_9": "E4",
-    "staff_10": "X",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-06": {
-    "staff_1": "OFF",
-    "staff_2": "N",
-    "staff_3": "OFF",
-    "staff_4": "E",
-    "staff_5": "M",
-    "staff_6": "OFF",
-    "staff_7": "OFF",
-    "staff_8": "M",
-    "staff_9": "OFF",
-    "staff_10": "OFF",
-    "staff_11": "OFF",
-    "staff_12": "E"
-  },
-  "2026-09-07": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "E",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "OFF",
-    "staff_10": "M",
-    "staff_11": "M",
-    "staff_12": "E"
-  },
-  "2026-09-08": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "OFF",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-09": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "E",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "OFF",
-    "staff_12": "E"
-  },
-  "2026-09-10": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "E",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "N12",
-    "staff_12": "OFF"
-  },
-  "2026-09-11": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "X",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-12": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "X",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "OFF",
-    "staff_10": "OFF",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-13": {
-    "staff_1": "E",
-    "staff_2": "OFF",
-    "staff_3": "M",
-    "staff_4": "OFF",
-    "staff_5": "OFF",
-    "staff_6": "OFF",
-    "staff_7": "OFF",
-    "staff_8": "OFF",
-    "staff_9": "M",
-    "staff_10": "N",
-    "staff_11": "E",
-    "staff_12": "OFF"
-  },
-  "2026-09-14": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "X",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-15": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "X",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-16": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "X",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-17": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "X",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-18": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "X",
-    "staff_9": "M",
-    "staff_10": "E",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-19": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "M",
-    "staff_4": "M",
-    "staff_5": "M",
-    "staff_6": "N12",
-    "staff_7": "E",
-    "staff_8": "X",
-    "staff_9": "E4",
-    "staff_10": "E",
-    "staff_11": "OFF",
-    "staff_12": "OFF"
-  },
-  "2026-09-20": {
-    "staff_1": "OFF",
-    "staff_2": "N",
-    "staff_3": "OFF",
-    "staff_4": "OFF",
-    "staff_5": "OFF",
-    "staff_6": "E",
-    "staff_7": "M",
-    "staff_8": "M",
-    "staff_9": "OFF",
-    "staff_10": "OFF",
-    "staff_11": "OFF",
-    "staff_12": "E"
-  },
-  "2026-09-21": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "E",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "X",
-    "staff_12": "E"
-  },
-  "2026-09-22": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "X",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-23": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "X",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "E",
-    "staff_12": "E"
-  },
-  "2026-09-24": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "X",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "E",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "N12",
-    "staff_12": "E"
-  },
-  "2026-09-25": {
-    "staff_1": "D",
-    "staff_2": "E",
-    "staff_3": "E",
-    "staff_4": "X",
-    "staff_5": "M",
-    "staff_6": "E4",
-    "staff_7": "N12",
-    "staff_8": "M",
-    "staff_9": "M",
-    "staff_10": "M",
-    "staff_11": "E",
-    "staff_12": "E"
-  }
-},
-      holidays: [],
-      leaves: [],
-      auditLogs: []
-    };
+<!-- HEADER -->
+<header class="app-header hidden" id="appHeader">
+  <div class="header-left">
+    <div class="header-logo" id="headerLogo">🩸</div>
+    <div class="header-title">Phlebotomy</div>
+    <span class="online-dot" id="onlineDot"></span>
+  </div>
+  <div class="header-right">
+    <div class="icon-btn" id="notificationBell" title="Notifications">🔔<span class="bell-badge hidden" id="bellBadge">0</span></div>
+    <div class="user-avatar" id="userAvatar" title="Profile">?</div>
+    <span class="logout-link" id="logoutBtn">Logout</span>
+  </div>
+</header>
 
-    // Auto-init on load
-    window.addEventListener('DOMContentLoaded', () => {
-      initApp();
-    });
+<!-- MAIN -->
+<main class="app-content hidden" id="appContent"></main>
 
-    function initApp() {
-      // Check localStorage for saved updates
-      const savedGrid = localStorage.getItem('kih_grid');
-      if (savedGrid) { try { STATE.grid = JSON.parse(savedGrid); } catch(e){} }
-      renderHeaderInfo();
-      renderRosterTable();
-    }
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav hidden" id="bottomNav">
+  <div class="nav-item active" data-tab="home"><span class="nav-icon">🏠</span><span>Home</span></div>
+  <div class="nav-item" data-tab="tests"><span class="nav-icon">🧪</span><span>Tests</span></div>
+  <div class="nav-item" data-tab="protocols"><span class="nav-icon">📋</span><span>Protocols</span></div>
+  <div class="nav-item" data-tab="roster"><span class="nav-icon">📅</span><span>Roster</span></div>
+  <div class="nav-item" data-tab="swap"><span class="nav-icon">🔄</span><span>Swap</span></div>
+  <div class="nav-item" data-tab="learn"><span class="nav-icon">📚</span><span>Learn</span></div>
+  <div class="nav-item" data-tab="attend"><span class="nav-icon">✅</span><span>Attend</span></div>
+  <div class="nav-item" data-tab="cpl"><span class="nav-icon">📈</span><span>CPL</span></div>
+  <div class="nav-item" data-tab="more"><span class="nav-icon">⋯</span><span>More</span></div>
+</nav>
 
-    function renderHeaderInfo() {
-      document.getElementById('periodLabel').textContent = STATE.period.startDate + ' to ' + STATE.period.endDate;
-      document.getElementById('staffCountLabel').textContent = STATE.staff.filter(s => !s.archived).length;
-      document.getElementById('sunCountLabel').textContent = STATE.period.sundayCount;
-      document.getElementById('offTargetLabel').textContent = STATE.period.offTarget;
-      document.getElementById('statusBadge').textContent = STATE.period.status || 'Draft';
-    }
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal-sheet" id="modalSheet"></div></div>
 
-    function switchTab(tab) {
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      ['roster', 'daily', 'staff', 'rules', 'audit'].forEach(t => {
-        document.getElementById(t + 'Section').style.display = (t === tab) ? 'block' : 'none';
-      });
-      if (tab === 'daily') renderDailyView();
-      if (tab === 'staff') renderStaffList();
-      if (tab === 'audit') renderAuditLogs();
-    }
-
-    function getDatesInRange(start, end) {
-      const dates = [];
-      const curr = new Date(start + 'T12:00:00');
-      const last = new Date(end + 'T12:00:00');
-      while (curr <= last) {
-        dates.push(curr.toISOString().split('T')[0]);
-        curr.setDate(curr.getDate() + 1);
-      }
-      return dates;
-    }
-
-    function renderRosterTable() {
-      const table = document.getElementById('rosterTable');
-      const dates = getDatesInRange(STATE.period.startDate, STATE.period.endDate);
-      const activeStaff = STATE.staff.filter(s => !s.archived);
-
-      let html = '<thead><tr><th>Staff Name</th><th>Gender</th>';
-      dates.forEach(d => {
-        const dt = new Date(d + 'T12:00:00');
-        const isSun = dt.getDay() === 0;
-        const dayNum = dt.getDate();
-        const dayShort = dt.toLocaleDateString('en-US', { weekday: 'narrow' });
-        html += '<th class="' + (isSun ? 'sunday-th' : '') + '">' + dayNum + '<br><small>' + dayShort + '</small></th>';
-      });
-      html += '<th>Total Duty</th><th>OFF</th><th>PH</th></tr></thead><tbody>';
-
-      activeStaff.forEach(st => {
-        let duty = 0, off = 0, ph = 0;
-        html += '<tr><td><strong>' + st.name + '</strong>' + (st.fixedShift ? ' <span style="font-size:10px; color:#c2410c;">[Fixed ' + st.fixedShift + ']</span>' : '') + '</td><td>' + st.gender + '</td>';
-        dates.forEach(d => {
-          const code = (STATE.grid[d] && STATE.grid[d][st._id]) || '-';
-          if (code === 'OFF' || code === 'O') off++;
-          else if (code === 'PH') ph++;
-          else if (code !== '-' && !['EL','CL','SL'].includes(code)) duty++;
-
-          const badgeCls = 'badge-' + (code === 'O' ? 'OFF' : code);
-          html += '<td><span class="badge ' + badgeCls + '">' + code + '</span></td>';
-        });
-        html += '<td><strong>' + duty + '</strong></td><td style="color:#b91c1c; font-weight:bold;">' + off + '</td><td>' + ph + '</td></tr>';
-      });
-
-      html += '</tbody>';
-      table.innerHTML = html;
-    }
-
-    function renderStaffList() {
-      const container = document.getElementById('staffListContainer');
-      container.innerHTML = STATE.staff.map(s => `
-        <div style="border: 1px solid var(--border); border-radius: 8px; padding: 14px; background: #fff;">
-          <h4 style="font-size: 15px; font-weight: 700;">${s.name}</h4>
-          <p style="font-size: 12px; color: var(--text-muted);">${s.gender} • ${s.designation}</p>
-          <div style="margin-top: 8px; font-size: 13px;">
-            <div><strong>Fixed Shift:</strong> ${s.fixedShift || 'None (Rotation)'}</div>
-            <div><strong>Preferences:</strong> ${(s.multiShifts || []).join(' → ') || 'Standard'}</div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderDailyView() {
-      const dateSelect = document.getElementById('dailyDateSelect');
-      if (!dateSelect.value) dateSelect.value = STATE.period.startDate;
-      const d = dateSelect.value;
-      const activeStaff = STATE.staff.filter(s => !s.archived);
-
-      const byShift = {};
-      activeStaff.forEach(st => {
-        const code = (STATE.grid[d] && STATE.grid[d][st._id]) || 'Unassigned';
-        if (!byShift[code]) byShift[code] = [];
-        byShift[code].push(st.name);
-      });
-
-      let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">';
-      Object.entries(byShift).forEach(([code, names]) => {
-        html += `
-          <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fafafa;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span class="badge badge-${code}">${code}</span>
-              <strong style="font-size: 13px;">${names.length} staff</strong>
-            </div>
-            <ul style="font-size: 13px; list-style: none;">
-              ${names.map(n => '<li>• ' + n + '</li>').join('')}
-            </ul>
-          </div>
-        `;
-      });
-      html += '</div>';
-      document.getElementById('dailyInspectorContent').innerHTML = html;
-    }
-
-    function openAutoGenWizard() {
-      document.getElementById('wizardModal').style.display = 'flex';
-      renderWizardStep(1);
-    }
-
-    function closeWizard() {
-      document.getElementById('wizardModal').style.display = 'none';
-    }
-
-    function renderWizardStep(step) {
-      for (let i = 1; i <= 6; i++) {
-        const dot = document.getElementById('dot' + i);
-        if (dot) dot.className = 'step-dot ' + (i <= step ? 'active' : '');
-      }
-
-      const body = document.getElementById('wizBody');
-      if (step === 1) {
-        body.innerHTML = `
-          <h4 style="font-weight:700; margin-bottom:10px;">Step 1: Period Selection</h4>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Default KIH roster cycle runs from 26th of month to 25th of next month.</p>
-          <div style="display:flex; gap:16px; margin-bottom:20px;">
-            <div><label style="font-size:12px; font-weight:bold;">Start Date</label><br><input type="date" id="wStart" value="${STATE.period.startDate}" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
-            <div><label style="font-size:12px; font-weight:bold;">End Date</label><br><input type="date" id="wEnd" value="${STATE.period.endDate}" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
-          </div>
-          <div style="display:flex; justify-content:flex-end;"><button class="btn btn-primary" onclick="renderWizardStep(2)">Next: Gazetted Holidays →</button></div>
-        `;
-      } else if (step === 2) {
-        body.innerHTML = `
-          <h4 style="font-weight:700; margin-bottom:10px;">Step 2: Gazetted Holidays</h4>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Gazetted holidays share Sunday shift patterns (2M + 2E + 1N), with PH compensation for working staff.</p>
-          <div style="padding:12px; background:#f8fafc; border:1px solid var(--border); border-radius:6px; margin-bottom:20px; font-size:13px;">
-            No additional gazetted holidays configured for this month.
-          </div>
-          <div style="display:flex; justify-content:space-between;"><button class="btn btn-secondary" onclick="renderWizardStep(1)">← Back</button><button class="btn btn-primary" onclick="renderWizardStep(3)">Next: Source Mode →</button></div>
-        `;
-      } else if (step === 3) {
-        body.innerHTML = `
-          <h4 style="font-weight:700; margin-bottom:10px;">Step 3: Generation Mode</h4>
-          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
-            <label style="display:flex; gap:10px; align-items:center; padding:12px; border:1px solid var(--primary); border-radius:8px; background:#f0f9ff; cursor:pointer;">
-              <input type="radio" name="wizMode" value="auto" checked>
-              <div><strong>Automatic Engine</strong><div style="font-size:12px; color:var(--text-muted);">Uses all 12 sections of KIH scheduling rules, strict OFF targets, and rest constraints.</div></div>
-            </label>
-          </div>
-          <div style="display:flex; justify-content:space-between;"><button class="btn btn-secondary" onclick="renderWizardStep(2)">← Back</button><button class="btn btn-primary" onclick="renderWizardStep(4)">Next: Summary →</button></div>
-        `;
-      } else if (step === 4) {
-        body.innerHTML = `
-          <h4 style="font-weight:700; margin-bottom:10px;">Step 4: Rule Summary</h4>
-          <div style="font-size:13px; line-height:1.8; margin-bottom:20px; background:#f8fafc; padding:14px; border-radius:8px;">
-            <div>• <strong>Active Staff:</strong> 12 members (6 Male, 6 Female)</div>
-            <div>• <strong>Fixed Shift:</strong> Tasleem Fatima = E (Permanent)</div>
-            <div>• <strong>OFF Target:</strong> ${STATE.period.sundayCount} Sundays = ${STATE.period.sundayCount} OFF per staff</div>
-            <div>• <strong>Night Rest:</strong> N/N12 duty requires OFF or E next day</div>
-          </div>
-          <div style="display:flex; justify-content:space-between;"><button class="btn btn-secondary" onclick="renderWizardStep(3)">← Back</button><button class="btn btn-primary" onclick="runGenerationSimulation()">⚡ Generate Roster Now</button></div>
-        `;
-      } else if (step === 5) {
-        body.innerHTML = `
-          <h4 style="font-weight:700; margin-bottom:10px;">Step 5: Engine Conflict Log</h4>
-          <div id="wizLog" class="log-terminal">
-            <div class="log-item">🚀 Engine initialized.</div>
-            <div class="log-item">🔒 Applied fixed shifts & profile rules.</div>
-            <div class="log-item">☀️ Distributed Sunday OFF slots (Fairness index updated).</div>
-            <div class="log-item">🔹 Solved daily shift requirements.</div>
-            <div class="log-item">✅ All constraints validated successfully!</div>
-          </div>
-          <div style="display:flex; justify-content:flex-end; margin-top:16px;"><button class="btn btn-primary" onclick="renderWizardStep(6)">Proceed to Validation & Save →</button></div>
-        `;
-      } else if (step === 6) {
-        body.innerHTML = `
-          <h4 style="font-weight:700; margin-bottom:10px;">Step 6: Final Validation</h4>
-          <div style="padding:14px; background:#ecfdf5; border:1px solid #10b981; border-radius:8px; margin-bottom:20px; font-size:13px; color:#065f46;">
-            <strong>✓ Roster Validated:</strong> All 12 staff satisfy exact OFF targets, gender rules, and night rest rules with zero empty cells.
-          </div>
-          <div style="display:flex; justify-content:space-between;"><button class="btn btn-secondary" onclick="renderWizardStep(4)">← Back</button><button class="btn btn-success" onclick="approveAndSaveRoster()">💾 Approve & Save Roster</button></div>
-        `;
-      }
-    }
-
-    function runGenerationSimulation() {
-      renderWizardStep(5);
-    }
-
-    function approveAndSaveRoster() {
-      STATE.period.status = 'Approved';
-      localStorage.setItem('kih_grid', JSON.stringify(STATE.grid));
-      renderHeaderInfo();
-      renderRosterTable();
-      closeWizard();
-      alert('Roster approved and saved successfully!');
-    }
-
-    function exportExcel() {
-      window.print();
-    }
-  </script>
+<script src="app-part1.js"></script>
+<script src="app-part2.js"></script>
+<script src="app-part3.js"></script>
+<script src="app-part4.js"></script>
+<script>bootApp();</script>
 </body>
 </html>
+/* ═══════════════════════════════════════════════════════════
+   KIH PHLEBOTOMY v4.0 — PART 1: CORE
+   ═══════════════════════════════════════════════════════════ */
+
+/* FIREBASE */
+const firebaseConfig = {
+  apiKey: "AIzaSyDemo_REPLACE_WITH_YOUR_REAL_KEY",
+  authDomain: "kih-phlebotomy.firebaseapp.com",
+  databaseURL: "https://kih-phlebotomy-default-rtdb.firebaseio.com",
+  projectId: "kih-phlebotomy",
+  storageBucket: "kih-phlebotomy.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000000000"
+};
+const IS_DEMO = true;
+let db = null, auth = null;
+try {
+  if (!IS_DEMO && typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    auth = firebase.auth();
+  }
+} catch(e) { console.warn('Firebase skipped (demo)'); }
+
+/* DESIGNATIONS */
+const DESIGNATIONS = [
+  { id: 'phleb', code: 'PLB', name: 'Phlebotomist', icon: '🩸' },
+  { id: 'sr', code: 'SPL', name: 'Sr. Phlebotomist', icon: '⭐' },
+  { id: 'jr', code: 'JPL', name: 'Jr. Phlebotomist', icon: '🎓' },
+  { id: 'tech', code: 'TCH', name: 'Technologist', icon: '🔬' }
+];
+
+/* SHIFTS LIBRARY */
+const SHIFTS_LIBRARY = {
+  M:   { code:'M',   name:'Morning',      start:'07:00', end:'15:00', duration:8,  color:'#10B981', gender:'Any' },
+  D:   { code:'D',   name:'Day',          start:'09:00', end:'17:00', duration:8,  color:'#F43F5E', gender:'Any' },
+  D2:  { code:'D2',  name:'Day 2',        start:'10:00', end:'18:00', duration:8,  color:'#F43F5E', gender:'Any' },
+  E:   { code:'E',   name:'Evening',      start:'15:00', end:'23:00', duration:8,  color:'#6366F1', gender:'Any' },
+  N:   { code:'N',   name:'Night',        start:'23:00', end:'07:00', duration:8,  color:'#8B5CF6', gender:'Male' },
+  N12: { code:'N12', name:'Extended Night',start:'00:00', end:'08:00', duration:12, color:'#EC4899', gender:'Male' },
+  E4:  { code:'E4',  name:'Short Evening',start:'16:00', end:'00:00', duration:8,  color:'#3B82F6', gender:'Any' },
+  X:   { code:'X',   name:'X-Duty',       start:'11:00', end:'19:00', duration:8,  color:'#6B7280', gender:'Any' },
+  OFF: { code:'OFF', name:'Off',          start:'-',     end:'-',     duration:0,  color:'#374151', gender:'Any' },
+  PH:  { code:'PH',  name:'Public Holiday',start:'-',    end:'-',     duration:0,  color:'#F59E0B', gender:'Any' },
+  CPL: { code:'CPL', name:'Compensated Leave',start:'-', end:'-',     duration:0,  color:'#8B5CF6', gender:'Any' },
+  EL:  { code:'EL',  name:'Earned Leave', start:'-',     end:'-',     duration:0,  color:'#EC4899', gender:'Any' },
+  CL:  { code:'CL',  name:'Casual Leave', start:'-',     end:'-',     duration:0,  color:'#14B8A6', gender:'Any' },
+  ME:  { code:'ME',  name:'Morning+Evening',start:'11:00',end:'23:00',duration:12, color:'#DC2626', gender:'Male' },
+  EN:  { code:'EN',  name:'Evening+Night', start:'21:00',end:'07:00', duration:10, color:'#7C3AED', gender:'Male' },
+  DX:  { code:'DX',  name:'Day+X',        start:'09:00', end:'19:00', duration:10, color:'#8B5CF6', gender:'Male' },
+  XE:  { code:'XE',  name:'X+Evening',    start:'11:00', end:'23:00', duration:12, color:'#F59E0B', gender:'Male' },
+  MX:  { code:'MX',  name:'Morning+X',    start:'07:00', end:'19:00', duration:12, color:'#10B981', gender:'Male' }
+};
+
+/* STATE */
+const State = {
+  user: null,
+  session: null,
+  online: navigator.onLine,
+  activeTab: 'home',
+  protocolTab: 'order',
+  staff: [],
+  tests: [],
+  policies: [],
+  historyForms: [],
+  notifications: [],
+  swapRequests: [],
+  leaveRequests: [],
+  attendance: [],
+  cplActivities: [],
+  rejections: [],
+  emergencyCards: [],
+  difficultDraws: [],
+  scripts: [],
+  shiftsSimple: [],
+  rosterData: null,
+  rosterPeriod: null,
+  holidays: [],
+  sundayIndex: 0,
+  unreadCount: 0,
+  settings: {
+    hospitalName: 'Kulsum International Hospital',
+    hospitalAddress: 'Islamabad, Pakistan',
+    hospitalPhone: '+92 51 XXXX XXXX',
+    headerText: 'PHLEBOTOMY'
+  }
+};
+
+/* HELPERS */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
+
+function toast(msg, type = '') {
+  const t = $('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast ' + type, 2600);
+}
+
+function uid() { return '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function fmtTime(d = new Date()) { return d.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }); }
+function fmtDate(d = new Date()) { return d.toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); }
+function fmtDateTime(ts) { const d = new Date(ts); return d.toLocaleString('en-PK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+function fmtDisplay(dateStr) { const d = new Date(dateStr); return d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function dayShort(date) { return new Date(date).toLocaleDateString('en-PK', { weekday: 'short' }); }
+function isSunday(date) { return new Date(date).getDay() === 0; }
+function isSaturday(date) { return new Date(date).getDay() === 6; }
+function isHoliday(date, holidays = State.holidays) {
+  const key = typeof date === 'string' ? date : new Date(date).toISOString().split('T')[0];
+  return holidays.some(h => h.date === key);
+}
+
+function dateRange(start, end) {
+  const dates = [];
+  let cur = new Date(start);
+  const last = new Date(end);
+  while (cur <= last) {
+    dates.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const p = name.trim().split(/\s+/);
+  return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || '?';
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function normalizeMobile(m) {
+  if (!m) return '';
+  let s = String(m).replace(/\D/g, '');
+  if (s.startsWith('92')) s = '0' + s.slice(2);
+  if (!s.startsWith('0')) s = '0' + s;
+  return s;
+}
+
+function formatMobile(m) {
+  const s = normalizeMobile(m);
+  if (s.length === 11) return `${s.slice(0,4)} ${s.slice(4)}`;
+  return s;
+}
+
+/* LOCAL DB */
+const LocalDB = {
+  KEY_PREFIX: 'kih_db_',
+  get(key, def = []) {
+    try { const raw = localStorage.getItem(this.KEY_PREFIX + key); return raw ? JSON.parse(raw) : def; }
+    catch { return def; }
+  },
+  set(key, val) {
+    try { localStorage.setItem(this.KEY_PREFIX + key, JSON.stringify(val)); return true; }
+    catch(e) { return false; }
+  },
+  push(key, item) {
+    const arr = this.get(key, []);
+    if (!item._id) item._id = uid();
+    if (!item.createdAt) item.createdAt = Date.now();
+    arr.push(item);
+    this.set(key, arr);
+    return item;
+  },
+  update(key, id, updates) {
+    const arr = this.get(key, []);
+    const idx = arr.findIndex(x => x._id === id);
+    if (idx === -1) return null;
+    arr[idx] = { ...arr[idx], ...updates, updatedAt: Date.now() };
+    this.set(key, arr);
+    return arr[idx];
+  },
+  remove(key, id) {
+    const arr = this.get(key, []);
+    const filtered = arr.filter(x => x._id !== id);
+    this.set(key, filtered);
+    return filtered;
+  }
+};
+
+/* SEED DATA */
+function getDefaultTests() {
+  return [
+    { _id: uid(), name: 'CBC', tube: 'EDTA (Lavender)', order: 5, volume: '2-3 mL', tat: '2 hrs', urgent: '30 min', category: 'Hematology', createdAt: Date.now() },
+    { _id: uid(), name: 'PT/INR', tube: 'Citrate (Blue)', order: 2, volume: '2.7 mL', tat: '4 hrs', urgent: '1 hr', category: 'Coagulation', createdAt: Date.now() },
+    { _id: uid(), name: 'LFT', tube: 'SST (Gold)', order: 3, volume: '3-5 mL', tat: '6 hrs', urgent: '2 hrs', category: 'Chemistry', createdAt: Date.now() },
+    { _id: uid(), name: 'RFT', tube: 'SST (Gold)', order: 3, volume: '3-5 mL', tat: '6 hrs', urgent: '2 hrs', category: 'Chemistry', createdAt: Date.now() },
+    { _id: uid(), name: 'Blood Sugar (F)', tube: 'Fluoride (Grey)', order: 6, volume: '2 mL', tat: '1 hr', urgent: '30 min', category: 'Chemistry', createdAt: Date.now() },
+    { _id: uid(), name: 'Blood Culture', tube: 'Culture Bottle', order: 1, volume: '10 mL', tat: '48 hrs', urgent: '24 hrs', category: 'Microbiology', createdAt: Date.now() },
+    { _id: uid(), name: 'TSH', tube: 'SST (Gold)', order: 3, volume: '3 mL', tat: '6 hrs', urgent: '3 hrs', category: 'Hormones', createdAt: Date.now() },
+    { _id: uid(), name: 'D-Dimer', tube: 'Citrate (Blue)', order: 2, volume: '2.7 mL', tat: '4 hrs', urgent: '1 hr', category: 'Coagulation', createdAt: Date.now() }
+  ];
+}
+
+function getDefaultEmergency() {
+  return [
+    { _id: uid(), title: '🩸 Needle Stick Injury', steps: ['Wash with soap + water (5 min)', 'Clean with alcohol', 'Notify supervisor within 1 hour', 'Fill incident form', 'Blood test (HIV, Hep B, Hep C)', 'Start PEP within 2 hours'], createdAt: Date.now() },
+    { _id: uid(), title: '😵 Patient Fainting', steps: ['Lay patient down (head low)', 'Elevate legs', 'Loosen tight clothes', 'Cold water on face', 'If not recovered in 1 min → call 1122'], createdAt: Date.now() },
+    { _id: uid(), title: '🩹 Hematoma', steps: ['Remove needle immediately', 'Firm pressure 5-10 min', 'Ice pack 15 min', 'Keep arm elevated'], createdAt: Date.now() },
+    { _id: uid(), title: '🦵 Nerve Injury', steps: ['Remove needle immediately', 'Ask patient: tingling, numbness, pain?', 'If yes → doctor immediately', 'Fill incident report'], createdAt: Date.now() },
+    { _id: uid(), title: '💉 Arterial Puncture', steps: ['Remove needle immediately', 'Firm pressure 5-10 min', 'Ice pack', 'Inform doctor'], createdAt: Date.now() },
+    { _id: uid(), title: '🩸 Continuous Bleeding', steps: ['Apply pressure 5-10 min', 'Tight bandage', 'If bleeding after 15 min → doctor'], createdAt: Date.now() }
+  ];
+}
+
+function getDefaultDifficult() {
+  return [
+    { _id: uid(), title: 'Rolling Vein', problem: 'Vein slips when touched', solution: 'Anchor both sides, insert slowly, 30° angle', createdAt: Date.now() },
+    { _id: uid(), title: 'Collapsed Vein', problem: 'Vein collapsed by vacuum', solution: 'Remove tourniquet, wait 5 min, use other vein', createdAt: Date.now() },
+    { _id: uid(), title: 'Fragile Vein', problem: 'Thin vein, bursts easily', solution: '23G/25G needle, butterfly, slow draw', createdAt: Date.now() },
+    { _id: uid(), title: 'No Vein Visible', problem: 'Cannot see or feel vein', solution: 'Warm water, tourniquet, tapping, vein finder', createdAt: Date.now() },
+    { _id: uid(), title: 'Sclerosed Vein', problem: 'Hard, cord-like vein', solution: 'Do not attempt. Use other vein', createdAt: Date.now() },
+    { _id: uid(), title: 'Edematous Patient', problem: 'Swollen arm', solution: 'Use other arm, elevate 5 min, refer doctor', createdAt: Date.now() }
+  ];
+}
+
+function getDefaultScripts() {
+  return [
+    { _id: uid(), title: 'First-Time Patient', en: 'Assalam-o-Alaikum! My name is [name], I will take your blood sample.', ur: 'السلام علیکم! میرا نام [name] ہے، میں آپ کا خون کا نمونہ لوں گا۔', createdAt: Date.now() },
+    { _id: uid(), title: 'Nervous Patient', en: 'I understand. Please look away. I will tell you each step.', ur: 'میں سمجھ سکتا ہوں۔ آپ اپنی نظر دوسری طرف کر لیں۔', createdAt: Date.now() },
+    { _id: uid(), title: 'Pediatric', en: 'You are so brave. This is a tiny needle. If you don\'t cry, you get a sticker!', ur: 'آپ بہت بہادر ہو۔ یہ ایک چھوٹی سی سوئی ہے۔', createdAt: Date.now() },
+    { _id: uid(), title: 'Elderly', en: 'Assalam-o-Alaikum uncle/aunty, how are you?', ur: 'السلام علیکم انکل/آنٹی، کیسے ہیں آپ؟', createdAt: Date.now() },
+    { _id: uid(), title: 'Refusing Patient', en: 'I understand. The doctor ordered this test. Please talk to supervisor if you don\'t want it now.', ur: 'میں سمجھتا ہوں۔ ڈاکٹر نے ٹیسٹ تجویز کیا ہے۔', createdAt: Date.now() },
+    { _id: uid(), title: 'Fainted Before', en: 'You fainted before? Today I will take sample while you are lying down.', ur: 'آپ پہلے بے ہوش ہوئے تھے؟ آج میں آپ کو لٹا کر نمونہ لوں گا۔', createdAt: Date.now() }
+  ];
+}
+
+function getDefaultPolicies() {
+  return [
+    { _id: uid(), title: 'Hand Hygiene Policy', body: 'All phlebotomists must perform hand hygiene before and after every patient contact using alcohol-based sanitizer or soap+water for 40 seconds.', createdAt: Date.now() },
+    { _id: uid(), title: 'Needle Safety Policy', body: 'Never recap needles. Use safety-engineered devices. Dispose immediately in sharps container. Report all needle stick injuries within 1 hour.', createdAt: Date.now() },
+    { _id: uid(), title: 'Patient Identification', body: 'Verify patient identity using 3 identifiers: full name, MR number, and date of birth.', createdAt: Date.now() },
+    { _id: uid(), title: 'Specimen Labeling', body: 'Label all tubes at bedside, immediately after collection. Include patient name, MR number, date, time, and collector initials.', createdAt: Date.now() },
+    { _id: uid(), title: 'Infection Control', body: 'Follow standard precautions. Wear gloves for all draws. Use spirit swab for 30 sec before puncture.', createdAt: Date.now() }
+  ];
+}
+
+const DEFAULT_SHIFTS = [
+  { _id:'sh_M',   code:'M',   name:'Morning',       start:'07:00', end:'15:00', duration:8, color:'#10B981', gender:'Any', staffMonFri:5, staffSat:4, staffSun:3, isSpecial:false, active:true },
+  { _id:'sh_E',   code:'E',   name:'Evening',       start:'15:00', end:'23:00', duration:8, color:'#6366F1', gender:'Any', staffMonFri:3, staffSat:3, staffSun:3, isSpecial:false, active:true },
+  { _id:'sh_N',   code:'N',   name:'Night',         start:'23:00', end:'07:00', duration:8, color:'#8B5CF6', gender:'Male',staffMonFri:2, staffSat:2, staffSun:2, isSpecial:false, active:true },
+  { _id:'sh_D',   code:'D',   name:'Day',           start:'09:00', end:'17:00', duration:8, color:'#F43F5E', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:true, active:true },
+  { _id:'sh_D2',  code:'D2',  name:'Day 2',         start:'10:00', end:'18:00', duration:8, color:'#F43F5E', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:true, active:true },
+  { _id:'sh_N12', code:'N12', name:'Extended Night',start:'00:00', end:'08:00', duration:12,color:'#EC4899', gender:'Male',staffMonFri:0, staffSat:0, staffSun:0, isSpecial:true, active:true },
+  { _id:'sh_E4',  code:'E4',  name:'Short Evening', start:'16:00', end:'00:00', duration:8, color:'#3B82F6', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:true, active:true },
+  { _id:'sh_X',   code:'X',   name:'X-Duty',        start:'11:00', end:'19:00', duration:8, color:'#6B7280', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:false, active:true },
+  { _id:'sh_OFF', code:'OFF', name:'Off',           start:'-',     end:'-',     duration:0, color:'#374151', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:false, active:true },
+  { _id:'sh_PH',  code:'PH',  name:'Public Holiday',start:'-',     end:'-',     duration:0, color:'#F59E0B', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:false, active:true },
+  { _id:'sh_CPL', code:'CPL', name:'Compensated Leave',start:'-',end:'-',      duration:0, color:'#8B5CF6', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:false, active:true },
+  { _id:'sh_EL',  code:'EL',  name:'Earned Leave',  start:'-',     end:'-',     duration:0, color:'#EC4899', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:false, active:true },
+  { _id:'sh_CL',  code:'CL',  name:'Casual Leave',  start:'-',     end:'-',     duration:0, color:'#14B8A6', gender:'Any', staffMonFri:0, staffSat:0, staffSun:0, isSpecial:false, active:true }
+];
+
+/* SESSION */
+const SESSION_KEY = 'kih_session_v4';
+const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
+
+function saveSession(user) {
+  const data = { user, expires: Date.now() + SESSION_TTL };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  State.session = data;
+}
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (Date.now() > d.expires) { localStorage.removeItem(SESSION_KEY); return null; }
+    return d;
+  } catch { return null; }
+}
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  State.session = null;
+  State.user = null;
+}
+
+const DEFAULT_ADMIN = {
+  _id: 'admin_default',
+  name: 'Administrator',
+  mobile: '03001234567',
+  password: 'admin123',
+  designation: 'sr',
+  role: 'admin',
+  gender: 'Male',
+  fixedShift: 'M',
+  shift: 'M',
+  multiShifts: [],
+  station: 'OPD',
+  notifications: true,
+  active: true,
+  createdAt: Date.now()
+};
+
+function isAdmin() { return State.user && State.user.role === 'admin'; }
+function isGuest() { return State.user && State.user.guest; }
+function canManage() { return isAdmin() && !isGuest(); }
+
+console.log('%c🩸 KIH Phlebotomy v4.0 · Part 1 loaded', 'color:#14B8A6;font-weight:bold;font-size:13px');
+      /* ═══════════════════════════════════════════════════════════
+   KIH PHLEBOTOMY v4.0 — PART 2: AUTH + RENDER
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── AUTH ─── */
+async function doLogin() {
+  const mobileInput = $('loginMobile');
+  const passwordInput = $('loginPassword');
+  const keep = $('keepSignedIn');
+  const btn = $('loginBtn');
+  
+  if (!mobileInput || !passwordInput) return;
+  
+  const mobile = normalizeMobile(mobileInput.value.trim());
+  const password = passwordInput.value.trim();
+  
+  if (!mobile || mobile.length < 10) { toast('Enter valid mobile', 'error'); return; }
+  if (!password) { toast('Enter password', 'error'); return; }
+  
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳</span><span>Signing in...</span>'; }
+  
+  let staffList = LocalDB.get('staff', []);
+  if (staffList.length === 0) {
+    LocalDB.set('staff', [DEFAULT_ADMIN]);
+    staffList = [DEFAULT_ADMIN];
+  }
+  
+  const user = staffList.find(s => 
+    normalizeMobile(s.mobile) === mobile && 
+    s.password === password && 
+    s.active !== false
+  );
+  
+  if (!user) {
+    toast('Invalid mobile or password', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔓</span><span>Sign In</span>'; }
+    return;
+  }
+  
+  State.user = user;
+  if (keep && keep.checked) saveSession(user);
+  else clearSession();
+  
+  if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔓</span><span>Sign In</span>'; }
+  showApp();
+  toast(`Welcome, ${user.name.split(' ')[0]}!`, 'success');
+}
+
+function doGuestLogin() {
+  const guest = {
+    _id: 'guest_' + Date.now(),
+    name: 'Guest User',
+    mobile: '0000000000',
+    designation: 'phleb',
+    role: 'staff',
+    guest: true,
+    active: true
+  };
+  State.user = guest;
+  clearSession();
+  showApp();
+  toast('Guest mode');
+}
+
+function doLogout() {
+  if (!confirm('Logout?')) return;
+  clearSession();
+  State.user = null;
+  $('loginScreen').style.display = 'flex';
+  $('appHeader').classList.add('hidden');
+  $('appContent').classList.add('hidden');
+  $('bottomNav').classList.add('hidden');
+  const sb = document.getElementById('kihSidebar');
+  if (sb) sb.remove();
+  toast('Logged out');
+}
+
+/* ─── SHOW APP ─── */
+function showApp() {
+  $('loginScreen').style.display = 'none';
+  $('appHeader').classList.remove('hidden');
+  $('appContent').classList.remove('hidden');
+  $('bottomNav').classList.remove('hidden');
+  
+  const initials = getInitials(State.user?.name || 'User');
+  $('userAvatar').textContent = initials;
+  $('userAvatar').title = State.user?.name || 'User';
+  
+  const dot = $('onlineDot');
+  if (dot) dot.style.background = navigator.onLine ? 'var(--success-l)' : 'var(--danger)';
+  
+  loadInitialData();
+  applyLogo();
+  render();
+  
+  if (window.innerWidth >= 1024) setTimeout(buildSidebar, 100);
+}
+
+function applyLogo() {
+  const logo = localStorage.getItem('kih_hospital_logo');
+  if (!logo) return;
+  const loginLogo = $('loginLogo');
+  if (loginLogo) loginLogo.innerHTML = `<img src="${logo}">`;
+  const headerLogo = $('headerLogo');
+  if (headerLogo) headerLogo.innerHTML = `<img src="${logo}">`;
+  const sbLogo = document.querySelector('.kih-sidebar-logo-icon');
+  if (sbLogo) sbLogo.innerHTML = `<img src="${logo}">`;
+}
+
+/* ─── LOAD DATA ─── */
+function loadInitialData() {
+  let staff = LocalDB.get('staff', []);
+  if (staff.length === 0) { LocalDB.set('staff', [DEFAULT_ADMIN]); staff = [DEFAULT_ADMIN]; }
+  State.staff = staff;
+  
+  let tests = LocalDB.get('tests', []);
+  if (tests.length === 0) { tests = getDefaultTests(); LocalDB.set('tests', tests); }
+  State.tests = tests;
+  
+  let emergency = LocalDB.get('emergency', []);
+  if (emergency.length === 0) { emergency = getDefaultEmergency(); LocalDB.set('emergency', emergency); }
+  State.emergencyCards = emergency;
+  
+  let difficult = LocalDB.get('difficult', []);
+  if (difficult.length === 0) { difficult = getDefaultDifficult(); LocalDB.set('difficult', difficult); }
+  State.difficultDraws = difficult;
+  
+  let scripts = LocalDB.get('scripts', []);
+  if (scripts.length === 0) { scripts = getDefaultScripts(); LocalDB.set('scripts', scripts); }
+  State.scripts = scripts;
+  
+  let policies = LocalDB.get('policies', []);
+  if (policies.length === 0) { policies = getDefaultPolicies(); LocalDB.set('policies', policies); }
+  State.policies = policies;
+  
+  let shifts = LocalDB.get('shiftsSimple', []);
+  if (shifts.length === 0) { shifts = JSON.parse(JSON.stringify(DEFAULT_SHIFTS)); LocalDB.set('shiftsSimple', shifts); }
+  State.shiftsSimple = shifts;
+  
+  State.historyForms = LocalDB.get('historyForms', []);
+  State.notifications = LocalDB.get('notifications', []);
+  State.swapRequests = LocalDB.get('swaps', []);
+  State.leaveRequests = LocalDB.get('leave', []);
+  State.attendance = LocalDB.get('attendance', []);
+  State.cplActivities = LocalDB.get('cpl', []);
+  State.rejections = LocalDB.get('rejections', []);
+  State.holidays = LocalDB.get('holidays', []);
+  State.sundayIndex = LocalDB.get('sundayIndex', 0);
+  
+  const saved = LocalDB.get('settings', null);
+  if (saved) Object.assign(State.settings, saved);
+  
+  State.unreadCount = State.notifications.filter(n => !n.read).length;
+  updateBell();
+}
+
+function updateBell() {
+  const b = $('bellBadge');
+  if (!b) return;
+  if (State.unreadCount > 0) {
+    b.textContent = State.unreadCount > 99 ? '99+' : State.unreadCount;
+    b.classList.remove('hidden');
+  } else {
+    b.classList.add('hidden');
+  }
+}
+
+/* ─── MODAL ─── */
+function openModal(html) {
+  const sheet = $('modalSheet');
+  const overlay = $('modalOverlay');
+  if (!sheet || !overlay) return;
+  sheet.innerHTML = html;
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  const overlay = $('modalOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+window.closeModal = closeModal;
+document.addEventListener('click', e => { if (e.target.id === 'modalOverlay') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ─── RENDER ─── */
+function render() {
+  const main = $('appContent');
+  if (!main) return;
+  
+  $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === State.activeTab));
+  
+  const renderers = {
+    home: renderHome, tests: renderTests, protocols: renderProtocols,
+    roster: renderRoster, swap: renderSwap, learn: renderLearn,
+    attend: renderAttend, cpl: renderCPL, more: renderMore
+  };
+  
+  const fn = renderers[State.activeTab] || renderHome;
+  main.innerHTML = fn();
+  attachHandlers();
+  window.scrollTo(0, 0);
+}
+
+function attachHandlers() {
+  $$('.nav-item').forEach(el => {
+    el.onclick = () => {
+      State.activeTab = el.dataset.tab;
+      render();
+      const sidebar = document.getElementById('kihSidebar');
+      if (sidebar) {
+        sidebar.querySelectorAll('.kih-nav-item').forEach(x => 
+          x.classList.toggle('active', x.dataset.tab === State.activeTab)
+        );
+      }
+    };
+  });
+  $$('[data-quick]').forEach(el => {
+    el.onclick = () => {
+      State.activeTab = 'protocols';
+      State.protocolTab = el.dataset.quick;
+      render();
+    };
+  });
+  $$('[data-ptab]').forEach(el => {
+    el.onclick = () => { State.protocolTab = el.dataset.ptab; render(); };
+  });
+}
+
+function filterItems(cls, q) {
+  const query = (q || '').toLowerCase();
+  $$('.' + cls).forEach(el => {
+    const name = (el.dataset.name || '').toLowerCase();
+    el.style.display = name.includes(query) ? '' : 'none';
+  });
+}
+
+/* ─── HOME ─── */
+function renderHome() {
+  const today = new Date();
+  const des = DESIGNATIONS.find(d => d.id === State.user?.designation);
+  const desBadge = des ? `<span class="badge badge-primary">${des.icon} ${des.name}</span>` : '';
+  const todayStr = today.toDateString();
+  const recentNotifs = State.notifications.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 3);
+  const pendingSwaps = State.swapRequests.filter(s => s.status === 'pending').length;
+  const todayPresent = State.attendance.filter(a => a.date === todayStr && a.status === 'present').length;
+  
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div class="card-title">👋 ${esc(State.user?.name || 'User')}</div>
+          <div class="card-sub">${fmtDate(today)}</div>
+        </div>
+        ${desBadge}
+      </div>
+    </div>
+    
+    <button class="big-btn big-btn-draw" onclick="State.activeTab='roster';render()">
+      📅 Roster Management
+    </button>
+    
+    <button class="big-btn big-btn-emergency" onclick="openEmergencyModal()">
+      🚨 Emergency Cards
+    </button>
+    
+    <div class="card">
+      <div class="card-title">📊 Today's Overview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+        <div class="stat-box">
+          <div class="num" style="color:var(--success)">${todayPresent}</div>
+          <div class="lbl">Present</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" style="color:var(--primary)">${State.staff.filter(s => s.active !== false && s.role !== 'admin').length}</div>
+          <div class="lbl">Staff</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" style="color:var(--warning)">${pendingSwaps}</div>
+          <div class="lbl">Pending</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">🔔 Recent Notifications</div>
+        <button class="btn-sm" onclick="openNotificationsModal()">View All</button>
+      </div>
+      ${recentNotifs.length === 0 
+        ? '<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:13px">No notifications yet</div>'
+        : recentNotifs.map(n => `
+          <div class="list-row" style="margin-top:8px">
+            <div>
+              <div style="font-weight:500;font-size:13.5px">${esc(n.title)}</div>
+              <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${esc(n.body || '')}</div>
+            </div>
+            ${n.createdAt ? `<span style="font-size:10.5px;color:var(--text-dim)">${fmtDateTime(n.createdAt)}</span>` : ''}
+          </div>
+        `).join('')
+      }
+    </div>
+    
+    <div class="card">
+      <div class="card-title">⚡ Quick Access</div>
+      <div class="btn-row">
+        <button class="btn-sm" onclick="State.activeTab='roster';render()">📅 Roster</button>
+        <button class="btn-sm" onclick="State.activeTab='swap';render()">🔄 Swap</button>
+        <button class="btn-sm" onclick="State.activeTab='attend';render()">✅ Attendance</button>
+        <button class="btn-sm" onclick="State.activeTab='learn';render()">📚 Learn</button>
+        <button class="btn-sm" onclick="openHistoryFormsModal()">📁 Forms</button>
+      </div>
+    </div>
+    
+    ${canManage() ? `
+      <div class="card">
+        <div class="card-title">📢 Send Notification</div>
+        <div class="card-sub">Notify staff via WhatsApp</div>
+        <button class="btn-sm btn-accent mt12" onclick="openSendNotificationModal()">📤 Send New Notification</button>
+      </div>
+    ` : ''}
+  `;
+}
+
+/* ─── TESTS ─── */
+function getTubeIcon(tubeName) {
+  const name = (tubeName || '').toLowerCase();
+  const tubeSVG = (capColor, bodyColor = '#f0f0f0') => `
+    <svg width="28" height="56" viewBox="0 0 32 64" fill="none">
+      <rect x="4" y="0" width="24" height="10" rx="3" fill="${capColor}"/>
+      <rect x="4" y="10" width="24" height="52" rx="4" stroke="#4B5563" stroke-width="1.5" fill="rgba(255,255,255,0.05)"/>
+      <rect x="6" y="32" width="20" height="28" rx="3" fill="${bodyColor}" opacity="0.7"/>
+      <rect x="7" y="14" width="3" height="40" rx="1.5" fill="rgba(255,255,255,0.15)"/>
+    </svg>
+  `;
+  if (name.includes('edta') || name.includes('lavender')) return tubeSVG('#A78BFA', '#C4B5FD');
+  if (name.includes('citrate') || name.includes('blue')) return tubeSVG('#60A5FA', '#93C5FD');
+  if (name.includes('sst') || name.includes('gold')) return tubeSVG('#FBBF24', '#FDE68A');
+  if (name.includes('heparin') || name.includes('green')) return tubeSVG('#10B981', '#6EE7B7');
+  if (name.includes('fluoride') || name.includes('grey') || name.includes('gray')) return tubeSVG('#9CA3AF', '#D1D5DB');
+  if (name.includes('culture')) return tubeSVG('#F3F4F6', '#FEF3C7');
+  return tubeSVG('#6B7280', '#9CA3AF');
+}
+
+function renderTests() {
+  return `
+    <div class="card">
+      <div class="card-title">🧪 Test Protocols</div>
+      <div class="card-sub">Tube, order of draw, volume, TAT</div>
+      <input class="search-bar mt12" placeholder="🔍 Search tests..." oninput="filterItems('test-item', this.value)">
+    </div>
+    
+    <div id="testList">
+      ${State.tests.length === 0 
+        ? `<div class="empty-state"><div class="icon">🧪</div><div>No tests yet</div></div>`
+        : State.tests.map(t => `
+          <div class="card test-item" data-name="${esc((t.name||'').toLowerCase())} ${esc((t.category||'').toLowerCase())}">
+            <div class="flex-between">
+              <div style="font-weight:700;font-size:15px">${esc(t.name)}</div>
+              <span class="badge badge-primary">${esc(t.category || 'General')}</span>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:14px;align-items:center">
+              <div style="flex-shrink:0">${getTubeIcon(t.tube)}</div>
+              <div style="flex:1">
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:3px">Tube</div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(t.tube)}</div>
+                <div style="display:flex;gap:14px;font-size:13px">
+                  <div><span style="color:var(--text-dim)">Order:</span> <strong>#${esc(t.order)}</strong></div>
+                  <div><span style="color:var(--text-dim)">Vol:</span> <strong>${esc(t.volume)}</strong></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+              <div class="list-row" style="margin:0;padding:10px 12px">
+                <span style="font-size:12.5px">⏱️ Routine</span>
+                <strong style="font-size:13px">${esc(t.tat)}</strong>
+              </div>
+              <div class="list-row" style="margin:0;padding:10px 12px;border-left:3px solid var(--danger)">
+                <span style="font-size:12.5px">🚨 Urgent</span>
+                <strong style="font-size:13px">${esc(t.urgent || t.tat)}</strong>
+              </div>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+}
+
+/* ─── PROTOCOLS ─── */
+function renderProtocols() {
+  const tabs = [
+    { id: 'order', label: 'Order of Draw' },
+    { id: 'difficult', label: 'Difficult Draw' },
+    { id: 'scripts', label: 'Scripts' },
+    { id: 'rejection', label: 'Rejection' }
+  ];
+  
+  let body = '';
+  if (State.protocolTab === 'order') body = renderOrderOfDraw();
+  else if (State.protocolTab === 'difficult') body = renderDifficult();
+  else if (State.protocolTab === 'scripts') body = renderScripts();
+  else if (State.protocolTab === 'rejection') body = renderRejection();
+  
+  return `
+    <div class="tab-bar">
+      ${tabs.map(t => `<div class="tab ${State.protocolTab===t.id?'active':''}" data-ptab="${t.id}">${t.label}</div>`).join('')}
+    </div>
+    ${body}
+  `;
+}
+
+function renderOrderOfDraw() {
+  const order = [
+    { n: 1, tube: 'Blood Culture', color: '#FBBF24', note: 'Sterile technique' },
+    { n: 2, tube: 'Citrate (Blue)', color: '#60A5FA', note: 'Fill to line, mix 3-4x' },
+    { n: 3, tube: 'SST (Gold/Red)', color: '#FBBF24', note: 'Clot 30 min' },
+    { n: 4, tube: 'Heparin (Green)', color: '#10B981', note: 'Mix 8-10x' },
+    { n: 5, tube: 'EDTA (Lavender)', color: '#A78BFA', note: 'Mix 8-10x' },
+    { n: 6, tube: 'Fluoride (Grey)', color: '#9CA3AF', note: 'Glucose' }
+  ];
+  return `
+    <div class="card">
+      <div class="card-title">📋 Order of Draw</div>
+      <div class="mt12">
+        ${order.map(o => `
+          <div class="list-row">
+            <div class="flex-center gap12">
+              <span style="width:32px;height:32px;border-radius:50%;background:${o.color};color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px">${o.n}</span>
+              <div>
+                <div style="font-weight:600;font-size:14px">${o.tube}</div>
+                <div style="font-size:11.5px;color:var(--text-muted)">${o.note}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderDifficult() {
+  return `
+    <input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('difficult-item', this.value)">
+    <div id="difficultList">
+      ${State.difficultDraws.map(s => `
+        <div class="card difficult-item" data-name="${esc((s.title||'').toLowerCase())}">
+          <div class="card-title" style="font-size:15px">🩺 ${esc(s.title)}</div>
+          <div class="card-sub mt8"><strong style="color:var(--danger)">Problem:</strong> ${esc(s.problem)}</div>
+          <div style="background:var(--bg-1);padding:12px;border-radius:10px;font-size:13.5px;color:var(--text-muted);margin-top:10px;border:1px solid var(--border)">
+            <strong style="color:var(--primary)">Solution:</strong> ${esc(s.solution)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderScripts() {
+  return `
+    <input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('script-item', this.value)">
+    <div id="scriptList">
+      ${State.scripts.map(s => `
+        <div class="card script-item" data-name="${esc((s.title||'').toLowerCase())}">
+          <div class="card-title" style="font-size:15px">💬 ${esc(s.title)}</div>
+          <div class="mt12" style="font-size:13.5px;line-height:1.7;color:var(--text-muted)">
+            <p><strong style="color:var(--primary)">🇬🇧 English:</strong> ${esc(s.en)}</p>
+            ${s.ur ? `<p class="mt12" style="direction:rtl;text-align:right"><strong style="color:var(--primary)">🇵🇰 اردو:</strong> ${esc(s.ur)}</p>` : ''}
+          </div>
+          <div class="btn-row mt12">
+            <button class="btn-sm" data-copy="${esc(s.en)}">📋 Copy EN</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderRejection() {
+  const reasons = [
+    { _id: 'hemo', title: 'Hemolysis', how: 'Serum/plasma appears red', why: 'Thin needle, shaking, high vacuum', prevent: '21G-23G needle, gentle invert, slow pull', action: 'Recollect sample' },
+    { _id: 'clot', title: 'Clotting', how: 'Clots in EDTA tube', why: 'Not mixed, under-mixed', prevent: 'Mix 8-10 times', action: 'Recollect new tube' },
+    { _id: 'short', title: 'Short Volume', how: 'Low blood level', why: 'Low vacuum, needle out', prevent: 'Check expiry, stable needle', action: 'Recollect sample' },
+    { _id: 'wrong', title: 'Wrong Tube', how: 'Incorrect color', why: 'Wrong order of draw', prevent: 'Check protocol card', action: 'Recollect correct tube' },
+    { _id: 'label', title: 'Mislabeled', how: 'Wrong label', why: 'Forgot label', prevent: 'Bedside label, confirm 3x', action: 'Recollect from patient' },
+    { _id: 'delay', title: 'Delayed Transport', how: 'Sample arrived late', why: 'Traffic, transport delay', prevent: 'Send immediately', action: 'New sample' },
+    { _id: 'contam', title: 'Contaminated', how: 'Skin flora in culture', why: 'Skin not cleaned', prevent: '30 sec spirit swab', action: 'New sample' }
+  ];
+  
+  return `
+    <div class="card" style="border-left:4px solid var(--danger)">
+      <div class="card-title">📊 Rejection Statistics</div>
+      <div class="card-sub mt8">Total reported: <strong>${State.rejections.length}</strong></div>
+      <button class="btn-sm btn-danger mt12" onclick="openReportRejectionModal()">🚫 Report Rejection</button>
+    </div>
+    <input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('rejection-item', this.value)">
+    <div id="rejectionList">
+      ${reasons.map(r => `
+        <div class="card rejection-item" data-name="${esc(r.title.toLowerCase())}">
+          <div class="card-title" style="font-size:15px">${esc(r.title)}</div>
+          <div class="mt12" style="font-size:13.5px;line-height:1.7;color:var(--text-muted)">
+            <p><strong style="color:var(--primary)">🔍 Detect:</strong> ${esc(r.how)}</p>
+            <p class="mt8"><strong style="color:var(--danger)">⚠️ Why:</strong> ${esc(r.why)}</p>
+            <p class="mt8"><strong style="color:var(--success)">🛡️ Prevent:</strong> ${esc(r.prevent)}</p>
+            <p class="mt8"><strong style="color:var(--warning)">✅ Action:</strong> ${esc(r.action)}</p>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function copyText(text, msg) {
+  navigator.clipboard.writeText(text).then(() => toast(msg || 'Copied', 'success')).catch(() => toast('Copy failed', 'error'));
+}
+
+/* ─── ROSTER ─── */
+function renderRoster() {
+  const hasRoster = State.rosterData && Object.keys(State.rosterData).length > 0;
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">📅 Roster</div>
+        <button class="btn-sm btn-accent" onclick="openAutoGenWizard()">⚡ Auto Generate</button>
+      </div>
+      <div class="card-sub">${State.rosterPeriod ? `${fmtDisplay(State.rosterPeriod.start)} → ${fmtDisplay(State.rosterPeriod.end)}` : 'No roster yet'}</div>
+    </div>
+    ${hasRoster ? renderRosterGrid() : renderEmptyRoster()}
+  `;
+}
+
+function renderEmptyRoster() {
+  return `
+    <div class="card">
+      <div class="empty-state">
+        <div class="icon">📅</div>
+        <div style="font-weight:600;margin-bottom:6px">No roster yet</div>
+        <div style="font-size:13px">Tap "Auto Generate" to create roster</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRosterGrid() {
+  const staffList = State.staff.filter(s => s.active !== false && s.role !== 'admin');
+  if (!staffList.length) return '<div class="card"><div class="card-sub">No staff available</div></div>';
+  
+  const dates = dateRange(State.rosterPeriod.start, State.rosterPeriod.end);
+  const visibleDates = dates.slice(0, 14);
+  
+  return `
+    <div class="card" style="overflow-x:auto">
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Staff</th>
+            ${visibleDates.map(d => `<th>${new Date(d).getDate()}<br><small>${dayShort(d)}</small></th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${staffList.map(s => `
+            <tr>
+              <td>${esc(s.name.split(' ')[0])}</td>
+              ${visibleDates.map(d => {
+                const shift = State.rosterData[s._id]?.[d] || 'OFF';
+                const shiftDef = SHIFTS_LIBRARY[shift] || SHIFTS_LIBRARY.OFF;
+                return `<td><span class="shift-pill shift-${esc(shift)}">${esc(shift)}</span></td>`;
+              }).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="card-sub mt12" style="text-align:center">Showing first 14 days of ${dates.length} days</div>
+    </div>
+  `;
+}
+
+/* ─── SWAP ─── */
+function renderSwap() {
+  const pending = State.swapRequests.filter(s => s.status === 'pending');
+  const approved = State.swapRequests.filter(s => s.status === 'approved');
+  
+  return `
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">🔄 Shift Swap</div>
+        <button class="btn-sm btn-accent" onclick="openSwapModal()">+ New</button>
+      </div>
+    </div>
+    ${pending.length > 0 ? `<div class="card"><div class="card-title" style="font-size:14px">⏳ Pending (${pending.length})</div>${pending.map(s => renderSwapItem(s)).join('')}</div>` : ''}
+    ${approved.length > 0 ? `<div class="card"><div class="card-title" style="font-size:14px">✅ Approved (${approved.length})</div>${approved.map(s => renderSwapItem(s)).join('')}</div>` : ''}
+    ${State.swapRequests.length === 0 ? `
+      <div class="card">
+        <div class="empty-state">
+          <div class="icon">🔄</div>
+          <div style="font-weight:600;margin-bottom:6px">No swap requests</div>
+        </div>
+      </div>
+    ` : ''}
+  `;
+}
+
+function renderSwapItem(s) {
+  const bc = s.status === 'approved' ? 'badge-success' : s.status === 'rejected' ? 'badge-danger' : 'badge-warning';
+  const canApprove = isAdmin() && s.status === 'pending';
+  return `
+    <div class="list-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px">
+      <div class="flex-between">
+        <span style="font-weight:600;font-size:14px">${esc(s.from)} → ${esc(s.to)}</span>
+        <span class="badge ${bc}">${esc(s.status)}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted)">
+        👤 ${esc(s.requestedBy || 'Unknown')} · with ${esc(s.with || 'Unknown')}
+      </div>
+      ${canApprove ? `
+        <div class="btn-row" style="margin-top:0">
+          <button class="btn-sm btn-success" onclick="approveSwap('${s._id}')">✅ Approve</button>
+          <button class="btn-sm btn-danger" onclick="rejectSwap('${s._id}')">❌ Reject</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function approveSwap(id) {
+  LocalDB.update('swaps', id, { status: 'approved' });
+  State.swapRequests = LocalDB.get('swaps', []);
+  toast('Swap approved', 'success');
+  render();
+}
+
+function rejectSwap(id) {
+  LocalDB.update('swaps', id, { status: 'rejected' });
+  State.swapRequests = LocalDB.get('swaps', []);
+  toast('Swap rejected', 'warning');
+  render();
+}
+
+/* ─── LEARN ─── */
+function renderLearn() {
+  return `
+    <div class="card">
+      <div class="card-title">📚 Training Quizzes</div>
+      <div class="card-sub">Test your phlebotomy knowledge</div>
+      <div class="mt12">
+        <div class="list-row">
+          <div><div style="font-weight:600;font-size:14px">Order of Draw</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">10 questions</div></div>
+          <span class="badge">New</span>
+        </div>
+        <div class="list-row">
+          <div><div style="font-weight:600;font-size:14px">Difficult Draw</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">10 questions</div></div>
+          <span class="badge">New</span>
+        </div>
+      </div>
+      <button class="btn-sm btn-accent btn-block mt12" onclick="openQuizModal()">▶ Start Quiz</button>
+    </div>
+  `;
+}
+
+/* ─── ATTEND ─── */
+function renderAttend() {
+  const today = new Date().toDateString();
+  const todayRec = State.attendance.find(a => a.date === today && a.staffId === State.user?._id);
+  const history = State.attendance.filter(a => a.staffId === State.user?._id).slice(-7).reverse();
+  
+  return `
+    <div class="card">
+      <div class="card-title">✅ Attendance</div>
+      <div class="card-sub">${fmtDate()}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+        <button class="btn-sm btn-success btn-block" ${todayRec?'disabled':''} onclick="markAttendance('present')">🟢 Present</button>
+        <button class="btn-sm btn-danger btn-block" ${todayRec?'disabled':''} onclick="markAttendance('absent')">🔴 Absent</button>
+      </div>
+      ${todayRec ? `<div class="list-row mt12" style="border-left:3px solid ${todayRec.status==='present'?'var(--success)':'var(--danger)'}">
+        <span>Today marked: <strong>${esc(todayRec.status)}</strong> at ${esc(todayRec.time || fmtTime())}</span>
+      </div>` : ''}
+    </div>
+    <div class="card">
+      <div class="card-title" style="font-size:14px">📜 Last 7 Days</div>
+      ${history.length === 0 ? '<div class="card-sub">No records yet</div>' : history.map(h => `
+        <div class="list-row">
+          <div>
+            <div style="font-weight:500;font-size:13.5px">${esc(h.date)}</div>
+            <div style="font-size:11.5px;color:var(--text-muted)">${esc(h.time || '')}</div>
+          </div>
+          <span class="badge ${h.status==='present'?'badge-success':'badge-danger'}">${esc(h.status)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function markAttendance(status) {
+  if (!State.user || State.user.guest) { toast('Guest mode — not saved', 'warning'); return; }
+  const today = new Date().toDateString();
+  const existing = State.attendance.find(a => a.date === today && a.staffId === State.user._id);
+  if (existing) { toast('Already marked for today', 'warning'); return; }
+  
+  LocalDB.push('attendance', {
+    staffId: State.user._id,
+    staffName: State.user.name,
+    date: today,
+    status,
+    time: fmtTime(),
+    timestamp: Date.now()
+  });
+  State.attendance = LocalDB.get('attendance', []);
+  toast(`Marked ${status}`, status === 'present' ? 'success' : 'error');
+  render();
+}
+
+/* ─── CPL ─── */
+function renderCPL() {
+  const myCPL = State.cplActivities.filter(c => c.staffId === State.user?._id);
+  const totalPoints = myCPL.reduce((sum, c) => sum + (parseFloat(c.points) || 0), 0);
+  
+  return `
+    <div class="card">
+      <div class="card-title">📈 CPL Activities</div>
+      <div class="card-sub">Continuing Professional Learning</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <div class="stat-box">
+          <div class="num" style="color:var(--primary)">${totalPoints.toFixed(1)}</div>
+          <div class="lbl">Total Points</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" style="color:var(--success)">${myCPL.length}</div>
+          <div class="lbl">Activities</div>
+        </div>
+      </div>
+      <button class="btn-sm btn-accent btn-block mt12" onclick="openAddCPLModal()">+ Add Activity</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="font-size:14px">My Activities</div>
+      ${myCPL.length === 0 ? '<div class="card-sub">No activities yet</div>' : myCPL.slice().reverse().map(c => `
+        <div class="list-row">
+          <div>
+            <div style="font-weight:500;font-size:13.5px">${esc(c.title)}</div>
+            <div style="font-size:11.5px;color:var(--text-muted)">${esc(c.category || 'General')} · ${c.createdAt ? fmtDateTime(c.createdAt) : ''}</div>
+          </div>
+          <span class="badge badge-primary">${esc(c.points)} pts</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ─── MORE ─── */
+function renderMore() {
+  return `
+    <div class="card">
+      <div class="card-title">👤 Profile</div>
+      <div class="list-row mt12">
+        <div class="flex-center gap12">
+          <div class="avatar">${getInitials(State.user?.name || 'U')}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px">${esc(State.user?.name || 'User')}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${esc(State.user?.mobile || '')}</div>
+          </div>
+        </div>
+      </div>
+      <div class="list-row">
+        <span>Designation</span>
+        <strong>${esc(DESIGNATIONS.find(d=>d.id===State.user?.designation)?.name || 'N/A')}</strong>
+      </div>
+      <div class="list-row">
+        <span>Role</span>
+        <strong>${esc(State.user?.role || 'staff')}</strong>
+      </div>
+      <button class="btn-sm btn-block mt12" onclick="openEditProfileModal()">✏️ Edit Profile</button>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">📋 Policies</div>
+      ${State.policies.map(p => `
+        <div class="list-row">
+          <div>
+            <div style="font-weight:500;font-size:13.5px">${esc(p.title)}</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${esc((p.body || '').slice(0, 80))}…</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    
+    ${canManage() ? `
+      <div class="card">
+        <div class="card-title">🛠️ Admin Tools</div>
+        <button class="btn-sm btn-block mt8" onclick="openManageStaffModal()">👥 Manage Staff</button>
+        <button class="btn-sm btn-block mt8" onclick="openManageShiftsModal()">⏰ Manage Shifts</button>
+        <button class="btn-sm btn-block mt8" onclick="openManageHolidaysModal()">🎉 Holidays</button>
+        <button class="btn-sm btn-block mt8" onclick="openHospitalSettingsModal()">🏥 Hospital Settings</button>
+        <button class="btn-sm btn-block mt8" onclick="exportAllData()">📤 Export All Data</button>
+      </div>
+    ` : ''}
+    
+    <div class="card">
+      <div class="card-title">ℹ️ About</div>
+      <div class="card-sub">KIH Phlebotomy Companion v4.0</div>
+      <div class="card-sub mt8">© ${new Date().getFullYear()} ${esc(State.settings.hospitalName)}</div>
+    </div>
+  `;
+}
+
+/* ─── SIDEBAR (desktop) ─── */
+function buildSidebar() {
+  let sb = document.getElementById('kihSidebar');
+  if (sb) sb.remove();
+  
+  sb = document.createElement('aside');
+  sb.id = 'kihSidebar';
+  sb.className = 'kih-sidebar';
+  
+  const tabs = [
+    { id: 'home', icon: '🏠', label: 'Home' },
+    { id: 'tests', icon: '🧪', label: 'Tests' },
+    { id: 'protocols', icon: '📋', label: 'Protocols' },
+    { id: 'roster', icon: '📅', label: 'Roster' },
+    { id: 'swap', icon: '🔄', label: 'Swap' },
+    { id: 'learn', icon: '📚', label: 'Learn' },
+    { id: 'attend', icon: '✅', label: 'Attendance' },
+    { id: 'cpl', icon: '📈', label: 'CPL' },
+    { id: 'more', icon: '⋯', label: 'More' }
+  ];
+  
+  const initials = getInitials(State.user?.name || 'U');
+  
+  sb.innerHTML = `
+    <div class="kih-sidebar-logo">
+      <div class="kih-sidebar-logo-icon">🩸</div>
+      <div class="kih-sidebar-logo-text">KIH<small>Phlebotomy</small></div>
+    </div>
+    <div class="kih-sidebar-nav">
+      ${tabs.map(t => `
+        <div class="kih-nav-item ${State.activeTab===t.id?'active':''}" data-tab="${t.id}">
+          <span class="kih-nav-icon">${t.icon}</span>
+          <span class="kih-nav-label">${t.label}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="kih-sidebar-footer">
+      <div class="kih-user-card">
+        <div class="kih-user-avatar">${initials}</div>
+        <div class="kih-user-info">
+          <div class="kih-user-name">${esc(State.user?.name || 'User')}</div>
+          <div class="kih-user-role">${esc(State.user?.role || 'staff')}</div>
+        </div>
+      </div>
+      <button class="kih-logout-btn" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  `;
+  
+  document.body.appendChild(sb);
+  
+  sb.querySelectorAll('.kih-nav-item').forEach(el => {
+    el.onclick = () => {
+      State.activeTab = el.dataset.tab;
+      render();
+      sb.querySelectorAll('.kih-nav-item').forEach(x => 
+        x.classList.toggle('active', x.dataset.tab === State.activeTab)
+      );
+    };
+  });
+}
+
+console.log('%c🩸 KIH Phlebotomy v4.0 · Part 2 loaded', 'color:#14B8A6;font-weight:bold;font-size:13px');
+    /* ═══════════════════════════════════════════════════════════
+   KIH PHLEBOTOMY v4.0 — PART 3: ROSTER ENGINE + MODALS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── ROSTER GENERATION ENGINE ─── */
+function generateRoster(startDate, endDate, options = {}) {
+  const dates = dateRange(startDate, endDate);
+  const staffList = State.staff.filter(s => s.active !== false && s.role !== 'admin');
+  
+  if (!staffList.length) {
+    toast('No staff available to roster', 'error');
+    return null;
+  }
+  
+  const roster = {};
+  staffList.forEach(s => { roster[s._id] = {}; });
+  
+  // Track consecutive working days and shifts
+  const workDays = {};
+  const lastShift = {};
+  const shiftCount = {}; // Track per-shift counts for fairness
+  
+  staffList.forEach(s => {
+    workDays[s._id] = 0;
+    lastShift[s._id] = null;
+    shiftCount[s._id] = {};
+    State.shiftsSimple.forEach(sh => { shiftCount[s._id][sh.code] = 0; });
+  });
+  
+  // Male staff for night shifts
+  const males = staffList.filter(s => s.gender === 'Male');
+  const anyStaff = staffList;
+  
+  // Track Sunday index for round-robin
+  let sundayIdx = State.sundayIndex || 0;
+  
+  dates.forEach((date, dayIdx) => {
+    const isSun = isSunday(date);
+    const isSat = isSaturday(date);
+    const holiday = isHoliday(date);
+    
+    // Get active shifts for this day
+    const dayShifts = State.shiftsSimple.filter(sh => {
+      if (!sh.active) return false;
+      if (sh.code === 'OFF' || sh.code === 'PH' || sh.code === 'CPL' || sh.code === 'EL' || sh.code === 'CL') return false;
+      if (holiday && sh.code !== 'PH') return false;
+      return true;
+    });
+    
+    // Sort staff by least work days (fairness)
+    const sortedStaff = [...staffList].sort((a, b) => {
+      const wDiff = workDays[a._id] - workDays[b._id];
+      if (wDiff !== 0) return wDiff;
+      return (a._id || '').localeCompare(b._id || '');
+    });
+    
+    // Special Sunday handling: round-robin off
+    const offThisSunday = new Set();
+    if (isSun) {
+      const offCount = Math.max(1, Math.floor(staffList.length / 3));
+      for (let i = 0; i < offCount; i++) {
+        const idx = (sundayIdx + i) % staffList.length;
+        offThisSunday.add(staffList[idx]._id);
+      }
+      sundayIdx = (sundayIdx + offCount) % staffList.length;
+    }
+    
+    dayShifts.forEach(shift => {
+      let needed = 0;
+      if (isSun) needed = shift.staffSun || 0;
+      else if (isSat) needed = shift.staffSat || 0;
+      else needed = shift.staffMonFri || 0;
+      
+      if (needed === 0) return;
+      
+      const pool = (shift.gender === 'Male' ? males : anyStaff).filter(s => {
+        if (offThisSunday.has(s._id)) return false;
+        if (roster[s._id][date]) return false;
+        // Prevent consecutive night shifts
+        if (shift.code === 'N' && lastShift[s._id] === 'N') return false;
+        // Max 6 consecutive work days
+        if (workDays[s._id] >= 6) return false;
+        return true;
+      });
+      
+      // Sort by fairness (least assigned to this shift)
+      pool.sort((a, b) => {
+        const aCount = shiftCount[a._id][shift.code] || 0;
+        const bCount = shiftCount[b._id][shift.code] || 0;
+        if (aCount !== bCount) return aCount - bCount;
+        return workDays[a._id] - workDays[b._id];
+      });
+      
+      for (let i = 0; i < needed && i < pool.length; i++) {
+        const s = pool[i];
+        roster[s._id][date] = shift.code;
+        workDays[s._id]++;
+        lastShift[s._id] = shift.code;
+        shiftCount[s._id][shift.code] = (shiftCount[s._id][shift.code] || 0) + 1;
+      }
+    });
+    
+    // Mark OFF for unassigned
+    staffList.forEach(s => {
+      if (!roster[s._id][date]) {
+        if (holiday) roster[s._id][date] = 'PH';
+        else roster[s._id][date] = 'OFF';
+      }
+    });
+  });
+  
+  State.sundayIndex = sundayIdx;
+  LocalDB.set('sundayIndex', sundayIdx);
+  
+  State.rosterData = roster;
+  State.rosterPeriod = { start: startDate, end: endDate };
+  LocalDB.set('rosterData', roster);
+  LocalDB.set('rosterPeriod', State.rosterPeriod);
+  
+  return roster;
+}
+
+/* ─── AUTO GENERATE WIZARD ─── */
+function openAutoGenWizard() {
+  const today = new Date();
+  const startDefault = today.toISOString().split('T')[0];
+  const end = new Date(today);
+  end.setDate(end.getDate() + 29);
+  const endDefault = end.toISOString().split('T')[0];
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>⚡ Auto Generate Roster</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>Start Date</label>
+      <input type="date" id="rosterStart" value="${startDefault}">
+    </div>
+    <div class="input-group">
+      <label>End Date</label>
+      <input type="date" id="rosterEnd" value="${endDefault}">
+    </div>
+    
+    <div class="card" style="background:var(--bg-1)">
+      <div class="card-title" style="font-size:14px">📋 Staff Count</div>
+      <div class="card-sub">${State.staff.filter(s => s.active !== false && s.role !== 'admin').length} active staff</div>
+    </div>
+    
+    <button class="btn-primary mt12" onclick="runAutoGen()">⚡ Generate Roster</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function runAutoGen() {
+  const start = $('rosterStart')?.value;
+  const end = $('rosterEnd')?.value;
+  
+  if (!start || !end) { toast('Select dates', 'error'); return; }
+  if (new Date(start) > new Date(end)) { toast('Start must be before end', 'error'); return; }
+  
+  const days = dateRange(start, end).length;
+  if (days > 62) { toast('Max 62 days at a time', 'error'); return; }
+  
+  closeModal();
+  toast('Generating roster…');
+  
+  setTimeout(() => {
+    try {
+      generateRoster(start, end);
+      render();
+      toast(`Roster generated for ${days} days`, 'success');
+    } catch(e) {
+      console.error(e);
+      toast('Generation failed', 'error');
+    }
+  }, 100);
+}
+
+/* ─── SWAP MODAL ─── */
+function openSwapModal() {
+  const staffList = State.staff.filter(s => s.active !== false);
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>🔄 New Swap Request</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="input-group">
+      <label>My Shift Code</label>
+      <select id="swapFrom">
+        ${Object.keys(SHIFTS_LIBRARY).map(c => `<option value="${c}">${c} — ${SHIFTS_LIBRARY[c].name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Swap With (Shift)</label>
+      <select id="swapTo">
+        ${Object.keys(SHIFTS_LIBRARY).map(c => `<option value="${c}">${c} — ${SHIFTS_LIBRARY[c].name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Swap With (Staff)</label>
+      <select id="swapWith">
+        ${staffList.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Date</label>
+      <input type="date" id="swapDate" value="${new Date().toISOString().split('T')[0]}">
+    </div>
+    <div class="input-group">
+      <label>Reason (optional)</label>
+      <textarea id="swapReason" rows="2" placeholder="Why do you need this swap?"></textarea>
+    </div>
+    
+    <button class="btn-primary" onclick="submitSwap()">📤 Submit Request</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function submitSwap() {
+  const from = $('swapFrom')?.value;
+  const to = $('swapTo')?.value;
+  const withStaff = $('swapWith')?.value;
+  const date = $('swapDate')?.value;
+  const reason = $('swapReason')?.value || '';
+  
+  if (!from || !to || !withStaff) { toast('Fill all fields', 'error'); return; }
+  
+  LocalDB.push('swaps', {
+    from, to, with: withStaff, date, reason,
+    requestedBy: State.user?.name || 'Unknown',
+    requestedById: State.user?._id,
+    status: 'pending'
+  });
+  State.swapRequests = LocalDB.get('swaps', []);
+  closeModal();
+  toast('Swap request submitted', 'success');
+  render();
+}
+
+/* ─── EMERGENCY MODAL ─── */
+function openEmergencyModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>🚨 Emergency Cards</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    ${State.emergencyCards.map(c => `
+      <div class="emergency-card">
+        <h3>${esc(c.title)}</h3>
+        <ul class="emergency-steps">
+          ${c.steps.map(s => `<li>${esc(s)}</li>`).join('')}
+        </ul>
+      </div>
+    `).join('')}
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+/* ─── NOTIFICATIONS MODAL ─── */
+function openNotificationsModal() {
+  State.notifications.forEach(n => { n.read = true; });
+  LocalDB.set('notifications', State.notifications);
+  State.unreadCount = 0;
+  updateBell();
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>🔔 Notifications</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    ${State.notifications.length === 0
+      ? '<div class="empty-state"><div class="icon">🔔</div><div>No notifications</div></div>'
+      : State.notifications.slice().reverse().map(n => `
+        <div class="list-row" style="flex-direction:column;align-items:stretch">
+          <div class="flex-between">
+            <strong style="font-size:14px">${esc(n.title)}</strong>
+            ${n.createdAt ? `<span style="font-size:10.5px;color:var(--text-dim)">${fmtDateTime(n.createdAt)}</span>` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(n.body || '')}</div>
+        </div>
+      `).join('')
+    }
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+/* ─── HISTORY FORMS MODAL ─── */
+function openHistoryFormsModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>📁 Forms & Records</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="list-row"><span>📋 Total Forms</span><strong>${State.historyForms.length}</strong></div>
+    <div class="list-row"><span>🚫 Rejections</span><strong>${State.rejections.length}</strong></div>
+    <div class="list-row"><span>🔄 Swap Requests</span><strong>${State.swapRequests.length}</strong></div>
+    <div class="list-row"><span>✅ Attendance Records</span><strong>${State.attendance.length}</strong></div>
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+/* ─── SEND NOTIFICATION MODAL ─── */
+function openSendNotificationModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>📤 Send Notification</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Title</label>
+      <input id="notifTitle" placeholder="e.g., Roster Updated" maxlength="80">
+    </div>
+    <div class="input-group">
+      <label>Message</label>
+      <textarea id="notifBody" rows="3" placeholder="Notification details…" maxlength="300"></textarea>
+    </div>
+    <div class="input-group">
+      <label>Priority</label>
+      <select id="notifPriority">
+        <option value="normal">Normal</option>
+        <option value="urgent">Urgent</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="sendNotification()">📤 Send to All Staff</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function sendNotification() {
+  const title = $('notifTitle')?.value.trim();
+  const body = $('notifBody')?.value.trim();
+  const priority = $('notifPriority')?.value || 'normal';
+  
+  if (!title) { toast('Enter title', 'error'); return; }
+  
+  LocalDB.push('notifications', {
+    title, body, priority,
+    from: State.user?.name || 'Admin',
+    read: false
+  });
+  State.notifications = LocalDB.get('notifications', []);
+  State.unreadCount = State.notifications.filter(n => !n.read).length;
+  updateBell();
+  
+  closeModal();
+  toast('Notification sent', 'success');
+  render();
+}
+
+/* ─── REPORT REJECTION MODAL ─── */
+function openReportRejectionModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>🚫 Report Rejection</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Reason</label>
+      <select id="rejReason">
+        <option>Hemolysis</option>
+        <option>Clotting</option>
+        <option>Short Volume</option>
+        <option>Wrong Tube</option>
+        <option>Mislabeled</option>
+        <option>Delayed Transport</option>
+        <option>Contaminated</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Patient MR Number</label>
+      <input id="rejMR" placeholder="MR-XXXXXX">
+    </div>
+    <div class="input-group">
+      <label>Notes</label>
+      <textarea id="rejNotes" rows="2" placeholder="Additional details…"></textarea>
+    </div>
+    <button class="btn-primary" onclick="submitRejection()">🚫 Submit</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function submitRejection() {
+  const reason = $('rejReason')?.value;
+  const mr = $('rejMR')?.value.trim();
+  const notes = $('rejNotes')?.value.trim();
+  
+  if (!reason) { toast('Select reason', 'error'); return; }
+  
+  LocalDB.push('rejections', {
+    reason, mr, notes,
+    reportedBy: State.user?.name || 'Unknown',
+    reportedById: State.user?._id
+  });
+  State.rejections = LocalDB.get('rejections', []);
+  closeModal();
+  toast('Rejection reported', 'success');
+  render();
+}
+
+/* ─── QUIZ MODAL ─── */
+const QUIZ_QUESTIONS = [
+  { q: 'Which tube is drawn first?', a: ['Blood Culture', 'EDTA', 'SST', 'Citrate'], correct: 0 },
+  { q: 'Which tube is used for CBC?', a: ['SST', 'EDTA (Lavender)', 'Citrate', 'Fluoride'], correct: 1 },
+  { q: 'How many times should EDTA tube be mixed?', a: ['2-3 times', '5 times', '8-10 times', 'Do not mix'], correct: 2 },
+  { q: 'Best needle gauge for adults?', a: ['18G', '21G-23G', '25G', '16G'], correct: 1 },
+  { q: 'How long should alcohol swab dry?', a: ['5 sec', '10 sec', '30 sec', '60 sec'], correct: 2 },
+  { q: 'Which tube for PT/INR?', a: ['EDTA', 'Citrate (Blue)', 'SST', 'Heparin'], correct: 1 },
+  { q: 'Max time for tourniquet application?', a: ['30 sec', '1 min', '2 min', '5 min'], correct: 1 },
+  { q: 'When to label tubes?', a: ['Before draw', 'At bedside immediately after', 'At lab', 'End of shift'], correct: 1 },
+  { q: 'What to do if patient faints?', a: ['Call 1122', 'Lay down + elevate legs', 'Continue draw', 'Give water'], correct: 1 },
+  { q: 'Hemolysis cause?', a: ['Slow draw', 'Shaking tube violently', 'Warm arm', 'Mixing properly'], correct: 1 }
+];
+
+let quizState = null;
+
+function openQuizModal() {
+  quizState = { idx: 0, score: 0, answers: [] };
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const q = QUIZ_QUESTIONS[quizState.idx];
+  if (!q) return showQuizResults();
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>📚 Quiz (${quizState.idx + 1}/${QUIZ_QUESTIONS.length})</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${(quizState.idx / QUIZ_QUESTIONS.length) * 100}%"></div></div>
+    <div class="card">
+      <div style="font-weight:600;font-size:16px;margin-bottom:14px">${esc(q.q)}</div>
+      ${q.a.map((opt, i) => `
+        <button class="btn-sm btn-block mt8" style="justify-content:flex-start;text-align:left" onclick="answerQuiz(${i})">
+          ${String.fromCharCode(65 + i)}. ${esc(opt)}
+        </button>
+      `).join('')}
+    </div>
+  `);
+}
+
+function answerQuiz(choice) {
+  const q = QUIZ_QUESTIONS[quizState.idx];
+  const correct = choice === q.correct;
+  if (correct) quizState.score++;
+  quizState.answers.push({ q: q.q, correct, chosen: choice });
+  quizState.idx++;
+  renderQuizQuestion();
+}
+
+function showQuizResults() {
+  const pct = Math.round((quizState.score / QUIZ_QUESTIONS.length) * 100);
+  const grade = pct >= 80 ? '🏆 Excellent' : pct >= 60 ? '👍 Good' : '📖 Study More';
+  
+  openModal(`
+    <div class="modal-header">
+      <h2>📊 Quiz Results</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="card text-center">
+      <div style="font-size:56px;margin-bottom:8px">${pct >= 60 ? '🎉' : '📚'}</div>
+      <div style="font-size:32px;font-weight:700;color:${pct >= 60 ? 'var(--success)' : 'var(--warning)'}">${pct}%</div>
+      <div style="font-size:14px;color:var(--text-muted);margin-top:6px">${quizState.score}/${QUIZ_QUESTIONS.length} correct</div>
+      <div style="font-size:16px;font-weight:600;margin-top:12px">${grade}</div>
+    </div>
+    ${quizState.answers.map((a, i) => `
+      <div class="list-row" style="border-left:3px solid ${a.correct ? 'var(--success)' : 'var(--danger)'}">
+        <span style="font-size:13px">${i + 1}. ${esc(a.q)}</span>
+        <span>${a.correct ? '✅' : '❌'}</span>
+      </div>
+    `).join('')}
+    <button class="btn-primary mt12" onclick="openQuizModal()">🔄 Retake Quiz</button>
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+/* ─── CPL ADD MODAL ─── */
+function openAddCPLModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>📈 Add CPL Activity</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Activity Title</label>
+      <input id="cplTitle" placeholder="e.g., Infection Control Workshop" maxlength="100">
+    </div>
+    <div class="input-group">
+      <label>Category</label>
+      <select id="cplCategory">
+        <option>Training</option>
+        <option>Workshop</option>
+        <option>Conference</option>
+        <option>Self-Study</option>
+        <option>Certification</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>CPL Points</label>
+      <input id="cplPoints" type="number" min="0" step="0.5" value="1">
+    </div>
+    <div class="input-group">
+      <label>Notes (optional)</label>
+      <textarea id="cplNotes" rows="2"></textarea>
+    </div>
+    <button class="btn-primary" onclick="submitCPL()">+ Add Activity</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function submitCPL() {
+  const title = $('cplTitle')?.value.trim();
+  const category = $('cplCategory')?.value;
+  const points = parseFloat($('cplPoints')?.value) || 0;
+  const notes = $('cplNotes')?.value.trim();
+  
+  if (!title) { toast('Enter title', 'error'); return; }
+  if (points <= 0) { toast('Enter valid points', 'error'); return; }
+  
+  LocalDB.push('cpl', {
+    staffId: State.user?._id,
+    staffName: State.user?.name,
+    title, category, points, notes
+  });
+  State.cplActivities = LocalDB.get('cpl', []);
+  closeModal();
+  toast('Activity added', 'success');
+  render();
+}
+
+/* ─── EDIT PROFILE MODAL ─── */
+function openEditProfileModal() {
+  const u = State.user || {};
+  openModal(`
+    <div class="modal-header">
+      <h2>✏️ Edit Profile</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Full Name</label>
+      <input id="editName" value="${esc(u.name || '')}">
+    </div>
+    <div class="input-group">
+      <label>Mobile</label>
+      <input id="editMobile" value="${esc(u.mobile || '')}" maxlength="11">
+    </div>
+    <div class="input-group">
+      <label>Designation</label>
+      <select id="editDes">
+        ${DESIGNATIONS.map(d => `<option value="${d.id}" ${u.designation===d.id?'selected':''}>${d.icon} ${d.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Gender</label>
+      <select id="editGender">
+        <option ${u.gender==='Male'?'selected':''}>Male</option>
+        <option ${u.gender==='Female'?'selected':''}>Female</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>New Password (leave blank to keep)</label>
+      <input id="editPass" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" onclick="saveProfile()">💾 Save</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function saveProfile() {
+  const name = $('editName')?.value.trim();
+  const mobile = normalizeMobile($('editMobile')?.value.trim());
+  const des = $('editDes')?.value;
+  const gender = $('editGender')?.value;
+  const pass = $('editPass')?.value;
+  
+  if (!name || !mobile) { toast('Name & mobile required', 'error'); return; }
+  
+  const updates = { name, mobile, designation: des, gender };
+  if (pass) updates.password = pass;
+  
+  if (State.user._id && !State.user.guest) {
+    LocalDB.update('staff', State.user._id, updates);
+    State.staff = LocalDB.get('staff', []);
+  }
+  Object.assign(State.user, updates);
+  
+  closeModal();
+  toast('Profile updated', 'success');
+  showApp();
+}
+
+/* ─── ADMIN: MANAGE STAFF ─── */
+function openManageStaffModal() {
+  const staffList = State.staff.filter(s => s.role !== 'admin');
+  openModal(`
+    <div class="modal-header">
+      <h2>👥 Manage Staff (${staffList.length})</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <button class="btn-sm btn-accent btn-block mb12" onclick="openAddStaffModal()">+ Add New Staff</button>
+    ${staffList.length === 0 ? '<div class="empty-state"><div class="icon">👥</div><div>No staff yet</div></div>'
+      : staffList.map(s => `
+        <div class="list-row">
+          <div>
+            <div style="font-weight:600;font-size:14px">${esc(s.name)}</div>
+            <div style="font-size:11.5px;color:var(--text-muted)">${esc(s.mobile)} · ${esc(DESIGNATIONS.find(d=>d.id===s.designation)?.name || s.designation)}</div>
+          </div>
+          <button class="btn-sm btn-danger" onclick="deleteStaff('${s._id}')">🗑️</button>
+        </div>
+      `).join('')
+    }
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+function openAddStaffModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>➕ Add Staff</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Full Name</label>
+      <input id="nsName" placeholder="e.g., Ahmed Khan">
+    </div>
+    <div class="input-group">
+      <label>Mobile (11 digits)</label>
+      <input id="nsMobile" placeholder="03001234567" maxlength="11">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input id="nsPass" type="password" placeholder="••••••••">
+    </div>
+    <div class="input-group">
+      <label>Designation</label>
+      <select id="nsDes">
+        ${DESIGNATIONS.map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Gender</label>
+      <select id="nsGender"><option>Male</option><option>Female</option></select>
+    </div>
+    <button class="btn-primary" onclick="saveNewStaff()">💾 Save</button>
+    <button class="btn-secondary" onclick="openManageStaffModal()">Back</button>
+  `);
+}
+
+function saveNewStaff() {
+  const name = $('nsName')?.value.trim();
+  const mobile = normalizeMobile($('nsMobile')?.value.trim());
+  const password = $('nsPass')?.value;
+  const designation = $('nsDes')?.value;
+  const gender = $('nsGender')?.value;
+  
+  if (!name || !mobile || !password) { toast('Fill all fields', 'error'); return; }
+  if (mobile.length !== 11) { toast('Mobile must be 11 digits', 'error'); return; }
+  
+  const staffList = LocalDB.get('staff', []);
+  if (staffList.some(s => normalizeMobile(s.mobile) === mobile)) {
+    toast('Mobile already exists', 'error'); return;
+  }
+  
+  LocalDB.push('staff', {
+    name, mobile, password, designation, gender,
+    role: 'staff', active: true,
+    fixedShift: 'M', multiShifts: [], station: 'OPD', notifications: true
+  });
+  State.staff = LocalDB.get('staff', []);
+  toast('Staff added', 'success');
+  openManageStaffModal();
+}
+
+function deleteStaff(id) {
+  if (!confirm('Delete this staff member?')) return;
+  LocalDB.remove('staff', id);
+  State.staff = LocalDB.get('staff', []);
+  toast('Staff deleted', 'warning');
+  openManageStaffModal();
+}
+
+/* ─── ADMIN: MANAGE SHIFTS ─── */
+function openManageShiftsModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>⏰ Manage Shifts</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    ${State.shiftsSimple.map(s => `
+      <div class="card" style="padding:14px">
+        <div class="flex-between">
+          <div>
+            <div style="font-weight:600;font-size:14px">
+              <span class="shift-pill shift-${esc(s.code)}" style="margin-right:8px">${esc(s.code)}</span>
+              ${esc(s.name)}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+              ${esc(s.start)} → ${esc(s.end)} · ${s.duration}h · ${esc(s.gender)}
+            </div>
+          </div>
+          <span class="badge ${s.active ? 'badge-success' : 'badge-danger'}">${s.active ? 'Active' : 'Off'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+          <div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Mon-Fri</div><strong>${s.staffMonFri}</strong></div>
+          <div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Sat</div><strong>${s.staffSat}</strong></div>
+          <div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Sun</div><strong>${s.staffSun}</strong></div>
+        </div>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn-sm" onclick="editShift('${s._id}')">✏️ Edit</button>
+          <button class="btn-sm ${s.active ? 'btn-danger' : 'btn-success'}" onclick="toggleShift('${s._id}')">${s.active ? '🚫 Disable' : '✅ Enable'}</button>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+function editShift(id) {
+  const s = State.shiftsSimple.find(x => x._id === id);
+  if (!s) return;
+  openModal(`
+    <div class="modal-header">
+      <h2>✏️ Edit Shift: ${esc(s.code)}</h2>
+      <button class="modal-close" onclick="openManageShiftsModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Name</label>
+      <input id="esName" value="${esc(s.name)}">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="input-group">
+        <label>Start</label>
+        <input id="esStart" type="time" value="${esc(s.start)}">
+      </div>
+      <div class="input-group">
+        <label>End</label>
+        <input id="esEnd" type="time" value="${esc(s.end)}">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div class="input-group">
+        <label>Mon-Fri</label>
+        <input id="esMonFri" type="number" min="0" max="20" value="${s.staffMonFri}">
+      </div>
+      <div class="input-group">
+        <label>Sat</label>
+        <input id="esSat" type="number" min="0" max="20" value="${s.staffSat}">
+      </div>
+      <div class="input-group">
+        <label>Sun</label>
+        <input id="esSun" type="number" min="0" max="20" value="${s.staffSun}">
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Gender</label>
+      <select id="esGender">
+        <option ${s.gender==='Any'?'selected':''}>Any</option>
+        <option ${s.gender==='Male'?'selected':''}>Male</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveShift('${s._id}')">💾 Save</button>
+    <button class="btn-secondary" onclick="openManageShiftsModal()">Back</button>
+  `);
+}
+
+function saveShift(id) {
+  const updates = {
+    name: $('esName')?.value.trim(),
+    start: $('esStart')?.value,
+    end: $('esEnd')?.value,
+    staffMonFri: parseInt($('esMonFri')?.value) || 0,
+    staffSat: parseInt($('esSat')?.value) || 0,
+    staffSun: parseInt($('esSun')?.value) || 0,
+    gender: $('esGender')?.value
+  };
+  const arr = LocalDB.get('shiftsSimple', []);
+  const idx = arr.findIndex(x => x._id === id);
+  if (idx >= 0) { arr[idx] = { ...arr[idx], ...updates }; LocalDB.set('shiftsSimple', arr); }
+  State.shiftsSimple = LocalDB.get('shiftsSimple', []);
+  toast('Shift updated', 'success');
+  openManageShiftsModal();
+}
+
+function toggleShift(id) {
+  const arr = LocalDB.get('shiftsSimple', []);
+  const idx = arr.findIndex(x => x._id === id);
+  if (idx >= 0) { arr[idx].active = !arr[idx].active; LocalDB.set('shiftsSimple', arr); }
+  State.shiftsSimple = LocalDB.get('shiftsSimple', []);
+  toast('Shift toggled', 'success');
+  openManageShiftsModal();
+}
+
+/* ─── ADMIN: HOLIDAYS ─── */
+function openManageHolidaysModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>🎉 Holidays</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:12px">
+      <input type="date" id="holDate" class="search-bar" style="margin:0">
+      <input id="holName" class="search-bar" placeholder="Name" style="margin:0">
+    </div>
+    <button class="btn-sm btn-accent btn-block mb12" onclick="addHoliday()">+ Add Holiday</button>
+    ${State.holidays.length === 0 ? '<div class="empty-state"><div class="icon">🎉</div><div>No holidays</div></div>'
+      : State.holidays.slice().sort((a,b) => a.date.localeCompare(b.date)).map(h => `
+        <div class="list-row">
+          <div>
+            <div style="font-weight:600;font-size:13.5px">${esc(h.name || 'Holiday')}</div>
+            <div style="font-size:11.5px;color:var(--text-muted)">${fmtDisplay(h.date)}</div>
+          </div>
+          <button class="btn-sm btn-danger" onclick="removeHoliday('${esc(h.date)}')">🗑️</button>
+        </div>
+      `).join('')
+    }
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  `);
+}
+
+function addHoliday() {
+  const date = $('holDate')?.value;
+  const name = $('holName')?.value.trim() || 'Holiday';
+  if (!date) { toast('Select date', 'error'); return; }
+  if (State.holidays.some(h => h.date === date)) { toast('Already added', 'error'); return; }
+  State.holidays.push({ date, name });
+  LocalDB.set('holidays', State.holidays);
+  toast('Holiday added', 'success');
+  openManageHolidaysModal();
+}
+
+function removeHoliday(date) {
+  State.holidays = State.holidays.filter(h => h.date !== date);
+  LocalDB.set('holidays', State.holidays);
+  toast('Removed', 'warning');
+  openManageHolidaysModal();
+}
+
+/* ─── ADMIN: HOSPITAL SETTINGS ─── */
+function openHospitalSettingsModal() {
+  const s = State.settings;
+  openModal(`
+    <div class="modal-header">
+      <h2>🏥 Hospital Settings</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Hospital Name</label>
+      <input id="hsName" value="${esc(s.hospitalName)}">
+    </div>
+    <div class="input-group">
+      <label>Address</label>
+      <input id="hsAddr" value="${esc(s.hospitalAddress)}">
+    </div>
+    <div class="input-group">
+      <label>Phone</label>
+      <input id="hsPhone" value="${esc(s.hospitalPhone)}">
+    </div>
+    <div class="input-group">
+      <label>Header Text</label>
+      <input id="hsHeader" value="${esc(s.headerText)}">
+    </div>
+    <div class="input-group">
+      <label>Upload Logo (PNG/JPG)</label>
+      <input id="hsLogo" type="file" accept="image/*" onchange="handleLogoUpload(event)">
+    </div>
+    <button class="btn-primary" onclick="saveHospitalSettings()">💾 Save Settings</button>
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+  `);
+}
+
+function saveHospitalSettings() {
+  State.settings.hospitalName = $('hsName')?.value.trim() || '';
+  State.settings.hospitalAddress = $('hsAddr')?.value.trim() || '';
+  State.settings.hospitalPhone = $('hsPhone')?.value.trim() || '';
+  State.settings.headerText = $('hsHeader')?.value.trim() || '';
+  LocalDB.set('settings', State.settings);
+  closeModal();
+  toast('Settings saved', 'success');
+  render();
+}
+
+function handleLogoUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 500000) { toast('Image must be < 500KB', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    localStorage.setItem('kih_hospital_logo', ev.target.result);
+    applyLogo();
+    toast('Logo uploaded', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ─── EXPORT ALL DATA ─── */
+function exportAllData() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    staff: LocalDB.get('staff', []),
+    tests: LocalDB.get('tests', []),
+    roster: LocalDB.get('rosterData', null),
+    rosterPeriod: LocalDB.get('rosterPeriod', null),
+    swaps: LocalDB.get('swaps', []),
+    attendance: LocalDB.get('attendance', []),
+    cpl: LocalDB.get('cpl', []),
+    rejections: LocalDB.get('rejections', []),
+    holidays: LocalDB.get('holidays', []),
+    notifications: LocalDB.get('notifications', []),
+    settings: LocalDB.get('settings', {})
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kih-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Data exported', 'success');
+}
+
+console.log('%c🩸 KIH Phlebotomy v4.0 · Part 3 loaded', 'color:#14B8A6;font-weight:bold;font-size:13px');
+    /* ═══════════════════════════════════════════════════════════
+   KIH PHLEBOTOMY v4.0 — PART 4: BOOT + EVENTS
+   ═══════════════════════════════════════════════════════════ */
+
+function bootApp() {
+  // Login button
+  const loginBtn = $('loginBtn');
+  if (loginBtn) loginBtn.onclick = doLogin;
+  
+  const guestBtn = $('guestBtn');
+  if (guestBtn) guestBtn.onclick = doGuestLogin;
+  
+  // Enter key on password
+  const pass = $('loginPassword');
+  if (pass) pass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  
+  // Logout
+  const logoutBtn = $('logoutBtn');
+  if (logoutBtn) logoutBtn.onclick = doLogout;
+  
+  // Notification bell
+  const bell = $('notificationBell');
+  if (bell) bell.onclick = openNotificationsModal;
+  
+  // User avatar
+  const avatar = $('userAvatar');
+  if (avatar) avatar.onclick = () => { State.activeTab = 'more'; render(); };
+  
+  // Online/offline
+  window.addEventListener('online', () => {
+    State.online = true;
+    const dot = $('onlineDot');
+    if (dot) dot.style.background = 'var(--success-l)';
+    toast('Back online', 'success');
+  });
+  window.addEventListener('offline', () => {
+    State.online = false;
+    const dot = $('onlineDot');
+    if (dot) dot.style.background = 'var(--danger)';
+    toast('Offline mode', 'warning');
+  });
+  
+  // Resize: build/destroy sidebar
+  let lastDesktop = window.innerWidth >= 1024;
+  window.addEventListener('resize', () => {
+    const isDesktop = window.innerWidth >= 1024;
+    if (isDesktop !== lastDesktop) {
+      lastDesktop = isDesktop;
+      if (isDesktop && State.user) buildSidebar();
+      else {
+        const sb = document.getElementById('kihSidebar');
+        if (sb) sb.remove();
+      }
+    }
+  });
+  
+  // Global copy handler for [data-copy] buttons
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-copy]');
+    if (btn) {
+      const text = btn.getAttribute('data-copy');
+      navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success')).catch(() => toast('Copy failed', 'error'));
+    }
+  });
+  
+  // Check existing session
+  const session = loadSession();
+  if (session && session.user) {
+    State.user = session.user;
+    State.session = session;
+    // Verify user still exists
+    const staffList = LocalDB.get('staff', [DEFAULT_ADMIN]);
+    const found = staffList.find(s => s._id === session.user._id);
+    if (found || session.user.guest) {
+      showApp();
+      return;
+    }
+    clearSession();
+  }
+  
+  // Show login
+  $('loginScreen').style.display = 'flex';
+}
+
+// Service worker (optional — remove if not needed)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  // Uncomment to enable offline caching:
+  // navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+console.log('%c🩸 KIH Phlebotomy v4.0 · Part 4 loaded', 'color:#14B8A6;font-weight:bold;font-size:13px');
+console.log('%c✅ App ready! Login: 03001234567 / admin123', 'color:#10B981;font-weight:bold;font-size:12px');
