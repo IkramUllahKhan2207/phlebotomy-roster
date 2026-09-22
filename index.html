@@ -1,954 +1,2154 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#FFFFFF">
-<title>KIH Phlebotomy · Companion</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--bg-0:#FFFFFF;--bg-1:#F9FAFB;--bg-2:#F3F4F6;--border:#E5E7EB;--border-2:#D1D5DB;--text:#111827;--text-muted:#6B7280;--text-dim:#9CA3AF;--primary:#14B8A6;--primary-d:#0D9488;--primary-glow:rgba(20,184,166,0.25);--success:#10B981;--success-l:#34D399;--danger:#EF4444;--danger-l:#F87171;--warning:#F59E0B;--radius:12px;--radius-lg:16px;--radius-xl:24px;--nav-h:70px;--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow:0 4px 12px rgba(0,0,0,0.08);--shadow-lg:0 12px 32px rgba(0,0,0,0.12)}
-html,body{background:var(--bg-0);color:var(--text);min-height:100vh;font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body{padding-bottom:calc(var(--nav-h) + 20px)}
-.hidden{display:none !important}
-.flex{display:flex}.flex-center{display:flex;align-items:center;justify-content:center}
-.flex-between{display:flex;align-items:center;justify-content:space-between}
-.gap8{gap:8px}.gap12{gap:12px}.gap16{gap:16px}
-.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
-.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
-.text-sm{font-size:13px}.text-xs{font-size:11px}
-.text-muted{color:var(--text-muted)}.text-center{text-align:center}.bold{font-weight:600}
-.num-mono{font-family:'JetBrains Mono',monospace}
-.login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:2000;background:var(--bg-0)}
-.login-card{width:100%;max-width:400px;background:var(--bg-0);border:1px solid var(--border);border-radius:var(--radius-xl);padding:32px 24px;box-shadow:var(--shadow-lg)}
-.login-logo{width:72px;height:72px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:38px;background:var(--primary);border-radius:20px;color:#fff;overflow:hidden}
-.login-logo img{width:100%;height:100%;object-fit:contain}
-.login-card h1{font-size:24px;font-weight:700;text-align:center;margin-bottom:6px}
-.login-card .subtitle{text-align:center;color:var(--text-muted);font-size:13.5px;margin-bottom:24px}
-.input-group{margin-bottom:16px}
-.input-group label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
-.input-group input,.input-group select,.input-group textarea{width:100%;padding:12px 14px;background:var(--bg-0);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .15s ease}
-.input-group input:focus,.input-group select:focus,.input-group textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
-.input-group input::placeholder,.input-group textarea::placeholder{color:var(--text-dim)}
-.checkbox-row{display:flex;align-items:center;gap:10px;margin:14px 0 18px;color:var(--text-muted);font-size:14px;cursor:pointer;user-select:none}
-.checkbox-row input[type="checkbox"]{width:18px;height:18px;accent-color:var(--primary);cursor:pointer}
-.btn-primary{width:100%;padding:14px;background:var(--primary);color:#fff;font-size:15px;font-weight:600;border:none;border-radius:var(--radius);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s ease}
-.btn-primary:hover{filter:brightness(1.08)}.btn-primary:active{transform:scale(0.98)}.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
-.btn-secondary{width:100%;padding:14px;background:transparent;color:var(--text-muted);font-size:14px;font-weight:500;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:inherit;margin-top:10px;transition:all .15s ease}
-.btn-secondary:hover{background:var(--bg-1);color:var(--text)}
-.login-footer{margin-top:20px;text-align:center;color:var(--text-dim);font-size:12px}
-.app-header{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-0);border-bottom:1px solid var(--border)}
-.header-left{display:flex;align-items:center;gap:10px}
-.header-logo{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--primary);border-radius:8px;color:#fff;overflow:hidden}
-.header-logo img{width:100%;height:100%;object-fit:contain}
-.header-title{font-size:15px;font-weight:700}
-.online-dot{width:8px;height:8px;border-radius:50%;background:var(--success-l)}
-.header-right{display:flex;align-items:center;gap:8px}
-.icon-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--bg-1);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:16px;cursor:pointer;position:relative;transition:all .15s ease}
-.icon-btn:hover{background:var(--bg-2);color:var(--text)}
-.bell-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center}
-.user-avatar{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--bg-2);border:1px solid var(--border);border-radius:50%;font-size:13px;font-weight:700;cursor:pointer;color:var(--text)}
-.logout-link{color:var(--danger);font-size:13px;font-weight:500;cursor:pointer;padding:8px 10px;border-radius:8px}
-.logout-link:hover{background:rgba(239,68,68,0.08)}
-.app-content{padding:16px;max-width:100%;margin:0 auto}
-.card{background:var(--bg-0);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm);transition:all .15s ease}
-.card:hover{box-shadow:var(--shadow);border-color:var(--border-2)}
-.card-title{font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-.card-sub{color:var(--text-muted);font-size:13.5px;line-height:1.5}
-.badge{display:inline-flex;align-items:center;padding:3px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:20px;font-size:11.5px;font-weight:500;color:var(--text-muted);white-space:nowrap}
-.badge-primary{background:rgba(20,184,166,0.1);border-color:rgba(20,184,166,0.3);color:var(--primary)}
-.badge-success{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#059669}
-.badge-danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#DC2626}
-.badge-warning{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#D97706}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.btn-sm{padding:8px 14px;background:var(--bg-1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s ease;white-space:nowrap}
-.btn-sm:hover{background:var(--bg-2);border-color:var(--border-2)}.btn-sm:active{transform:scale(0.97)}.btn-sm:disabled{opacity:0.5;cursor:not-allowed}
-.btn-accent{background:var(--primary);border-color:var(--primary);color:#fff}.btn-accent:hover{filter:brightness(1.08)}
-.btn-success{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#059669}.btn-success:hover{background:rgba(16,185,129,0.2)}
-.btn-danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#DC2626}.btn-danger:hover{background:rgba(239,68,68,0.2)}
-.btn-block{width:100%;justify-content:center;padding:12px}
-.big-btn{width:100%;padding:18px;border:none;border-radius:var(--radius-lg);font-family:inherit;font-size:16px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;transition:all .15s ease;background:var(--primary)}
-.big-btn:hover{filter:brightness(1.08)}.big-btn:active{transform:scale(0.98)}
-.big-btn-draw{background:#10B981}.big-btn-emergency{background:#EF4444}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-0);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:6px 4px 10px;z-index:100;overflow-x:auto}
-.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 6px;min-width:52px;color:var(--text-dim);font-size:10px;font-weight:500;cursor:pointer;border-radius:8px;transition:all .15s ease;flex-shrink:0}
-.nav-item .nav-icon{font-size:20px;line-height:1}
-.nav-item.active{color:var(--primary);background:rgba(20,184,166,0.1)}
-.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);min-width:240px;max-width:90vw;padding:12px 18px;background:var(--text);color:var(--bg-0);border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:var(--shadow-lg);z-index:3000;opacity:0;pointer-events:none;transition:all .2s ease;text-align:center}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.success{background:#10B981;color:#fff}.toast.error{background:#EF4444;color:#fff}.toast.warning{background:#F59E0B;color:#fff}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:flex-end;justify-content:center}
-.modal-overlay.active{display:flex}
-.modal-sheet{width:100%;max-width:640px;max-height:92vh;overflow-y:auto;background:var(--bg-0);border-radius:20px 20px 0 0;padding:20px 18px 30px;animation:slideUp .25s ease}
-@keyframes slideUp{from{transform:translateY(30px);opacity:0.8}to{transform:translateY(0);opacity:1}}
-.modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-.modal-header h2{font-size:18px;font-weight:600;flex:1}
-.modal-close{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-1);border:1px solid var(--border);border-radius:50%;color:var(--text-muted);font-size:16px;cursor:pointer;font-family:inherit}
-.modal-close:hover{background:var(--bg-2);color:var(--text)}
-.search-bar{width:100%;padding:11px 14px;background:var(--bg-0);border:1px solid var(--border);border-radius:40px;color:var(--text);font-size:13.5px;font-family:inherit;outline:none;margin-bottom:12px}
-.search-bar:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
-.tab-bar{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;margin-bottom:8px;scrollbar-width:none}
-.tab-bar::-webkit-scrollbar{display:none}
-.tab{padding:8px 14px;background:var(--bg-1);border:1px solid var(--border);border-radius:40px;color:var(--text-muted);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;white-space:nowrap}
-.tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
-.progress-bar{height:6px;background:var(--bg-2);border-radius:6px;overflow:hidden;margin:8px 0}
-.progress-fill{height:100%;background:var(--primary);border-radius:6px;transition:width .3s ease}
-.list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--bg-0);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:all .15s ease}
-.list-row:hover{background:var(--bg-1);border-color:var(--border-2)}
-.stat-box{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center}
-.stat-box .num{font-size:24px;font-weight:700;line-height:1.1}
-.stat-box .lbl{font-size:11px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.05em}
-.emergency-card{background:var(--bg-0);border:1px solid var(--border);border-left:3px solid #EF4444;border-radius:10px;padding:14px;margin-bottom:10px}
-.emergency-card h3{font-size:15px;font-weight:600;margin-bottom:8px}
-.emergency-steps{list-style:none;color:var(--text-muted);font-size:13px;line-height:1.6}
-.emergency-steps li{padding-left:14px;position:relative;margin-bottom:4px}
-.emergency-steps li::before{content:'●';position:absolute;left:0;color:#EF4444;font-size:7px;top:6px}
-.empty-state{text-align:center;padding:30px 16px;color:var(--text-muted)}
-.empty-state .icon{font-size:40px;margin-bottom:10px;opacity:0.4}
-.avatar{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-2);border:1px solid var(--border);border-radius:50%;font-weight:600;font-size:13px}
-.divider{height:1px;background:var(--border);margin:14px 0}
-.roster-table{width:100%;border-collapse:collapse;font-size:11px}
-.roster-table th{padding:8px 4px;color:var(--text-dim);font-weight:600;font-size:10px;text-transform:uppercase;text-align:center}
-.roster-table th:first-child{text-align:left}
-.roster-table td{padding:6px 4px;text-align:center;border-top:1px solid var(--border);font-size:11px}
-.roster-table td:first-child{text-align:left;font-weight:500;white-space:nowrap}
-.shift-pill{display:inline-block;padding:3px 6px;border-radius:5px;font-size:9.5px;font-weight:600;color:#fff;min-width:22px}
-.shift-M{background:#10B981}.shift-E{background:#6366F1}.shift-N{background:#8B5CF6}.shift-N12{background:#EC4899}
-.shift-E4{background:#3B82F6}.shift-D{background:#F43F5E}.shift-D2{background:#F43F5E}.shift-X{background:#6B7280}
-.shift-OFF{background:#374151}.shift-PH{background:#F59E0B}.shift-CPL{background:#8B5CF6}.shift-EL{background:#EC4899}
-.shift-CL{background:#14B8A6}.shift-ME{background:#DC2626}.shift-EN{background:#7C3AED}.shift-DX{background:#8B5CF6}
-.shift-XE{background:#F59E0B}.shift-MX{background:#10B981}
-@media (min-width:1024px){
-  body{padding-bottom:0}
-  .app-header{padding:12px 24px}
-  .bottom-nav{display:none !important}
-  .app-content{margin-left:220px !important;max-width:calc(100% - 220px) !important;width:calc(100% - 220px) !important;padding:20px 28px !important}
-  .app-header .header-left{margin-left:220px}
-  .app-header .header-logo{display:none}
-  .kih-sidebar{display:flex !important;position:fixed;top:60px;left:0;bottom:0;width:220px;background:var(--bg-0);border-right:1px solid var(--border);flex-direction:column;padding:16px 10px;z-index:90;overflow-y:auto}
-  .kih-sidebar-logo{display:flex;align-items:center;gap:10px;padding:6px 10px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
-  .kih-sidebar-logo-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--primary);border-radius:8px;font-size:18px;color:#fff;overflow:hidden}
-  .kih-sidebar-logo-icon img{width:100%;height:100%;object-fit:contain}
-  .kih-sidebar-logo-text{font-size:14px;font-weight:700;line-height:1.2}
-  .kih-sidebar-logo-text small{display:block;font-size:10px;font-weight:400;color:var(--text-muted);margin-top:1px}
-  .kih-sidebar-nav{display:flex;flex-direction:column;gap:2px}
-  .kih-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text-muted);font-size:13.5px;font-weight:500;cursor:pointer;transition:all .15s ease}
-  .kih-nav-item:hover{background:var(--bg-1);color:var(--text)}
-  .kih-nav-item.active{background:var(--primary);color:#fff}
-  .kih-nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
-  .kih-nav-label{flex:1}
-  .kih-sidebar-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--border)}
-  .kih-user-card{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-1);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
-  .kih-user-avatar{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--primary);border-radius:50%;font-weight:600;font-size:12px;color:#fff;flex-shrink:0}
-  .kih-user-info{flex:1;min-width:0}
-  .kih-user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .kih-user-role{font-size:10px;color:var(--text-muted);margin-top:1px}
-  .kih-logout-btn{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;color:var(--danger);font-size:12.5px;font-weight:500;cursor:pointer;background:transparent;border:1px solid rgba(239,68,68,0.2);width:100%;font-family:inherit}
-  .kih-logout-btn:hover{background:rgba(239,68,68,0.08)}
-}
-@media (max-width:1023px){.kih-sidebar{display:none !important}}
-@media (max-width:400px){.app-content{padding:12px}.card{padding:14px}}
-</style>
-</head>
-<body>
-
-<div id="loginScreen" class="login-screen">
-  <div class="login-card">
-    <div class="login-logo" id="loginLogo">🩸</div>
-    <h1>KIH Phlebotomy</h1>
-    <p class="subtitle">Kulsum International Hospital · Islamabad</p>
-    <div class="input-group">
-      <label>Mobile Number</label>
-      <input type="tel" id="loginMobile" placeholder="03001234567" autocomplete="tel" inputmode="tel" maxlength="11" value="03001234567">
-    </div>
-    <div class="input-group">
-      <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" value="admin123">
-    </div>
-    <label class="checkbox-row">
-      <input type="checkbox" id="keepSignedIn" checked>
-      <span>Keep me signed in (30 days)</span>
-    </label>
-    <button class="btn-primary" id="loginBtn"><span>🔓</span><span>Sign In</span></button>
-    <button class="btn-secondary" id="guestBtn">👤 Continue as Guest</button>
-    <div class="login-footer">Session persists 30 days · Demo Mode</div>
-  </div>
-</div>
-
-<header class="app-header hidden" id="appHeader">
-  <div class="header-left">
-    <div class="header-logo" id="headerLogo">🩸</div>
-    <div class="header-title">Phlebotomy</div>
-    <span class="online-dot" id="onlineDot"></span>
-  </div>
-  <div class="header-right">
-    <div class="icon-btn" id="notificationBell" title="Notifications">🔔<span class="bell-badge hidden" id="bellBadge">0</span></div>
-    <div class="user-avatar" id="userAvatar" title="Profile">?</div>
-    <span class="logout-link" id="logoutBtn">Logout</span>
-  </div>
-</header>
-
-<main class="app-content hidden" id="appContent"></main>
-
-<nav class="bottom-nav hidden" id="bottomNav">
-  <div class="nav-item active" data-tab="home"><span class="nav-icon">🏠</span><span>Home</span></div>
-  <div class="nav-item" data-tab="tests"><span class="nav-icon">🧪</span><span>Tests</span></div>
-  <div class="nav-item" data-tab="protocols"><span class="nav-icon">📋</span><span>Protocols</span></div>
-  <div class="nav-item" data-tab="roster"><span class="nav-icon">📅</span><span>Roster</span></div>
-  <div class="nav-item" data-tab="swap"><span class="nav-icon">🔄</span><span>Swap</span></div>
-  <div class="nav-item" data-tab="learn"><span class="nav-icon">📚</span><span>Learn</span></div>
-  <div class="nav-item" data-tab="attend"><span class="nav-icon">✅</span><span>Attend</span></div>
-  <div class="nav-item" data-tab="cpl"><span class="nav-icon">📈</span><span>CPL</span></div>
-  <div class="nav-item" data-tab="more"><span class="nav-icon">⋯</span><span>More</span></div>
-</nav>
-
-<div class="toast" id="toast"></div>
-<div class="modal-overlay" id="modalOverlay"><div class="modal-sheet" id="modalSheet"></div></div>
-
-<script>
 /* ═══════════════════════════════════════════════════════════
-   KIH PHLEBOTOMY v4.0 — COMPLETE SINGLE-FILE APP
+   PART 6 — VIEWS, LOGIN, SESSION, INIT
    ═══════════════════════════════════════════════════════════ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDemo_REPLACE_WITH_YOUR_REAL_KEY",
-  authDomain: "kih-phlebotomy.firebaseapp.com",
-  databaseURL: "https://kih-phlebotomy-default-rtdb.firebaseio.com",
-  projectId: "kih-phlebotomy",
-  storageBucket: "kih-phlebotomy.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000"
-};
-const IS_DEMO = true;
-
-const DESIGNATIONS = [
-  { id: 'phleb', code: 'PLB', name: 'Phlebotomist', icon: '🩸' },
-  { id: 'sr', code: 'SPL', name: 'Sr. Phlebotomist', icon: '⭐' },
-  { id: 'jr', code: 'JPL', name: 'Jr. Phlebotomist', icon: '🎓' },
-  { id: 'tech', code: 'TCH', name: 'Technologist', icon: '🔬' }
-];
-
-const SHIFTS_LIBRARY = {
-  M:{code:'M',name:'Morning',start:'07:00',end:'15:00',duration:8,color:'#10B981',gender:'Any'},
-  D:{code:'D',name:'Day',start:'09:00',end:'17:00',duration:8,color:'#F43F5E',gender:'Any'},
-  D2:{code:'D2',name:'Day 2',start:'10:00',end:'18:00',duration:8,color:'#F43F5E',gender:'Any'},
-  E:{code:'E',name:'Evening',start:'15:00',end:'23:00',duration:8,color:'#6366F1',gender:'Any'},
-  N:{code:'N',name:'Night',start:'23:00',end:'07:00',duration:8,color:'#8B5CF6',gender:'Male'},
-  N12:{code:'N12',name:'Extended Night',start:'00:00',end:'08:00',duration:12,color:'#EC4899',gender:'Male'},
-  E4:{code:'E4',name:'Short Evening',start:'16:00',end:'00:00',duration:8,color:'#3B82F6',gender:'Any'},
-  X:{code:'X',name:'X-Duty',start:'11:00',end:'19:00',duration:8,color:'#6B7280',gender:'Any'},
-  OFF:{code:'OFF',name:'Off',start:'-',end:'-',duration:0,color:'#374151',gender:'Any'},
-  PH:{code:'PH',name:'Public Holiday',start:'-',end:'-',duration:0,color:'#F59E0B',gender:'Any'},
-  CPL:{code:'CPL',name:'Compensated Leave',start:'-',end:'-',duration:0,color:'#8B5CF6',gender:'Any'},
-  EL:{code:'EL',name:'Earned Leave',start:'-',end:'-',duration:0,color:'#EC4899',gender:'Any'},
-  CL:{code:'CL',name:'Casual Leave',start:'-',end:'-',duration:0,color:'#14B8A6',gender:'Any'}
-};
-
-const State = {
-  user:null,session:null,online:navigator.onLine,activeTab:'home',protocolTab:'order',
-  staff:[],tests:[],policies:[],historyForms:[],notifications:[],swapRequests:[],
-  leaveRequests:[],attendance:[],cplActivities:[],rejections:[],emergencyCards:[],
-  difficultDraws:[],scripts:[],shiftsSimple:[],rosterData:null,rosterPeriod:null,
-  holidays:[],sundayIndex:0,unreadCount:0,
-  settings:{hospitalName:'Kulsum International Hospital',hospitalAddress:'Islamabad, Pakistan',hospitalPhone:'+92 51 XXXX XXXX',headerText:'PHLEBOTOMY'}
-};
-
-const $ = id => document.getElementById(id);
-const $$ = sel => document.querySelectorAll(sel);
-
-function toast(msg,type=''){const t=$('toast');if(!t)return;t.textContent=msg;t.className='toast show '+type;clearTimeout(t._timer);t._timer=setTimeout(()=>t.className='toast '+type,2600);}
-function uid(){return '_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
-function fmtTime(d=new Date()){return d.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});}
-function fmtDate(d=new Date()){return d.toLocaleDateString('en-PK',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
-function fmtDateTime(ts){const d=new Date(ts);return d.toLocaleString('en-PK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
-function fmtDisplay(dateStr){const d=new Date(dateStr);return d.toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'});}
-function dayShort(date){return new Date(date).toLocaleDateString('en-PK',{weekday:'short'});}
-function isSunday(date){return new Date(date).getDay()===0;}
-function isSaturday(date){return new Date(date).getDay()===6;}
-function isHoliday(date,holidays=State.holidays){const key=typeof date==='string'?date:new Date(date).toISOString().split('T')[0];return holidays.some(h=>h.date===key);}
-function dateRange(start,end){const dates=[];let cur=new Date(start);const last=new Date(end);while(cur<=last){dates.push(cur.toISOString().split('T')[0]);cur.setDate(cur.getDate()+1);}return dates;}
-function getInitials(name){if(!name)return '?';const p=name.trim().split(/\s+/);return ((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase()||'?';}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function normalizeMobile(m){if(!m)return '';let s=String(m).replace(/\D/g,'');if(s.startsWith('92'))s='0'+s.slice(2);if(!s.startsWith('0'))s='0'+s;return s;}
-
-const LocalDB = {
-  KEY_PREFIX:'kih_db_',
-  get(key,def=[]){try{const raw=localStorage.getItem(this.KEY_PREFIX+key);return raw?JSON.parse(raw):def;}catch{return def;}},
-  set(key,val){try{localStorage.setItem(this.KEY_PREFIX+key,JSON.stringify(val));return true;}catch(e){return false;}},
-  push(key,item){const arr=this.get(key,[]);if(!item._id)item._id=uid();if(!item.createdAt)item.createdAt=Date.now();arr.push(item);this.set(key,arr);return item;},
-  update(key,id,updates){const arr=this.get(key,[]);const idx=arr.findIndex(x=>x._id===id);if(idx===-1)return null;arr[idx]={...arr[idx],...updates,updatedAt:Date.now()};this.set(key,arr);return arr[idx];},
-  remove(key,id){const arr=this.get(key,[]);const filtered=arr.filter(x=>x._id!==id);this.set(key,filtered);return filtered;}
-};
-
-function getDefaultTests(){return [
-  {_id:uid(),name:'CBC',tube:'EDTA (Lavender)',order:5,volume:'2-3 mL',tat:'2 hrs',urgent:'30 min',category:'Hematology',createdAt:Date.now()},
-  {_id:uid(),name:'PT/INR',tube:'Citrate (Blue)',order:2,volume:'2.7 mL',tat:'4 hrs',urgent:'1 hr',category:'Coagulation',createdAt:Date.now()},
-  {_id:uid(),name:'LFT',tube:'SST (Gold)',order:3,volume:'3-5 mL',tat:'6 hrs',urgent:'2 hrs',category:'Chemistry',createdAt:Date.now()},
-  {_id:uid(),name:'RFT',tube:'SST (Gold)',order:3,volume:'3-5 mL',tat:'6 hrs',urgent:'2 hrs',category:'Chemistry',createdAt:Date.now()},
-  {_id:uid(),name:'Blood Sugar (F)',tube:'Fluoride (Grey)',order:6,volume:'2 mL',tat:'1 hr',urgent:'30 min',category:'Chemistry',createdAt:Date.now()},
-  {_id:uid(),name:'Blood Culture',tube:'Culture Bottle',order:1,volume:'10 mL',tat:'48 hrs',urgent:'24 hrs',category:'Microbiology',createdAt:Date.now()},
-  {_id:uid(),name:'TSH',tube:'SST (Gold)',order:3,volume:'3 mL',tat:'6 hrs',urgent:'3 hrs',category:'Hormones',createdAt:Date.now()},
-  {_id:uid(),name:'D-Dimer',tube:'Citrate (Blue)',order:2,volume:'2.7 mL',tat:'4 hrs',urgent:'1 hr',category:'Coagulation',createdAt:Date.now()}
-];}
-
-function getDefaultEmergency(){return [
-  {_id:uid(),title:'🩸 Needle Stick Injury',steps:['Wash with soap + water (5 min)','Clean with alcohol','Notify supervisor within 1 hour','Fill incident form','Blood test (HIV, Hep B, Hep C)','Start PEP within 2 hours'],createdAt:Date.now()},
-  {_id:uid(),title:'😵 Patient Fainting',steps:['Lay patient down (head low)','Elevate legs','Loosen tight clothes','Cold water on face','If not recovered in 1 min → call 1122'],createdAt:Date.now()},
-  {_id:uid(),title:'🩹 Hematoma',steps:['Remove needle immediately','Firm pressure 5-10 min','Ice pack 15 min','Keep arm elevated'],createdAt:Date.now()},
-  {_id:uid(),title:'🦵 Nerve Injury',steps:['Remove needle immediately','Ask patient: tingling, numbness, pain?','If yes → doctor immediately','Fill incident report'],createdAt:Date.now()},
-  {_id:uid(),title:'💉 Arterial Puncture',steps:['Remove needle immediately','Firm pressure 5-10 min','Ice pack','Inform doctor'],createdAt:Date.now()},
-  {_id:uid(),title:'🩸 Continuous Bleeding',steps:['Apply pressure 5-10 min','Tight bandage','If bleeding after 15 min → doctor'],createdAt:Date.now()}
-];}
-
-function getDefaultDifficult(){return [
-  {_id:uid(),title:'Rolling Vein',problem:'Vein slips when touched',solution:'Anchor both sides, insert slowly, 30° angle',createdAt:Date.now()},
-  {_id:uid(),title:'Collapsed Vein',problem:'Vein collapsed by vacuum',solution:'Remove tourniquet, wait 5 min, use other vein',createdAt:Date.now()},
-  {_id:uid(),title:'Fragile Vein',problem:'Thin vein, bursts easily',solution:'23G/25G needle, butterfly, slow draw',createdAt:Date.now()},
-  {_id:uid(),title:'No Vein Visible',problem:'Cannot see or feel vein',solution:'Warm water, tourniquet, tapping, vein finder',createdAt:Date.now()},
-  {_id:uid(),title:'Sclerosed Vein',problem:'Hard, cord-like vein',solution:'Do not attempt. Use other vein',createdAt:Date.now()},
-  {_id:uid(),title:'Edematous Patient',problem:'Swollen arm',solution:'Use other arm, elevate 5 min, refer doctor',createdAt:Date.now()}
-];}
-
-function getDefaultScripts(){return [
-  {_id:uid(),title:'First-Time Patient',en:'Assalam-o-Alaikum! My name is [name], I will take your blood sample.',ur:'السلام علیکم! میرا نام [name] ہے، میں آپ کا خون کا نمونہ لوں گا۔',createdAt:Date.now()},
-  {_id:uid(),title:'Nervous Patient',en:'I understand. Please look away. I will tell you each step.',ur:'میں سمجھ سکتا ہوں۔ آپ اپنی نظر دوسری طرف کر لیں۔',createdAt:Date.now()},
-  {_id:uid(),title:'Pediatric',en:'You are so brave. This is a tiny needle. If you don\'t cry, you get a sticker!',ur:'آپ بہت بہادر ہو۔ یہ ایک چھوٹی سی سوئی ہے۔',createdAt:Date.now()},
-  {_id:uid(),title:'Elderly',en:'Assalam-o-Alaikum uncle/aunty, how are you?',ur:'السلام علیکم انکل/آنٹی، کیسے ہیں آپ؟',createdAt:Date.now()},
-  {_id:uid(),title:'Refusing Patient',en:'I understand. The doctor ordered this test. Please talk to supervisor if you don\'t want it now.',ur:'میں سمجھتا ہوں۔ ڈاکٹر نے ٹیسٹ تجویز کیا ہے۔',createdAt:Date.now()},
-  {_id:uid(),title:'Fainted Before',en:'You fainted before? Today I will take sample while you are lying down.',ur:'آپ پہلے بے ہوش ہوئے تھے؟ آج میں آپ کو لٹا کر نمونہ لوں گا۔',createdAt:Date.now()}
-];}
-
-function getDefaultPolicies(){return [
-  {_id:uid(),title:'Hand Hygiene Policy',body:'All phlebotomists must perform hand hygiene before and after every patient contact.',createdAt:Date.now()},
-  {_id:uid(),title:'Needle Safety Policy',body:'Never recap needles. Use safety-engineered devices. Report all needle stick injuries within 1 hour.',createdAt:Date.now()},
-  {_id:uid(),title:'Patient Identification',body:'Verify patient identity using 3 identifiers: full name, MR number, and date of birth.',createdAt:Date.now()},
-  {_id:uid(),title:'Specimen Labeling',body:'Label all tubes at bedside, immediately after collection.',createdAt:Date.now()},
-  {_id:uid(),title:'Infection Control',body:'Follow standard precautions. Wear gloves for all draws.',createdAt:Date.now()}
-];}
-
-const DEFAULT_SHIFTS = [
-  {_id:'sh_M',code:'M',name:'Morning',start:'07:00',end:'15:00',duration:8,color:'#10B981',gender:'Any',staffMonFri:5,staffSat:4,staffSun:3,isSpecial:false,active:true},
-  {_id:'sh_E',code:'E',name:'Evening',start:'15:00',end:'23:00',duration:8,color:'#6366F1',gender:'Any',staffMonFri:3,staffSat:3,staffSun:3,isSpecial:false,active:true},
-  {_id:'sh_N',code:'N',name:'Night',start:'23:00',end:'07:00',duration:8,color:'#8B5CF6',gender:'Male',staffMonFri:2,staffSat:2,staffSun:2,isSpecial:false,active:true},
-  {_id:'sh_D',code:'D',name:'Day',start:'09:00',end:'17:00',duration:8,color:'#F43F5E',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:true,active:true},
-  {_id:'sh_D2',code:'D2',name:'Day 2',start:'10:00',end:'18:00',duration:8,color:'#F43F5E',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:true,active:true},
-  {_id:'sh_N12',code:'N12',name:'Extended Night',start:'00:00',end:'08:00',duration:12,color:'#EC4899',gender:'Male',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:true,active:true},
-  {_id:'sh_E4',code:'E4',name:'Short Evening',start:'16:00',end:'00:00',duration:8,color:'#3B82F6',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:true,active:true},
-  {_id:'sh_X',code:'X',name:'X-Duty',start:'11:00',end:'19:00',duration:8,color:'#6B7280',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:false,active:true},
-  {_id:'sh_OFF',code:'OFF',name:'Off',start:'-',end:'-',duration:0,color:'#374151',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:false,active:true},
-  {_id:'sh_PH',code:'PH',name:'Public Holiday',start:'-',end:'-',duration:0,color:'#F59E0B',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:false,active:true},
-  {_id:'sh_CPL',code:'CPL',name:'Compensated Leave',start:'-',end:'-',duration:0,color:'#8B5CF6',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:false,active:true},
-  {_id:'sh_EL',code:'EL',name:'Earned Leave',start:'-',end:'-',duration:0,color:'#EC4899',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:false,active:true},
-  {_id:'sh_CL',code:'CL',name:'Casual Leave',start:'-',end:'-',duration:0,color:'#14B8A6',gender:'Any',staffMonFri:0,staffSat:0,staffSun:0,isSpecial:false,active:true}
-];
-
-const SESSION_KEY='kih_session_v4';
-const SESSION_TTL=30*24*60*60*1000;
-
-function saveSession(user){const data={user,expires:Date.now()+SESSION_TTL};localStorage.setItem(SESSION_KEY,JSON.stringify(data));State.session=data;}
-function loadSession(){try{const raw=localStorage.getItem(SESSION_KEY);if(!raw)return null;const d=JSON.parse(raw);if(Date.now()>d.expires){localStorage.removeItem(SESSION_KEY);return null;}return d;}catch{return null;}}
-function clearSession(){localStorage.removeItem(SESSION_KEY);State.session=null;State.user=null;}
-
-const DEFAULT_ADMIN = {_id:'admin_default',name:'Administrator',mobile:'03001234567',password:'admin123',designation:'sr',role:'admin',gender:'Male',fixedShift:'M',shift:'M',multiShifts:[],station:'OPD',notifications:true,active:true,createdAt:Date.now()};
-
-function isAdmin(){return State.user&&State.user.role==='admin';}
-function isGuest(){return State.user&&State.user.guest;}
-function canManage(){return isAdmin()&&!isGuest();}
-
-/* ─── AUTH ─── */
-function doLogin(){
-  const mobileInput=$('loginMobile'),passwordInput=$('loginPassword'),keep=$('keepSignedIn'),btn=$('loginBtn');
-  if(!mobileInput||!passwordInput)return;
-  const mobile=normalizeMobile(mobileInput.value.trim());
-  const password=passwordInput.value.trim();
-  if(!mobile||mobile.length<10){toast('Enter valid mobile','error');return;}
-  if(!password){toast('Enter password','error');return;}
-  if(btn){btn.disabled=true;btn.innerHTML='<span>⏳</span><span>Signing in...</span>';}
-  let staffList=LocalDB.get('staff',[]);
-  if(staffList.length===0){LocalDB.set('staff',[DEFAULT_ADMIN]);staffList=[DEFAULT_ADMIN];}
-  const user=staffList.find(s=>normalizeMobile(s.mobile)===mobile&&s.password===password&&s.active!==false);
-  if(!user){toast('Invalid mobile or password','error');if(btn){btn.disabled=false;btn.innerHTML='<span>🔓</span><span>Sign In</span>';}return;}
-  State.user=user;
-  if(keep&&keep.checked)saveSession(user);else clearSession();
-  if(btn){btn.disabled=false;btn.innerHTML='<span>🔓</span><span>Sign In</span>';}
-  showApp();
-  toast(`Welcome, ${user.name.split(' ')[0]}!`,'success');
+/* ---------- SESSION ---------- */
+function saveSession(user, keep){
+  const payload = {user, exp: keep ? Date.now()+SESSION_TTL : Date.now()+3600*1000};
+  localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
 }
-
-function doGuestLogin(){
-  const guest={_id:'guest_'+Date.now(),name:'Guest User',mobile:'0000000000',designation:'phleb',role:'staff',guest:true,active:true};
-  State.user=guest;clearSession();showApp();toast('Guest mode');
+function loadSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+    if(!s || !s.exp || s.exp < Date.now()){ localStorage.removeItem(SESSION_KEY); return null; }
+    return s.user;
+  }catch(e){ return null; }
 }
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
 
-function doLogout(){
-  if(!confirm('Logout?'))return;
-  clearSession();State.user=null;
-  $('loginScreen').style.display='flex';
-  $('appHeader').classList.add('hidden');
-  $('appContent').classList.add('hidden');
-  $('bottomNav').classList.add('hidden');
-  const sb=document.getElementById('kihSidebar');if(sb)sb.remove();
-  toast('Logged out');
-}
-
-function showApp(){
-  $('loginScreen').style.display='none';
-  $('appHeader').classList.remove('hidden');
-  $('appContent').classList.remove('hidden');
-  $('bottomNav').classList.remove('hidden');
-  const initials=getInitials(State.user?.name||'User');
-  $('userAvatar').textContent=initials;
-  $('userAvatar').title=State.user?.name||'User';
-  const dot=$('onlineDot');if(dot)dot.style.background=navigator.onLine?'var(--success-l)':'var(--danger)';
-  loadInitialData();
-  applyLogo();
-  render();
-  if(window.innerWidth>=1024)setTimeout(buildSidebar,100);
-}
-
-function applyLogo(){
-  const logo=localStorage.getItem('kih_hospital_logo');if(!logo)return;
-  const loginLogo=$('loginLogo');if(loginLogo)loginLogo.innerHTML=`<img src="${logo}">`;
-  const headerLogo=$('headerLogo');if(headerLogo)headerLogo.innerHTML=`<img src="${logo}">`;
-  const sbLogo=document.querySelector('.kih-sidebar-logo-icon');if(sbLogo)sbLogo.innerHTML=`<img src="${logo}">`;
-}
-
-function loadInitialData(){
-  let staff=LocalDB.get('staff',[]);if(staff.length===0){LocalDB.set('staff',[DEFAULT_ADMIN]);staff=[DEFAULT_ADMIN];}State.staff=staff;
-  let tests=LocalDB.get('tests',[]);if(tests.length===0){tests=getDefaultTests();LocalDB.set('tests',tests);}State.tests=tests;
-  let emergency=LocalDB.get('emergency',[]);if(emergency.length===0){emergency=getDefaultEmergency();LocalDB.set('emergency',emergency);}State.emergencyCards=emergency;
-  let difficult=LocalDB.get('difficult',[]);if(difficult.length===0){difficult=getDefaultDifficult();LocalDB.set('difficult',difficult);}State.difficultDraws=difficult;
-  let scripts=LocalDB.get('scripts',[]);if(scripts.length===0){scripts=getDefaultScripts();LocalDB.set('scripts',scripts);}State.scripts=scripts;
-  let policies=LocalDB.get('policies',[]);if(policies.length===0){policies=getDefaultPolicies();LocalDB.set('policies',policies);}State.policies=policies;
-  let shifts=LocalDB.get('shiftsSimple',[]);if(shifts.length===0){shifts=JSON.parse(JSON.stringify(DEFAULT_SHIFTS));LocalDB.set('shiftsSimple',shifts);}State.shiftsSimple=shifts;
-  State.historyForms=LocalDB.get('historyForms',[]);
-  State.notifications=LocalDB.get('notifications',[]);
-  State.swapRequests=LocalDB.get('swaps',[]);
-  State.leaveRequests=LocalDB.get('leave',[]);
-  State.attendance=LocalDB.get('attendance',[]);
-  State.cplActivities=LocalDB.get('cpl',[]);
-  State.rejections=LocalDB.get('rejections',[]);
-  State.holidays=LocalDB.get('holidays',[]);
-  State.sundayIndex=LocalDB.get('sundayIndex',0);
-  State.rosterData=LocalDB.get('rosterData',null);
-  State.rosterPeriod=LocalDB.get('rosterPeriod',null);
-  const saved=LocalDB.get('settings',null);if(saved)Object.assign(State.settings,saved);
-  State.unreadCount=State.notifications.filter(n=>!n.read).length;
-  updateBell();
-}
-
-function updateBell(){const b=$('bellBadge');if(!b)return;if(State.unreadCount>0){b.textContent=State.unreadCount>99?'99+':State.unreadCount;b.classList.remove('hidden');}else{b.classList.add('hidden');}}
-
-function openModal(html){const sheet=$('modalSheet'),overlay=$('modalOverlay');if(!sheet||!overlay)return;sheet.innerHTML=html;overlay.classList.add('active');document.body.style.overflow='hidden';}
-function closeModal(){const overlay=$('modalOverlay');if(!overlay)return;overlay.classList.remove('active');document.body.style.overflow='';}
-window.closeModal=closeModal;
-document.addEventListener('click',e=>{if(e.target.id==='modalOverlay')closeModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
-
-function render(){
-  const main=$('appContent');if(!main)return;
-  $$('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.tab===State.activeTab));
-  const renderers={home:renderHome,tests:renderTests,protocols:renderProtocols,roster:renderRoster,swap:renderSwap,learn:renderLearn,attend:renderAttend,cpl:renderCPL,more:renderMore};
-  const fn=renderers[State.activeTab]||renderHome;
-  main.innerHTML=fn();
-  attachHandlers();
+/* ---------- VIEW SWITCH ---------- */
+function switchView(name){
+  $$(".view").forEach(v=>v.classList.toggle("active", v.id === "view-"+name));
+  $$("#bottomNav button").forEach(b=>b.classList.toggle("active", b.dataset.nav===name));
   window.scrollTo(0,0);
+  if(name==="roster") switchRosterTab("view");
+  if(name==="tests") renderTests();
+  if(name==="policy") renderPolicies();
+  if(name==="swap") renderSwaps();
+  if(name==="learn") renderLearn();
+  if(name==="attend") renderAttendance();
+  if(name==="cpl") renderCPL();
+  if(name==="home") renderHome();
 }
+$$("#bottomNav button").forEach(b=> b.onclick = ()=> switchView(b.dataset.nav));
+$$("[data-nav]").forEach(b=> b.onclick = ()=> switchView(b.dataset.nav));
 
-function attachHandlers(){
-  $$('.nav-item').forEach(el=>{el.onclick=()=>{State.activeTab=el.dataset.tab;render();const sidebar=document.getElementById('kihSidebar');if(sidebar){sidebar.querySelectorAll('.kih-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.tab===State.activeTab));}};});
-  $$('[data-quick]').forEach(el=>{el.onclick=()=>{State.activeTab='protocols';State.protocolTab=el.dataset.quick;render();};});
-  $$('[data-ptab]').forEach(el=>{el.onclick=()=>{State.protocolTab=el.dataset.ptab;render();};});
+/* ---------- LOGIN ---------- */
+function showApp(user){
+  State.user = user;
+  $("#loginScreen").classList.add("hidden");
+  $("#appHeader").classList.remove("hidden");
+  $("#appMain").classList.remove("hidden");
+  $("#bottomNav").classList.remove("hidden");
+  $("#userAvatar").textContent = initials(user.name || user.mobile || "U");
+  $("#moreUser").textContent = user.name || user.mobile || "User";
+  $("#moreRole").textContent = user.role || "Phlebotomist";
+  renderHome();
 }
+function showLogin(){
+  $("#loginScreen").classList.remove("hidden");
+  $("#appHeader").classList.add("hidden");
+  $("#appMain").classList.add("hidden");
+  $("#bottomNav").classList.add("hidden");
+}
+$("#btnLogin").onclick = async ()=>{
+  const mob = $("#loginMobile").value.trim();
+  const pass = $("#loginPass").value;
+  const keep = $("#keepSigned").checked;
+  if(!mob || !pass){ $("#loginErr").textContent = "Enter mobile and password."; return; }
+  // Demo auth: any mobile + default password from settings
+  // In production, wire to Firebase Auth.
+  if(pass.length < 4){ $("#loginErr").textContent = "Password too short."; return; }
+  $("#loginErr").textContent = "";
+  const user = {id:uid(), mobile:mob, name:"Phlebotomist", role:"Phlebotomist"};
+  saveSession(user, keep);
+  showApp(user);
+  toast("Welcome back!","ok");
+};
+$("#btnGuest").onclick = ()=>{
+  const user = {id:"guest", mobile:"guest", name:"Guest", role:"Guest", guest:true};
+  saveSession(user, false);
+  showApp(user);
+  toast("Signed in as Guest","info");
+};
+$("#btnLogout").onclick = async ()=>{
+  if(!confirm("Logout?")) return;
+  clearSession();
+  if(FIREBASE_OK) try{ await auth.signOut(); }catch(e){}
+  showLogin();
+  toast("Logged out","info");
+};
+$("#userAvatar").onclick = ()=> switchView("more");
 
-function filterItems(cls,q){const query=(q||'').toLowerCase();$$('.'+cls).forEach(el=>{const name=(el.dataset.name||'').toLowerCase();el.style.display=name.includes(query)?'':'none';});}
-
-/* ─── HOME ─── */
+/* ---------- HOME ---------- */
 function renderHome(){
-  const today=new Date();
-  const des=DESIGNATIONS.find(d=>d.id===State.user?.designation);
-  const desBadge=des?`<span class="badge badge-primary">${des.icon} ${des.name}</span>`:'';
-  const todayStr=today.toDateString();
-  const recentNotifs=State.notifications.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,3);
-  const pendingSwaps=State.swapRequests.filter(s=>s.status==='pending').length;
-  const todayPresent=State.attendance.filter(a=>a.date===todayStr&&a.status==='present').length;
-  return `
-    <div class="card">
-      <div class="flex-between">
-        <div><div class="card-title">👋 ${esc(State.user?.name||'User')}</div><div class="card-sub">${fmtDate(today)}</div></div>
-        ${desBadge}
-      </div>
-    </div>
-    <button class="big-btn big-btn-draw" onclick="State.activeTab='roster';render()">📅 Roster Management</button>
-    <button class="big-btn big-btn-emergency" onclick="openEmergencyModal()">🚨 Emergency Cards</button>
-    <div class="card">
-      <div class="card-title">📊 Today's Overview</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
-        <div class="stat-box"><div class="num" style="color:var(--success)">${todayPresent}</div><div class="lbl">Present</div></div>
-        <div class="stat-box"><div class="num" style="color:var(--primary)">${State.staff.filter(s=>s.active!==false&&s.role!=='admin').length}</div><div class="lbl">Staff</div></div>
-        <div class="stat-box"><div class="num" style="color:var(--warning)">${pendingSwaps}</div><div class="lbl">Pending</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="flex-between">
-        <div class="card-title">🔔 Recent Notifications</div>
-        <button class="btn-sm" onclick="openNotificationsModal()">View All</button>
-      </div>
-      ${recentNotifs.length===0?'<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:13px">No notifications yet</div>':recentNotifs.map(n=>`<div class="list-row" style="margin-top:8px"><div><div style="font-weight:500;font-size:13.5px">${esc(n.title)}</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${esc(n.body||'')}</div></div>${n.createdAt?`<span style="font-size:10.5px;color:var(--text-dim)">${fmtDateTime(n.createdAt)}</span>`:''}</div>`).join('')}
-    </div>
-    <div class="card">
-      <div class="card-title">⚡ Quick Access</div>
-      <div class="btn-row">
-        <button class="btn-sm" onclick="State.activeTab='roster';render()">📅 Roster</button>
-        <button class="btn-sm" onclick="State.activeTab='swap';render()">🔄 Swap</button>
-        <button class="btn-sm" onclick="State.activeTab='attend';render()">✅ Attendance</button>
-        <button class="btn-sm" onclick="State.activeTab='learn';render()">📚 Learn</button>
-        <button class="btn-sm" onclick="openHistoryFormsModal()">📁 Forms</button>
-      </div>
-    </div>
-    ${canManage()?`<div class="card"><div class="card-title">📢 Send Notification</div><div class="card-sub">Notify staff via WhatsApp</div><button class="btn-sm btn-accent mt12" onclick="openSendNotificationModal()">📤 Send New Notification</button></div>`:''}
-  `;
+  const h = new Date().getHours();
+  const greet = h<12?"Good morning":(h<17?"Good afternoon":"Good evening");
+  $("#homeGreeting").textContent = `${greet}, ${State.user?.name||"there"}`;
+  $("#cntTests").textContent = State.tests.length || 12;
+  $("#cntPolicies").textContent = State.policies.length || 6;
+  $("#cntSwaps").textContent = State.swaps.length;
+  $("#cntQuizzes").textContent = State.quizzes.length || 5;
+  $("#cntCPL").textContent = State.cpl.length;
+  const r = State.rosters[State.activeRosterId];
+  $("#cntRoster").textContent = r ? (r.valid ? "✓" : "!") : "—";
+
+  // Today's duty
+  const today = fmtDate(new Date());
+  let html = "";
+  if(r && r.cells){
+    const onDuty = State.staff.filter(s => r.cells[s.id] && r.cells[s.id][today] && !RELAX_CODES.includes(r.cells[s.id][today]));
+    if(onDuty.length){
+      onDuty.forEach(s=>{
+        const c = r.cells[s.id][today];
+        html += `<div class="li"><div class="ico">🩸</div><div class="body"><div class="title">${esc(s.name)}</div><div class="sub">${SHIFT_CODES[c]||c}</div></div><span class="shift ${c}">${c}</span></div>`;
+      });
+    } else html = `<div class="empty"><div class="ico">📅</div>No roster for today.</div>`;
+  } else html = `<div class="empty"><div class="ico">📅</div>No roster for today.</div>`;
+  $("#homeTodayDuty").innerHTML = html;
 }
 
-/* ─── TESTS ─── */
-function getTubeIcon(tubeName){
-  const name=(tubeName||'').toLowerCase();
-  const tubeSVG=(capColor,bodyColor='#f0f0f0')=>`<svg width="28" height="56" viewBox="0 0 32 64" fill="none"><rect x="4" y="0" width="24" height="10" rx="3" fill="${capColor}"/><rect x="4" y="10" width="24" height="52" rx="4" stroke="#4B5563" stroke-width="1.5" fill="rgba(255,255,255,0.05)"/><rect x="6" y="32" width="20" height="28" rx="3" fill="${bodyColor}" opacity="0.7"/></svg>`;
-  if(name.includes('edta')||name.includes('lavender'))return tubeSVG('#A78BFA','#C4B5FD');
-  if(name.includes('citrate')||name.includes('blue'))return tubeSVG('#60A5FA','#93C5FD');
-  if(name.includes('sst')||name.includes('gold'))return tubeSVG('#FBBF24','#FDE68A');
-  if(name.includes('heparin')||name.includes('green'))return tubeSVG('#10B981','#6EE7B7');
-  if(name.includes('fluoride')||name.includes('grey')||name.includes('gray'))return tubeSVG('#9CA3AF','#D1D5DB');
-  if(name.includes('culture'))return tubeSVG('#F3F4F6','#FEF3C7');
-  return tubeSVG('#6B7280','#9CA3AF');
-}
-
-function renderTests(){
-  return `
-    <div class="card">
-      <div class="card-title">🧪 Test Protocols</div>
-      <div class="card-sub">Tube, order of draw, volume, TAT</div>
-      <input class="search-bar mt12" placeholder="🔍 Search tests..." oninput="filterItems('test-item', this.value)">
-    </div>
-    <div id="testList">
-      ${State.tests.length===0?'<div class="empty-state"><div class="icon">🧪</div><div>No tests yet</div></div>':State.tests.map(t=>`<div class="card test-item" data-name="${esc((t.name||'').toLowerCase())} ${esc((t.category||'').toLowerCase())}"><div class="flex-between"><div style="font-weight:700;font-size:15px">${esc(t.name)}</div><span class="badge badge-primary">${esc(t.category||'General')}</span></div><div style="display:flex;gap:14px;margin-top:14px;align-items:center"><div style="flex-shrink:0">${getTubeIcon(t.tube)}</div><div style="flex:1"><div style="font-size:12px;color:var(--text-muted);margin-bottom:3px">Tube</div><div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(t.tube)}</div><div style="display:flex;gap:14px;font-size:13px"><div><span style="color:var(--text-dim)">Order:</span> <strong>#${esc(t.order)}</strong></div><div><span style="color:var(--text-dim)">Vol:</span> <strong>${esc(t.volume)}</strong></div></div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><div class="list-row" style="margin:0;padding:10px 12px"><span style="font-size:12.5px">⏱️ Routine</span><strong style="font-size:13px">${esc(t.tat)}</strong></div><div class="list-row" style="margin:0;padding:10px 12px;border-left:3px solid var(--danger)"><span style="font-size:12.5px">🚨 Urgent</span><strong style="font-size:13px">${esc(t.urgent||t.tat)}</strong></div></div></div>`).join('')}
-    </div>
-  `;
-}
-
-/* ─── PROTOCOLS ─── */
-function renderProtocols(){
-  const tabs=[{id:'order',label:'Order of Draw'},{id:'difficult',label:'Difficult Draw'},{id:'scripts',label:'Scripts'},{id:'rejection',label:'Rejection'}];
-  let body='';
-  if(State.protocolTab==='order')body=renderOrderOfDraw();
-  else if(State.protocolTab==='difficult')body=renderDifficult();
-  else if(State.protocolTab==='scripts')body=renderScripts();
-  else if(State.protocolTab==='rejection')body=renderRejection();
-  return `<div class="tab-bar">${tabs.map(t=>`<div class="tab ${State.protocolTab===t.id?'active':''}" data-ptab="${t.id}">${t.label}</div>`).join('')}</div>${body}`;
-}
-
-function renderOrderOfDraw(){
-  const order=[
-    {n:1,tube:'Blood Culture',color:'#FBBF24',note:'Sterile technique'},
-    {n:2,tube:'Citrate (Blue)',color:'#60A5FA',note:'Fill to line, mix 3-4x'},
-    {n:3,tube:'SST (Gold/Red)',color:'#FBBF24',note:'Clot 30 min'},
-    {n:4,tube:'Heparin (Green)',color:'#10B981',note:'Mix 8-10x'},
-    {n:5,tube:'EDTA (Lavender)',color:'#A78BFA',note:'Mix 8-10x'},
-    {n:6,tube:'Fluoride (Grey)',color:'#9CA3AF',note:'Glucose'}
-  ];
-  return `<div class="card"><div class="card-title">📋 Order of Draw</div><div class="mt12">${order.map(o=>`<div class="list-row"><div class="flex-center gap12"><span style="width:32px;height:32px;border-radius:50%;background:${o.color};color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px">${o.n}</span><div><div style="font-weight:600;font-size:14px">${o.tube}</div><div style="font-size:11.5px;color:var(--text-muted)">${o.note}</div></div></div></div>`).join('')}</div></div>`;
-}
-
-function renderDifficult(){
-  return `<input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('difficult-item', this.value)"><div id="difficultList">${State.difficultDraws.map(s=>`<div class="card difficult-item" data-name="${esc((s.title||'').toLowerCase())}"><div class="card-title" style="font-size:15px">🩺 ${esc(s.title)}</div><div class="card-sub mt8"><strong style="color:var(--danger)">Problem:</strong> ${esc(s.problem)}</div><div style="background:var(--bg-1);padding:12px;border-radius:10px;font-size:13.5px;color:var(--text-muted);margin-top:10px;border:1px solid var(--border)"><strong style="color:var(--primary)">Solution:</strong> ${esc(s.solution)}</div></div>`).join('')}</div>`;
-}
-
-function renderScripts(){
-  return `<input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('script-item', this.value)"><div id="scriptList">${State.scripts.map(s=>`<div class="card script-item" data-name="${esc((s.title||'').toLowerCase())}"><div class="card-title" style="font-size:15px">💬 ${esc(s.title)}</div><div class="mt12" style="font-size:13.5px;line-height:1.7;color:var(--text-muted)"><p><strong style="color:var(--primary)">🇬🇧 English:</strong> ${esc(s.en)}</p>${s.ur?`<p class="mt12" style="direction:rtl;text-align:right"><strong style="color:var(--primary)">🇵🇰 اردو:</strong> ${esc(s.ur)}</p>`:''}</div><div class="btn-row mt12"><button class="btn-sm" data-copy="${esc(s.en)}">📋 Copy EN</button></div></div>`).join('')}</div>`;
-}
-
-function renderRejection(){
-  const reasons=[
-    {_id:'hemo',title:'Hemolysis',how:'Serum/plasma appears red',why:'Thin needle, shaking, high vacuum',prevent:'21G-23G needle, gentle invert, slow pull',action:'Recollect sample'},
-    {_id:'clot',title:'Clotting',how:'Clots in EDTA tube',why:'Not mixed, under-mixed',prevent:'Mix 8-10 times',action:'Recollect new tube'},
-    {_id:'short',title:'Short Volume',how:'Low blood level',why:'Low vacuum, needle out',prevent:'Check expiry, stable needle',action:'Recollect sample'},
-    {_id:'wrong',title:'Wrong Tube',how:'Incorrect color',why:'Wrong order of draw',prevent:'Check protocol card',action:'Recollect correct tube'},
-    {_id:'label',title:'Mislabeled',how:'Wrong label',why:'Forgot label',prevent:'Bedside label, confirm 3x',action:'Recollect from patient'},
-    {_id:'delay',title:'Delayed Transport',how:'Sample arrived late',why:'Traffic, transport delay',prevent:'Send immediately',action:'New sample'},
-    {_id:'contam',title:'Contaminated',how:'Skin flora in culture',why:'Skin not cleaned',prevent:'30 sec spirit swab',action:'New sample'}
-  ];
-  return `<div class="card" style="border-left:4px solid var(--danger)"><div class="card-title">📊 Rejection Statistics</div><div class="card-sub mt8">Total reported: <strong>${State.rejections.length}</strong></div><button class="btn-sm btn-danger mt12" onclick="openReportRejectionModal()">🚫 Report Rejection</button></div><input class="search-bar" placeholder="🔍 Search..." oninput="filterItems('rejection-item', this.value)"><div id="rejectionList">${reasons.map(r=>`<div class="card rejection-item" data-name="${esc(r.title.toLowerCase())}"><div class="card-title" style="font-size:15px">${esc(r.title)}</div><div class="mt12" style="font-size:13.5px;line-height:1.7;color:var(--text-muted)"><p><strong style="color:var(--primary)">🔍 Detect:</strong> ${esc(r.how)}</p><p class="mt8"><strong style="color:var(--danger)">⚠️ Why:</strong> ${esc(r.why)}</p><p class="mt8"><strong style="color:var(--success)">🛡️ Prevent:</strong> ${esc(r.prevent)}</p><p class="mt8"><strong style="color:var(--warning)">✅ Action:</strong> ${esc(r.action)}</p></div></div>`).join('')}</div>`;
-}
-
-/* ─── ROSTER ─── */
-function renderRoster(){
-  const hasRoster=State.rosterData&&Object.keys(State.rosterData).length>0;
-  return `<div class="card"><div class="flex-between"><div class="card-title">📅 Roster</div><button class="btn-sm btn-accent" onclick="openAutoGenWizard()">⚡ Auto Generate</button></div><div class="card-sub">${State.rosterPeriod?`${fmtDisplay(State.rosterPeriod.start)} → ${fmtDisplay(State.rosterPeriod.end)}`:'No roster yet'}</div></div>${hasRoster?renderRosterGrid():renderEmptyRoster()}`;
-}
-
-function renderEmptyRoster(){
-  return `<div class="card"><div class="empty-state"><div class="icon">📅</div><div style="font-weight:600;margin-bottom:6px">No roster yet</div><div style="font-size:13px">Tap "Auto Generate" to create roster</div></div></div>`;
-}
-
-function renderRosterGrid(){
-  const staffList=State.staff.filter(s=>s.active!==false&&s.role!=='admin');
-  if(!staffList.length)return '<div class="card"><div class="card-sub">No staff available</div></div>';
-  const dates=dateRange(State.rosterPeriod.start,State.rosterPeriod.end);
-  const visibleDates=dates.slice(0,14);
-  return `<div class="card" style="overflow-x:auto"><table class="roster-table"><thead><tr><th>Staff</th>${visibleDates.map(d=>`<th>${new Date(d).getDate()}<br><small>${dayShort(d)}</small></th>`).join('')}</tr></thead><tbody>${staffList.map(s=>`<tr><td>${esc(s.name.split(' ')[0])}</td>${visibleDates.map(d=>{const shift=State.rosterData[s._id]?.[d]||'OFF';return `<td><span class="shift-pill shift-${esc(shift)}">${esc(shift)}</span></td>`;}).join('')}</tr>`).join('')}</tbody></table><div class="card-sub mt12" style="text-align:center">Showing first 14 days of ${dates.length} days</div></div>`;
-}
-
-/* ─── SWAP ─── */
-function renderSwap(){
-  const pending=State.swapRequests.filter(s=>s.status==='pending');
-  const approved=State.swapRequests.filter(s=>s.status==='approved');
-  return `<div class="card"><div class="flex-between"><div class="card-title">🔄 Shift Swap</div><button class="btn-sm btn-accent" onclick="openSwapModal()">+ New</button></div></div>${pending.length>0?`<div class="card"><div class="card-title" style="font-size:14px">⏳ Pending (${pending.length})</div>${pending.map(s=>renderSwapItem(s)).join('')}</div>`:''}${approved.length>0?`<div class="card"><div class="card-title" style="font-size:14px">✅ Approved (${approved.length})</div>${approved.map(s=>renderSwapItem(s)).join('')}</div>`:''}${State.swapRequests.length===0?`<div class="card"><div class="empty-state"><div class="icon">🔄</div><div style="font-weight:600;margin-bottom:6px">No swap requests</div></div></div>`:''}`;
-}
-
-function renderSwapItem(s){
-  const bc=s.status==='approved'?'badge-success':s.status==='rejected'?'badge-danger':'badge-warning';
-  const canApprove=isAdmin()&&s.status==='pending';
-  return `<div class="list-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px"><div class="flex-between"><span style="font-weight:600;font-size:14px">${esc(s.from)} → ${esc(s.to)}</span><span class="badge ${bc}">${esc(s.status)}</span></div><div style="font-size:12.5px;color:var(--text-muted)">👤 ${esc(s.requestedBy||'Unknown')} · with ${esc(s.with||'Unknown')}</div>${canApprove?`<div class="btn-row" style="margin-top:0"><button class="btn-sm btn-success" onclick="approveSwap('${s._id}')">✅ Approve</button><button class="btn-sm btn-danger" onclick="rejectSwap('${s._id}')">❌ Reject</button></div>`:''}</div>`;
-}
-
-function approveSwap(id){LocalDB.update('swaps',id,{status:'approved'});State.swapRequests=LocalDB.get('swaps',[]);toast('Swap approved','success');render();}
-function rejectSwap(id){LocalDB.update('swaps',id,{status:'rejected'});State.swapRequests=LocalDB.get('swaps',[]);toast('Swap rejected','warning');render();}
-
-/* ─── LEARN ─── */
-function renderLearn(){
-  return `<div class="card"><div class="card-title">📚 Training Quizzes</div><div class="card-sub">Test your phlebotomy knowledge</div><div class="mt12"><div class="list-row"><div><div style="font-weight:600;font-size:14px">Order of Draw</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">10 questions</div></div><span class="badge">New</span></div><div class="list-row"><div><div style="font-weight:600;font-size:14px">Difficult Draw</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">10 questions</div></div><span class="badge">New</span></div></div><button class="btn-sm btn-accent btn-block mt12" onclick="openQuizModal()">▶ Start Quiz</button></div>`;
-}
-
-/* ─── ATTEND ─── */
-function renderAttend(){
-  const today=new Date().toDateString();
-  const todayRec=State.attendance.find(a=>a.date===today&&a.staffId===State.user?._id);
-  const history=State.attendance.filter(a=>a.staffId===State.user?._id).slice(-7).reverse();
-  return `<div class="card"><div class="card-title">✅ Attendance</div><div class="card-sub">${fmtDate()}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><button class="btn-sm btn-success btn-block" ${todayRec?'disabled':''} onclick="markAttendance('present')">🟢 Present</button><button class="btn-sm btn-danger btn-block" ${todayRec?'disabled':''} onclick="markAttendance('absent')">🔴 Absent</button></div>${todayRec?`<div class="list-row mt12" style="border-left:3px solid ${todayRec.status==='present'?'var(--success)':'var(--danger)'}"><span>Today marked: <strong>${esc(todayRec.status)}</strong> at ${esc(todayRec.time||fmtTime())}</span></div>`:''}</div><div class="card"><div class="card-title" style="font-size:14px">📜 Last 7 Days</div>${history.length===0?'<div class="card-sub">No records yet</div>':history.map(h=>`<div class="list-row"><div><div style="font-weight:500;font-size:13.5px">${esc(h.date)}</div><div style="font-size:11.5px;color:var(--text-muted)">${esc(h.time||'')}</div></div><span class="badge ${h.status==='present'?'badge-success':'badge-danger'}">${esc(h.status)}</span></div>`).join('')}</div>`;
-}
-
-function markAttendance(status){
-  if(!State.user||State.user.guest){toast('Guest mode — not saved','warning');return;}
-  const today=new Date().toDateString();
-  const existing=State.attendance.find(a=>a.date===today&&a.staffId===State.user._id);
-  if(existing){toast('Already marked for today','warning');return;}
-  LocalDB.push('attendance',{staffId:State.user._id,staffName:State.user.name,date:today,status,time:fmtTime(),timestamp:Date.now()});
-  State.attendance=LocalDB.get('attendance',[]);
-  toast(`Marked ${status}`,status==='present'?'success':'error');
-  render();
-}
-
-/* ─── CPL ─── */
-function renderCPL(){
-  const myCPL=State.cplActivities.filter(c=>c.staffId===State.user?._id);
-  const totalPoints=myCPL.reduce((sum,c)=>sum+(parseFloat(c.points)||0),0);
-  return `<div class="card"><div class="card-title">📈 CPL Activities</div><div class="card-sub">Continuing Professional Learning</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><div class="stat-box"><div class="num" style="color:var(--primary)">${totalPoints.toFixed(1)}</div><div class="lbl">Total Points</div></div><div class="stat-box"><div class="num" style="color:var(--success)">${myCPL.length}</div><div class="lbl">Activities</div></div></div><button class="btn-sm btn-accent btn-block mt12" onclick="openAddCPLModal()">+ Add Activity</button></div><div class="card"><div class="card-title" style="font-size:14px">My Activities</div>${myCPL.length===0?'<div class="card-sub">No activities yet</div>':myCPL.slice().reverse().map(c=>`<div class="list-row"><div><div style="font-weight:500;font-size:13.5px">${esc(c.title)}</div><div style="font-size:11.5px;color:var(--text-muted)">${esc(c.category||'General')} · ${c.createdAt?fmtDateTime(c.createdAt):''}</div></div><span class="badge badge-primary">${esc(c.points)} pts</span></div>`).join('')}</div>`;
-}
-
-/* ─── MORE ─── */
-function renderMore(){
-  return `<div class="card"><div class="card-title">👤 Profile</div><div class="list-row mt12"><div class="flex-center gap12"><div class="avatar">${getInitials(State.user?.name||'U')}</div><div><div style="font-weight:600;font-size:14px">${esc(State.user?.name||'User')}</div><div style="font-size:12px;color:var(--text-muted)">${esc(State.user?.mobile||'')}</div></div></div></div><div class="list-row"><span>Designation</span><strong>${esc(DESIGNATIONS.find(d=>d.id===State.user?.designation)?.name||'N/A')}</strong></div><div class="list-row"><span>Role</span><strong>${esc(State.user?.role||'staff')}</strong></div><button class="btn-sm btn-block mt12" onclick="openEditProfileModal()">✏️ Edit Profile</button></div><div class="card"><div class="card-title">📋 Policies</div>${State.policies.map(p=>`<div class="list-row"><div><div style="font-weight:500;font-size:13.5px">${esc(p.title)}</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${esc((p.body||'').slice(0,80))}…</div></div></div>`).join('')}</div>${canManage()?`<div class="card"><div class="card-title">🛠️ Admin Tools</div><button class="btn-sm btn-block mt8" onclick="openManageStaffModal()">👥 Manage Staff</button><button class="btn-sm btn-block mt8" onclick="openManageShiftsModal()">⏰ Manage Shifts</button><button class="btn-sm btn-block mt8" onclick="openManageHolidaysModal()">🎉 Holidays</button><button class="btn-sm btn-block mt8" onclick="openHospitalSettingsModal()">🏥 Hospital Settings</button><button class="btn-sm btn-block mt8" onclick="exportAllData()">📤 Export All Data</button></div>`:''}<div class="card"><div class="card-title">ℹ️ About</div><div class="card-sub">KIH Phlebotomy Companion v4.0</div><div class="card-sub mt8">© ${new Date().getFullYear()} ${esc(State.settings.hospitalName)}</div></div>`;
-}
-
-/* ─── SIDEBAR ─── */
-function buildSidebar(){
-  let sb=document.getElementById('kihSidebar');if(sb)sb.remove();
-  sb=document.createElement('aside');sb.id='kihSidebar';sb.className='kih-sidebar';
-  const tabs=[{id:'home',icon:'🏠',label:'Home'},{id:'tests',icon:'🧪',label:'Tests'},{id:'protocols',icon:'📋',label:'Protocols'},{id:'roster',icon:'📅',label:'Roster'},{id:'swap',icon:'🔄',label:'Swap'},{id:'learn',icon:'📚',label:'Learn'},{id:'attend',icon:'✅',label:'Attendance'},{id:'cpl',icon:'📈',label:'CPL'},{id:'more',icon:'⋯',label:'More'}];
-  const initials=getInitials(State.user?.name||'U');
-  sb.innerHTML=`<div class="kih-sidebar-logo"><div class="kih-sidebar-logo-icon">🩸</div><div class="kih-sidebar-logo-text">KIH<small>Phlebotomy</small></div></div><div class="kih-sidebar-nav">${tabs.map(t=>`<div class="kih-nav-item ${State.activeTab===t.id?'active':''}" data-tab="${t.id}"><span class="kih-nav-icon">${t.icon}</span><span class="kih-nav-label">${t.label}</span></div>`).join('')}</div><div class="kih-sidebar-footer"><div class="kih-user-card"><div class="kih-user-avatar">${initials}</div><div class="kih-user-info"><div class="kih-user-name">${esc(State.user?.name||'User')}</div><div class="kih-user-role">${esc(State.user?.role||'staff')}</div></div></div><button class="kih-logout-btn" onclick="doLogout()">🚪 Logout</button></div>`;
-  document.body.appendChild(sb);
-  sb.querySelectorAll('.kih-nav-item').forEach(el=>{el.onclick=()=>{State.activeTab=el.dataset.tab;render();sb.querySelectorAll('.kih-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.tab===State.activeTab));};});
-}
-
-/* ─── ROSTER GENERATION ─── */
-function generateRoster(startDate,endDate){
-  const dates=dateRange(startDate,endDate);
-  const staffList=State.staff.filter(s=>s.active!==false&&s.role!=='admin');
-  if(!staffList.length){toast('No staff available to roster','error');return null;}
-  const roster={};
-  staffList.forEach(s=>{roster[s._id]={};});
-  const workDays={};const lastShift={};const shiftCount={};
-  staffList.forEach(s=>{workDays[s._id]=0;lastShift[s._id]=null;shiftCount[s._id]={};State.shiftsSimple.forEach(sh=>{shiftCount[s._id][sh.code]=0;});});
-  const males=staffList.filter(s=>s.gender==='Male');
-  const anyStaff=staffList;
-  let sundayIdx=State.sundayIndex||0;
-  dates.forEach(date=>{
-    const isSun=isSunday(date);const isSat=isSaturday(date);const holiday=isHoliday(date);
-    const dayShifts=State.shiftsSimple.filter(sh=>{if(!sh.active)return false;if(['OFF','PH','CPL','EL','CL'].includes(sh.code))return false;if(holiday&&sh.code!=='PH')return false;return true;});
-    const sortedStaff=[...staffList].sort((a,b)=>{const wDiff=workDays[a._id]-workDays[b._id];if(wDiff!==0)return wDiff;return (a._id||'').localeCompare(b._id||'');});
-    const offThisSunday=new Set();
-    if(isSun){const offCount=Math.max(1,Math.floor(staffList.length/3));for(let i=0;i<offCount;i++){const idx=(sundayIdx+i)%staffList.length;offThisSunday.add(staffList[idx]._id);}sundayIdx=(sundayIdx+offCount)%staffList.length;}
-    dayShifts.forEach(shift=>{
-      let needed=0;
-      if(isSun)needed=shift.staffSun||0;else if(isSat)needed=shift.staffSat||0;else needed=shift.staffMonFri||0;
-      if(needed===0)return;
-      const pool=(shift.gender==='Male'?males:anyStaff).filter(s=>{if(offThisSunday.has(s._id))return false;if(roster[s._id][date])return false;if(shift.code==='N'&&lastShift[s._id]==='N')return false;if(workDays[s._id]>=6)return false;return true;});
-      pool.sort((a,b)=>{const aCount=shiftCount[a._id][shift.code]||0;const bCount=shiftCount[b._id][shift.code]||0;if(aCount!==bCount)return aCount-bCount;return workDays[a._id]-workDays[b._id];});
-      for(let i=0;i<needed&&i<pool.length;i++){const s=pool[i];roster[s._id][date]=shift.code;workDays[s._id]++;lastShift[s._id]=shift.code;shiftCount[s._id][shift.code]=(shiftCount[s._id][shift.code]||0)+1;}
-    });
-    staffList.forEach(s=>{if(!roster[s._id][date]){if(holiday)roster[s._id][date]='PH';else roster[s._id][date]='OFF';}});
-  });
-  State.sundayIndex=sundayIdx;LocalDB.set('sundayIndex',sundayIdx);
-  State.rosterData=roster;State.rosterPeriod={start:startDate,end:endDate};
-  LocalDB.set('rosterData',roster);LocalDB.set('rosterPeriod',State.rosterPeriod);
-  return roster;
-}
-
-/* ─── MODALS ─── */
-function openAutoGenWizard(){
-  const today=new Date();const startDefault=today.toISOString().split('T')[0];
-  const end=new Date(today);end.setDate(end.getDate()+29);const endDefault=end.toISOString().split('T')[0];
-  openModal(`<div class="modal-header"><h2>⚡ Auto Generate Roster</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Start Date</label><input type="date" id="rosterStart" value="${startDefault}"></div><div class="input-group"><label>End Date</label><input type="date" id="rosterEnd" value="${endDefault}"></div><div class="card" style="background:var(--bg-1)"><div class="card-title" style="font-size:14px">📋 Staff Count</div><div class="card-sub">${State.staff.filter(s=>s.active!==false&&s.role!=='admin').length} active staff</div></div><button class="btn-primary mt12" onclick="runAutoGen()">⚡ Generate Roster</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
-}
-
-function runAutoGen(){
-  const start=$('rosterStart')?.value;const end=$('rosterEnd')?.value;
-  if(!start||!end){toast('Select dates','error');return;}
-  if(new Date(start)>new Date(end)){toast('Start must be before end','error');return;}
-  const days=dateRange(start,end).length;
-  if(days>62){toast('Max 62 days at a time','error');return;}
-  closeModal();toast('Generating roster…');
-  setTimeout(()=>{try{generateRoster(start,end);render();toast(`Roster generated for ${days} days`,'success');}catch(e){console.error(e);toast('Generation failed','error');}},100);
-}
-
-function openSwapModal(){
-  const staffList=State.staff.filter(s=>s.active!==false);
-  openModal(`<div class="modal-header"><h2>🔄 New Swap Request</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>My Shift Code</label><select id="swapFrom">${Object.keys(SHIFTS_LIBRARY).map(c=>`<option value="${c}">${c} — ${SHIFTS_LIBRARY[c].name}</option>`).join('')}</select></div><div class="input-group"><label>Swap With (Shift)</label><select id="swapTo">${Object.keys(SHIFTS_LIBRARY).map(c=>`<option value="${c}">${c} — ${SHIFTS_LIBRARY[c].name}</option>`).join('')}</select></div><div class="input-group"><label>Swap With (Staff)</label><select id="swapWith">${staffList.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('')}</select></div><div class="input-group"><label>Date</label><input type="date" id="swapDate" value="${new Date().toISOString().split('T')[0]}"></div><div class="input-group"><label>Reason (optional)</label><textarea id="swapReason" rows="2" placeholder="Why?"></textarea></div><button class="btn-primary" onclick="submitSwap()">📤 Submit Request</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
-}
-
-function submitSwap(){
-  const from=$('swapFrom')?.value;const to=$('swapTo')?.value;const withStaff=$('swapWith')?.value;const date=$('swapDate')?.value;const reason=$('swapReason')?.value||'';
-  if(!from||!to||!withStaff){toast('Fill all fields','error');return;}
-  LocalDB.push('swaps',{from,to,with:withStaff,date,reason,requestedBy:State.user?.name||'Unknown',requestedById:State.user?._id,status:'pending'});
-  State.swapRequests=LocalDB.get('swaps',[]);
-  closeModal();toast('Swap request submitted','success');render();
-}
-
-function openEmergencyModal(){
-  openModal(`<div class="modal-header"><h2>🚨 Emergency Cards</h2><button class="modal-close" onclick="closeModal()">✕</button></div>${State.emergencyCards.map(c=>`<div class="emergency-card"><h3>${esc(c.title)}</h3><ul class="emergency-steps">${c.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`).join('')}<button class="btn-secondary" onclick="closeModal()">Close</button>`);
-}
-
-function openNotificationsModal(){
-  State.notifications.forEach(n=>{n.read=true;});
-  LocalDB.set('notifications',State.notifications);
-  State.unreadCount=0;updateBell();
-  openModal(`<div class="modal-header"><h2>🔔 Notifications</h2><button class="modal-close" onclick="closeModal()">✕</button></div>${State.notifications.length===0?'<div class="empty-state"><div class="icon">🔔</div><div>No notifications</div></div>':State.notifications.slice().reverse().map(n=>`<div class="list-row" style="flex-direction:column;align-items:stretch"><div class="flex-between"><strong style="font-size:14px">${esc(n.title)}</strong>${n.createdAt?`<span style="font-size:10.5px;color:var(--text-dim)">${fmtDateTime(n.createdAt)}</span>`:''}</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(n.body||'')}</div></div>`).join('')}<button class="btn-secondary" onclick="closeModal()">Close</button>`);
-}
-
-function openHistoryFormsModal(){
-  openModal(`<div class="modal-header"><h2>📁 Forms & Records</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="list-row"><span>📋 Total Forms</span><strong>${State.historyForms.length}</strong></div><div class="list-row"><span>🚫 Rejections</span><strong>${State.rejections.length}</strong></div><div class="list-row"><span>🔄 Swap Requests</span><strong>${State.swapRequests.length}</strong></div><div class="list-row"><span>✅ Attendance Records</span><strong>${State.attendance.length}</strong></div><button class="btn-secondary" onclick="closeModal()">Close</button>`);
-}
-
-function openSendNotificationModal(){
-  openModal(`<div class="modal-header"><h2>📤 Send Notification</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Title</label><input id="notifTitle" placeholder="e.g., Roster Updated" maxlength="80"></div><div class="input-group"><label>Message</label><textarea id="notifBody" rows="3" placeholder="Notification details…" maxlength="300"></textarea></div><div class="input-group"><label>Priority</label><select id="notifPriority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div><button class="btn-primary" onclick="sendNotification()">📤 Send to All Staff</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
-}
-
-function sendNotification(){
-  const title=$('notifTitle')?.value.trim();const body=$('notifBody')?.value.trim();const priority=$('notifPriority')?.value||'normal';
-  if(!title){toast('Enter title','error');return;}
-  LocalDB.push('notifications',{title,body,priority,from:State.user?.name||'Admin',read:false});
-  State.notifications=LocalDB.get('notifications',[]);
-  State.unreadCount=State.notifications.filter(n=>!n.read).length;
-  updateBell();closeModal();toast('Notification sent','success');render();
-}
-
-function openReportRejectionModal(){
-  openModal(`<div class="modal-header"><h2>🚫 Report Rejection</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Reason</label><select id="rejReason"><option>Hemolysis</option><option>Clotting</option><option>Short Volume</option><option>Wrong Tube</option><option>Mislabeled</option><option>Delayed Transport</option><option>Contaminated</option></select></div><div class="input-group"><label>Patient MR Number</label><input id="rejMR" placeholder="MR-XXXXXX"></div><div class="input-group"><label>Notes</label><textarea id="rejNotes" rows="2"></textarea></div><button class="btn-primary" onclick="submitRejection()">🚫 Submit</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
-}
-
-function submitRejection(){
-  const reason=$('rejReason')?.value;const mr=$('rejMR')?.value.trim();const notes=$('rejNotes')?.value.trim();
-  if(!reason){toast('Select reason','error');return;}
-  LocalDB.push('rejections',{reason,mr,notes,reportedBy:State.user?.name||'Unknown',reportedById:State.user?._id});
-  State.rejections=LocalDB.get('rejections',[]);
-  closeModal();toast('Rejection reported','success');render();
-}
-
-const QUIZ_QUESTIONS=[
-  {q:'Which tube is drawn first?',a:['Blood Culture','EDTA','SST','Citrate'],correct:0},
-  {q:'Which tube is used for CBC?',a:['SST','EDTA (Lavender)','Citrate','Fluoride'],correct:1},
-  {q:'How many times should EDTA tube be mixed?',a:['2-3 times','5 times','8-10 times','Do not mix'],correct:2},
-  {q:'Best needle gauge for adults?',a:['18G','21G-23G','25G','16G'],correct:1},
-  {q:'How long should alcohol swab dry?',a:['5 sec','10 sec','30 sec','60 sec'],correct:2},
-  {q:'Which tube for PT/INR?',a:['EDTA','Citrate (Blue)','SST','Heparin'],correct:1},
-  {q:'Max time for tourniquet application?',a:['30 sec','1 min','2 min','5 min'],correct:1},
-  {q:'When to label tubes?',a:['Before draw','At bedside immediately after','At lab','End of shift'],correct:1},
-  {q:'What to do if patient faints?',a:['Call 1122','Lay down + elevate legs','Continue draw','Give water'],correct:1},
-  {q:'Hemolysis cause?',a:['Slow draw','Shaking tube violently','Warm arm','Mixing properly'],correct:1}
+/* ---------- TESTS (default seed) ---------- */
+const DEFAULT_TESTS = [
+  {id:"t1", cat:"hematology", name:"CBC", tube:"EDTA (Lavender)", order:1, volume:"2-3 mL", tat:"Routine 4h · Urgent 1h"},
+  {id:"t2", cat:"hematology", name:"PT/INR", tube:"Sodium Citrate (Blue)", order:2, volume:"2.7 mL", tat:"Routine 4h · Urgent 1h"},
+  {id:"t3", cat:"chemistry", name:"Blood Glucose (Fasting)", tube:"Fluoride Oxalate (Grey)", order:6, volume:"2 mL", tat:"Routine 2h · Urgent 30m"},
+  {id:"t4", cat:"chemistry", name:"LFT", tube:"Serum (Gold/Red)", order:5, volume:"4-5 mL", tat:"Routine 6h · Urgent 2h"},
+  {id:"t5", cat:"chemistry", name:"RFT", tube:"Serum (Gold/Red)", order:5, volume:"4-5 mL", tat:"Routine 6h · Urgent 2h"},
+  {id:"t6", cat:"micro", name:"Blood Culture", tube:"Culture Bottle", order:7, volume:"10 mL", tat:"Routine 5d · Urgent 3d"},
+  {id:"t7", cat:"special", name:"HbA1c", tube:"EDTA (Lavender)", order:1, volume:"2 mL", tat:"Routine 6h"}
 ];
+function renderTests(){
+  if(!State.tests.length) State.tests = DEFAULT_TESTS.slice();
+  const q = ($("#testsSearch").value||"").toLowerCase();
+  const activeTab = ($("#testsTabs .tab.active")||{dataset:{}}).dataset.ttab || "all";
+  let list = State.tests.filter(t => activeTab==="all" || t.cat===activeTab);
+  if(q) list = list.filter(t => t.name.toLowerCase().includes(q) || t.tube.toLowerCase().includes(q));
+  const el = $("#testsList");
+  if(!list.length){ el.innerHTML = `<div class="empty"><div class="ico">🔍</div>No tests found.</div>`; return; }
+  el.innerHTML = list.map(t=>`
+    <div class="card">
+      <div class="card-hd"><span class="ico">🧪</span><h3>${esc(t.name)}</h3><span class="pill info">${t.cat}</span></div>
+      <p><b>Tube:</b> ${esc(t.tube)}<br><b>Order of Draw:</b> #${t.order}<br><b>Volume:</b> ${esc(t.volume)}<br><b>TAT:</b> ${esc(t.tat)}</p>
+    </div>`).join("");
+}
+$("#testsSearch").addEventListener("input", renderTests);
+$$("#testsTabs .tab").forEach(t=> t.onclick = ()=>{ $$("#testsTabs .tab").forEach(x=>x.classList.remove("active")); t.classList.add("active"); renderTests(); });
 
-let quizState=null;
+/* ---------- POLICIES ---------- */
+const DEFAULT_POLICIES = [
+  {id:"p1", title:"Hand Hygiene", body:"Sanitize before and after every patient contact. Soap + water for 40s when visibly soiled."},
+  {id:"p2", title:"Needle Safety", body:"Never recap needles. Dispose immediately in sharps container. Report needle-stick within 1 hour."},
+  {id:"p3", title:"Patient Identification", body:"Confirm name, MR number, and DOB three times before draw. Use two identifiers minimum."},
+  {id:"p4", title:"Order of Draw", body:"Blood Culture → Citrate → Serum → Heparin → EDTA → Fluoride Oxalate."},
+  {id:"p5", title:"Labeling", body:"Label at bedside, immediately after draw. Include name, MR#, date, time, initials."},
+  {id:"p6", title:"Sample Transport", body:"Deliver to lab within 30 minutes. Cold chain for specific tests. Log time on handoff."}
+];
+function renderPolicies(){
+  if(!State.policies.length) State.policies = DEFAULT_POLICIES.slice();
+  const q = ($("#policySearch").value||"").toLowerCase();
+  const list = q ? State.policies.filter(p=>p.title.toLowerCase().includes(q)||p.body.toLowerCase().includes(q)) : State.policies;
+  const el = $("#policyList");
+  el.innerHTML = list.map(p=>`
+    <div class="card">
+      <div class="card-hd"><span class="ico">📋</span><h3>${esc(p.title)}</h3></div>
+      <p>${esc(p.body)}</p>
+      <button class="btn sm mt" data-ack="${p.id}">✔ I Acknowledge</button>
+    </div>`).join("");
+  $$("[data-ack]").forEach(b=> b.onclick = ()=>{ toast("Acknowledged","ok"); b.textContent="✅ Acknowledged"; b.disabled=true; });
+}
+$("#policySearch").addEventListener("input", renderPolicies);
 
-function openQuizModal(){quizState={idx:0,score:0,answers:[]};renderQuizQuestion();}
+/* ---------- SWAPS ---------- */
+function renderSwaps(){
+  const el = $("#swapList");
+  if(!State.swaps.length){ el.innerHTML = `<div class="empty"><div class="ico">🔄</div>No swap requests.</div>`; return; }
+  el.innerHTML = State.swaps.map(s=>{
+    const a = State.staff.find(x=>x.id===s.fromId);
+    const b = State.staff.find(x=>x.id===s.toId);
+    return `<div class="li"><div class="ico">🔄</div><div class="body">
+      <div class="title">${esc(a?a.name:"?")} ↔ ${esc(b?b.name:"?")}</div>
+      <div class="sub">${fmtDisplay(s.date)} · ${s.status||"pending"}</div>
+    </div><span class="pill ${s.status==="approved"?"ok":"warn"}">${s.status||"pending"}</span></div>`;
+  }).join("");
+}
+$("#btnNewSwap").onclick = ()=>{
+  openModal(`
+    <div class="modal-hd"><h3>New Swap Request</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="field"><label>My Staff</label><select id="swFrom">${State.staff.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>
+    <div class="field"><label>Swap With</label><select id="swTo">${State.staff.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>
+    <div class="field"><label>Date</label><input id="swDate" type="date" value="${fmtDate(new Date())}"></div>
+    <button class="btn primary block mt" id="swSave">Submit Request</button>
+  `);
+  $("#swSave").onclick = async ()=>{
+    const item = {id:uid(), fromId:$("#swFrom").value, toId:$("#swTo").value, date:$("#swDate").value, status:"pending"};
+    State.swaps.push(item);
+    await dbSet("swaps", Object.fromEntries(State.swaps.map(x=>[x.id,x])));
+    closeModal(); renderSwaps(); toast("Swap requested","ok");
+  };
+};
 
-function renderQuizQuestion(){
-  const q=QUIZ_QUESTIONS[quizState.idx];
-  if(!q)return showQuizResults();
-  openModal(`<div class="modal-header"><h2>📚 Quiz (${quizState.idx+1}/${QUIZ_QUESTIONS.length})</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="progress-bar"><div class="progress-fill" style="width:${(quizState.idx/QUIZ_QUESTIONS.length)*100}%"></div></div><div class="card"><div style="font-weight:600;font-size:16px;margin-bottom:14px">${esc(q.q)}</div>${q.a.map((opt,i)=>`<button class="btn-sm btn-block mt8" style="justify-content:flex-start;text-align:left" onclick="answerQuiz(${i})">${String.fromCharCode(65+i)}. ${esc(opt)}</button>`).join('')}</div>`);
+/* ---------- LEARN ---------- */
+function renderLearn(){
+  const el = $("#learnList");
+  const quizzes = State.quizzes.length ? State.quizzes : [
+    {id:"q1", title:"Order of Draw", score:null},
+    {id:"q2", title:"Needle Safety", score:null},
+    {id:"q3", title:"Gender Shift Rules", score:null}
+  ];
+  el.innerHTML = quizzes.map(q=>`
+    <div class="li"><div class="ico">🎓</div><div class="body">
+      <div class="title">${esc(q.title)}</div><div class="sub">${q.score!=null?`Score: ${q.score}%`:"Not attempted"}</div>
+    </div><button class="btn sm primary" data-quiz="${q.id}">Start</button></div>`).join("");
+  $$("[data-quiz]").forEach(b=> b.onclick = ()=> toast("Quiz engine placeholder","info"));
 }
 
-function answerQuiz(choice){const q=QUIZ_QUESTIONS[quizState.idx];if(choice===q.correct)quizState.score++;quizState.answers.push({q:q.q,correct:choice===q.correct,chosen:choice});quizState.idx++;renderQuizQuestion();}
+/* ---------- ATTENDANCE ---------- */
+function renderAttendance(){
+  const el = $("#attendList");
+  if(!State.attendance.length){ el.innerHTML = `<div class="empty"><div class="ico">⏱</div>No attendance records.</div>`; return; }
+  el.innerHTML = State.attendance.slice().reverse().map(a=>`
+    <div class="li"><div class="ico">⏱</div><div class="body">
+      <div class="title">${a.type==="in"?"✅ Check In":"⏹ Check Out"}</div>
+      <div class="sub">${new Date(a.ts).toLocaleString()}</div>
+    </div></div>`).join("");
+}
+$("#btnCheckIn").onclick = async ()=>{
+  const rec = {id:uid(), type:"in", ts:Date.now(), userId:State.user?.id};
+  State.attendance.push(rec);
+  await dbSet("attendance", Object.fromEntries(State.attendance.map(x=>[x.id,x])));
+  renderAttendance(); toast("Checked in ✅","ok");
+};
+$("#btnCheckOut").onclick = async ()=>{
+  const rec = {id:uid(), type:"out", ts:Date.now(), userId:State.user?.id};
+  State.attendance.push(rec);
+  await dbSet("attendance", Object.fromEntries(State.attendance.map(x=>[x.id,x])));
+  renderAttendance(); toast("Checked out","ok");
+};
 
-function showQuizResults(){
-  const pct=Math.round((quizState.score/QUIZ_QUESTIONS.length)*100);
-  const grade=pct>=80?'🏆 Excellent':pct>=60?'👍 Good':'📖 Study More';
-  openModal(`<div class="modal-header"><h2>📊 Quiz Results</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="card text-center"><div style="font-size:56px;margin-bottom:8px">${pct>=60?'🎉':'📚'}</div><div style="font-size:32px;font-weight:700;color:${pct>=60?'var(--success)':'var(--warning)'}">${pct}%</div><div style="font-size:14px;color:var(--text-muted);margin-top:6px">${quizState.score}/${QUIZ_QUESTIONS.length} correct</div><div style="font-size:16px;font-weight:600;margin-top:12px">${grade}</div></div>${quizState.answers.map((a,i)=>`<div class="list-row" style="border-left:3px solid ${a.correct?'var(--success)':'var(--danger)'}"><span style="font-size:13px">${i+1}. ${esc(a.q)}</span><span>${a.correct?'✅':'❌'}</span></div>`).join('')}<button class="btn-primary mt12" onclick="openQuizModal()">🔄 Retake Quiz</button><button class="btn-secondary" onclick="closeModal()">Close</button>`);
+/* ---------- CPL ---------- */
+function renderCPL(){
+  const el = $("#cplList");
+  if(!State.cpl.length){ el.innerHTML = `<div class="empty"><div class="ico">📈</div>No CPL activities logged.</div>`; return; }
+  el.innerHTML = State.cpl.map(c=>`<div class="li"><div class="ico">📈</div><div class="body"><div class="title">${esc(c.title)}</div><div class="sub">${c.points} pts · ${c.date}</div></div></div>`).join("");
 }
 
-function openAddCPLModal(){
-  openModal(`<div class="modal-header"><h2>📈 Add CPL Activity</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Activity Title</label><input id="cplTitle" placeholder="e.g., Infection Control Workshop" maxlength="100"></div><div class="input-group"><label>Category</label><select id="cplCategory"><option>Training</option><option>Workshop</option><option>Conference</option><option>Self-Study</option><option>Certification</option></select></div><div class="input-group"><label>CPL Points</label><input id="cplPoints" type="number" min="0" step="0.5" value="1"></div><div class="input-group"><label>Notes (optional)</label><textarea id="cplNotes" rows="2"></textarea></div><button class="btn-primary" onclick="submitCPL()">+ Add Activity</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
+/* ---------- START DRAW (B1) — 15 steps ---------- */
+const START_DRAW_STEPS = [
+  ["Order Verify", "Confirm test name and patient name match the request."],
+  ["Patient Identify", "Confirm name, MR number, DOB — 3 times."],
+  ["Equipment Ready", "Needle, tubes, cotton, spirit swab, bandage."],
+  ["Hand Hygiene", "Sanitize hands, wear gloves."],
+  ["Tourniquet", "Apply 3–4 inches above site. Max 1 minute."],
+  ["Vein Select", "Antecubital area preferred."],
+  ["Site Clean", "Spirit swab, circular motion, 30 seconds."],
+  ["Needle Insert", "15–30 degree angle, bevel up."],
+  ["Tube Fill", "Follow order of draw."],
+  ["Tourniquet Remove", "Release before last tube."],
+  ["Needle Remove", "Cotton pressure, no recap."],
+  ["Label", "Patient name, time, initials — at bedside."],
+  ["Mix", "Invert 8–10 times gently."],
+  ["Patient Rest", "Seated 5–10 minutes."],
+  ["Send to Lab", "Log time, hand off."]
+];
+function openStartDraw(){
+  let h = `<div class="modal-hd"><h3>🩸 Start Draw</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="progress"><div class="bar" id="sdBar" style="width:0%"></div></div>
+    <div id="sdSteps">`;
+  START_DRAW_STEPS.forEach((s,i)=>{
+    h += `<div class="step" data-step="${i}">
+      <div class="chk">${i+1}</div>
+      <div style="flex:1">
+        <div class="st-num">STEP ${i+1}</div>
+        <div class="st-title">${s[0]}</div>
+        <div class="st-desc">${s[1]}</div>
+        <div class="st-time hidden"></div>
+      </div>
+    </div>`;
+  });
+  h += `</div><button class="btn ok block mt" id="sdComplete">✅ Mark Sample Collected</button>`;
+  openModal(h);
+  const done = new Set();
+  $$("#sdSteps .step").forEach(st=>{
+    st.onclick = ()=>{
+      const i = +st.dataset.step;
+      if(done.has(i)){ done.delete(i); st.classList.remove("done"); }
+      else {
+        done.add(i);
+        st.classList.add("done");
+        const t = st.querySelector(".st-time");
+        t.textContent = "✓ " + new Date().toLocaleTimeString();
+        t.classList.remove("hidden");
+      }
+      $("#sdBar").style.width = (done.size / START_DRAW_STEPS.length * 100) + "%";
+    };
+  });
+  $("#sdComplete").onclick = async ()=>{
+    const rec = {id:uid(), staffId:State.user?.id, staffName:State.user?.name, stepsDone:Array.from(done), total:START_DRAW_STEPS.length, ts:Date.now()};
+    await dbPush("draws", rec);
+    closeModal(); toast("Sample collected & logged ✅","ok");
+  };
+}
+$("#btnStartDrawHome").onclick = openStartDraw;
+
+/* ---------- EMERGENCY CARDS (B2) ---------- */
+const EMERGENCY_CARDS = [
+  {id:"e1", ico:"🩸", title:"Needle Stick Injury", steps:[
+    "Wash immediately with soap + water (5 min)",
+    "Clean with alcohol",
+    "Inform supervisor within 1 hour",
+    "Fill incident form",
+    "Blood test: HIV, Hep B, Hep C",
+    "Start PEP within 2 hours",
+    "Follow-up: 6 weeks, 3 months, 6 months"]},
+  {id:"e2", ico:"😵", title:"Patient Fainting", steps:[
+    "Lay patient down, head lower",
+    "Elevate legs",
+    "Loosen tight clothing",
+    "Cold water on face",
+    "Ammonia smelling salts",
+    "If not recovered in 1 min → call 1122",
+    "Check blood sugar"]},
+  {id:"e3", ico:"🩹", title:"Hematoma", steps:[
+    "Remove needle immediately",
+    "Firm pressure 5–10 minutes",
+    "Ice pack 15 minutes",
+    "Keep arm elevated",
+    "Rest patient",
+    "Warm compress after 24h",
+    "If large → see doctor"]},
+  {id:"e4", ico:"🦵", title:"Nerve Injury", steps:[
+    "Remove needle immediately",
+    "Ask: tingling, numbness, pain?",
+    "If yes → doctor immediately",
+    "Rest the arm",
+    "Fill incident report",
+    "Follow up in 48 hours"]},
+  {id:"e5", ico:"💉", title:"Arterial Puncture", steps:[
+    "Remove needle immediately",
+    "Firm pressure 5–10 minutes",
+    "Apply ice pack",
+    "Elevate arm",
+    "Monitor for hematoma",
+    "Inform doctor"]},
+  {id:"e6", ico:"🩸", title:"Continuous Bleeding", steps:[
+    "Apply pressure 5–10 minutes",
+    "Apply tight bandage",
+    "Elevate arm",
+    "If bleeding > 15 min → doctor",
+    "Review patient medications"]}
+];
+function openEmergency(){
+  let h = `<div class="modal-hd"><h3>🚨 Emergency Cards</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="emSearch" placeholder="Search emergency…"></div>
+    <div id="emList">`;
+  EMERGENCY_CARDS.forEach(c=>{
+    h += `<div class="ecard critical" data-em="${c.id}">
+      <div class="eh"><span class="ico">${c.ico}</span><h4>${c.title}</h4></div>
+      <ol>${c.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+    </div>`;
+  });
+  h += `</div><button class="btn block mt" onclick="window.print()">🖨 Print All</button>`;
+  openModal(h);
+  $("#emSearch").oninput = ()=>{
+    const q = $("#emSearch").value.toLowerCase();
+    $$("#emList .ecard").forEach(c=>{
+      c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none";
+    });
+  };
+}
+$("#btnEmergencyHome").onclick = openEmergency;
+
+/* ---------- DIFFICULT DRAW (B3) ---------- */
+const DIFFICULT = [
+  {id:"d1", title:"Rolling Vein", problem:"Vein slips on touch", solution:"Anchor both sides, insert slowly, 30° angle, butterfly needle."},
+  {id:"d2", title:"Collapsed Vein", problem:"Vein collapsed from vacuum", solution:"Release tourniquet, wait 5 min, alternate vein, smaller tube, slow pull."},
+  {id:"d3", title:"Fragile Vein", problem:"Thin vein, bursts easily", solution:"Use 23G/25G, butterfly, slow, minimal vacuum, warm compress."},
+  {id:"d4", title:"No Vein Visible", problem:"No visible vein", solution:"Warm water 5 min, tourniquet 2 min, tap, BP cuff 40 mmHg, vein finder."},
+  {id:"d5", title:"Sclerosed Vein", problem:"Hard, cord-like vein", solution:"Do not attempt. Alternate vein or other arm; use hand veins."},
+  {id:"d6", title:"Edematous Patient", problem:"Swollen hand/arm", solution:"Other arm, elevate 5 min, gentle pressure, ultrasound, refer to doctor."}
+];
+function openDifficult(){
+  let h = `<div class="modal-hd"><h3>💪 Difficult Draw</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="ddSearch" placeholder="Search scenario…"></div><div id="ddList">`;
+  DIFFICULT.forEach(d=>{
+    h += `<div class="card"><div class="card-hd"><span class="ico">💪</span><h3>${esc(d.title)}</h3></div>
+      <p><b>Problem:</b> ${esc(d.problem)}<br><b>Solution:</b> ${esc(d.solution)}</p></div>`;
+  });
+  h += `</div>`;
+  openModal(h);
+  $("#ddSearch").oninput = ()=>{
+    const q = $("#ddSearch").value.toLowerCase();
+    $$("#ddList .card").forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none");
+  };
 }
 
-function submitCPL(){
-  const title=$('cplTitle')?.value.trim();const category=$('cplCategory')?.value;const points=parseFloat($('cplPoints')?.value)||0;const notes=$('cplNotes')?.value.trim();
-  if(!title){toast('Enter title','error');return;}
-  if(points<=0){toast('Enter valid points','error');return;}
-  LocalDB.push('cpl',{staffId:State.user?._id,staffName:State.user?.name,title,category,points,notes});
-  State.cplActivities=LocalDB.get('cpl',[]);
-  closeModal();toast('Activity added','success');render();
+/* ---------- COMMUNICATION SCRIPTS (B4) ---------- */
+const SCRIPTS = [
+  {id:"c1", title:"First-Time Patient", text:"Assalam-o-Alaikum! Mera naam [name] hai, main aapka blood sample loonga.\nYeh test doctor ne order kiya hai, 5 minute ka kaam hai.\nAapko sirf ek chhoti si sui chubhegi, bilkul injection jaisi.\nAap apna haath relaxed rakhein.\nKoi sawal hai to pooch sakte hain."},
+  {id:"c2", title:"Nervous Patient", text:"Main samajh sakta hoon, bohot log pehli baar mein nervous hote hain.\nAap apni nazar doosri taraf kar lein.\nMain aapko har step batata jaunga.\nDeep breath lein — saans andar, saans bahar.\nHo gaya! Aapne bohot acha kiya."},
+  {id:"c3", title:"Pediatric (Child)", text:"[Bacha ka naam]! Aap bohot brave ho.\nYeh ek chhoti si sui hai, machhar ke katne jaisi.\nAgar aap royenge nahi to sticker milega!\nMaa/Papa aapka haath pakad lein.\n1, 2, 3... ho gaya! Shabash!"},
+  {id:"c4", title:"Elderly", text:"Assalam-o-Alaikum uncle/aunty, kaise hain aap?\nAapki vein dhoondne ki koshish karta hoon.\nAap apna haath bilkul relaxed rakhein.\nShukriya uncle/aunty, Allah aapko sehat de."},
+  {id:"c5", title:"Refusing Patient", text:"Main samajhta hoon aap pareshan hain.\nDoctor ne test order kiya hai, yeh aapki sehat ke liye zaroori hai.\nAgar aap abhi nahi chahte, to supervisor se baat karein.\nAapki marzi ka ehtram hai."},
+  {id:"c6", title:"Fainted Before", text:"Aapne bataya aap pehle behosh hue the? Shukriya batane ke liye.\nAaj main aapko lita kar sample loonga.\nAap paani pi lein pehle.\nAgar chakkar aaye to foran bataein."}
+];
+function openCommunication(){
+  let h = `<div class="modal-hd"><h3>💬 Communication Scripts</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="csSearch" placeholder="Search script…"></div><div id="csList">`;
+  SCRIPTS.forEach(s=>{
+    h += `<div class="card"><div class="card-hd"><span class="ico">💬</span><h3>${esc(s.title)}</h3></div>
+      <p style="white-space:pre-line">${esc(s.text)}</p>
+      <button class="btn sm mt" data-copy="${s.id}">📋 Copy</button></div>`;
+  });
+  h += `</div>`;
+  openModal(h);
+  $$("[data-copy]").forEach(b=> b.onclick = ()=>{
+    const s = SCRIPTS.find(x=>x.id===b.dataset.copy);
+    navigator.clipboard.writeText(s.text).then(()=>toast("Copied","ok"));
+  });
+  $("#csSearch").oninput = ()=>{
+    const q = $("#csSearch").value.toLowerCase();
+    $$("#csList .card").forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none");
+  };
 }
 
-function openEditProfileModal(){
-  const u=State.user||{};
-  openModal(`<div class="modal-header"><h2>✏️ Edit Profile</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Full Name</label><input id="editName" value="${esc(u.name||'')}"></div><div class="input-group"><label>Mobile</label><input id="editMobile" value="${esc(u.mobile||'')}" maxlength="11"></div><div class="input-group"><label>Designation</label><select id="editDes">${DESIGNATIONS.map(d=>`<option value="${d.id}" ${u.designation===d.id?'selected':''}>${d.icon} ${d.name}</option>`).join('')}</select></div><div class="input-group"><label>Gender</label><select id="editGender"><option ${u.gender==='Male'?'selected':''}>Male</option><option ${u.gender==='Female'?'selected':''}>Female</option></select></div><div class="input-group"><label>New Password (leave blank to keep)</label><input id="editPass" type="password" placeholder="••••••••"></div><button class="btn-primary" onclick="saveProfile()">💾 Save</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
+/* ---------- REJECTION GUIDE (B5) ---------- */
+const REJECTIONS = [
+  {id:"r1", title:"Hemolysis (Blood Broke)", sign:"Serum/plasma appears red", cause:"Thin needle, vigorous shaking, high vacuum, vein collapse, prolonged tourniquet", prevent:"21–23G needle, gentle invert, slow pull, tourniquet <1 min", fix:"Collect a new sample"},
+  {id:"r2", title:"Clotting", sign:"Clots in EDTA tube", cause:"Not mixed, under-mixed, dirty tube, slow fill", prevent:"Mix immediately 8–10 times, correct order, check expiry", fix:"New sample with fresh tube"},
+  {id:"r3", title:"Short Volume", sign:"Low blood level in tube", cause:"Low vacuum, needle out, vein collapse, dehydration", prevent:"Check expiry, keep needle stable, hydrate patient", fix:"Recollect"},
+  {id:"r4", title:"Wrong Tube", sign:"Wrong colour/anticoagulant", cause:"Wrong order of draw, colour confusion, low training", prevent:"Check protocol card, memorize order, confirm", fix:"Recollect with correct tube"},
+  {id:"r5", title:"Mislabeled", sign:"Label doesn't match patient", cause:"Forgot label, wrong patient, no time written", prevent:"Label at bedside, 3 confirms, always write time", fix:"Recollect from correct patient"},
+  {id:"r6", title:"Delayed Transport", sign:"Sample arrived late", cause:"Traffic, transport delay, wrong storage", prevent:"Send immediately, maintain cold chain, time limits", fix:"Collect a new sample"},
+  {id:"r7", title:"Contaminated", sign:"Growth or interference", cause:"Improper skin cleaning, dirty tube, missed hand hygiene", prevent:"30s spirit swab, wait to dry, sterile technique", fix:"New sample"}
+];
+function openRejection(){
+  let h = `<div class="modal-hd"><h3>❌ Specimen Rejection Guide</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="rjSearch" placeholder="Search reason (e.g. hemolysis, clot)…"></div><div id="rjList">`;
+  REJECTIONS.forEach(r=>{
+    h += `<div class="card"><div class="card-hd"><span class="ico">❌</span><h3>${esc(r.title)}</h3></div>
+      <p><b>How to spot:</b> ${esc(r.sign)}<br><b>Cause:</b> ${esc(r.cause)}<br>
+      <b style="color:var(--green)">Prevention:</b> ${esc(r.prevent)}<br>
+      <b style="color:var(--amber)">Action:</b> ${esc(r.fix)}</p></div>`;
+  });
+  h += `</div>`;
+  openModal(h);
+  $("#rjSearch").oninput = ()=>{
+    const q = $("#rjSearch").value.toLowerCase();
+    $$("#rjList .card").forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none");
+  };
 }
 
-function saveProfile(){
-  const name=$('editName')?.value.trim();const mobile=normalizeMobile($('editMobile')?.value.trim());const des=$('editDes')?.value;const gender=$('editGender')?.value;const pass=$('editPass')?.value;
-  if(!name||!mobile){toast('Name & mobile required','error');return;}
-  const updates={name,mobile,designation:des,gender};
-  if(pass)updates.password=pass;
-  if(State.user._id&&!State.user.guest){LocalDB.update('staff',State.user._id,updates);State.staff=LocalDB.get('staff',[]);}
-  Object.assign(State.user,updates);
-  closeModal();toast('Profile updated','success');showApp();
+/* ---------- MORE tiles ---------- */
+$$("[data-more]").forEach(b=> b.onclick = ()=>{
+  const m = b.dataset.more;
+  if(m==="startdraw") openStartDraw();
+  if(m==="emergency") openEmergency();
+  if(m==="difficult") openDifficult();
+  if(m==="communication") openCommunication();
+  if(m==="rejection") openRejection();
+  if(m==="notifications") toast("No new notifications","info");
+});
+
+/* ---------- NOTIFICATIONS BELL ---------- */
+$("#btnBell").onclick = ()=> toast("No new notifications","info");
+
+/* ---------- SESSION RESTORE ---------- */
+function restoreSession(){
+  const u = loadSession();
+  if(u) { showApp(u); return true; }
+  return false;
 }
 
-function openManageStaffModal(){
-  const staffList=State.staff.filter(s=>s.role!=='admin');
-  openModal(`<div class="modal-header"><h2>👥 Manage Staff (${staffList.length})</h2><button class="modal-close" onclick="closeModal()">✕</button></div><button class="btn-sm btn-accent btn-block mb12" onclick="openAddStaffModal()">+ Add New Staff</button>${staffList.length===0?'<div class="empty-state"><div class="icon">👥</div><div>No staff yet</div></div>':staffList.map(s=>`<div class="list-row"><div><div style="font-weight:600;font-size:14px">${esc(s.name)}</div><div style="font-size:11.5px;color:var(--text-muted)">${esc(s.mobile)} · ${esc(DESIGNATIONS.find(d=>d.id===s.designation)?.name||s.designation)}</div></div><button class="btn-sm btn-danger" onclick="deleteStaff('${s._id}')">🗑️</button></div>`).join('')}<button class="btn-secondary" onclick="closeModal()">Close</button>`);
-}
+/* ---------- INIT ---------- */
+(async function init(){
+  try{
+    await loadAllData();
+  }catch(e){ console.warn("Load failed:", e); }
 
-function openAddStaffModal(){
-  openModal(`<div class="modal-header"><h2>➕ Add Staff</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Full Name</label><input id="nsName" placeholder="e.g., Ahmed Khan"></div><div class="input-group"><label>Mobile (11 digits)</label><input id="nsMobile" placeholder="03001234567" maxlength="11"></div><div class="input-group"><label>Password</label><input id="nsPass" type="password" placeholder="••••••••"></div><div class="input-group"><label>Designation</label><select id="nsDes">${DESIGNATIONS.map(d=>`<option value="${d.id}">${d.icon} ${d.name}</option>`).join('')}</select></div><div class="input-group"><label>Gender</label><select id="nsGender"><option>Male</option><option>Female</option></select></div><button class="btn-primary" onclick="saveNewStaff()">💾 Save</button><button class="btn-secondary" onclick="openManageStaffModal()">Back</button>`);
-}
-
-function saveNewStaff(){
-  const name=$('nsName')?.value.trim();const mobile=normalizeMobile($('nsMobile')?.value.trim());const password=$('nsPass')?.value;const designation=$('nsDes')?.value;const gender=$('nsGender')?.value;
-  if(!name||!mobile||!password){toast('Fill all fields','error');return;}
-  if(mobile.length!==11){toast('Mobile must be 11 digits','error');return;}
-  const staffList=LocalDB.get('staff',[]);
-  if(staffList.some(s=>normalizeMobile(s.mobile)===mobile)){toast('Mobile already exists','error');return;}
-  LocalDB.push('staff',{name,mobile,password,designation,gender,role:'staff',active:true,fixedShift:'M',multiShifts:[],station:'OPD',notifications:true});
-  State.staff=LocalDB.get('staff',[]);
-  toast('Staff added','success');openManageStaffModal();
-}
-
-function deleteStaff(id){if(!confirm('Delete this staff member?'))return;LocalDB.remove('staff',id);State.staff=LocalDB.get('staff',[]);toast('Staff deleted','warning');openManageStaffModal();}
-
-function openManageShiftsModal(){
-  openModal(`<div class="modal-header"><h2>⏰ Manage Shifts</h2><button class="modal-close" onclick="closeModal()">✕</button></div>${State.shiftsSimple.map(s=>`<div class="card" style="padding:14px"><div class="flex-between"><div><div style="font-weight:600;font-size:14px"><span class="shift-pill shift-${esc(s.code)}" style="margin-right:8px">${esc(s.code)}</span>${esc(s.name)}</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">${esc(s.start)} → ${esc(s.end)} · ${s.duration}h · ${esc(s.gender)}</div></div><span class="badge ${s.active?'badge-success':'badge-danger'}">${s.active?'Active':'Off'}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px"><div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Mon-Fri</div><strong>${s.staffMonFri}</strong></div><div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Sat</div><strong>${s.staffSat}</strong></div><div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Sun</div><strong>${s.staffSun}</strong></div></div><div class="btn-row" style="margin-top:10px"><button class="btn-sm" onclick="editShift('${s._id}')">✏️ Edit</button><button class="btn-sm ${s.active?'btn-danger':'btn-success'}" onclick="toggleShift('${s._id}')">${s.active?'🚫 Disable':'✅ Enable'}</button></div></div>`).join('')}<button class="btn-secondary" onclick="closeModal()">Close</button>`);
-}
-
-function editShift(id){
-  const s=State.shiftsSimple.find(x=>x._id===id);if(!s)return;
-  openModal(`<div class="modal-header"><h2>✏️ Edit Shift: ${esc(s.code)}</h2><button class="modal-close" onclick="openManageShiftsModal()">✕</button></div><div class="input-group"><label>Name</label><input id="esName" value="${esc(s.name)}"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="input-group"><label>Start</label><input id="esStart" type="time" value="${esc(s.start)}"></div><div class="input-group"><label>End</label><input id="esEnd" type="time" value="${esc(s.end)}"></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="input-group"><label>Mon-Fri</label><input id="esMonFri" type="number" min="0" max="20" value="${s.staffMonFri}"></div><div class="input-group"><label>Sat</label><input id="esSat" type="number" min="0" max="20" value="${s.staffSat}"></div><div class="input-group"><label>Sun</label><input id="esSun" type="number" min="0" max="20" value="${s.staffSun}"></div></div><div class="input-group"><label>Gender</label><select id="esGender"><option ${s.gender==='Any'?'selected':''}>Any</option><option ${s.gender==='Male'?'selected':''}>Male</option></select></div><button class="btn-primary" onclick="saveShift('${s._id}')">💾 Save</button><button class="btn-secondary" onclick="openManageShiftsModal()">Back</button>`);
-}
-
-function saveShift(id){
-  const updates={name:$('esName')?.value.trim(),start:$('esStart')?.value,end:$('esEnd')?.value,staffMonFri:parseInt($('esMonFri')?.value)||0,staffSat:parseInt($('esSat')?.value)||0,staffSun:parseInt($('esSun')?.value)||0,gender:$('esGender')?.value};
-  const arr=LocalDB.get('shiftsSimple',[]);const idx=arr.findIndex(x=>x._id===id);
-  if(idx>=0){arr[idx]={...arr[idx],...updates};LocalDB.set('shiftsSimple',arr);}
-  State.shiftsSimple=LocalDB.get('shiftsSimple',[]);
-  toast('Shift updated','success');openManageShiftsModal();
-}
-
-function toggleShift(id){
-  const arr=LocalDB.get('shiftsSimple',[]);const idx=arr.findIndex(x=>x._id===id);
-  if(idx>=0){arr[idx].active=!arr[idx].active;LocalDB.set('shiftsSimple',arr);}
-  State.shiftsSimple=LocalDB.get('shiftsSimple',[]);
-  toast('Shift toggled','success');openManageShiftsModal();
-}
-
-function openManageHolidaysModal(){
-  openModal(`<div class="modal-header"><h2>🎉 Holidays</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:12px"><input type="date" id="holDate" class="search-bar" style="margin:0"><input id="holName" class="search-bar" placeholder="Name" style="margin:0"></div><button class="btn-sm btn-accent btn-block mb12" onclick="addHoliday()">+ Add Holiday</button>${State.holidays.length===0?'<div class="empty-state"><div class="icon">🎉</div><div>No holidays</div></div>':State.holidays.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(h=>`<div class="list-row"><div><div style="font-weight:600;font-size:13.5px">${esc(h.name||'Holiday')}</div><div style="font-size:11.5px;color:var(--text-muted)">${fmtDisplay(h.date)}</div></div><button class="btn-sm btn-danger" onclick="removeHoliday('${esc(h.date)}')">🗑️</button></div>`).join('')}<button class="btn-secondary" onclick="closeModal()">Close</button>`);
-}
-
-function addHoliday(){
-  const date=$('holDate')?.value;const name=$('holName')?.value.trim()||'Holiday';
-  if(!date){toast('Select date','error');return;}
-  if(State.holidays.some(h=>h.date===date)){toast('Already added','error');return;}
-  State.holidays.push({date,name});LocalDB.set('holidays',State.holidays);
-  toast('Holiday added','success');openManageHolidaysModal();
-}
-
-function removeHoliday(date){State.holidays=State.holidays.filter(h=>h.date!==date);LocalDB.set('holidays',State.holidays);toast('Removed','warning');openManageHolidaysModal();}
-
-function openHospitalSettingsModal(){
-  const s=State.settings;
-  openModal(`<div class="modal-header"><h2>🏥 Hospital Settings</h2><button class="modal-close" onclick="closeModal()">✕</button></div><div class="input-group"><label>Hospital Name</label><input id="hsName" value="${esc(s.hospitalName)}"></div><div class="input-group"><label>Address</label><input id="hsAddr" value="${esc(s.hospitalAddress)}"></div><div class="input-group"><label>Phone</label><input id="hsPhone" value="${esc(s.hospitalPhone)}"></div><div class="input-group"><label>Header Text</label><input id="hsHeader" value="${esc(s.headerText)}"></div><div class="input-group"><label>Upload Logo (PNG/JPG)</label><input id="hsLogo" type="file" accept="image/*" onchange="handleLogoUpload(event)"></div><button class="btn-primary" onclick="saveHospitalSettings()">💾 Save Settings</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>`);
-}
-
-function saveHospitalSettings(){
-  State.settings.hospitalName=$('hsName')?.value.trim()||'';
-  State.settings.hospitalAddress=$('hsAddr')?.value.trim()||'';
-  State.settings.hospitalPhone=$('hsPhone')?.value.trim()||'';
-  State.settings.headerText=$('hsHeader')?.value.trim()||'';
-  LocalDB.set('settings',State.settings);
-  closeModal();toast('Settings saved','success');render();
-}
-
-function handleLogoUpload(e){
-  const file=e.target.files?.[0];if(!file)return;
-  if(file.size>500000){toast('Image must be < 500KB','error');return;}
-  const reader=new FileReader();
-  reader.onload=ev=>{localStorage.setItem('kih_hospital_logo',ev.target.result);applyLogo();toast('Logo uploaded','success');};
-  reader.readAsDataURL(file);
-}
-
-function exportAllData(){
-  const data={exportedAt:new Date().toISOString(),staff:LocalDB.get('staff',[]),tests:LocalDB.get('tests',[]),roster:LocalDB.get('rosterData',null),rosterPeriod:LocalDB.get('rosterPeriod',null),swaps:LocalDB.get('swaps',[]),attendance:LocalDB.get('attendance',[]),cpl:LocalDB.get('cpl',[]),rejections:LocalDB.get('rejections',[]),holidays:LocalDB.get('holidays',[]),notifications:LocalDB.get('notifications',[]),settings:LocalDB.get('settings',{})};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`kih-backup-${new Date().toISOString().split('T')[0]}.json`;a.click();
-  URL.revokeObjectURL(url);toast('Data exported','success');
-}
-
-/* ─── BOOT ─── */
-function bootApp(){
-  const loginBtn=$('loginBtn');if(loginBtn)loginBtn.onclick=doLogin;
-  const guestBtn=$('guestBtn');if(guestBtn)guestBtn.onclick=doGuestLogin;
-  const pass=$('loginPassword');if(pass)pass.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-  const logoutBtn=$('logoutBtn');if(logoutBtn)logoutBtn.onclick=doLogout;
-  const bell=$('notificationBell');if(bell)bell.onclick=openNotificationsModal;
-  const avatar=$('userAvatar');if(avatar)avatar.onclick=()=>{State.activeTab='more';render();};
-  window.addEventListener('online',()=>{State.online=true;const dot=$('onlineDot');if(dot)dot.style.background='var(--success-l)';toast('Back online','success');});
-  window.addEventListener('offline',()=>{State.online=false;const dot=$('onlineDot');if(dot)dot.style.background='var(--danger)';toast('Offline mode','warning');});
-  let lastDesktop=window.innerWidth>=1024;
-  window.addEventListener('resize',()=>{const isDesktop=window.innerWidth>=1024;if(isDesktop!==lastDesktop){lastDesktop=isDesktop;if(isDesktop&&State.user)buildSidebar();else{const sb=document.getElementById('kihSidebar');if(sb)sb.remove();}}});
-  document.addEventListener('click',e=>{const btn=e.target.closest('[data-copy]');if(btn){const text=btn.getAttribute('data-copy');navigator.clipboard.writeText(text).then(()=>toast('Copied!','success')).catch(()=>toast('Copy failed','error'));}});
-  const session=loadSession();
-  if(session&&session.user){
-    State.user=session.user;State.session=session;
-    const staffList=LocalDB.get('staff',[DEFAULT_ADMIN]);
-    const found=staffList.find(s=>s._id===session.user._id);
-    if(found||session.user.guest){showApp();return;}
-    clearSession();
+  if(!restoreSession()){
+    showLogin();
   }
-  $('loginScreen').style.display='flex';
-}
 
-bootApp();
-console.log('%c✅ KIH Phlebotomy v4.0 ready!','color:#10B981;font-weight:bold;font-size:13px');
-console.log('%c🔐 Login: 03001234567 / admin123','color:#14B8A6;font-weight:bold;font-size:12px');
+  // Firebase auth listener (backup)
+  if(FIREBASE_OK){
+    auth.onAuthStateChanged(u=>{
+      if(u && !State.user){
+        const s = loadSession();
+        if(!s) showApp({id:u.uid, mobile:u.phoneNumber||"", name:u.displayName||"User"});
+      }
+    });
+  }
+
+  // Global error guard
+  window.addEventListener("error", e=>{
+    console.warn("Runtime:", e.message);
+  });
+  window.addEventListener("unhandledrejection", e=>{
+    console.warn("Promise rejection:", e.reason);
+  });
+})();
+
+/* ---------- KEYBOARD SHORTCUTS ---------- */
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape") closeModal();
+});
 </script>
 </body>
 </html>
+    <body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🩸</div>
+    <h1>KIH Phlebotomy</h1>
+    <p class="sub">Kulsum International Hospital, Islamabad</p>
+    <div class="field">
+      <label>Mobile Number</label>
+      <input id="loginMobile" type="tel" placeholder="03XXXXXXXXX" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="keepSigned" checked>
+      <label for="keepSigned" style="margin:0">Keep me signed in (30 days)</label>
+    </div>
+    <button class="btn-primary" id="btnLogin">Sign In</button>
+    <div class="divider">or</div>
+    <button class="btn-ghost" id="btnGuest">Continue as Guest</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="appHeader" class="hidden">
+  <div class="brand"><span class="dot"></span> KIH Phlebotomy</div>
+  <button class="hdr-btn" id="btnBell" title="Notifications">🔔<span class="badge hidden" id="bellBadge">0</span></button>
+  <div class="avatar" id="userAvatar" title="Account">?</div>
+</header>
+
+<!-- MAIN -->
+<main class="hidden" id="appMain">
+
+  <!-- ========== HOME ========== -->
+  <section class="view active" id="view-home">
+    <div class="page-title" id="homeGreeting">Good day</div>
+    <div class="page-sub" id="homeSub">Kulsum International Hospital · Phlebotomy Dept</div>
+
+    <button class="btn danger block mb" id="btnStartDrawHome" style="padding:16px;font-size:16px">🩸 Start Draw</button>
+    <button class="btn warn block mb" id="btnEmergencyHome" style="padding:16px;font-size:16px">🚨 Emergency Cards</button>
+
+    <div class="grid2 mt">
+      <button class="tile" data-nav="tests"><span class="ico">🧪</span><span class="lbl">Test Protocols</span><span class="val" id="cntTests">0</span></button>
+      <button class="tile" data-nav="roster"><span class="ico">📅</span><span class="lbl">Roster</span><span class="val" id="cntRoster">—</span></button>
+      <button class="tile" data-nav="swap"><span class="ico">🔄</span><span class="lbl">Shift Swap</span><span class="val" id="cntSwaps">0</span></button>
+      <button class="tile" data-nav="policy"><span class="ico">📋</span><span class="lbl">Policies</span><span class="val" id="cntPolicies">0</span></button>
+      <button class="tile" data-nav="learn"><span class="ico">🎓</span><span class="lbl">Training</span><span class="val" id="cntQuizzes">0</span></button>
+      <button class="tile" data-nav="attend"><span class="ico">⏱</span><span class="lbl">Attendance</span><span class="val" id="cntAttend">—</span></button>
+      <button class="tile" data-nav="cpl"><span class="ico">📈</span><span class="lbl">CPL Tracker</span><span class="val" id="cntCPL">0</span></button>
+      <button class="tile" data-nav="more"><span class="ico">⋯</span><span class="lbl">More</span><span class="val">→</span></button>
+    </div>
+
+    <div class="section-h">Today on Duty</div>
+    <div id="homeTodayDuty"><div class="empty"><div class="ico">📅</div>No roster for today.</div></div>
+  </section>
+
+  <!-- ========== TESTS ========== -->
+  <section class="view" id="view-tests">
+    <div class="page-title">🧪 Test Protocols</div>
+    <div class="page-sub">Tube · Order of Draw · Volume · TAT</div>
+    <div class="tabs" id="testsTabs">
+      <button class="tab active" data-ttab="all">All</button>
+      <button class="tab" data-ttab="hematology">Hematology</button>
+      <button class="tab" data-ttab="chemistry">Chemistry</button>
+      <button class="tab" data-ttab="micro">Microbiology</button>
+      <button class="tab" data-ttab="special">Special</button>
+    </div>
+    <div class="search"><span class="si">🔍</span><input id="testsSearch" placeholder="Search test name…"></div>
+    <div id="testsList"></div>
+  </section>
+
+  <!-- ========== POLICY ========== -->
+  <section class="view" id="view-policy">
+    <div class="page-title">📋 Policies</div>
+    <div class="page-sub">Read & acknowledge</div>
+    <div class="search"><span class="si">🔍</span><input id="policySearch" placeholder="Search policy…"></div>
+    <div id="policyList"></div>
+  </section>
+
+  <!-- ========== ROSTER ========== -->
+  <section class="view" id="view-roster">
+    <div class="page-title">📅 Roster</div>
+    <div class="page-sub">Generate · View · Validate</div>
+    <div class="tabs" id="rosterTabs">
+      <button class="tab active" data-rtab="view">View</button>
+      <button class="tab" data-rtab="generate">Generate</button>
+      <button class="tab" data-rtab="staff">Staff</button>
+      <button class="tab" data-rtab="leaves">Leaves</button>
+      <button class="tab" data-rtab="holidays">Holidays</button>
+    </div>
+    <div id="rosterPaneView"></div>
+    <div id="rosterPaneGenerate" class="hidden"></div>
+    <div id="rosterPaneStaff" class="hidden"></div>
+    <div id="rosterPaneLeaves" class="hidden"></div>
+    <div id="rosterPaneHolidays" class="hidden"></div>
+  </section>
+
+  <!-- ========== SWAP ========== -->
+  <section class="view" id="view-swap">
+    <div class="page-title">🔄 Shift Swap</div>
+    <div class="page-sub">Request & approve swaps</div>
+    <div class="actions"><button class="btn primary" id="btnNewSwap">+ New Request</button></div>
+    <div id="swapList"></div>
+  </section>
+
+  <!-- ========== LEARN ========== -->
+  <section class="view" id="view-learn">
+    <div class="page-title">🎓 Training</div>
+    <div class="page-sub">Quizzes & learning modules</div>
+    <div id="learnList"></div>
+  </section>
+
+  <!-- ========== ATTEND ========== -->
+  <section class="view" id="view-attend">
+    <div class="page-title">⏱ Attendance</div>
+    <div class="page-sub">Check-in / check-out log</div>
+    <div class="actions">
+      <button class="btn ok" id="btnCheckIn">✅ Check In</button>
+      <button class="btn warn" id="btnCheckOut">⏹ Check Out</button>
+    </div>
+    <div id="attendList"></div>
+  </section>
+
+  <!-- ========== CPL ========== -->
+  <section class="view" id="view-cpl">
+    <div class="page-title">📈 CPL Tracker</div>
+    <div class="page-sub">Continuous Professional Learning points</div>
+    <div id="cplList"></div>
+  </section>
+
+  <!-- ========== MORE ========== -->
+  <section class="view" id="view-more">
+    <div class="page-title">⋯ More</div>
+    <div class="page-sub">Extra tools & references</div>
+    <div class="grid2">
+      <button class="tile" data-more="startdraw"><span class="ico">🩸</span><span class="lbl">Start Draw</span><span class="val">15 steps</span></button>
+      <button class="tile" data-more="emergency"><span class="ico">🚨</span><span class="lbl">Emergency</span><span class="val">6 cards</span></button>
+      <button class="tile" data-more="difficult"><span class="ico">💪</span><span class="lbl">Difficult Draw</span><span class="val">6 scenarios</span></button>
+      <button class="tile" data-more="communication"><span class="ico">💬</span><span class="lbl">Scripts</span><span class="val">6 scripts</span></button>
+      <button class="tile" data-more="rejection"><span class="ico">❌</span><span class="lbl">Rejection</span><span class="val">7 reasons</span></button>
+      <button class="tile" data-more="notifications"><span class="ico">🔔</span><span class="lbl">Notifications</span><span class="val" id="moreNotif">0</span></button>
+    </div>
+    <div class="section-h">Account</div>
+    <div class="li"><div class="ico">👤</div><div class="body"><div class="title" id="moreUser">—</div><div class="sub" id="moreRole">—</div></div></div>
+    <button class="btn danger block mt" id="btnLogout">Logout</button>
+  </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav id="bottomNav" class="hidden">
+  <button data-nav="home" class="active"><span class="ni">🏠</span>Home</button>
+  <button data-nav="tests"><span class="ni">🧪</span>Tests</button>
+  <button data-nav="policy"><span class="ni">📋</span>Policy</button>
+  <button data-nav="roster"><span class="ni">📅</span>Roster</button>
+  <button data-nav="swap"><span class="ni">🔄</span>Swap</button>
+  <button data-nav="learn"><span class="ni">🎓</span>Learn</button>
+  <button data-nav="attend"><span class="ni">⏱</span>Attend</button>
+  <button data-nav="cpl"><span class="ni">📈</span>CPL</button>
+  <button data-nav="more"><span class="ni">⋯</span>More</button>
+</nav>
+
+<!-- TOASTS + MODAL -->
+<div id="toastWrap"></div>
+<div id="modalWrap"><div class="modal" id="modalBody"></div></div>
+
+<!-- FIREBASE COMPAT SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 3 — FIREBASE CONFIG + STATE + HELPERS
+   ═══════════════════════════════════════════════════════════ */
+
+const firebaseConfig = {
+  apiKey: "REPLACE_ME",
+  authDomain: "REPLACE_ME.firebaseapp.com",
+  databaseURL: "https://REPLACE_ME-default-rtdb.firebaseio.com",
+  projectId: "REPLACE_ME",
+  storageBucket: "REPLACE_ME.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:REPLACE_ME"
+};
+
+let db = null, auth = null, FIREBASE_OK = false;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  auth = firebase.auth();
+  FIREBASE_OK = true;
+} catch(e) { console.warn("Firebase init skipped (demo mode):", e.message); }
+
+/* ---------- CONSTANTS ---------- */
+const SESSION_KEY = "kih_phleb_session_v1";
+const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+const SHIFT_CODES = {
+  M:"07:00–15:00", D:"09:00–17:00", D2:"10:00–18:00",
+  E:"15:00–23:00", N:"23:00–07:00", X:"11:00–19:00",
+  E4:"16:00–00:00", N12:"00:00–08:00",
+  O:"Off", PH:"Public Holiday", CPL:"CPL", EL:"Earned Leave", CL:"Casual Leave",
+  ME:"M+E", EN:"E+N", "M+E":"M+E", DX:"D+X", XE:"X+E", MX:"M+X", EX:"E+X"
+};
+const RELAX_CODES = ["O","PH","CPL","EL","CL"];
+const LEAVE_CODES = ["O","PH","CPL","EL","CL"];
+const MALE_ONLY = ["N","N12","E4"];
+const EXTENDED = ["ME","EN","M+E","DX","XE","MX","EX"];
+
+/* ---------- DEFAULT STAFF (A1) ---------- */
+const DEFAULT_STAFF = [
+  {id:"s1",  name:"Noreen Akhtar",            gender:"F", fixedShift:null, pref:["E","M","D"]},
+  {id:"s2",  name:"Syed Sajid Hussain Shah",  gender:"M", fixedShift:null, pref:["M","E","D"]},
+  {id:"s3",  name:"Habiba Fiaz",              gender:"F", fixedShift:null, pref:["E","M","D"]},
+  {id:"s4",  name:"Qurat Ul Ain",             gender:"F", fixedShift:null, pref:["E","M","D"]},
+  {id:"s5",  name:"Donia Bashir",             gender:"F", fixedShift:null, pref:["E","M","D"]},
+  {id:"s6",  name:"Sheryar Khan",             gender:"M", fixedShift:null, pref:["M","E","D"]},
+  {id:"s7",  name:"Waqas Aziz",               gender:"M", fixedShift:null, pref:["M","E","D"]},
+  {id:"s8",  name:"Bushra Safeer Awan",       gender:"F", fixedShift:null, pref:["E","M","D"]},
+  {id:"s9",  name:"Asim Ali",                 gender:"M", fixedShift:null, pref:["M","E","D"]},
+  {id:"s10", name:"Muhammad Zakria",          gender:"M", fixedShift:null, pref:["M","E","D"]},
+  {id:"s11", name:"Imran Mubarak Abbasi",     gender:"M", fixedShift:null, pref:["M","E","D"]},
+  {id:"s12", name:"Tasleem Fatima",           gender:"F", fixedShift:"E", pref:["E"]}
+];
+
+/* ---------- STATE ---------- */
+const State = {
+  user: null,
+  staff: [],
+  leaves: [],        // {id, staffId, from, to, type, status}
+  holidays: [],      // {id, date, name}
+  specialOff: [],    // {id, staffId, date, locked:true}
+  rosters: {},       // {rosterId: {id, from, to, generatedAt, cells:{staffId:{date:code}}, conflicts:[], valid:bool}}
+  activeRosterId: null,
+  swaps: [],
+  attendance: [],
+  cpl: [],
+  notifications: [],
+  policies: [],
+  tests: [],
+  quizzes: [],
+  sundayRotation: {}, // {periodKey: {femaleId: index}}
+  settings: { defaultPassword:"kih1234", adminMobiles:["03000000000"] }
+};
+
+/* ---------- HELPERS ---------- */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function toast(msg, type="info", ms=2600){
+  const w = $("#toastWrap");
+  const t = document.createElement("div");
+  t.className = "toast " + (type==="info"?"":type);
+  t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity .3s"; setTimeout(()=>t.remove(),300); }, ms);
+}
+function openModal(html){ $("#modalBody").innerHTML = html; $("#modalWrap").classList.add("open"); }
+function closeModal(){ $("#modalWrap").classList.remove("open"); }
+$("#modalWrap").addEventListener("click", e=>{ if(e.target.id==="modalWrap") closeModal(); });
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+function fmtDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function parseDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function fmtDisplay(s){ const d=parseDate(s); const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear()}`; }
+function fmtDisplayShort(s){ const d=parseDate(s); const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return `${d.getDate()} ${mo[d.getMonth()]}`; }
+function dayName(s){ return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][parseDate(s).getDay()]; }
+function daysBetween(from,to){ const a=parseDate(from), b=parseDate(to); return Math.round((b-a)/86400000)+1; }
+function eachDate(from,to){ const out=[]; let d=parseDate(from), e=parseDate(to); while(d<=e){ out.push(fmtDate(d)); d.setDate(d.getDate()+1); } return out; }
+function initials(name){ return name.split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* Firebase-safe read/write */
+async function dbGet(path){
+  if(!FIREBASE_OK) return JSON.parse(localStorage.getItem("kih_db_"+path)||"null");
+  try { const snap = await db.ref(path).once("value"); return snap.val(); } catch(e){ console.warn(e); return null; }
+}
+async function dbSet(path, val){
+  if(!FIREBASE_OK){ localStorage.setItem("kih_db_"+path, JSON.stringify(val)); return; }
+  try { await db.ref(path).set(val); } catch(e){ console.warn(e); }
+}
+async function dbPush(path, val){
+  if(!FIREBASE_OK){
+    const arr = JSON.parse(localStorage.getItem("kih_db_"+path)||"[]");
+    const item = {...val, id: val.id||uid()}; arr.push(item);
+    localStorage.setItem("kih_db_"+path, JSON.stringify(arr)); return item;
+  }
+  try { const ref = db.ref(path).push(); await ref.set(val); return {...val, id: ref.key}; } catch(e){ console.warn(e); }
+}
+  /* ═══════════════════════════════════════════════════════════
+   PART 4A — CRUD (Staff, Leaves, Holidays, Special OFF)
+   ═══════════════════════════════════════════════════════════ */
+
+async function loadAllData(){
+  // Load from Firebase/localStorage; fall back to defaults
+  const staff = await dbGet("staff");
+  State.staff = (staff && Object.keys(staff).length) ? Object.values(staff) : JSON.parse(JSON.stringify(DEFAULT_STAFF));
+  if(!staff) await dbSet("staff", Object.fromEntries(State.staff.map(s=>[s.id,s])));
+
+  State.leaves      = Object.values((await dbGet("leaves"))      || {});
+  State.holidays    = Object.values((await dbGet("holidays"))    || {});
+  State.specialOff  = Object.values((await dbGet("specialOff"))  || {});
+  State.rosters     = (await dbGet("rosters")) || {};
+  State.activeRosterId = (await dbGet("activeRosterId")) || null;
+  State.swaps       = Object.values((await dbGet("swaps"))       || {});
+  State.attendance  = Object.values((await dbGet("attendance"))  || {});
+  State.cpl         = Object.values((await dbGet("cpl"))         || {});
+  State.notifications = Object.values((await dbGet("notifications")) || {});
+  State.policies    = Object.values((await dbGet("policies"))    || {});
+  State.tests       = Object.values((await dbGet("tests"))       || {});
+  State.quizzes     = Object.values((await dbGet("quizzes"))     || {});
+  State.sundayRotation = (await dbGet("sundayRotation")) || {};
+}
+
+/* ---------- STAFF CRUD ---------- */
+function renderStaffPane(){
+  const el = $("#rosterPaneStaff");
+  let h = `<div class="actions"><button class="btn primary" id="btnAddStaff">+ Add Staff</button></div>`;
+  h += `<div id="staffList">`;
+  State.staff.forEach(s=>{
+    h += `<div class="li">
+      <div class="ico">${s.gender==="F"?"👩":"👨"}</div>
+      <div class="body">
+        <div class="title">${esc(s.name)} ${s.fixedShift?`<span class="pill info">FIXED ${s.fixedShift}</span>`:""}</div>
+        <div class="sub">${s.gender==="F"?"Female":"Male"} · ID ${s.id}</div>
+      </div>
+      <button class="btn sm" data-edit-staff="${s.id}">✎</button>
+      <button class="btn sm danger" data-del-staff="${s.id}">🗑</button>
+    </div>`;
+  });
+  h += `</div>`;
+  el.innerHTML = h;
+
+  $("#btnAddStaff").onclick = ()=> staffModal(null);
+  $$("[data-edit-staff]").forEach(b=> b.onclick = ()=> staffModal(b.dataset.editStaff));
+  $$("[data-del-staff]").forEach(b=> b.onclick = async ()=>{
+    if(!confirm("Delete this staff member?")) return;
+    State.staff = State.staff.filter(x=>x.id!==b.dataset.delStaff);
+    await dbSet("staff", Object.fromEntries(State.staff.map(s=>[s.id,s])));
+    renderStaffPane(); toast("Staff removed","ok");
+  });
+}
+
+function staffModal(id){
+  const s = id ? State.staff.find(x=>x.id===id) : {id:uid(), name:"", gender:"F", fixedShift:null, pref:["E","M","D"]};
+  openModal(`
+    <div class="modal-hd"><h3>${id?"Edit":"Add"} Staff</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="field"><label>Full Name</label><input id="sfName" value="${esc(s.name)}"></div>
+    <div class="field"><label>Gender</label>
+      <select id="sfGender"><option value="F" ${s.gender==="F"?"selected":""}>Female</option><option value="M" ${s.gender==="M"?"selected":""}>Male</option></select>
+    </div>
+    <div class="field"><label>Fixed Shift (optional)</label>
+      <select id="sfFixed"><option value="">None</option>${["M","D","D2","E","N","X","E4","N12"].map(c=>`<option ${s.fixedShift===c?"selected":""}>${c}</option>`).join("")}</select>
+    </div>
+    <div class="field"><label>Preferred shifts (comma-separated)</label><input id="sfPref" value="${(s.pref||[]).join(",")}"></div>
+    <button class="btn primary block mt" id="sfSave">Save</button>
+  `);
+  $("#sfSave").onclick = async ()=>{
+    const name = $("#sfName").value.trim();
+    if(!name){ toast("Name required","err"); return; }
+    const obj = {id:s.id, name, gender:$("#sfGender").value, fixedShift:$("#sfFixed").value||null, pref:$("#sfPref").value.split(",").map(x=>x.trim()).filter(Boolean)};
+    const idx = State.staff.findIndex(x=>x.id===s.id);
+    if(idx>=0) State.staff[idx]=obj; else State.staff.push(obj);
+    await dbSet("staff", Object.fromEntries(State.staff.map(x=>[x.id,x])));
+    closeModal(); renderStaffPane(); toast("Staff saved","ok");
+  };
+}
+
+/* ---------- LEAVES CRUD ---------- */
+function renderLeavesPane(){
+  const el = $("#rosterPaneLeaves");
+  let h = `<div class="actions"><button class="btn primary" id="btnAddLeave">+ Add Leave</button></div>`;
+  if(!State.leaves.length) h += `<div class="empty"><div class="ico">📭</div>No leaves recorded.</div>`;
+  State.leaves.sort((a,b)=>a.from<b.from?-1:1).forEach(l=>{
+    const st = State.staff.find(s=>s.id===l.staffId);
+    h += `<div class="li">
+      <div class="ico">🌴</div>
+      <div class="body">
+        <div class="title">${esc(st?st.name:"Unknown")} <span class="pill info">${l.type}</span></div>
+        <div class="sub">${fmtDisplay(l.from)} → ${fmtDisplay(l.to)} · ${l.status||"approved"}</div>
+      </div>
+      <button class="btn sm danger" data-del-leave="${l.id}">🗑</button>
+    </div>`;
+  });
+  el.innerHTML = h;
+
+  $("#btnAddLeave").onclick = ()=> leaveModal();
+  $$("[data-del-leave]").forEach(b=> b.onclick = async ()=>{
+    if(!confirm("Delete this leave?")) return;
+    const l = State.leaves.find(x=>x.id===b.dataset.delLeave);
+    State.leaves = State.leaves.filter(x=>x.id!==b.dataset.delLeave);
+    if(FIREBASE_OK && l) await db.ref("leaves/"+l.id).remove();
+    else await dbSet("leaves", Object.fromEntries(State.leaves.map(x=>[x.id,x])));
+    renderLeavesPane(); toast("Leave removed","ok");
+  });
+}
+
+function leaveModal(){
+  const today = fmtDate(new Date());
+  openModal(`
+    <div class="modal-hd"><h3>Add Leave</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="field"><label>Staff</label>
+      <select id="lfStaff">${State.staff.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>
+    <div class="form-grid">
+      <div class="field"><label>From</label><input id="lfFrom" type="date" value="${today}"></div>
+      <div class="field"><label>To</label><input id="lfTo" type="date" value="${today}"></div>
+      <div class="field full"><label>Type</label>
+        <select id="lfType">${["EL","CL","CPL","PH","O"].map(c=>`<option>${c}</option>`).join("")}</select></div>
+    </div>
+    <button class="btn primary block mt" id="lfSave">Save Leave</button>
+  `);
+  $("#lfSave").onclick = async ()=>{
+    const from = $("#lfFrom").value, to = $("#lfTo").value;
+    if(!from || !to || from>to){ toast("Invalid date range","err"); return; }
+    const item = {id:uid(), staffId:$("#lfStaff").value, from, to, type:$("#lfType").value, status:"approved"};
+    State.leaves.push(item);
+    await dbSet("leaves", Object.fromEntries(State.leaves.map(x=>[x.id,x])));
+    closeModal(); renderLeavesPane(); toast("Leave added","ok");
+  };
+}
+
+/* ---------- HOLIDAYS CRUD ---------- */
+function renderHolidaysPane(){
+  const el = $("#rosterPaneHolidays");
+  let h = `<div class="actions"><button class="btn primary" id="btnAddHol">+ Add Gazetted Holiday</button></div>`;
+  if(!State.holidays.length) h += `<div class="empty"><div class="ico">🎉</div>No gazetted holidays.</div>`;
+  State.holidays.sort((a,b)=>a.date<b.date?-1:1).forEach(hh=>{
+    h += `<div class="li">
+      <div class="ico">🎉</div>
+      <div class="body"><div class="title">${esc(hh.name)}</div><div class="sub">${fmtDisplay(hh.date)}</div></div>
+      <button class="btn sm danger" data-del-hol="${hh.id}">🗑</button>
+    </div>`;
+  });
+  el.innerHTML = h;
+
+  $("#btnAddHol").onclick = ()=>{
+    openModal(`
+      <div class="modal-hd"><h3>Add Gazetted Holiday</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div class="field"><label>Date</label><input id="hfDate" type="date" value="${fmtDate(new Date())}"></div>
+      <div class="field"><label>Name</label><input id="hfName" placeholder="e.g. Eid-ul-Fitr"></div>
+      <button class="btn primary block mt" id="hfSave">Save</button>
+    `);
+    $("#hfSave").onclick = async ()=>{
+      const d=$("#hfDate").value, n=$("#hfName").value.trim();
+      if(!d||!n){ toast("Date and name required","err"); return; }
+      State.holidays.push({id:uid(), date:d, name:n});
+      await dbSet("holidays", Object.fromEntries(State.holidays.map(x=>[x.id,x])));
+      closeModal(); renderHolidaysPane(); toast("Holiday added","ok");
+    };
+  };
+  $$("[data-del-hol]").forEach(b=> b.onclick = async ()=>{
+    State.holidays = State.holidays.filter(x=>x.id!==b.dataset.delHol);
+    await dbSet("holidays", Object.fromEntries(State.holidays.map(x=>[x.id,x])));
+    renderHolidaysPane(); toast("Removed","ok");
+  });
+}
+  /* ═══════════════════════════════════════════════════════════
+   PART 4B — ROSTER GENERATION ENGINE (STRICT A1–A31)
+   ═══════════════════════════════════════════════════════════
+
+   WHAT WAS WRONG (typical bugs in "basic" rosters):
+   1. Fixed OFF target of 4 instead of counting actual Sundays.
+   2. Random staff rotation each day → chaotic shifts.
+   3. Female staff sometimes assigned N / N12 / E4.
+   4. Locked special OFF overwritten.
+   5. Staffing pattern not matched exactly (extra/missing duties).
+   6. No N/N12 next-day rest rule.
+   7. No previous-roster continuity.
+   8. No conflict reporting — silent rule breaking.
+   9. Tasleem Fatima rotated away from E.
+   10. Sunday OFF for females not rotated fairly across months.
+
+   FIX APPROACH:
+   - Deterministic, rule-based, priority-driven engine (A24).
+   - Build date metadata first (A2, A25-STEP 1-2).
+   - Reserve locked OFF + approved leave FIRST (A6, A25-STEP 5-6).
+   - Compute OFF target = Sunday count (A5).
+   - Assign Sunday OFF with persistent female rotation (A8).
+   - Fill remaining OFF by workload balancing (A7).
+   - Per-day: compute absences → pick EXACT staffing pattern (A10–A16).
+   - Assign each duty slot with highest-priority eligible staff (A19–A24).
+   - Enforce gender (A4), N/N12 rest (A18), fixed shift (A22), prev roster (A20), min rotation (A19).
+   - Validate everything (A26). If impossible → structured conflicts (A27).
+   ═══════════════════════════════════════════════════════════ */
+
+const WEEKDAYS = ["Mon","Tue","Wed","Thu","Fri"];
+const PATTERNS = {
+  // key: `${dayType}_${absence}` where dayType ∈ weekday | sat | sun
+  // value: {M:4, E:4, E4:1, N12:1, N:0, D:1, D2:0, X:1, EX:0, DX:0}
+  weekday_0: {M:4, E:4, E4:1, N12:1, D:1, X:1},
+  weekday_1: {M:4, E:4, E4:1, N12:1, D:1},
+  weekday_2: {M:3, E:3, E4:1, N12:1, D:1, X:1},
+  weekday_3: {M:3, E:2, E4:1, N12:1, EX:1, DX:1},
+
+  sat_0:     {M:3, E:3, E4:1, N12:1, D:1, X:1},
+  sat_2:     {M:3, E:3, E4:1, N12:1, D:1, X:1},
+  sat_3:     {M:3, E:2, E4:1, N12:1, EX:1, DX:1},
+  // sat_1 undefined → conflict (A11)
+
+  sun_0:     {M:2, E:2, N:1},
+  sun_1:     {M:4, E:4, E4:1, N12:1, D:1},
+  sun_2:     {M:3, E:3, E4:1, N12:1, D:1, X:1},
+  sun_3:     {M:3, E:2, E4:1, N12:1, EX:1, DX:1}
+};
+
+/* ---------- MAIN ENTRY ---------- */
+function generateRoster({from, to, prevRosterId}={}){
+  const conflicts = [];
+  const dates = eachDate(from, to);
+  const staff = State.staff.filter(s => s.name.toLowerCase() !== "admin");
+
+  // STEP 2 — classify each date
+  const meta = {};
+  dates.forEach(d => {
+    const dow = parseDate(d).getDay();
+    const hol = State.holidays.find(h => h.date === d);
+    meta[d] = {
+      date: d,
+      dow,                                   // 0=Sun..6=Sat
+      isSun: dow === 0,
+      isSat: dow === 6,
+      isHol: !!hol,
+      dayType: hol ? "sun" : (dow === 0 ? "sun" : (dow === 6 ? "sat" : "weekday")),
+      holidayName: hol ? hol.name : null
+    };
+  });
+
+  // STEP 3 — OFF target = number of Sundays (A5)
+  // NOTE: If a holiday falls on weekday, it uses "sun" pattern but does NOT add to OFF target.
+  const sundayCount = dates.filter(d => meta[d].isSun).length;
+  const offTarget = sundayCount;
+
+  // STEP 4 — previous roster (A20)
+  let prevCells = {};
+  if(prevRosterId && State.rosters[prevRosterId]){
+    prevCells = State.rosters[prevRosterId].cells || {};
+  } else if(State.activeRosterId && State.rosters[State.activeRosterId]){
+    prevCells = State.rosters[State.activeRosterId].cells || {};
+  }
+  const lastShiftOf = {};
+  staff.forEach(s => {
+    lastShiftOf[s.id] = {};
+    if(prevCells[s.id]){
+      const keys = Object.keys(prevCells[s.id]).sort();
+      for(let i=keys.length-1; i>=0; i--){
+        const code = prevCells[s.id][keys[i]];
+        if(!RELAX_CODES.includes(code)){ lastShiftOf[s.id].last = code; break; }
+      }
+    }
+  });
+
+  // ---------- ROSTER GRID ----------
+  const cells = {};
+  staff.forEach(s => { cells[s.id] = {}; }); // cells[staffId][date] = code
+
+  // STEP 5 — locked special OFF
+  const lockedOff = {}; // lockedOff[staffId] = Set(dates)
+  staff.forEach(s => lockedOff[s.id] = new Set());
+  State.specialOff.forEach(o => {
+    if(o.staffId && o.date && lockedOff[o.staffId] && meta[o.date]){
+      lockedOff[o.staffId].add(o.date);
+    }
+  });
+
+  // STEP 6 — approved leave
+  const leaveMap = {}; // leaveMap[staffId][date] = code
+  staff.forEach(s => leaveMap[s.id] = {});
+  State.leaves.forEach(l => {
+    if(l.status && l.status !== "approved") return;
+    if(!leaveMap[l.staffId]) return;
+    const days = eachDate(l.from, l.to);
+    days.forEach(d => {
+      if(!meta[d]) return;
+      leaveMap[l.staffId][d] = l.type; // EL / CL / CPL / PH / O
+    });
+  });
+
+  // STEP 7-8 — apply locked OFF + leave; compute off count so far
+  const offCount = {};   // how many O-type (O + PH + CPL + EL + CL) each staff has
+  const relaxCount = {}; // same, but for the daily relax limit accounting
+  staff.forEach(s => { offCount[s.id] = 0; relaxCount[s.id] = 0; });
+
+  staff.forEach(s => {
+    dates.forEach(d => {
+      if(leaveMap[s.id][d]){
+        cells[s.id][d] = leaveMap[s.id][d];
+        offCount[s.id]++;
+      } else if(lockedOff[s.id].has(d)){
+        cells[s.id][d] = "O";
+        offCount[s.id]++;
+      }
+    });
+  });
+
+  // STEP 9 — distribute Sunday OFF fairly (A8) using persistent rotation
+  distributeSundayOff(staff, dates, meta, cells, offTarget);
+
+  // STEP 10 — distribute remaining OFF by workload balancing (A7)
+  distributeRemainingOff(staff, dates, meta, cells, offCount, offTarget, conflicts);
+
+  // STEP 11-19 — day-by-day duty assignment
+  assignDuties(staff, dates, meta, cells, offCount, offTarget, lastShiftOf, prevCells, conflicts);
+
+  // STEP 20-22 — validation
+  const valid = validateRoster(staff, dates, meta, cells, offTarget, conflicts);
+
+  // Persist rotation index (A8)
+  persistSundayRotation(staff, meta, cells);
+
+  return {
+    id: uid(),
+    from, to,
+    generatedAt: new Date().toISOString(),
+    sundayCount,
+    cells,
+    conflicts,
+    valid
+  };
+}
+
+/* ─────────────────────────────────────────────────────────
+   STEP 9 — SUNDAY OFF DISTRIBUTION (A8 female fairness + A7 workload)
+   ───────────────────────────────────────────────────────── */
+function distributeSundayOff(staff, dates, meta, cells, offTarget){
+  const sundays = dates.filter(d => meta[d].isSun);
+  if(!sundays.length) return;
+
+  const females = staff.filter(s => s.gender === "F");
+  const males   = staff.filter(s => s.gender === "M");
+
+  // Female rotation index persists across months
+  const rotKey = "female_sunday_rotation";
+  const rot = State.sundayRotation[rotKey] || {};
+  let pointer = rot.pointer || 0;
+
+  // Each Sunday, rotate which females get OFF
+  // We aim: each female gets either floor or ceil of sundays/females
+  const perFemaleBase = Math.floor(sundays.length / Math.max(1, females.length));
+  const extra = sundays.length - perFemaleBase * females.length;
+
+  // Sorted order stable by name for determinism, offset by pointer
+  const sortedFemales = females.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const fairQuota = {};
+  sortedFemales.forEach((f, i) => {
+    fairQuota[f.id] = perFemaleBase + (i < extra ? 1 : 0);
+  });
+  // rotate who gets the extra one
+  const rotatedFair = {};
+  sortedFemales.forEach((f, i) => {
+    const idx = (i + pointer) % sortedFemales.length;
+    rotatedFair[sortedFemales[idx].id] = fairQuota[f.id];
+  });
+
+  // Females get their quota on Sundays
+  sundays.forEach((d, dayIdx) => {
+    // pick females who still need a Sunday off and don't already have this day blocked
+    const eligible = sortedFemales.filter(f =>
+      cells[f.id][d] === undefined &&
+      (rotatedFair[f.id] || 0) > 0
+    );
+    // Sort by remaining Sunday quota desc, then name (deterministic)
+    eligible.sort((a,b) => {
+      if(rotatedFair[b.id] !== rotatedFair[a.id]) return rotatedFair[b.id] - rotatedFair[a.id];
+      return a.name.localeCompare(b.name);
+    });
+    // Give one Sunday off per day to as many as possible (relax limit for Sunday = 7 staff)
+    // We only need to cover females here; the workload pass fills the rest.
+    // Cap at: each female should only get 1 Sunday off per its quota across the whole period.
+    // We'll assign at most one female per Sunday here to keep it fair; if there are many
+    // females and few Sundays, the workload pass handles distribution.
+    if(eligible.length){
+      const pick = eligible[0];
+      cells[pick.id][d] = "O";
+      rotatedFair[pick.id]--;
+    }
+  });
+
+  // Rotate pointer forward
+  pointer = (pointer + 1) % Math.max(1, sortedFemales.length);
+  State.sundayRotation[rotKey] = { pointer };
+}
+
+function persistSundayRotation(staff, meta, cells){
+  dbSet("sundayRotation", State.sundayRotation);
+}
+
+/* ─────────────────────────────────────────────────────────
+   STEP 10 — DISTRIBUTE REMAINING OFF (A7)
+   ───────────────────────────────────────────────────────── */
+function distributeRemainingOff(staff, dates, meta, cells, offCount, offTarget, conflicts){
+  // Recompute offCount from cells
+  staff.forEach(s => {
+    offCount[s.id] = dates.filter(d => RELAX_CODES.includes(cells[s.id][d])).length;
+  });
+
+  // eligible dates for extra OFF: not Sunday (Sundays already handled), not already assigned,
+  // and not after a night shift (unless we need to).
+  // We pick days where the staff's scheduled duty is not yet assigned (i.e., cells undefined).
+  // To balance workload, we give OFF to staff who currently have fewer OFF than target,
+  // preferring those with the highest prospective duty count.
+
+  const candidatesForOff = staff
+    .map(s => ({s, need: offTarget - offCount[s.id]}))
+    .filter(x => x.need > 0)
+    .sort((a,b) => b.need - a.need);
+
+  candidatesForOff.forEach(({s, need}) => {
+    // find non-Sunday dates where this staff is not yet assigned and
+    // the daily RELAX limit is not yet exceeded
+    const avail = dates.filter(d => {
+      if(meta[d].isSun) return false;              // Sundays done
+      if(cells[s.id][d] !== undefined) return false; // already assigned/off/leave
+      return true;                                 // relax limit checked at assignment time below
+    });
+
+    // Sort by day-of-week to spread OFF across the period (deterministic)
+    // Give OFF to earliest non-weekend first, but avoid making everyone off on same day.
+    avail.sort((a,b) => {
+      // Prefer weekdays (Mon-Fri) over Saturday if possible
+      const da = meta[a].isSat ? 1 : 0;
+      const db = meta[b].isSat ? 1 : 0;
+      if(da !== db) return da - db;
+      return a.localeCompare(b);
+    });
+
+    let given = 0;
+    for(const d of avail){
+      if(given >= need) break;
+      if(!canTakeOff(staff, d, meta, cells)) continue;
+      cells[s.id][d] = "O";
+      offCount[s.id]++;
+      given++;
+    }
+    if(given < need){
+      conflicts.push({
+        staffId: s.id, date: null,
+        problem: `${s.name} needs ${need} extra OFF but only ${given} could be placed without violating relax/leave rules.`,
+        fix: "Admin must adjust locked OFF, leaves, or staffing."
+      });
+    }
+  });
+}
+
+function canTakeOff(staff, date, meta, cells){
+  const dayType = meta[date].dayType;
+  const limit = dayType === "weekday" ? 1 : (dayType === "sat" ? 2 : 7);
+  const currentOff = staff.filter(s => RELAX_CODES.includes(cells[s.id][date])).length;
+  return currentOff < limit;
+}
+
+/* ─────────────────────────────────────────────────────────
+   STEP 11-19 — ASSIGN DUTIES DAY BY DAY
+   ───────────────────────────────────────────────────────── */
+function assignDuties(staff, dates, meta, cells, offCount, offTarget, lastShiftOf, prevCells, conflicts){
+  const consecutiveCount = {}; // consecutiveCount[staffId][shift] = days streak
+  staff.forEach(s => consecutiveCount[s.id] = {});
+
+  // Track last assigned shift for continuity (before this period)
+  const lastAssigned = {};
+  staff.forEach(s => {
+    lastAssigned[s.id] = lastShiftOf[s.id].last || null;
+  });
+
+  dates.forEach((d, dayIdx) => {
+    // STEP 11 — compute absences
+    const absent = staff.filter(s => RELAX_CODES.includes(cells[s.id][d]));
+    const available = staff.filter(s => cells[s.id][d] === undefined);
+
+    // STEP 12 — pick staffing pattern
+    const dayType = meta[d].dayType;
+    const absenceN = absent.length;
+    const patKey = `${dayType}_${absenceN}`;
+    let pattern = PATTERNS[patKey];
+
+    if(!pattern){
+      conflicts.push({
+        date: d,
+        problem: `${absenceN} staff unavailable on ${dayName(d)} (${fmtDisplayShort(d)}).`,
+        requiredPattern: "(no defined pattern for this absence count)",
+        fix: "Admin intervention required — reduce absences or add a new pattern."
+      });
+      return;
+    }
+
+    // Also verify required male-only slots are fillable
+    const mNeeded = (pattern.E4||0) + (pattern.N12||0) + (pattern.N||0);
+    const mAvailable = available.filter(s => s.gender === "M").length;
+    if(mAvailable < mNeeded){
+      conflicts.push({
+        date: d,
+        problem: `Pattern needs ${mNeeded} male slot(s) but only ${mAvailable} male staff available.`,
+        requiredPattern: patternStr(pattern),
+        fix: "Female staff cannot fill N/N12/E4. Reduce absences or add male staff."
+      });
+      return;
+    }
+
+    // STEP 13 — assign slots in a deterministic order.
+    // Priority: N, N12, E4 (male-only, strict) → M, E, D, D2, X, EX, DX (flexible)
+    const slots = expandPattern(pattern);
+    const assignedThisDay = {};
+    staff.forEach(s => { if(cells[s.id][d] !== undefined) assignedThisDay[s.id] = cells[s.id][d]; });
+
+    // Sort slots: male-only first
+    slots.sort((a,b)=>{
+      const order = {N:0, N12:1, E4:2, M:3, E:4, D:5, D2:6, X:7, EX:8, DX:9};
+      return (order[a.shift]??99) - (order[b.shift]??99);
+    });
+
+    for(const slot of slots){
+      const shift = slot.shift;
+      const candidates = available.filter(s => cells[s.id][d] === undefined && !assignedThisDay[s.id]);
+
+      // Filter by gender
+      const genderOK = candidates.filter(s => {
+        if(MALE_ONLY.includes(shift)) return s.gender === "M";
+        return true;
+      });
+
+      // STEP 15 — N/N12 next-day priority (A18)
+      // If staff worked N or N12 yesterday, they should be O → E4 → E → X
+      const sorted = genderOK.slice().sort((a,b) => scoreCandidate(b, a, shift, d, {
+        meta, cells, lastAssigned, consecutiveCount, prevCells, dates, dayIdx, pattern
+      }) - scoreCandidate(a, b, shift, d, {
+        meta, cells, lastAssigned, consecutiveCount, prevCells, dates, dayIdx, pattern
+      }));
+
+      const pick = sorted[0];
+      if(!pick){
+        conflicts.push({
+          date: d,
+          problem: `No eligible staff for ${shift} slot.`,
+          requiredPattern: patternStr(pattern),
+          fix: "Admin intervention required."
+        });
+        continue;
+      }
+      cells[pick.id][d] = shift;
+      assignedThisDay[pick.id] = shift;
+      // Update tracking
+      consecutiveCount[pick.id][shift] = (consecutiveCount[pick.id][shift]||0) + 1;
+      Object.keys(consecutiveCount[pick.id]).forEach(k => { if(k!==shift) consecutiveCount[pick.id][k]=0; });
+      lastAssigned[pick.id] = shift;
+    }
+
+    // STEP 20 (per-day) — verify staffing matches
+    const assignedCounts = {};
+    staff.forEach(s => {
+      const c = cells[s.id][d];
+      if(c) assignedCounts[c] = (assignedCounts[c]||0) + 1;
+    });
+    Object.entries(pattern).forEach(([shift, count])=>{
+      if((assignedCounts[shift]||0) !== count){
+        conflicts.push({
+          date: d,
+          problem: `Expected ${count}× ${shift} but got ${assignedCounts[shift]||0}.`,
+          requiredPattern: patternStr(pattern),
+          fix: "Internal scheduling error — re-run generation or contact support."
+        });
+      }
+    });
+  });
+}
+
+/* Score a candidate for a given shift. Higher is better. */
+function scoreCandidate(cand, other, shift, date, ctx){
+  let score = 0;
+
+  // A22 — fixed shift
+  if(cand.fixedShift === shift) score += 1000;
+  else if(cand.fixedShift && cand.fixedShift !== shift) score -= 500;
+
+  // A18 — N/N12 rest next day
+  const prevDayDate = ctx.dates[ctx.dayIdx-1];
+  const prevCell = prevDayDate ? ctx.cells[cand.id][prevDayDate] : null;
+  if(prevCell === "N" || prevCell === "N12"){
+    const priority = {O:4, E4:3, E:2, X:1};
+    score += (priority[shift] || -5) * 40;
+  }
+
+  // A20 — previous roster continuity
+  if(ctx.lastAssigned[cand.id] === shift) score += 200;
+  // prefer a shift they had in the previous period
+  const prevDays = ctx.prevCells[cand.id] ? Object.values(ctx.prevCells[cand.id]) : [];
+  if(prevDays.includes(shift)) score += 60;
+
+  // A19 — minimum rotation: if yesterday they had same shift, big bonus
+  if(ctx.cells[cand.id][prevDayDate] === shift) score += 300;
+
+  // A21 — preferred shift
+  if(Array.isArray(cand.pref) && cand.pref.includes(shift)){
+    const rank = cand.pref.indexOf(shift);
+    score += (10 - rank) * 20;
+  }
+
+  // A7 — workload balancing: prefer staff with fewer total duties so far
+  let duties = 0, offs = 0;
+  ctx.dates.forEach(d2 => {
+    const c2 = ctx.cells[cand.id][d2];
+    if(c2){ if(RELAX_CODES.includes(c2)) offs++; else duties++; }
+  });
+  score += (offs * 5);       // staff with more OFF should get duties (to balance)
+  score -= duties * 2;       // staff with more duties are less preferred
+
+  // A8 — sunday/off fairness for females already handled in distribution
+
+  return score;
+}
+
+function expandPattern(pattern){
+  const out = [];
+  Object.entries(pattern).forEach(([shift, n])=>{
+    for(let i=0;i<n;i++) out.push({shift});
+  });
+  return out;
+}
+
+function patternStr(p){
+  return Object.entries(p).filter(([,n])=>n>0).map(([s,n])=>`${s}${n}`).join(" ");
+}
+
+/* ─────────────────────────────────────────────────────────
+   STEP 20-22 — VALIDATION (A26)
+   ───────────────────────────────────────────────────────── */
+function validateRoster(staff, dates, meta, cells, offTarget, conflicts){
+  let ok = true;
+
+  // OFF target
+  staff.forEach(s => {
+    const offCount = dates.filter(d => RELAX_CODES.includes(cells[s.id][d])).length;
+    if(offCount !== offTarget){
+      ok = false;
+      conflicts.push({
+        staffId: s.id,
+        problem: `${s.name} has ${offCount} OFF but target is ${offTarget}.`,
+        fix: "Admin must adjust leaves/special OFF or staffing patterns."
+      });
+    }
+  });
+
+  // Gender
+  staff.forEach(s => {
+    dates.forEach(d => {
+      const c = cells[s.id][d];
+      if(s.gender === "F" && MALE_ONLY.includes(c)){
+        ok = false;
+        conflicts.push({date:d, staffId:s.id, problem:`Female ${s.name} assigned ${c}.`, fix:"Gender rule violated."});
+      }
+    });
+  });
+
+  // Empty cells
+  staff.forEach(s => {
+    dates.forEach(d => {
+      if(!cells[s.id][d]){
+        ok = false;
+        conflicts.push({date:d, staffId:s.id, problem:`No assignment for ${s.name}.`, fix:"Empty cell."});
+      }
+    });
+  });
+
+  // Relax limit
+  dates.forEach(d => {
+    const limit = meta[d].dayType === "weekday" ? 1 : (meta[d].dayType === "sat" ? 2 : 7);
+    const cnt = staff.filter(s => RELAX_CODES.includes(cells[s.id][d])).length;
+    if(cnt > limit){
+      ok = false;
+      conflicts.push({date:d, problem:`Relax limit exceeded (${cnt} > ${limit}).`, fix:"Reduce OFF on this day."});
+    }
+  });
+
+  // Fixed shift
+  const tasleem = staff.find(s => s.name.toLowerCase().includes("tasleem"));
+  if(tasleem){
+    dates.forEach(d => {
+      const c = cells[tasleem.id][d];
+      if(c && !RELAX_CODES.includes(c) && c !== "E"){
+        // Only flag if not an admin override
+        ok = false;
+        conflicts.push({date:d, staffId:tasleem.id, problem:`Tasleem assigned ${c} instead of E.`, fix:"Fixed shift violated."});
+      }
+    });
+  }
+
+  return ok;
+}
+
+/* ─────────────────────────────────────────────────────────
+   CONFLICT STRING (per A27)
+   ───────────────────────────────────────────────────────── */
+function formatConflict(c){
+  let s = "";
+  if(c.date) s += `Date: ${fmtDisplay(c.date)}\n`;
+  if(c.staffId){ const st = State.staff.find(x=>x.id===c.staffId); if(st) s += `Staff: ${st.name}\n`; }
+  if(c.problem) s += `Problem: ${c.problem}\n`;
+  if(c.requiredPattern) s += `Required pattern: ${c.requiredPattern}\n`;
+  if(c.fix) s += `Action: ${c.fix}`;
+  return s.trim();
+}
+  /* ═══════════════════════════════════════════════════════════
+   PART 5 — ROSTER VIEW + GENERATE PANE
+   ═══════════════════════════════════════════════════════════ */
+
+function renderRosterPaneView(){
+  const el = $("#rosterPaneView");
+  const r = State.rosters[State.activeRosterId];
+  if(!r){
+    el.innerHTML = `<div class="empty"><div class="ico">📅</div>No roster generated yet.<br><br><button class="btn primary" onclick="switchRosterTab('generate')">Generate Roster</button></div>`;
+    return;
+  }
+  const dates = eachDate(r.from, r.to);
+  const meta = {};
+  dates.forEach(d=>{
+    const dow = parseDate(d).getDay();
+    const hol = State.holidays.find(h=>h.date===d);
+    meta[d] = {isSun:dow===0, isSat:dow===6, isHol:!!hol, dayType: hol?"sun":(dow===0?"sun":(dow===6?"sat":"weekday"))};
+  });
+
+  let h = `<div class="card">
+    <div class="card-hd"><span class="ico">📅</span><h3>${fmtDisplay(r.from)} → ${fmtDisplay(r.to)}</h3></div>
+    <p>${r.sundayCount} Sundays · ${dates.length} days · Generated ${new Date(r.generatedAt).toLocaleString()}</p>
+    <div class="row" style="margin-top:8px">
+      <span class="pill ${r.valid?'ok':'err'}">${r.valid?'✅ Valid':'❌ Has Conflicts'}</span>
+      <span class="pill info">${Object.keys(r.cells).length} staff</span>
+    </div>
+  </div>`;
+
+  if(r.conflicts && r.conflicts.length){
+    h += `<div class="section-h">Conflicts (${r.conflicts.length})</div>`;
+    r.conflicts.slice(0,10).forEach(c=>{
+      h += `<div class="conflict"><b>${c.date?fmtDisplay(c.date):"Roster"}</b><br>${esc(c.problem||"")}${c.fix?`<div class="fix">→ ${esc(c.fix)}</div>`:""}</div>`;
+    });
+  }
+
+  h += `<div class="section-h">Roster Grid</div>
+  <div class="roster-scroll"><table class="roster-table"><thead><tr><th class="staff-col">Staff</th>`;
+  dates.forEach(d=>{
+    h += `<th>${dayName(d).slice(0,1)}<br>${parseDate(d).getDate()}</th>`;
+  });
+  h += `</tr></thead><tbody>`;
+
+  State.staff.forEach(s=>{
+    if(s.name.toLowerCase()==="admin") return;
+    h += `<tr><td class="staff-col">${esc(s.name)}</td>`;
+    dates.forEach(d=>{
+      const c = r.cells[s.id] ? r.cells[s.id][d] : "";
+      h += `<td><span class="shift ${c||'O'}">${c||"-"}</span></td>`;
+    });
+    h += `</tr>`;
+  });
+  h += `</tbody></table></div>`;
+
+  h += `<div class="actions mt">
+    <button class="btn ok" id="btnApproveRoster" ${r.valid?"":"disabled"}>✅ Approve Roster</button>
+    <button class="btn" onclick="exportRosterCSV('${r.id}')">⬇ CSV</button>
+  </div>`;
+
+  el.innerHTML = h;
+  const approve = $("#btnApproveRoster");
+  if(approve) approve.onclick = async ()=>{
+    State.activeRosterId = r.id;
+    await dbSet("activeRosterId", r.id);
+    toast("Roster approved & activated","ok");
+  };
+}
+
+function renderRosterPaneGenerate(){
+  const el = $("#rosterPaneGenerate");
+  const today = new Date();
+  const defFrom = `${today.getFullYear()}-${pad2(today.getMonth()+1)}-26`;
+  let d = new Date(today.getFullYear(), today.getMonth()+1, 25);
+  const defTo = fmtDate(d);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-hd"><span class="ico">⚙</span><h3>Generate Roster</h3></div>
+      <p>Rules A1–A31 enforced. Sundays counted dynamically. Female Sunday OFF rotated fairly.</p>
+      <div class="form-grid mt">
+        <div class="field"><label>From</label><input id="genFrom" type="date" value="${defFrom}"></div>
+        <div class="field"><label>To</label><input id="genTo" type="date" value="${defTo}"></div>
+        <div class="field full"><label>Previous roster (for continuity)</label>
+          <select id="genPrev"><option value="">None</option>
+          ${Object.values(State.rosters).map(r=>`<option value="${r.id}" ${r.id===State.activeRosterId?"selected":""}>${fmtDisplay(r.from)} → ${fmtDisplay(r.to)}</option>`).join("")}
+          </select></div>
+      </div>
+      <button class="btn primary block mt" id="btnRunGen">🚀 Generate Roster</button>
+      <div id="genResult" class="mt"></div>
+    </div>
+  `;
+
+  $("#btnRunGen").onclick = async ()=>{
+    const from = $("#genFrom").value, to = $("#genTo").value;
+    if(!from||!to||from>to){ toast("Invalid period","err"); return; }
+    const prevId = $("#genPrev").value || null;
+    $("#genResult").innerHTML = `<div class="pill info">Generating…</div>`;
+    await new Promise(r=>setTimeout(r,50));
+
+    const r = generateRoster({from, to, prevRosterId:prevId});
+    State.rosters[r.id] = r;
+    await dbSet("rosters", State.rosters);
+
+    if(r.valid){
+      State.activeRosterId = r.id;
+      await dbSet("activeRosterId", r.id);
+      $("#genResult").innerHTML = `<div class="pill ok">✅ Roster generated successfully (${r.sundayCount} Sundays).</div>
+        <button class="btn primary block mt" onclick="switchRosterTab('view')">View Roster</button>`;
+      toast("Roster generated ✅","ok");
+    } else {
+      let h = `<div class="pill err">❌ ${r.conflicts.length} conflict(s)</div>`;
+      r.conflicts.slice(0,20).forEach(c=>{
+        h += `<div class="conflict mt"><b>${c.date?fmtDisplay(c.date):"Roster"}</b><br>${esc(c.problem||"")}${c.fix?`<div class="fix">→ ${esc(c.fix)}</div>`:""}</div>`;
+      });
+      h += `<button class="btn block mt" onclick="switchRosterTab('view')">View Draft</button>`;
+      $("#genResult").innerHTML = h;
+      toast("Conflicts detected — approval disabled","warn");
+    }
+    renderRosterPaneView();
+  };
+}
+
+window.switchRosterTab = function(tab){
+  $$("#rosterTabs .tab").forEach(t=>t.classList.toggle("active", t.dataset.rtab===tab));
+  ["view","generate","staff","leaves","holidays"].forEach(t=>{
+    $("#rosterPane"+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle("hidden", t!==tab);
+  });
+  if(tab==="view") renderRosterPaneView();
+  if(tab==="staff") renderStaffPane();
+  if(tab==="leaves") renderLeavesPane();
+  if(tab==="holidays") renderHolidaysPane();
+};
+
+function exportRosterCSV(rosterId){
+  const r = State.rosters[rosterId]; if(!r) return;
+  const dates = eachDate(r.from, r.to);
+  const rows = [["Staff", ...dates.map(d=>`${dayName(d)} ${fmtDisplayShort(d)}`)]];
+  State.staff.forEach(s=>{
+    if(s.name.toLowerCase()==="admin") return;
+    rows.push([s.name, ...dates.map(d=> (r.cells[s.id]||{})[d] || "")]);
+  });
+  const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `KIH_roster_${r.from}_${r.to}.csv`;
+  a.click();
+}
+
+/* Roster tabs binding */
+document.addEventListener("click", e=>{
+  const t = e.target.closest("#rosterTabs .tab");
+  if(t) switchRosterTab(t.dataset.rtab);
+});
+  /* ═══════════════════════════════════════════════════════════
+   PART 6 — VIEWS, LOGIN, SESSION, INIT
+   ═══════════════════════════════════════════════════════════ */
+
+/* ---------- SESSION ---------- */
+function saveSession(user, keep){
+  const payload = {user, exp: keep ? Date.now()+SESSION_TTL : Date.now()+3600*1000};
+  localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+}
+function loadSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+    if(!s || !s.exp || s.exp < Date.now()){ localStorage.removeItem(SESSION_KEY); return null; }
+    return s.user;
+  }catch(e){ return null; }
+}
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+/* ---------- VIEW SWITCH ---------- */
+function switchView(name){
+  $$(".view").forEach(v=>v.classList.toggle("active", v.id === "view-"+name));
+  $$("#bottomNav button").forEach(b=>b.classList.toggle("active", b.dataset.nav===name));
+  window.scrollTo(0,0);
+  if(name==="roster") switchRosterTab("view");
+  if(name==="tests") renderTests();
+  if(name==="policy") renderPolicies();
+  if(name==="swap") renderSwaps();
+  if(name==="learn") renderLearn();
+  if(name==="attend") renderAttendance();
+  if(name==="cpl") renderCPL();
+  if(name==="home") renderHome();
+}
+$$("#bottomNav button").forEach(b=> b.onclick = ()=> switchView(b.dataset.nav));
+$$("[data-nav]").forEach(b=> b.onclick = ()=> switchView(b.dataset.nav));
+
+/* ---------- LOGIN ---------- */
+function showApp(user){
+  State.user = user;
+  $("#loginScreen").classList.add("hidden");
+  $("#appHeader").classList.remove("hidden");
+  $("#appMain").classList.remove("hidden");
+  $("#bottomNav").classList.remove("hidden");
+  $("#userAvatar").textContent = initials(user.name || user.mobile || "U");
+  $("#moreUser").textContent = user.name || user.mobile || "User";
+  $("#moreRole").textContent = user.role || "Phlebotomist";
+  renderHome();
+}
+function showLogin(){
+  $("#loginScreen").classList.remove("hidden");
+  $("#appHeader").classList.add("hidden");
+  $("#appMain").classList.add("hidden");
+  $("#bottomNav").classList.add("hidden");
+}
+$("#btnLogin").onclick = async ()=>{
+  const mob = $("#loginMobile").value.trim();
+  const pass = $("#loginPass").value;
+  const keep = $("#keepSigned").checked;
+  if(!mob || !pass){ $("#loginErr").textContent = "Enter mobile and password."; return; }
+  // Demo auth: any mobile + default password from settings
+  // In production, wire to Firebase Auth.
+  if(pass.length < 4){ $("#loginErr").textContent = "Password too short."; return; }
+  $("#loginErr").textContent = "";
+  const user = {id:uid(), mobile:mob, name:"Phlebotomist", role:"Phlebotomist"};
+  saveSession(user, keep);
+  showApp(user);
+  toast("Welcome back!","ok");
+};
+$("#btnGuest").onclick = ()=>{
+  const user = {id:"guest", mobile:"guest", name:"Guest", role:"Guest", guest:true};
+  saveSession(user, false);
+  showApp(user);
+  toast("Signed in as Guest","info");
+};
+$("#btnLogout").onclick = async ()=>{
+  if(!confirm("Logout?")) return;
+  clearSession();
+  if(FIREBASE_OK) try{ await auth.signOut(); }catch(e){}
+  showLogin();
+  toast("Logged out","info");
+};
+$("#userAvatar").onclick = ()=> switchView("more");
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const h = new Date().getHours();
+  const greet = h<12?"Good morning":(h<17?"Good afternoon":"Good evening");
+  $("#homeGreeting").textContent = `${greet}, ${State.user?.name||"there"}`;
+  $("#cntTests").textContent = State.tests.length || 12;
+  $("#cntPolicies").textContent = State.policies.length || 6;
+  $("#cntSwaps").textContent = State.swaps.length;
+  $("#cntQuizzes").textContent = State.quizzes.length || 5;
+  $("#cntCPL").textContent = State.cpl.length;
+  const r = State.rosters[State.activeRosterId];
+  $("#cntRoster").textContent = r ? (r.valid ? "✓" : "!") : "—";
+
+  // Today's duty
+  const today = fmtDate(new Date());
+  let html = "";
+  if(r && r.cells){
+    const onDuty = State.staff.filter(s => r.cells[s.id] && r.cells[s.id][today] && !RELAX_CODES.includes(r.cells[s.id][today]));
+    if(onDuty.length){
+      onDuty.forEach(s=>{
+        const c = r.cells[s.id][today];
+        html += `<div class="li"><div class="ico">🩸</div><div class="body"><div class="title">${esc(s.name)}</div><div class="sub">${SHIFT_CODES[c]||c}</div></div><span class="shift ${c}">${c}</span></div>`;
+      });
+    } else html = `<div class="empty"><div class="ico">📅</div>No roster for today.</div>`;
+  } else html = `<div class="empty"><div class="ico">📅</div>No roster for today.</div>`;
+  $("#homeTodayDuty").innerHTML = html;
+}
+
+/* ---------- TESTS (default seed) ---------- */
+const DEFAULT_TESTS = [
+  {id:"t1", cat:"hematology", name:"CBC", tube:"EDTA (Lavender)", order:1, volume:"2-3 mL", tat:"Routine 4h · Urgent 1h"},
+  {id:"t2", cat:"hematology", name:"PT/INR", tube:"Sodium Citrate (Blue)", order:2, volume:"2.7 mL", tat:"Routine 4h · Urgent 1h"},
+  {id:"t3", cat:"chemistry", name:"Blood Glucose (Fasting)", tube:"Fluoride Oxalate (Grey)", order:6, volume:"2 mL", tat:"Routine 2h · Urgent 30m"},
+  {id:"t4", cat:"chemistry", name:"LFT", tube:"Serum (Gold/Red)", order:5, volume:"4-5 mL", tat:"Routine 6h · Urgent 2h"},
+  {id:"t5", cat:"chemistry", name:"RFT", tube:"Serum (Gold/Red)", order:5, volume:"4-5 mL", tat:"Routine 6h · Urgent 2h"},
+  {id:"t6", cat:"micro", name:"Blood Culture", tube:"Culture Bottle", order:7, volume:"10 mL", tat:"Routine 5d · Urgent 3d"},
+  {id:"t7", cat:"special", name:"HbA1c", tube:"EDTA (Lavender)", order:1, volume:"2 mL", tat:"Routine 6h"}
+];
+function renderTests(){
+  if(!State.tests.length) State.tests = DEFAULT_TESTS.slice();
+  const q = ($("#testsSearch").value||"").toLowerCase();
+  const activeTab = ($("#testsTabs .tab.active")||{dataset:{}}).dataset.ttab || "all";
+  let list = State.tests.filter(t => activeTab==="all" || t.cat===activeTab);
+  if(q) list = list.filter(t => t.name.toLowerCase().includes(q) || t.tube.toLowerCase().includes(q));
+  const el = $("#testsList");
+  if(!list.length){ el.innerHTML = `<div class="empty"><div class="ico">🔍</div>No tests found.</div>`; return; }
+  el.innerHTML = list.map(t=>`
+    <div class="card">
+      <div class="card-hd"><span class="ico">🧪</span><h3>${esc(t.name)}</h3><span class="pill info">${t.cat}</span></div>
+      <p><b>Tube:</b> ${esc(t.tube)}<br><b>Order of Draw:</b> #${t.order}<br><b>Volume:</b> ${esc(t.volume)}<br><b>TAT:</b> ${esc(t.tat)}</p>
+    </div>`).join("");
+}
+$("#testsSearch").addEventListener("input", renderTests);
+$$("#testsTabs .tab").forEach(t=> t.onclick = ()=>{ $$("#testsTabs .tab").forEach(x=>x.classList.remove("active")); t.classList.add("active"); renderTests(); });
+
+/* ---------- POLICIES ---------- */
+const DEFAULT_POLICIES = [
+  {id:"p1", title:"Hand Hygiene", body:"Sanitize before and after every patient contact. Soap + water for 40s when visibly soiled."},
+  {id:"p2", title:"Needle Safety", body:"Never recap needles. Dispose immediately in sharps container. Report needle-stick within 1 hour."},
+  {id:"p3", title:"Patient Identification", body:"Confirm name, MR number, and DOB three times before draw. Use two identifiers minimum."},
+  {id:"p4", title:"Order of Draw", body:"Blood Culture → Citrate → Serum → Heparin → EDTA → Fluoride Oxalate."},
+  {id:"p5", title:"Labeling", body:"Label at bedside, immediately after draw. Include name, MR#, date, time, initials."},
+  {id:"p6", title:"Sample Transport", body:"Deliver to lab within 30 minutes. Cold chain for specific tests. Log time on handoff."}
+];
+function renderPolicies(){
+  if(!State.policies.length) State.policies = DEFAULT_POLICIES.slice();
+  const q = ($("#policySearch").value||"").toLowerCase();
+  const list = q ? State.policies.filter(p=>p.title.toLowerCase().includes(q)||p.body.toLowerCase().includes(q)) : State.policies;
+  const el = $("#policyList");
+  el.innerHTML = list.map(p=>`
+    <div class="card">
+      <div class="card-hd"><span class="ico">📋</span><h3>${esc(p.title)}</h3></div>
+      <p>${esc(p.body)}</p>
+      <button class="btn sm mt" data-ack="${p.id}">✔ I Acknowledge</button>
+    </div>`).join("");
+  $$("[data-ack]").forEach(b=> b.onclick = ()=>{ toast("Acknowledged","ok"); b.textContent="✅ Acknowledged"; b.disabled=true; });
+}
+$("#policySearch").addEventListener("input", renderPolicies);
+
+/* ---------- SWAPS ---------- */
+function renderSwaps(){
+  const el = $("#swapList");
+  if(!State.swaps.length){ el.innerHTML = `<div class="empty"><div class="ico">🔄</div>No swap requests.</div>`; return; }
+  el.innerHTML = State.swaps.map(s=>{
+    const a = State.staff.find(x=>x.id===s.fromId);
+    const b = State.staff.find(x=>x.id===s.toId);
+    return `<div class="li"><div class="ico">🔄</div><div class="body">
+      <div class="title">${esc(a?a.name:"?")} ↔ ${esc(b?b.name:"?")}</div>
+      <div class="sub">${fmtDisplay(s.date)} · ${s.status||"pending"}</div>
+    </div><span class="pill ${s.status==="approved"?"ok":"warn"}">${s.status||"pending"}</span></div>`;
+  }).join("");
+}
+$("#btnNewSwap").onclick = ()=>{
+  openModal(`
+    <div class="modal-hd"><h3>New Swap Request</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="field"><label>My Staff</label><select id="swFrom">${State.staff.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>
+    <div class="field"><label>Swap With</label><select id="swTo">${State.staff.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>
+    <div class="field"><label>Date</label><input id="swDate" type="date" value="${fmtDate(new Date())}"></div>
+    <button class="btn primary block mt" id="swSave">Submit Request</button>
+  `);
+  $("#swSave").onclick = async ()=>{
+    const item = {id:uid(), fromId:$("#swFrom").value, toId:$("#swTo").value, date:$("#swDate").value, status:"pending"};
+    State.swaps.push(item);
+    await dbSet("swaps", Object.fromEntries(State.swaps.map(x=>[x.id,x])));
+    closeModal(); renderSwaps(); toast("Swap requested","ok");
+  };
+};
+
+/* ---------- LEARN ---------- */
+function renderLearn(){
+  const el = $("#learnList");
+  const quizzes = State.quizzes.length ? State.quizzes : [
+    {id:"q1", title:"Order of Draw", score:null},
+    {id:"q2", title:"Needle Safety", score:null},
+    {id:"q3", title:"Gender Shift Rules", score:null}
+  ];
+  el.innerHTML = quizzes.map(q=>`
+    <div class="li"><div class="ico">🎓</div><div class="body">
+      <div class="title">${esc(q.title)}</div><div class="sub">${q.score!=null?`Score: ${q.score}%`:"Not attempted"}</div>
+    </div><button class="btn sm primary" data-quiz="${q.id}">Start</button></div>`).join("");
+  $$("[data-quiz]").forEach(b=> b.onclick = ()=> toast("Quiz engine placeholder","info"));
+}
+
+/* ---------- ATTENDANCE ---------- */
+function renderAttendance(){
+  const el = $("#attendList");
+  if(!State.attendance.length){ el.innerHTML = `<div class="empty"><div class="ico">⏱</div>No attendance records.</div>`; return; }
+  el.innerHTML = State.attendance.slice().reverse().map(a=>`
+    <div class="li"><div class="ico">⏱</div><div class="body">
+      <div class="title">${a.type==="in"?"✅ Check In":"⏹ Check Out"}</div>
+      <div class="sub">${new Date(a.ts).toLocaleString()}</div>
+    </div></div>`).join("");
+}
+$("#btnCheckIn").onclick = async ()=>{
+  const rec = {id:uid(), type:"in", ts:Date.now(), userId:State.user?.id};
+  State.attendance.push(rec);
+  await dbSet("attendance", Object.fromEntries(State.attendance.map(x=>[x.id,x])));
+  renderAttendance(); toast("Checked in ✅","ok");
+};
+$("#btnCheckOut").onclick = async ()=>{
+  const rec = {id:uid(), type:"out", ts:Date.now(), userId:State.user?.id};
+  State.attendance.push(rec);
+  await dbSet("attendance", Object.fromEntries(State.attendance.map(x=>[x.id,x])));
+  renderAttendance(); toast("Checked out","ok");
+};
+
+/* ---------- CPL ---------- */
+function renderCPL(){
+  const el = $("#cplList");
+  if(!State.cpl.length){ el.innerHTML = `<div class="empty"><div class="ico">📈</div>No CPL activities logged.</div>`; return; }
+  el.innerHTML = State.cpl.map(c=>`<div class="li"><div class="ico">📈</div><div class="body"><div class="title">${esc(c.title)}</div><div class="sub">${c.points} pts · ${c.date}</div></div></div>`).join("");
+}
+
+/* ---------- START DRAW (B1) — 15 steps ---------- */
+const START_DRAW_STEPS = [
+  ["Order Verify", "Confirm test name and patient name match the request."],
+  ["Patient Identify", "Confirm name, MR number, DOB — 3 times."],
+  ["Equipment Ready", "Needle, tubes, cotton, spirit swab, bandage."],
+  ["Hand Hygiene", "Sanitize hands, wear gloves."],
+  ["Tourniquet", "Apply 3–4 inches above site. Max 1 minute."],
+  ["Vein Select", "Antecubital area preferred."],
+  ["Site Clean", "Spirit swab, circular motion, 30 seconds."],
+  ["Needle Insert", "15–30 degree angle, bevel up."],
+  ["Tube Fill", "Follow order of draw."],
+  ["Tourniquet Remove", "Release before last tube."],
+  ["Needle Remove", "Cotton pressure, no recap."],
+  ["Label", "Patient name, time, initials — at bedside."],
+  ["Mix", "Invert 8–10 times gently."],
+  ["Patient Rest", "Seated 5–10 minutes."],
+  ["Send to Lab", "Log time, hand off."]
+];
+function openStartDraw(){
+  let h = `<div class="modal-hd"><h3>🩸 Start Draw</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="progress"><div class="bar" id="sdBar" style="width:0%"></div></div>
+    <div id="sdSteps">`;
+  START_DRAW_STEPS.forEach((s,i)=>{
+    h += `<div class="step" data-step="${i}">
+      <div class="chk">${i+1}</div>
+      <div style="flex:1">
+        <div class="st-num">STEP ${i+1}</div>
+        <div class="st-title">${s[0]}</div>
+        <div class="st-desc">${s[1]}</div>
+        <div class="st-time hidden"></div>
+      </div>
+    </div>`;
+  });
+  h += `</div><button class="btn ok block mt" id="sdComplete">✅ Mark Sample Collected</button>`;
+  openModal(h);
+  const done = new Set();
+  $$("#sdSteps .step").forEach(st=>{
+    st.onclick = ()=>{
+      const i = +st.dataset.step;
+      if(done.has(i)){ done.delete(i); st.classList.remove("done"); }
+      else {
+        done.add(i);
+        st.classList.add("done");
+        const t = st.querySelector(".st-time");
+        t.textContent = "✓ " + new Date().toLocaleTimeString();
+        t.classList.remove("hidden");
+      }
+      $("#sdBar").style.width = (done.size / START_DRAW_STEPS.length * 100) + "%";
+    };
+  });
+  $("#sdComplete").onclick = async ()=>{
+    const rec = {id:uid(), staffId:State.user?.id, staffName:State.user?.name, stepsDone:Array.from(done), total:START_DRAW_STEPS.length, ts:Date.now()};
+    await dbPush("draws", rec);
+    closeModal(); toast("Sample collected & logged ✅","ok");
+  };
+}
+$("#btnStartDrawHome").onclick = openStartDraw;
+
+/* ---------- EMERGENCY CARDS (B2) ---------- */
+const EMERGENCY_CARDS = [
+  {id:"e1", ico:"🩸", title:"Needle Stick Injury", steps:[
+    "Wash immediately with soap + water (5 min)",
+    "Clean with alcohol",
+    "Inform supervisor within 1 hour",
+    "Fill incident form",
+    "Blood test: HIV, Hep B, Hep C",
+    "Start PEP within 2 hours",
+    "Follow-up: 6 weeks, 3 months, 6 months"]},
+  {id:"e2", ico:"😵", title:"Patient Fainting", steps:[
+    "Lay patient down, head lower",
+    "Elevate legs",
+    "Loosen tight clothing",
+    "Cold water on face",
+    "Ammonia smelling salts",
+    "If not recovered in 1 min → call 1122",
+    "Check blood sugar"]},
+  {id:"e3", ico:"🩹", title:"Hematoma", steps:[
+    "Remove needle immediately",
+    "Firm pressure 5–10 minutes",
+    "Ice pack 15 minutes",
+    "Keep arm elevated",
+    "Rest patient",
+    "Warm compress after 24h",
+    "If large → see doctor"]},
+  {id:"e4", ico:"🦵", title:"Nerve Injury", steps:[
+    "Remove needle immediately",
+    "Ask: tingling, numbness, pain?",
+    "If yes → doctor immediately",
+    "Rest the arm",
+    "Fill incident report",
+    "Follow up in 48 hours"]},
+  {id:"e5", ico:"💉", title:"Arterial Puncture", steps:[
+    "Remove needle immediately",
+    "Firm pressure 5–10 minutes",
+    "Apply ice pack",
+    "Elevate arm",
+    "Monitor for hematoma",
+    "Inform doctor"]},
+  {id:"e6", ico:"🩸", title:"Continuous Bleeding", steps:[
+    "Apply pressure 5–10 minutes",
+    "Apply tight bandage",
+    "Elevate arm",
+    "If bleeding > 15 min → doctor",
+    "Review patient medications"]}
+];
+function openEmergency(){
+  let h = `<div class="modal-hd"><h3>🚨 Emergency Cards</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="emSearch" placeholder="Search emergency…"></div>
+    <div id="emList">`;
+  EMERGENCY_CARDS.forEach(c=>{
+    h += `<div class="ecard critical" data-em="${c.id}">
+      <div class="eh"><span class="ico">${c.ico}</span><h4>${c.title}</h4></div>
+      <ol>${c.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+    </div>`;
+  });
+  h += `</div><button class="btn block mt" onclick="window.print()">🖨 Print All</button>`;
+  openModal(h);
+  $("#emSearch").oninput = ()=>{
+    const q = $("#emSearch").value.toLowerCase();
+    $$("#emList .ecard").forEach(c=>{
+      c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none";
+    });
+  };
+}
+$("#btnEmergencyHome").onclick = openEmergency;
+
+/* ---------- DIFFICULT DRAW (B3) ---------- */
+const DIFFICULT = [
+  {id:"d1", title:"Rolling Vein", problem:"Vein slips on touch", solution:"Anchor both sides, insert slowly, 30° angle, butterfly needle."},
+  {id:"d2", title:"Collapsed Vein", problem:"Vein collapsed from vacuum", solution:"Release tourniquet, wait 5 min, alternate vein, smaller tube, slow pull."},
+  {id:"d3", title:"Fragile Vein", problem:"Thin vein, bursts easily", solution:"Use 23G/25G, butterfly, slow, minimal vacuum, warm compress."},
+  {id:"d4", title:"No Vein Visible", problem:"No visible vein", solution:"Warm water 5 min, tourniquet 2 min, tap, BP cuff 40 mmHg, vein finder."},
+  {id:"d5", title:"Sclerosed Vein", problem:"Hard, cord-like vein", solution:"Do not attempt. Alternate vein or other arm; use hand veins."},
+  {id:"d6", title:"Edematous Patient", problem:"Swollen hand/arm", solution:"Other arm, elevate 5 min, gentle pressure, ultrasound, refer to doctor."}
+];
+function openDifficult(){
+  let h = `<div class="modal-hd"><h3>💪 Difficult Draw</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="ddSearch" placeholder="Search scenario…"></div><div id="ddList">`;
+  DIFFICULT.forEach(d=>{
+    h += `<div class="card"><div class="card-hd"><span class="ico">💪</span><h3>${esc(d.title)}</h3></div>
+      <p><b>Problem:</b> ${esc(d.problem)}<br><b>Solution:</b> ${esc(d.solution)}</p></div>`;
+  });
+  h += `</div>`;
+  openModal(h);
+  $("#ddSearch").oninput = ()=>{
+    const q = $("#ddSearch").value.toLowerCase();
+    $$("#ddList .card").forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none");
+  };
+}
+
+/* ---------- COMMUNICATION SCRIPTS (B4) ---------- */
+const SCRIPTS = [
+  {id:"c1", title:"First-Time Patient", text:"Assalam-o-Alaikum! Mera naam [name] hai, main aapka blood sample loonga.\nYeh test doctor ne order kiya hai, 5 minute ka kaam hai.\nAapko sirf ek chhoti si sui chubhegi, bilkul injection jaisi.\nAap apna haath relaxed rakhein.\nKoi sawal hai to pooch sakte hain."},
+  {id:"c2", title:"Nervous Patient", text:"Main samajh sakta hoon, bohot log pehli baar mein nervous hote hain.\nAap apni nazar doosri taraf kar lein.\nMain aapko har step batata jaunga.\nDeep breath lein — saans andar, saans bahar.\nHo gaya! Aapne bohot acha kiya."},
+  {id:"c3", title:"Pediatric (Child)", text:"[Bacha ka naam]! Aap bohot brave ho.\nYeh ek chhoti si sui hai, machhar ke katne jaisi.\nAgar aap royenge nahi to sticker milega!\nMaa/Papa aapka haath pakad lein.\n1, 2, 3... ho gaya! Shabash!"},
+  {id:"c4", title:"Elderly", text:"Assalam-o-Alaikum uncle/aunty, kaise hain aap?\nAapki vein dhoondne ki koshish karta hoon.\nAap apna haath bilkul relaxed rakhein.\nShukriya uncle/aunty, Allah aapko sehat de."},
+  {id:"c5", title:"Refusing Patient", text:"Main samajhta hoon aap pareshan hain.\nDoctor ne test order kiya hai, yeh aapki sehat ke liye zaroori hai.\nAgar aap abhi nahi chahte, to supervisor se baat karein.\nAapki marzi ka ehtram hai."},
+  {id:"c6", title:"Fainted Before", text:"Aapne bataya aap pehle behosh hue the? Shukriya batane ke liye.\nAaj main aapko lita kar sample loonga.\nAap paani pi lein pehle.\nAgar chakkar aaye to foran bataein."}
+];
+function openCommunication(){
+  let h = `<div class="modal-hd"><h3>💬 Communication Scripts</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="csSearch" placeholder="Search script…"></div><div id="csList">`;
+  SCRIPTS.forEach(s=>{
+    h += `<div class="card"><div class="card-hd"><span class="ico">💬</span><h3>${esc(s.title)}</h3></div>
+      <p style="white-space:pre-line">${esc(s.text)}</p>
+      <button class="btn sm mt" data-copy="${s.id}">📋 Copy</button></div>`;
+  });
+  h += `</div>`;
+  openModal(h);
+  $$("[data-copy]").forEach(b=> b.onclick = ()=>{
+    const s = SCRIPTS.find(x=>x.id===b.dataset.copy);
+    navigator.clipboard.writeText(s.text).then(()=>toast("Copied","ok"));
+  });
+  $("#csSearch").oninput = ()=>{
+    const q = $("#csSearch").value.toLowerCase();
+    $$("#csList .card").forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none");
+  };
+}
+
+/* ---------- REJECTION GUIDE (B5) ---------- */
+const REJECTIONS = [
+  {id:"r1", title:"Hemolysis (Blood Broke)", sign:"Serum/plasma appears red", cause:"Thin needle, vigorous shaking, high vacuum, vein collapse, prolonged tourniquet", prevent:"21–23G needle, gentle invert, slow pull, tourniquet <1 min", fix:"Collect a new sample"},
+  {id:"r2", title:"Clotting", sign:"Clots in EDTA tube", cause:"Not mixed, under-mixed, dirty tube, slow fill", prevent:"Mix immediately 8–10 times, correct order, check expiry", fix:"New sample with fresh tube"},
+  {id:"r3", title:"Short Volume", sign:"Low blood level in tube", cause:"Low vacuum, needle out, vein collapse, dehydration", prevent:"Check expiry, keep needle stable, hydrate patient", fix:"Recollect"},
+  {id:"r4", title:"Wrong Tube", sign:"Wrong colour/anticoagulant", cause:"Wrong order of draw, colour confusion, low training", prevent:"Check protocol card, memorize order, confirm", fix:"Recollect with correct tube"},
+  {id:"r5", title:"Mislabeled", sign:"Label doesn't match patient", cause:"Forgot label, wrong patient, no time written", prevent:"Label at bedside, 3 confirms, always write time", fix:"Recollect from correct patient"},
+  {id:"r6", title:"Delayed Transport", sign:"Sample arrived late", cause:"Traffic, transport delay, wrong storage", prevent:"Send immediately, maintain cold chain, time limits", fix:"Collect a new sample"},
+  {id:"r7", title:"Contaminated", sign:"Growth or interference", cause:"Improper skin cleaning, dirty tube, missed hand hygiene", prevent:"30s spirit swab, wait to dry, sterile technique", fix:"New sample"}
+];
+function openRejection(){
+  let h = `<div class="modal-hd"><h3>❌ Specimen Rejection Guide</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="search"><span class="si">🔍</span><input id="rjSearch" placeholder="Search reason (e.g. hemolysis, clot)…"></div><div id="rjList">`;
+  REJECTIONS.forEach(r=>{
+    h += `<div class="card"><div class="card-hd"><span class="ico">❌</span><h3>${esc(r.title)}</h3></div>
+      <p><b>How to spot:</b> ${esc(r.sign)}<br><b>Cause:</b> ${esc(r.cause)}<br>
+      <b style="color:var(--green)">Prevention:</b> ${esc(r.prevent)}<br>
+      <b style="color:var(--amber)">Action:</b> ${esc(r.fix)}</p></div>`;
+  });
+  h += `</div>`;
+  openModal(h);
+  $("#rjSearch").oninput = ()=>{
+    const q = $("#rjSearch").value.toLowerCase();
+    $$("#rjList .card").forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none");
+  };
+}
+
+/* ---------- MORE tiles ---------- */
+$$("[data-more]").forEach(b=> b.onclick = ()=>{
+  const m = b.dataset.more;
+  if(m==="startdraw") openStartDraw();
+  if(m==="emergency") openEmergency();
+  if(m==="difficult") openDifficult();
+  if(m==="communication") openCommunication();
+  if(m==="rejection") openRejection();
+  if(m==="notifications") toast("No new notifications","info");
+});
+
+/* ---------- NOTIFICATIONS BELL ---------- */
+$("#btnBell").onclick = ()=> toast("No new notifications","info");
+
+/* ---------- SESSION RESTORE ---------- */
+function restoreSession(){
+  const u = loadSession();
+  if(u) { showApp(u); return true; }
+  return false;
+}
+
+/* ---------- INIT ---------- */
+(async function init(){
+  try{
+    await loadAllData();
+  }catch(e){ console.warn("Load failed:", e); }
+
+  if(!restoreSession()){
+    showLogin();
+  }
+
+  // Firebase auth listener (backup)
+  if(FIREBASE_OK){
+    auth.onAuthStateChanged(u=>{
+      if(u && !State.user){
+        const s = loadSession();
+        if(!s) showApp({id:u.uid, mobile:u.phoneNumber||"", name:u.displayName||"User"});
+      }
+    });
+  }
+
+  // Global error guard
+  window.addEventListener("error", e=>{
+    console.warn("Runtime:", e.message);
+  });
+  window.addEventListener("unhandledrejection", e=>{
+    console.warn("Promise rejection:", e.reason);
+  });
+})();
+
+/* ---------- KEYBOARD SHORTCUTS ---------- */
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape") closeModal();
+});
+</script>
+</body>
+</html>
+    
