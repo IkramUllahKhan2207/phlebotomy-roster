@@ -2,205 +2,783 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KIH Phlebotomy PRO - FULL FINAL</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a1a">
+<title>KIH Phlebotomy Roster Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Outfit,sans-serif}
-body{background:#070a14;color:#fff;overflow-x:hidden}
-.hdr{background:linear-gradient(90deg,#101a3a 0%,#1e0f4a 50%,#2d125e 100%);padding:18px 16px;border-bottom:1px solid #ffffff14;position:sticky;top:0;z-index:99}
-.hdr h1{font-size:20px;letter-spacing:-.5px}.hdr h1 span{color:#00ffc6}
-.hdr p{font-size:11px;opacity:.6;margin-top:4px}
-.nav{display:flex;gap:8px;padding:10px;background:#0a0f1e;position:sticky;top:78px;z-index:98;overflow:auto}
-.nav b{padding:10px 18px;border-radius:30px;background:#151c35;border:1px solid #ffffff12;cursor:pointer;white-space:nowrap;font-size:13px}
-.nav b.on{background:linear-gradient(135deg,#6c5cff,#ff2e93);border-color:transparent;box-shadow:0 4px 20px #6c5cff66}
-.card{background:linear-gradient(180deg,#ffffff0e,#ffffff06);border:1px solid #ffffff12;border-radius:18px;padding:14px;margin:10px}
-.inp{width:100%;padding:14px;border-radius:14px;border:1px solid #ffffff15;background:#00000055;color:#fff;font-size:15px;outline:none}
-.badge{padding:4px 10px;border-radius:99px;font-size:11px;font-weight:800;margin:2px;display:inline-block;border:1px solid}
-.gold{background:#eab30822;color:#fde047;border-color:#eab308}.purple{background:#7c3aed22;color:#c4b5fd;border-color:#7c3aed}.blue{background:#2563eb22;color:#93c5fd;border-color:#2563eb}.green{background:#05966922;color:#6ee7b7;border-color:#059669}.red{background:#dc262622;color:#fca5a5;border-color:#dc2626}.orange{background:#f59e0b22;color:#fcd34d;border-color:#f59e0b}
-table{width:100%;border-collapse:collapse;font-size:11px} th{color:#00ffc6;text-align:left;padding:10px;background:#00000066} td{padding:8px;border-top:1px solid #ffffff0e;text-align:left}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.staff{background:#ffffff08;border:1px solid #ffffff12;padding:12px;border-radius:14px}
-.yellow{border-color:#facc15!important;box-shadow:0 0 0 2px #facc1533}.seen{border-color:#22c55e!important}
-.btn{width:100%;padding:12px;border-radius:12px;border:none;font-weight:800;cursor:pointer;margin-top:8px}
-.btn-main{background:linear-gradient(135deg,#6c5cff,#ff2e93);color:#fff}
+/* ===== RESET & BASE ===== */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg-dark:#0a0a1a;
+  --bg-card:#151528;
+  --bg-card-2:#1e1e3a;
+  --purple:#8b5cf6;
+  --purple-light:#a78bfa;
+  --pink:#ec4899;
+  --cyan:#06b6d4;
+  --green:#10b981;
+  --orange:#f59e0b;
+  --red:#ef4444;
+  --text:#ffffff;
+  --text-dim:#94a3b8;
+  --glass:rgba(255,255,255,0.06);
+  --glass-border:rgba(255,255,255,0.1);
+  --shadow-glow:0 8px 32px rgba(139,92,246,0.3);
+}
+body{
+  font-family:'Outfit',system-ui,sans-serif;
+  background:var(--bg-dark);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+/* Animated background orbs */
+body::before{
+  content:'';position:fixed;top:-20%;left:-20%;width:60%;height:60%;
+  background:radial-gradient(circle,rgba(139,92,246,0.15),transparent 70%);
+  border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;
+  animation:float 20s ease-in-out infinite;
+}
+body::after{
+  content:'';position:fixed;bottom:-20%;right:-20%;width:60%;height:60%;
+  background:radial-gradient(circle,rgba(236,72,153,0.12),transparent 70%);
+  border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;
+  animation:float 25s ease-in-out infinite reverse;
+}
+@keyframes float{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(30px,-30px) scale(1.1)}
+}
+
+/* ===== APP CONTAINER ===== */
+.app{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  position:relative;
+  z-index:1;
+  padding-bottom:90px;
+}
+
+/* ===== HEADER ===== */
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 20px;
+  position:sticky;
+  top:0;
+  background:rgba(10,10,26,0.85);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  z-index:100;
+  border-bottom:1px solid var(--glass-border);
+}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{
+  width:44px;height:44px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  box-shadow:0 4px 20px rgba(139,92,246,0.5);
+}
+.header-title{font-size:15px;font-weight:700;line-height:1.2}
+.header-title span{display:block;font-size:11px;font-weight:400;color:var(--text-dim);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:10px}
+.icon-btn{
+  width:40px;height:40px;
+  border-radius:12px;
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+}
+.icon-btn:active{transform:scale(0.92)}
+.badge-dot{
+  position:absolute;top:8px;right:8px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--red);
+  border:2px solid var(--bg-dark);
+}
+.avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,#06b6d4,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;
+  border:2px solid rgba(255,255,255,0.1);
+}
+
+/* ===== DASHBOARD TITLE ===== */
+.page-title{
+  padding:8px 20px 4px;
+  font-size:26px;font-weight:800;
+  letter-spacing:-0.5px;
+}
+.page-title .sparkle{color:var(--purple-light)}
+.page-sub{
+  padding:0 20px 16px;
+  font-size:12px;color:var(--text-dim);
+  font-weight:400;
+}
+
+/* ===== STAT CARDS ===== */
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:0 20px;
+  margin-bottom:20px;
+}
+.stat-card{
+  background:linear-gradient(145deg,rgba(139,92,246,0.15),rgba(30,30,58,0.6));
+  border:1px solid var(--glass-border);
+  border-radius:18px;
+  padding:14px 10px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  backdrop-filter:blur(10px);
+}
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--purple),transparent);
+  opacity:0.5;
+}
+.stat-icon{font-size:22px;margin-bottom:6px}
+.stat-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.stat-value{font-size:20px;font-weight:800;color:var(--text)}
+.stat-value.green{color:var(--green)}
+.stat-value.purple{color:var(--purple-light)}
+.stat-sub{font-size:9px;color:var(--text-dim);margin-top:2px}
+
+/* ===== SECTION CARD ===== */
+.section-card{
+  background:linear-gradient(145deg,rgba(30,30,58,0.7),rgba(21,21,40,0.9));
+  border:1px solid var(--glass-border);
+  border-radius:20px;
+  padding:16px;
+  margin:0 20px 16px;
+  backdrop-filter:blur(10px);
+}
+.section-title{
+  font-size:14px;font-weight:700;
+  margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.section-title .count{
+  font-size:11px;font-weight:500;color:var(--text-dim);
+}
+
+/* ===== SHIFT COVERAGE BARS ===== */
+.shift-row{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;
+}
+.shift-badge{
+  min-width:44px;height:32px;
+  border-radius:10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;
+  flex-shrink:0;
+}
+.shift-badge.m{background:linear-gradient(135deg,#8b5cf6,#a78bfa);color:#fff}
+.shift-badge.e{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000}
+.shift-badge.n{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff}
+.shift-info{flex:1}
+.shift-info-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.shift-info-top b{font-weight:600}
+.shift-info-top span{color:var(--text-dim);font-size:10px}
+.progress-bar{
+  height:6px;border-radius:3px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--purple),var(--pink));
+  transition:width 0.5s;
+}
+.progress-fill.green{background:linear-gradient(90deg,#10b981,#34d399)}
+.progress-fill.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+
+/* ===== SEGMENTED CONTROL ===== */
+.segmented{
+  display:flex;gap:6px;
+  background:rgba(0,0,0,0.3);
+  padding:4px;border-radius:14px;
+  margin-bottom:16px;
+}
+.segmented button{
+  flex:1;padding:10px;
+  border:none;border-radius:10px;
+  background:transparent;
+  color:var(--text-dim);
+  font-family:inherit;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+}
+.segmented button.active{
+  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
+  color:#fff;
+  box-shadow:0 4px 15px rgba(139,92,246,0.4);
+}
+
+/* ===== STAFF CARDS (ROSTER) ===== */
+.staff-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.staff-card{
+  background:linear-gradient(145deg,rgba(30,30,58,0.8),rgba(21,21,40,0.95));
+  border:1px solid var(--glass-border);
+  border-radius:16px;
+  padding:12px;
+  position:relative;
+  transition:all 0.2s;
+}
+.staff-card:active{transform:scale(0.97)}
+.staff-card.changed{
+  border-color:#facc15;
+  box-shadow:0 0 0 1px #facc15,0 0 20px rgba(250,204,21,0.2);
+}
+.staff-card.seen{
+  border-color:var(--green);
+}
+.staff-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.staff-avatar{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;
+  position:relative;flex-shrink:0;
+}
+.staff-avatar.female{background:linear-gradient(135deg,#ec4899,#f472b6)}
+.staff-avatar.male{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
+.staff-avatar .check{
+  position:absolute;bottom:-2px;right:-2px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;color:#fff;
+  border:2px solid var(--bg-card);
+}
+.staff-name{font-size:12px;font-weight:700;line-height:1.2}
+.staff-role{font-size:9px;color:var(--text-dim);margin-top:1px}
+.staff-tags{display:flex;flex-direction:column;gap:5px}
+.tag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:600;
+  padding:3px 7px;border-radius:20px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--glass-border);
+  width:fit-content;
+}
+.tag.safety{background:rgba(236,72,153,0.15);border-color:rgba(236,72,153,0.3);color:#f9a8d4}
+.tag.shift-m{background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.3);color:#c4b5fd}
+.tag.shift-e{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:#fcd34d}
+.tag.shift-n{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.3);color:#93c5fd}
+.staff-footer{
+  margin-top:8px;padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  font-size:9px;color:var(--text-dim);
+  display:flex;align-items:center;gap:4px;
+}
+
+/* ===== ADD STAFF FORM ===== */
+.form-group{margin-bottom:14px}
+.form-label{
+  font-size:11px;font-weight:600;
+  color:var(--text-dim);
+  margin-bottom:6px;display:block;
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+.form-input,.form-select{
+  width:100%;padding:12px 14px;
+  background:rgba(0,0,0,0.3);
+  border:1px solid var(--glass-border);
+  border-radius:12px;
+  color:var(--text);
+  font-family:inherit;font-size:13px;
+  outline:none;transition:all 0.2s;
+}
+.form-input:focus,.form-select:focus{
+  border-color:var(--purple);
+  box-shadow:0 0 0 3px rgba(139,92,246,0.15);
+}
+.form-input::placeholder{color:#475569}
+.photo-upload{
+  width:80px;height:80px;
+  border-radius:20px;
+  border:2px dashed rgba(139,92,246,0.4);
+  background:rgba(139,92,246,0.08);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;
+  margin-bottom:14px;
+  transition:all 0.2s;
+}
+.photo-upload:active{transform:scale(0.95)}
+.photo-upload-icon{font-size:20px}
+.photo-upload-text{font-size:9px;color:var(--text-dim);text-align:center;line-height:1.2}
+
+/* ===== TOGGLE SWITCH ===== */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;
+}
+.toggle-label{font-size:12px;font-weight:500}
+.toggle-switch{
+  width:46px;height:26px;
+  background:rgba(255,255,255,0.1);
+  border-radius:13px;
+  position:relative;cursor:pointer;
+  transition:all 0.3s;
+  flex-shrink:0;
+}
+.toggle-switch.on{background:linear-gradient(135deg,#8b5cf6,#ec4899)}
+.toggle-switch::after{
+  content:'';position:absolute;
+  width:20px;height:20px;
+  background:#fff;border-radius:50%;
+  top:3px;left:3px;
+  transition:all 0.3s;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+.toggle-switch.on::after{left:23px}
+
+/* ===== SAFETY BANNER ===== */
+.safety-banner{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 14px;
+  background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(6,182,212,0.1));
+  border:1px solid rgba(16,185,129,0.3);
+  border-radius:14px;
+  font-size:11px;
+  margin:0 20px 16px;
+  color:#6ee7b7;
+}
+.safety-banner .icon{font-size:16px}
+
+/* ===== PRIMARY BUTTON ===== */
+.btn-primary{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  border:none;border-radius:16px;
+  color:#fff;
+  font-family:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;
+  box-shadow:0 8px 25px rgba(139,92,246,0.4);
+  transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary:active{transform:scale(0.97);box-shadow:0 4px 15px rgba(139,92,246,0.3)}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-width:480px;
+  margin:0 auto;
+  background:rgba(10,10,26,0.95);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--glass-border);
+  display:flex;
+  padding:10px 0 max(10px,env(safe-area-inset-bottom));
+  z-index:100;
+}
+.nav-item{
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:center;gap:3px;
+  background:none;border:none;
+  color:var(--text-dim);
+  font-family:inherit;font-size:9px;font-weight:600;
+  cursor:pointer;
+  padding:6px 0;
+  transition:all 0.2s;
+}
+.nav-item .nav-icon{font-size:20px;transition:all 0.2s}
+.nav-item.active{color:var(--purple-light)}
+.nav-item.active .nav-icon{transform:translateY(-2px) scale(1.1)}
+.nav-item.add .nav-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:18px;
+  margin-top:-8px;
+  box-shadow:0 6px 20px rgba(139,92,246,0.5);
+}
+
+/* ===== VIEW SWITCHING ===== */
+.view{display:none;animation:fadeIn 0.3s}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== TOAST ===== */
+.toast{
+  position:fixed;bottom:100px;left:50%;
+  transform:translateX(-50%) translateY(100px);
+  background:linear-gradient(135deg,#10b981,#059669);
+  color:#fff;
+  padding:12px 24px;border-radius:14px;
+  font-size:13px;font-weight:600;
+  box-shadow:0 10px 30px rgba(16,185,129,0.4);
+  z-index:200;opacity:0;
+  transition:all 0.3s;
+  pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ===== DESKTOP ===== */
+@media(min-width:768px){
+  .app{max-width:1100px;padding:0 20px 100px}
+  .stats-grid{grid-template-columns:repeat(6,1fr)}
+  .staff-grid{grid-template-columns:repeat(4,1fr)}
+  .bottom-nav{max-width:1100px;border-radius:20px 20px 0 0}
+  .header{border-radius:0 0 20px 20px}
+}
 </style>
 </head>
 <body>
-<div class="hdr">
-<h1>KIH PHLEBOTOMY <span>PRO</span> 🚀 FULL FINAL</h1>
-<p>Kulsum International Hospital • 26 Sep - 25 Oct 2026 • Female Safety ON • Full Wave ON • Primary 07-15 Secondary 15-23 • Title: Only Phlebotomy • 804 Tests • Synced</p>
-</div>
-<div class="nav">
-<b class="on" onclick="tab('tests',this)">🧪 Tests Lab (804)</b>
-<b onclick="tab('roster',this)">📊 Full Roster Wave</b>
-<b onclick="tab('setup',this)">⚙️ Setup / Theme</b>
-<b onclick="tab('export',this)">📤 Export</b>
+
+<div class="app">
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🧪</div>
+      <div class="header-title">
+        Phlebotomy Roster
+        <span>Kulsum International Hospital</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="icon-btn">🔔<div class="badge-dot"></div></div>
+      <div class="avatar">IK</div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: DASHBOARD ===== -->
+  <div id="view-dashboard" class="view active">
+    <div class="page-title">Dashboard Analytics <span class="sparkle">✦</span></div>
+    <div class="page-sub">Oct 08, 2026 • Week 41</div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🧪</div>
+        <div class="stat-label">Shifts Filled</div>
+        <div class="stat-value purple">86%</div>
+        <div class="stat-sub">↑4% vs last week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label">Active Staff</div>
+        <div class="stat-value">24</div>
+        <div class="stat-sub">5 on shift now</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🛡️</div>
+        <div class="stat-label">Safety</div>
+        <div class="stat-value green">98%</div>
+        <div class="stat-sub">Female 100%</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Shift Coverage Today</div>
+
+      <div class="shift-row">
+        <div class="shift-badge m">M</div>
+        <div class="shift-info">
+          <div class="shift-info-top"><b>Morning</b><span>06:00 – 14:00</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+        </div>
+      </div>
+
+      <div class="shift-row">
+        <div class="shift-badge e">E</div>
+        <div class="shift-info">
+          <div class="shift-info-top"><b>Evening</b><span>14:00 – 22:00</span></div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:70%"></div></div>
+        </div>
+      </div>
+
+      <div class="shift-row">
+        <div class="shift-badge n">N</div>
+        <div class="shift-info">
+          <div class="shift-info-top"><b>Night</b><span>22:00 – 06:00</span></div>
+          <div class="progress-bar"><div class="progress-fill blue" style="width:60%"></div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="segmented">
+          <button class="active">Primary</button>
+          <button>Secondary</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="safety-banner">
+      <span class="icon">🛡️</span>
+      <span>All female staff have safety compliance active</span>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: ROSTER ===== -->
+  <div id="view-roster" class="view">
+    <div class="page-title">Staff Roster</div>
+    <div class="page-sub">Managing 12 Staff • Oct 2026</div>
+
+    <div style="padding:0 20px 16px">
+      <div class="segmented">
+        <button class="active" onclick="switchSeg(this)">Primary Shift</button>
+        <button onclick="switchSeg(this)">Secondary Shift</button>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        Today's Roster
+        <span class="count">12 Staff</span>
+      </div>
+      <div class="staff-grid" id="rosterGrid"></div>
+    </div>
+
+    <div class="safety-banner">
+      <span class="icon">🛡️</span>
+      <span>Female Safety Active — No N / N12 / E4 assigned</span>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: ADD STAFF ===== -->
+  <div id="view-add" class="view">
+    <div class="page-title">Add New Staff</div>
+    <div class="page-sub">Create new roster member</div>
+
+    <div class="section-card">
+      <div class="photo-upload" onclick="showToast('Photo upload coming soon')">
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Upload<br>Photo</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" placeholder="e.g. Emma Rodriguez" id="newName">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-select" id="newRole">
+          <option>Phlebotomist</option>
+          <option>Support Staff</option>
+          <option>Supervisor</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Gender (Safety Rule)</label>
+        <select class="form-select" id="newGender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">🩷 Female Safety Protocol</span>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Shift Assignment</label>
+        <div class="segmented">
+          <button class="active" onclick="switchSeg(this)">Primary</button>
+          <button onclick="switchSeg(this)">Secondary</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Shift Type</label>
+        <div class="segmented">
+          <button class="active" onclick="switchSeg(this)">☀️ Morning</button>
+          <button onclick="switchSeg(this)">🌆 Evening</button>
+          <button onclick="switchSeg(this)">🌙 Night</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Department</label>
+        <select class="form-select">
+          <option>Lab A - Phlebotomy</option>
+          <option>Lab B - Pediatric</option>
+          <option>Lab C - Emergency</option>
+        </select>
+      </div>
+
+      <div class="safety-banner" style="margin:14px 0">
+        <span class="icon">🔔</span>
+        <span>Will notify staff via secure app alert</span>
+      </div>
+
+      <button class="btn-primary" onclick="addStaff()">
+        <span>＋</span> Add Staff to Roster
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: PROFILE ===== -->
+  <div id="view-profile" class="view">
+    <div class="page-title">Admin Profile</div>
+    <div class="page-sub">Ikram Ullah Khan • Super Admin</div>
+
+    <div class="section-card">
+      <div class="toggle-row">
+        <span class="toggle-label">🛡️ Female Safety Toggle</span>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">🌊 Full Roster Wave</span>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">🔔 WhatsApp Auto Notify</span>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">📱 Desktop + Mobile Sync</span>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Display Theme</div>
+      <div class="segmented">
+        <button class="active" onclick="switchSeg(this)">🌙 Dark</button>
+        <button onclick="switchSeg(this)">☀️ Light</button>
+        <button onclick="switchSeg(this)">💧 Glass</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<div id="tests">
-<div class="card">
-<h3>🔍 KIH Test Protocol Search - Full DB</h3>
-<input id="q" class="inp" placeholder="Search: LB0316, CBC, GLUCOSE FASTING, LFT, 24H Urine, PT/INR, Vitamin D, Culture..." oninput="search()">
-<div style="margin-top:8px"><span class="badge gold">Gold SST</span><span class="badge purple">Purple EDTA</span><span class="badge blue">Blue Citrate</span><span class="badge green">Grey Fasting</span><span class="badge red">Fasting 10-12H</span><span class="badge orange">24H Urine</span><span id="cnt" class="badge" style="background:#fff;color:#000">Loading 804...</span></div>
-</div>
-<div class="card" style="padding:0;overflow:hidden"><div id="res" style="max-height:68vh;overflow:auto"></div></div>
-</div>
-
-<div id="roster" style="display:none">
-<div class="card">
-<h3>📅 Full Roster Wave - Kulsum Format - Only Phlebotomy Title</h3>
-<p style="font-size:11px;opacity:.7;margin:6px 0">💛 Yellow = Duty Changed | ✅ Green Border = Seen | 🩷 Pink = Female Safety Night Blocked | Full Wave = Sabko Full Roster Dikhega</p>
-<div class="grid" id="rosterGrid"></div>
-<button class="btn btn-main" onclick="markSeen()">✅ Mark All Seen (Green)</button>
-</div>
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="showView('dashboard',this)">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button class="nav-item" onclick="showView('roster',this)">
+    <span class="nav-icon">📋</span>Roster
+  </button>
+  <button class="nav-item add" onclick="showView('add',this)">
+    <span class="nav-icon">＋</span>
+  </button>
+  <button class="nav-item" onclick="showView('profile',this)">
+    <span class="nav-icon">👤</span>Profile
+  </button>
 </div>
 
-<div id="setup" style="display:none">
-<div class="card"><h3>⚙️ Setup - Mazaydar Edition</h3>
-<p style="font-size:13px;line-height:22px;margin-top:8px">
-✅ Female Safety - Auto Block Night for Noreen, Habiba, Donia, Female Staff<br>
-✅ Full Roster Wave - Sabko Full Month Dikhega (Kulsum Style)<br>
-✅ Only Phlebotomy Title - Lab/Blood Bank Word Removed<br>
-✅ Primary: 07:00-15:00 | Secondary: 15:00-23:00 | Night: N12<br>
-✅ Desktop+Mobile Sync - WhatsApp Auto<br>
-✅ Theme: Neon Glass (Current) - Dark Pro<br>
-✅ Language: English + اردو Mix
-</p>
-<button class="btn btn-main" onclick="alert('Settings Saved in Browser!')">💾 Save Settings</button>
-</div>
-</div>
-
-<div id="export" style="display:none">
-<div class="card"><h3>📤 Export</h3>
-<button class="btn btn-main" onclick="downloadCSV()">⬇️ Download 804 Tests CSV</button>
-<button class="btn" style="background:#25D366;color:#fff" onclick="shareWA()">📱 WhatsApp Share Roster</button>
-<button class="btn" style="background:#ffffff14;color:#fff">🖨️ Print Kulsum Format</button>
-<p style="font-size:10px;opacity:.5;text-align:center;margin-top:8px">KIH Phlebotomy Pro v4.0 FINAL • GitHub Pages • https://ikramullahkhan2207.github.io/phlebotomy-roster/</p>
-</div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
-// FULL 804 TESTS DB - SHORTENED TO 120 MOST USED + LOGIC FOR ALL
-const DB=[
-['LB0316','GLUCOSE FASTING','Gold SST + Grey Fluoride','Serum Fasting','Fasting 10-12 Hrs Required','Fasting 10-12 hrs, water allowed, morning sample'],
-['LB0318','GLUCOSE 2H PP','Gold + Grey','Serum','2H PP','2 hrs after meal, note time'],
-['LB0317','GLUCOSE RANDOM','Gold SST','Serum','Random','Any time'],
-['LB0128','HBA1C (GLYCOSYLATED HB)','Purple EDTA','Whole Blood','Random','Mix 8-10x, 3ml'],
-['LB0049','BLOOD CP CBC','Purple EDTA Lavender','Whole Blood','Random','Mix 8-10 times, 3ml, no clot'],
-['LB0051','BLOOD GROUPING ABO & RH','Purple EDTA','Whole Blood','Random','3ml EDTA'],
-['LB0036','APTT','Blue Citrate 3.2%','Citrated Plasma','Random','Exact fill 9:1, 1hr centrifuge'],
-['LB0183','PT / INR','Blue Citrate 3.2%','Citrated Plasma','Random','Exact fill'],
-['LB0004','24 HRS URINE CREATININE','24 Hrs Urine Acid Washed','24H Urine','24H Collection','Discard first, collect 24H, cold'],
-['LB0005','24 HRS URINE PROTEIN','24 Hrs Urine Plain','24H Urine','24H Collection','Collect 24H total volume'],
-['LB0242','URINE R/E','Urine Sterile Container','Urine','Random','Midstream clean catch 10-20ml'],
-['LB0091','BLOOD CULTURE','Blood Culture Bottle','Culture','Random','Aseptic before antibiotics'],
-['LB0013','VITAMIN D3 25-OH','Gold SST','Serum','Fasting Preferred','Morning fasting'],
-['LB0248','VITAMIN B12','Gold SST Yellow','Serum','Random / Fasting Pref','Morning'],
-['LB0166','LFTS (LIVER FUNCTION)','Gold SST Yellow','Serum','Fasting 8 Hrs Pref','Fasting 8 hrs preferred'],
-['LB0169','LIPID PROFILE','Gold SST Fasting','Serum Fasting','Fasting 10-12 Hrs Required','Fasting mandatory 10-12H'],
-['LB0221','TSH','Gold SST','Serum','Random Morning Pref','Morning preferred'],
-['LB0106','D-DIMER','Blue Citrate','Citrated Plasma','Random','Exact fill'],
-['LB0111','ESR','Purple EDTA / Black Citrate','Whole Blood','Random','4 hrs stability'],
-['LB0088','CREATININE','Gold SST','Serum','Random','No fasting'],
-['LB0090','UREA / BUN','Gold SST','Serum','Random','No fasting'],
-['LB0058','ELECTROLYTES (Na K Cl)','Gold SST','Serum','Random','Avoid hemolysis'],
-['LB0168','KFT (RENAL)','Gold SST','Serum','Random','Includes Creatinine Urea'],
-['LB0247','URIC ACID','Gold SST','Serum','Fasting Preferred','Fasting preferred'],
-['LB0141','CRP','Gold SST','Serum','Random','Inflammation marker'],
-['LB0071','BILIRUBIN TOTAL DIRECT','Gold SST','Serum','Fasting Preferred','Protect from light'],
-['LB0230','HBSAG','Gold SST','Serum','Random','Hepatitis B screening'],
-['LB0231','HCV ANTIBODY','Gold SST','Serum','Random','Hepatitis C'],
-['LB0229','HIV COMBO','Gold SST','Serum','Random','HIV screening'],
-['LB0119','FERRITIN','Gold SST','Serum','Random / Fasting Pref','Iron stores'],
-['LB0120','IRON STUDIES','Gold SST','Serum','Fasting Preferred','Morning fasting'],
-['LB0189','TROPONIN I','Gold SST','Serum','Random','Chest pain stat'],
-['LB0190','TROPONIN T','Gold SST','Serum','Random','Cardiac'],
-['LB0159','CK-MB','Gold SST','Serum','Random','Cardiac'],
-['LB0544','1,25 DIHYDROXY VIT D','Gold SST','Serum','Random','Clot 30 min centrifuge'],
-['LB0777','24H 5-HIAA','24 Hrs Urine Container','24H Urine','24H Collection','Keep cold, total volume'],
-['LB0032','AMYLASE','Gold SST','Serum','Random','Pancreatic'],
-['LB0033','LIPASE','Gold SST','Serum','Random','Pancreatic'],
-['LB0109','PSA TOTAL','Gold SST','Serum','Random','Prostate'],
-['LB0172','LDH','Gold SST','Serum','Random','Avoid hemolysis'],
-['LB0216','PROLACTIN','Gold SST','Serum','Random Morning','Morning sample'],
-['LB0024','CORTISOL MORNING','Gold SST','Serum','Morning 8AM','8AM sample mandatory'],
-['LB0025','CORTISOL EVENING','Gold SST','Serum','Evening 4PM','4PM sample'],
-['LB0135','LH','Gold SST','Serum','Random','Fertility'],
-['LB0136','FSH','Gold SST','Serum','Random','Fertility'],
-['LB0001','URINE CULTURE','Urine Sterile Culture','Urine Culture','Random','Midstream culture'],
-['LB0002','SPUTUM CULTURE','Sterile Container','Sputum','Random','Early morning'],
-['LB0003','STOOL CULTURE','Stool Container','Stool','Random','Fresh'],
+// ===== STAFF DATA =====
+const staff = [
+  {name:'Noreen Akhtar', gender:'female', role:'Phlebotomy', primary:'M', seen:true},
+  {name:'Habiba Fiaz', gender:'female', role:'Phlebotomy', primary:'E', seen:true},
+  {name:'Dunya Bashir', gender:'female', role:'Phlebotomy', primary:'M', seen:false},
+  {name:'Quratul Ain', gender:'female', role:'Phlebotomy', primary:'M', seen:true},
+  {name:'Bushra Safeer', gender:'female', role:'Phlebotomy', primary:'M', seen:true},
+  {name:'Tasleem Fatima', gender:'female', role:'Phlebotomy', primary:'E', seen:false},
+  {name:'Syed Sajid', gender:'male', role:'Phlebotomy', primary:'M', seen:true},
+  {name:'Shehryar Khan', gender:'male', role:'Phlebotomy', primary:'E', seen:true},
+  {name:'Waqas Aziz', gender:'male', role:'Phlebotomy', primary:'N', seen:false, changed:true},
+  {name:'Asim Ali', gender:'male', role:'Phlebotomy', primary:'E4', seen:true},
+  {name:'M. Zakria', gender:'male', role:'Phlebotomy', primary:'E4', seen:true},
+  {name:'Imran Mubarak', gender:'male', role:'Phlebotomy', primary:'M', seen:true}
 ];
-// Generate 750+ more dummy realistic entries to reach 804
-const moreTests=['ALBUMIN','GLOBULIN','TOTAL PROTEIN','ALT SGPT','AST SGOT','ALP','GGT','CALCIUM','MAGNESIUM','PHOSPHORUS','LDH','CK','CKMB','T3','T4','FT3','FT4','ANTI TPO','ANA','RF','ASO','HBA1C','BETA HCG','TESTOSTERONE','ESTROGEN','PROGESTERONE'];
-for(let i=0;i<760;i++){
- let code='LB'+String(1000+i).padStart(4,'0');
- let name=moreTests[i%moreTests.length]+' '+(i%2==0?'LEVEL':'PROFILE')+' '+(i+1);
- let tubes=['Gold SST','Purple EDTA','Blue Citrate','Grey Fluoride','24 Hrs Urine','Sterile Container'][i%6];
- let fast=[ 'Random','Fasting 10-12 Hrs Required','Fasting 8 Hrs Preferred','2H PP','24H Collection'][i%5];
- DB.push([code,name,tubes,'Serum',fast,'Standard protocol - '+tubes]);
+
+function getInitials(name){
+  return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
 }
 
-function search(){
- let q=document.getElementById('q').value.toLowerCase();
- let f=DB; if(q) f=DB.filter(t=>(t[0]+' '+t[1]+' '+t[2]+' '+t[4]).toLowerCase().includes(q));
- document.getElementById('cnt').innerText=f.length+' Tests Found of 804';
- let h='<table><tr><th>Code</th><th>Test Name</th><th>Tube / Container</th><th>Fasting</th><th>Protocol</th></tr>';
- f.slice(0,120).forEach(r=>{
-  let fc=r[4].includes('Fasting')?'red':r[4].includes('24H')?'orange':'green';
-  h+=`<tr><td><b style="color:#00ffc6">${r[0]}</b></td><td>${r[1]}</td><td><span class="badge gold">${r[2]}</span></td><td><span class="badge ${fc}">${r[4]}</span></td><td style="opacity:.8">${r[5]}</td></tr>`;
- });
- h+='</table>'; if(f.length>120) h+=`<div style="padding:12px;text-align:center;opacity:.6">Showing 120 of ${f.length} - Type more specific</div>`;
- document.getElementById('res').innerHTML=h;
+function renderRoster(){
+  const grid = document.getElementById('rosterGrid');
+  grid.innerHTML = staff.map(s => {
+    const isFemale = s.gender === 'female';
+    const tags = [];
+    if(isFemale) tags.push('<span class="tag safety">🩷 Female Safety</span>');
+    tags.push(`<span class="tag shift-${s.primary.toLowerCase().charAt(0)}">${s.primary} Roster: Primary</span>`);
+    tags.push(`<span class="tag">Lab A - Phlebotomy</span>`);
+    
+    return `
+      <div class="staff-card ${s.changed ? 'changed' : ''} ${s.seen ? 'seen' : ''}">
+        <div class="staff-top">
+          <div class="staff-avatar ${s.gender}">
+            ${getInitials(s.name)}
+            ${s.seen ? '<div class="check">✓</div>' : ''}
+          </div>
+          <div>
+            <div class="staff-name">${s.name}</div>
+            <div class="staff-role">${s.role}</div>
+          </div>
+        </div>
+        <div class="staff-tags">${tags.join('')}</div>
+        <div class="staff-footer">
+          ${s.seen ? '✅ Seen 09:15' : '⏳ Pending'}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
-search();
 
-// Roster Full Wave
-const staff=[
-{name:'Noreen Akhtar',gender:'F',role:'Phlebotomy'},
-{name:'Habiba Fiaz',gender:'F',role:'Phlebotomy'},
-{name:'Donia Bashir',gender:'F',role:'Phlebotomy'},
-{name:'Ayesha Khan',gender:'F',role:'Phlebotomy'},
-{name:'Sana Bibi',gender:'F',role:'Phlebotomy'},
-{name:'Waqas Aziz',gender:'M',role:'Phlebotomy',note:'PH N12'},
-{name:'Ikram Ullah',gender:'M',role:'Phlebotomy'},
-{name:'Ali Raza',gender:'M',role:'Phlebotomy'},
-{name:'Usman Ghani',gender:'M',role:'Phlebotomy'},
-{name:'Bilal Ahmed',gender:'M',role:'Phlebotomy'},
-{name:'Faisal Khan',gender:'M',role:'Phlebotomy'},
-{name:'Zubair Ali',gender:'M',role:'Phlebotomy'},
-];
-function buildRoster(){
- let g=document.getElementById('rosterGrid'); let html='';
- staff.forEach(s=>{
-  let shifts='M | M | E | M | OFF | M | N12';
-  if(s.gender=='F') shifts='M | E | E | M | OFF | M | M'; // Female Safety - No Night
-  let cls=s.name=='Waqas Aziz'?'yellow':'';
-  let seen=localStorage.getItem('seen_'+s.name)?'seen':'';
-  html+=`<div class="staff ${cls} ${seen}"><b>${s.name}</b> <span class="badge ${s.gender=='F'?'red':'blue'}">${s.gender=='F'?'Female Safety':'Phlebotomy'}</span><br><small style="opacity:.7">${shifts}</small><br><small class="${seen?'':' '}" style="color:${seen?'#22c55e':'#facc15'}">${seen?'✅ Seen':'⏳ Pending Seen'}</small></div>`;
- });
- g.innerHTML=html;
+function showView(id, btn){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if(btn && !btn.classList.contains('add')) btn.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
 }
-buildRoster();
-function markSeen(){ staff.forEach(s=>localStorage.setItem('seen_'+s.name,'1')); buildRoster(); alert('All Marked Seen - Green Border!'); }
 
-function tab(id,el){
- document.getElementById('tests').style.display=id=='tests'?'block':'none';
- document.getElementById('roster').style.display=id=='roster'?'block':'none';
- document.getElementById('setup').style.display=id=='setup'?'block':'none';
- document.getElementById('export').style.display=id=='export'?'block':'none';
- document.querySelectorAll('.nav b').forEach(b=>b.classList.remove('on')); el.classList.add('on');
+function switchSeg(btn){
+  const parent = btn.parentElement;
+  parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 }
-function downloadCSV(){
- let csv='Code,Name,Tube,Fasting,Protocol\n';
- DB.forEach(r=>csv+=`"${r[0]}","${r[1]}","${r[2]}","${r[4]}","${r[5]}"\n`);
- let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='KIH_804_Tests_FULL_FINAL.csv'; a.click();
+
+function addStaff(){
+  const name = document.getElementById('newName').value.trim();
+  if(!name){ showToast('⚠️ Enter staff name'); return; }
+  const gender = document.getElementById('newGender').value;
+  const role = document.getElementById('newRole').value;
+  staff.push({
+    name: name,
+    gender: gender,
+    role: role,
+    primary: 'M',
+    seen: false
+  });
+  renderRoster();
+  document.getElementById('newName').value = '';
+  showToast('✅ ' + name + ' added to roster!');
+  setTimeout(() => showView('roster', document.querySelectorAll('.nav-item')[1]), 800);
 }
-function shareWA(){
- let txt='KIH Phlebotomy Pro FULL FINAL Live: https://ikramullahkhan2207.github.io/phlebotomy-roster/ - 804 Tests + Full Roster Wave + Female Safety ON';
- window.open('https://wa.me/?text='+encodeURIComponent(txt));
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
 }
+
+// Initialize
+renderRoster();
 </script>
 </body>
 </html>
