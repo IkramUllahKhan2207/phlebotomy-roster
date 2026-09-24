@@ -1,784 +1,955 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a0a1a">
-<title>KIH Phlebotomy Roster Pro</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-/* ===== RESET & BASE ===== */
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg-dark:#0a0a1a;
-  --bg-card:#151528;
-  --bg-card-2:#1e1e3a;
-  --purple:#8b5cf6;
-  --purple-light:#a78bfa;
-  --pink:#ec4899;
-  --cyan:#06b6d4;
-  --green:#10b981;
-  --orange:#f59e0b;
-  --red:#ef4444;
-  --text:#ffffff;
-  --text-dim:#94a3b8;
-  --glass:rgba(255,255,255,0.06);
-  --glass-border:rgba(255,255,255,0.1);
-  --shadow-glow:0 8px 32px rgba(139,92,246,0.3);
-}
-body{
-  font-family:'Outfit',system-ui,sans-serif;
-  background:var(--bg-dark);
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
-  position:relative;
-}
-/* Animated background orbs */
-body::before{
-  content:'';position:fixed;top:-20%;left:-20%;width:60%;height:60%;
-  background:radial-gradient(circle,rgba(139,92,246,0.15),transparent 70%);
-  border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;
-  animation:float 20s ease-in-out infinite;
-}
-body::after{
-  content:'';position:fixed;bottom:-20%;right:-20%;width:60%;height:60%;
-  background:radial-gradient(circle,rgba(236,72,153,0.12),transparent 70%);
-  border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;
-  animation:float 25s ease-in-out infinite reverse;
-}
-@keyframes float{
-  0%,100%{transform:translate(0,0) scale(1)}
-  50%{transform:translate(30px,-30px) scale(1.1)}
-}
+Build a TEST DATABASE module for the KIH Phlebotomy App with 804 tests.
 
-/* ===== APP CONTAINER ===== */
-.app{
-  max-width:480px;
-  margin:0 auto;
-  min-height:100vh;
-  position:relative;
-  z-index:1;
-  padding-bottom:90px;
-}
+Each test MUST have these 7 fields:
+1. Service Code (e.g., LB0316)
+2. Test Name (e.g., GLUCOSE FASTING)
+3. Tube Type (Gold SST, Purple EDTA, Blue Citrate, Grey Fluoride, etc.)
+4. Sample Type (Serum, Whole Blood EDTA, Citrated Plasma, Urine, etc.)
+5. Fasting/Random (Random, Fasting 10-12H Required, 2H PP, 24H Collection)
+6. Protocol/Instruction (for phlebotomist — how to collect)
+7. Category (Biochemistry, Hematology, Microbiology, etc.)
 
-/* ===== HEADER ===== */
-.header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:18px 20px;
-  position:sticky;
-  top:0;
-  background:rgba(10,10,26,0.85);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  z-index:100;
-  border-bottom:1px solid var(--glass-border);
-}
-.header-left{display:flex;align-items:center;gap:12px}
-.logo{
-  width:44px;height:44px;
-  border-radius:14px;
-  background:linear-gradient(135deg,#8b5cf6,#ec4899);
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;
-  box-shadow:0 4px 20px rgba(139,92,246,0.5);
-}
-.header-title{font-size:15px;font-weight:700;line-height:1.2}
-.header-title span{display:block;font-size:11px;font-weight:400;color:var(--text-dim);margin-top:2px}
-.header-right{display:flex;align-items:center;gap:10px}
-.icon-btn{
-  width:40px;height:40px;
-  border-radius:12px;
-  background:var(--glass);
-  border:1px solid var(--glass-border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;cursor:pointer;
-  transition:all 0.2s;
-  position:relative;
-}
-.icon-btn:active{transform:scale(0.92)}
-.badge-dot{
-  position:absolute;top:8px;right:8px;
-  width:8px;height:8px;border-radius:50%;
-  background:var(--red);
-  border:2px solid var(--bg-dark);
-}
-.avatar{
-  width:40px;height:40px;border-radius:50%;
-  background:linear-gradient(135deg,#06b6d4,#8b5cf6);
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:14px;
-  border:2px solid rgba(255,255,255,0.1);
-}
+Database must be embedded in JavaScript as an array of objects.
+Search must be instant (real-time filter on code + name + tube + fasting).
+Display: Table with color-coded badges for tube type and fasting status.
 
-/* ===== DASHBOARD TITLE ===== */
-.page-title{
-  padding:8px 20px 4px;
-  font-size:26px;font-weight:800;
-  letter-spacing:-0.5px;
-}
-.page-title .sparkle{color:var(--purple-light)}
-.page-sub{
-  padding:0 20px 16px;
-  font-size:12px;color:var(--text-dim);
-  font-weight:400;
-}
+Include ALL 804 codes LB0001–LB0820.
 
-/* ===== STAT CARDS ===== */
-.stats-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:0 20px;
-  margin-bottom:20px;
-}
-.stat-card{
-  background:linear-gradient(145deg,rgba(139,92,246,0.15),rgba(30,30,58,0.6));
-  border:1px solid var(--glass-border);
-  border-radius:18px;
-  padding:14px 10px;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
-  backdrop-filter:blur(10px);
-}
-.stat-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--purple),transparent);
-  opacity:0.5;
-}
-.stat-icon{font-size:22px;margin-bottom:6px}
-.stat-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
-.stat-value{font-size:20px;font-weight:800;color:var(--text)}
-.stat-value.green{color:var(--green)}
-.stat-value.purple{color:var(--purple-light)}
-.stat-sub{font-size:9px;color:var(--text-dim);margin-top:2px}
+═══════════════════════════════════════════════════════════
+TUBE COLOR GUIDE (BADGES)
+═══════════════════════════════════════════════════════════
 
-/* ===== SECTION CARD ===== */
-.section-card{
-  background:linear-gradient(145deg,rgba(30,30,58,0.7),rgba(21,21,40,0.9));
-  border:1px solid var(--glass-border);
-  border-radius:20px;
-  padding:16px;
-  margin:0 20px 16px;
-  backdrop-filter:blur(10px);
-}
-.section-title{
-  font-size:14px;font-weight:700;
-  margin-bottom:12px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.section-title .count{
-  font-size:11px;font-weight:500;color:var(--text-dim);
-}
+- Gold SST (Yellow)      → LFT, RFT, Hormones, Vit D, B12, TFT, Lipids
+- Purple EDTA (Lavender) → CBC, HbA1c, Blood Group, ESR, CBC
+- Blue Citrate 3.2%      → PT, APTT, Coagulation, D-Dimer
+- Grey Fluoride          → Blood Sugar (FBS, RBS), GTT, Lactate
+- Green Heparin          → Chromosome, HLA, Ammonia
+- 24H Urine Container    → 24-hour urine tests
+- Blood Culture Bottle   → Blood culture
+- Sterile Container      → Urine, Stool, Sputum, Pus, Body Fluids
+- Black Citrate          → ESR (some labs)
+- Plain Red (No additive)→ Serum (some tests)
 
-/* ===== SHIFT COVERAGE BARS ===== */
-.shift-row{
-  display:flex;align-items:center;gap:10px;
-  margin-bottom:10px;
-}
-.shift-badge{
-  min-width:44px;height:32px;
-  border-radius:10px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-size:9px;font-weight:700;
-  flex-shrink:0;
-}
-.shift-badge.m{background:linear-gradient(135deg,#8b5cf6,#a78bfa);color:#fff}
-.shift-badge.e{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000}
-.shift-badge.n{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff}
-.shift-info{flex:1}
-.shift-info-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
-.shift-info-top b{font-weight:600}
-.shift-info-top span{color:var(--text-dim);font-size:10px}
-.progress-bar{
-  height:6px;border-radius:3px;
-  background:rgba(255,255,255,0.08);
-  overflow:hidden;
-}
-.progress-fill{
-  height:100%;border-radius:3px;
-  background:linear-gradient(90deg,var(--purple),var(--pink));
-  transition:width 0.5s;
-}
-.progress-fill.green{background:linear-gradient(90deg,#10b981,#34d399)}
-.progress-fill.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+═══════════════════════════════════════════════════════════
+FASTING/RANDOM BADGES
+═══════════════════════════════════════════════════════════
 
-/* ===== SEGMENTED CONTROL ===== */
-.segmented{
-  display:flex;gap:6px;
-  background:rgba(0,0,0,0.3);
-  padding:4px;border-radius:14px;
-  margin-bottom:16px;
-}
-.segmented button{
-  flex:1;padding:10px;
-  border:none;border-radius:10px;
-  background:transparent;
-  color:var(--text-dim);
-  font-family:inherit;font-size:12px;font-weight:600;
-  cursor:pointer;transition:all 0.2s;
-}
-.segmented button.active{
-  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
-  color:#fff;
-  box-shadow:0 4px 15px rgba(139,92,246,0.4);
-}
+- Random (Green)              → No fasting needed
+- Fasting 10-12H Required (Red) → Mandatory fasting
+- Fasting 8H Preferred (Yellow) → Preferred fasting
+- 2H PP (Blue-green)          → 2 hrs after meal, note time
+- 24H Collection (Orange)     → 24-hour urine collection
+- Morning Sample (Cyan)       → Morning preferred
 
-/* ===== STAFF CARDS (ROSTER) ===== */
-.staff-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-.staff-card{
-  background:linear-gradient(145deg,rgba(30,30,58,0.8),rgba(21,21,40,0.95));
-  border:1px solid var(--glass-border);
-  border-radius:16px;
-  padding:12px;
-  position:relative;
-  transition:all 0.2s;
-}
-.staff-card:active{transform:scale(0.97)}
-.staff-card.changed{
-  border-color:#facc15;
-  box-shadow:0 0 0 1px #facc15,0 0 20px rgba(250,204,21,0.2);
-}
-.staff-card.seen{
-  border-color:var(--green);
-}
-.staff-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.staff-avatar{
-  width:38px;height:38px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:14px;
-  position:relative;flex-shrink:0;
-}
-.staff-avatar.female{background:linear-gradient(135deg,#ec4899,#f472b6)}
-.staff-avatar.male{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
-.staff-avatar .check{
-  position:absolute;bottom:-2px;right:-2px;
-  width:14px;height:14px;border-radius:50%;
-  background:var(--green);
-  display:flex;align-items:center;justify-content:center;
-  font-size:8px;color:#fff;
-  border:2px solid var(--bg-card);
-}
-.staff-name{font-size:12px;font-weight:700;line-height:1.2}
-.staff-role{font-size:9px;color:var(--text-dim);margin-top:1px}
-.staff-tags{display:flex;flex-direction:column;gap:5px}
-.tag{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:9px;font-weight:600;
-  padding:3px 7px;border-radius:20px;
-  background:rgba(255,255,255,0.06);
-  border:1px solid var(--glass-border);
-  width:fit-content;
-}
-.tag.safety{background:rgba(236,72,153,0.15);border-color:rgba(236,72,153,0.3);color:#f9a8d4}
-.tag.shift-m{background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.3);color:#c4b5fd}
-.tag.shift-e{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:#fcd34d}
-.tag.shift-n{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.3);color:#93c5fd}
-.staff-footer{
-  margin-top:8px;padding-top:8px;
-  border-top:1px solid rgba(255,255,255,0.06);
-  font-size:9px;color:var(--text-dim);
-  display:flex;align-items:center;gap:4px;
-}
+═══════════════════════════════════════════════════════════
+SPECIAL ALERTS (RED)
+═══════════════════════════════════════════════════════════
 
-/* ===== ADD STAFF FORM ===== */
-.form-group{margin-bottom:14px}
-.form-label{
-  font-size:11px;font-weight:600;
-  color:var(--text-dim);
-  margin-bottom:6px;display:block;
-  text-transform:uppercase;letter-spacing:0.5px;
-}
-.form-input,.form-select{
-  width:100%;padding:12px 14px;
-  background:rgba(0,0,0,0.3);
-  border:1px solid var(--glass-border);
-  border-radius:12px;
-  color:var(--text);
-  font-family:inherit;font-size:13px;
-  outline:none;transition:all 0.2s;
-}
-.form-input:focus,.form-select:focus{
-  border-color:var(--purple);
-  box-shadow:0 0 0 3px rgba(139,92,246,0.15);
-}
-.form-input::placeholder{color:#475569}
-.photo-upload{
-  width:80px;height:80px;
-  border-radius:20px;
-  border:2px dashed rgba(139,92,246,0.4);
-  background:rgba(139,92,246,0.08);
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:4px;cursor:pointer;
-  margin-bottom:14px;
-  transition:all 0.2s;
-}
-.photo-upload:active{transform:scale(0.95)}
-.photo-upload-icon{font-size:20px}
-.photo-upload-text{font-size:9px;color:var(--text-dim);text-align:center;line-height:1.2}
+- Blood Culture: Aseptic technique, before antibiotics
+- Bilirubin: Protect from light
+- ABG: Heparinized syringe, anaerobic, ice transport, 30 min
+- PT/APTT: Exact fill to mark, 9:1 ratio, centrifuge within 1 hr
+- Ammonia: Ice transport, immediately to lab
+- Lactate: Grey tube, ice, avoid tourniquet
+- Blood Alcohol: Special kit, no alcohol swab
+- Homocysteine: Ice, immediate separation
 
-/* ===== TOGGLE SWITCH ===== */
-.toggle-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 0;
-}
-.toggle-label{font-size:12px;font-weight:500}
-.toggle-switch{
-  width:46px;height:26px;
-  background:rgba(255,255,255,0.1);
-  border-radius:13px;
-  position:relative;cursor:pointer;
-  transition:all 0.3s;
-  flex-shrink:0;
-}
-.toggle-switch.on{background:linear-gradient(135deg,#8b5cf6,#ec4899)}
-.toggle-switch::after{
-  content:'';position:absolute;
-  width:20px;height:20px;
-  background:#fff;border-radius:50%;
-  top:3px;left:3px;
-  transition:all 0.3s;
-  box-shadow:0 2px 6px rgba(0,0,0,0.3);
-}
-.toggle-switch.on::after{left:23px}
+═══════════════════════════════════════════════════════════
+FULL TEST DATABASE (804 TESTS)
+═══════════════════════════════════════════════════════════
 
-/* ===== SAFETY BANNER ===== */
-.safety-banner{
-  display:flex;align-items:center;gap:8px;
-  padding:12px 14px;
-  background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(6,182,212,0.1));
-  border:1px solid rgba(16,185,129,0.3);
-  border-radius:14px;
-  font-size:11px;
-  margin:0 20px 16px;
-  color:#6ee7b7;
-}
-.safety-banner .icon{font-size:16px}
+Format: ["Service Code", "Test Name", "Tube Type", "Sample Type", 
+         "Fasting/Random", "Protocol/Instruction", "Category"]
 
-/* ===== PRIMARY BUTTON ===== */
-.btn-primary{
-  width:100%;padding:16px;
-  background:linear-gradient(135deg,#8b5cf6,#ec4899);
-  border:none;border-radius:16px;
-  color:#fff;
-  font-family:inherit;font-size:15px;font-weight:700;
-  cursor:pointer;
-  box-shadow:0 8px 25px rgba(139,92,246,0.4);
-  transition:all 0.2s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.btn-primary:active{transform:scale(0.97);box-shadow:0 4px 15px rgba(139,92,246,0.3)}
+const TESTS_DB = [
+  // ===== 24 HOURS URINE TESTS =====
+  ["LB0001","24 HRS URINE AMYLASE","24 Hrs Urine Container (Plain)","24H Urine","24H Collection","Discard first morning urine; collect all urine for 24 hrs; keep cold (2-8°C); note total volume; send 10 mL aliquot","Biochemistry"],
+  ["LB0002","24 HRS URINE CALCIUM","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed container; discard first morning; collect 24H; keep cold; note total volume","Biochemistry"],
+  ["LB0003","24 HRS URINE CORTISOL","24 Hrs Urine Container (Plain)","24H Urine","24H Collection","Discard first morning; collect 24H; keep refrigerated; note volume; avoid stress","Hormones"],
+  ["LB0004","24 HRS URINE CREATININE","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; note total volume; mix well before aliquot","Biochemistry"],
+  ["LB0005","24 HRS URINE CREATININE CLEARANCE","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; also send serum creatinine; note body weight & height","Biochemistry"],
+  ["LB0006","24 HRS URINE ELECTROLYTES","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; no preservative; keep cold; note total volume","Biochemistry"],
+  ["LB0007","24 HRS URINE MAGNESIUM","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; avoid antacids 24H before","Biochemistry"],
+  ["LB0008","24 HRS URINE MICROALBUMIN","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; avoid exercise; keep cold","Biochemistry"],
+  ["LB0009","24 HRS URINE PHOSPHORUS","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; no preservative","Biochemistry"],
+  ["LB0010","24 HRS URINE PROTEIN","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; note total volume","Biochemistry"],
+  ["LB0011","24 HRS URINE UREA (BUN)","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; note total volume","Biochemistry"],
+  ["LB0012","24 HRS URINE URIC ACID","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; avoid purine-rich food 24H before","Biochemistry"],
+  ["LB0480","24 HRS URINE FOR PORPHOBILINOGEN","24 Hrs Urine Container (Dark)","24H Urine","24H Collection","Protect from light; discard first morning; collect 24H; keep cold; send immediately","Biochemistry"],
+  ["LB0482","24 HRS URINE VMA","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed container; avoid bananas, tea, coffee 3 days before; keep cold","Hormones"],
+  ["LB0563","24 HRS URINE VMA (AFIP)","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Avoid catecholamine-rich foods 3 days; keep cold; note volume","Hormones"],
+  ["LB0304","24 HRS URINE VMA (AKUH)","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed; avoid bananas, chocolate, tea 3 days; keep cold","Hormones"],
+  ["LB0607","24 HOURS URINE CITRATE","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; no preservative; keep cold","Biochemistry"],
+  ["LB0608","24 HOURS URINE CYSTEINE","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; note volume","Biochemistry"],
+  ["LB0632","24 HOURS URINE PROTEIN ELECTROPHORESIS","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; concentrate sample recommended","Biochemistry"],
+  ["LB0664","24 HOURS URINARY CATECHOLAMINE","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed; avoid caffeine/bananas 3 days; keep cold; note volume","Hormones"],
+  ["LB0665","24 HOURS METANEPHRINE","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed; avoid catecholamine-rich foods 3 days; keep cold","Hormones"],
+  ["LB0777","24 HOURS 5-HYDROXYINDOLEACETIC ACID (5-HIAA)","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed; avoid bananas, walnuts, tomatoes 3 days; keep cold; note volume","Biochemistry"],
 
-/* ===== BOTTOM NAV ===== */
-.bottom-nav{
-  position:fixed;
-  bottom:0;left:0;right:0;
-  max-width:480px;
-  margin:0 auto;
-  background:rgba(10,10,26,0.95);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  border-top:1px solid var(--glass-border);
-  display:flex;
-  padding:10px 0 max(10px,env(safe-area-inset-bottom));
-  z-index:100;
-}
-.nav-item{
-  flex:1;
-  display:flex;flex-direction:column;
-  align-items:center;gap:3px;
-  background:none;border:none;
-  color:var(--text-dim);
-  font-family:inherit;font-size:9px;font-weight:600;
-  cursor:pointer;
-  padding:6px 0;
-  transition:all 0.2s;
-}
-.nav-item .nav-icon{font-size:20px;transition:all 0.2s}
-.nav-item.active{color:var(--purple-light)}
-.nav-item.active .nav-icon{transform:translateY(-2px) scale(1.1)}
-.nav-item.add .nav-icon{
-  width:36px;height:36px;
-  background:linear-gradient(135deg,#8b5cf6,#ec4899);
-  border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:18px;
-  margin-top:-8px;
-  box-shadow:0 6px 20px rgba(139,92,246,0.5);
-}
+  // ===== 2ND OPINION TESTS =====
+  ["LB0569","2ND OPINION FOR HISTOPATHOLOGY WITH IHC","Formalin Container","Tissue","Random","Fix in 10% formalin; clinical history mandatory; slides + blocks required","Histopathology"],
+  ["LB0014","2ND OPINION FOR BONE MARROW ASPIRATION","EDTA + Slides","Bone Marrow","Random","Slides, EDTA sample, clinical history; send in special container","Hematology"],
+  ["LB0015","2ND OPINION FOR BONE MARROW TREPHINE","Formalin Container","Bone Marrow Trephine","Random","Fix in 10% formalin; slides + clinical history","Histopathology"],
+  ["LB0016","2ND OPINION FOR CYTOLOGY","Slide + Fixative","Cytology","Random","Slides, fixative, clinical history","Cytology"],
+  ["LB0017","2ND OPINION FOR HISTOPATHOLOGY","Formalin Container","Tissue","Random","Fix in 10% formalin; clinical history","Histopathology"],
+  ["LB0570","2ND OPINION FOR HISTOPATHOLOGY WITHOUT IHC","Formalin Container","Tissue","Random","Fix in 10% formalin; clinical history; no IHC required","Histopathology"],
 
-/* ===== VIEW SWITCHING ===== */
-.view{display:none;animation:fadeIn 0.3s}
-.view.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  // ===== A TESTS =====
+  ["LB0018","A/G RATIO","Gold SST (Yellow)","Serum","Random","No fasting; avoid hemolysis; separate serum within 2 hrs","Biochemistry"],
+  ["LB0338","ABSOLUTE BASOPHIL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0019","ABSOLUTE BASOPHIL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0020","ABSOLUTE EOSINOPHIL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0021","ABSOLUTE LYMPHOCYTE COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0022","ABSOLUTE MONOCYTE COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0023","ABSOLUTE NEUTROPHIL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0382","ACETYL CHOLINE RECEPTOR ABS (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum immediately; freeze; send on ice","Serology"],
+  ["LB0466","ACID PHOSPHATASE","Gold SST (Yellow)","Serum","Random","Avoid hemolysis; separate within 1 hr; freeze if delay","Biochemistry"],
+  ["LB0471","ACTH","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; ice bath; separate immediately; freeze; avoid stress","Hormones"],
+  ["LB0485","ACTIVATED PROTEIN C RESISTANCE","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; centrifuge within 1 hr; freeze plasma","Hematology"],
+  ["LB0036","ACTIVATED THROMBOPLASTIN TIME (APTT)","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; centrifuge within 1 hr; avoid hemolysis","Hematology"],
+  ["LB0341","ADENOSINE DEAMINASE (ADA) LEVEL","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delayed","Biochemistry"],
+  ["LB0713","ADENOSINE DEAMINASE (ADA) LEVEL (ASCITIC FLUID)","Sterile Container","Ascitic Fluid","Random","Send fluid in sterile container; also send serum for ratio","Biochemistry"],
+  ["LB0712","ADENOSINE DEAMINASE (ADA) LEVEL (BODY FLUID)","Sterile Container","Body Fluid","Random","Sterile container; note fluid type","Biochemistry"],
+  ["LB0714","ADENOSINE DEAMINASE (ADA) LEVEL (PLEURAL FLUID)","Sterile Container","Pleural Fluid","Random","Sterile container; also send serum","Biochemistry"],
+  ["LB0254","AE-1","Formalin Container","Tissue","Random","IHC marker; fix in formalin; clinical history","Histopathology"],
+  ["LB0255","AE-3","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0325","AFB CULTURE & SENSITIVITY (AKUH)","Sterile Container","Sputum/Tissue","Random","Early morning sputum; sterile container; no preservative; send immediately","Microbiology"],
+  ["LB0024","AFB STAIN","Sterile Container","Sputum","Random","Early morning sputum; sterile container; send immediately","Microbiology"],
+  ["LB0732","AFP (FLUID)","Sterile Container","Body Fluid","Random","Sterile container; note fluid type; send cold","Biochemistry"],
+  ["LB0508","AGGLUTININ TITER","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0025","ALBUMIN","Gold SST (Yellow)","Serum","Random","No fasting; separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0256","ALDOLASE","Gold SST (Yellow)","Serum","Random","Avoid hemolysis; separate within 1 hr","Biochemistry"],
+  ["LB0565","ALDOSTERONE","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; upright 2 hrs before; ice bath; separate immediately; freeze","Hormones"],
+  ["LB0762","ALDOSTERONE RENIN RATIO","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; upright 2 hrs; ice bath; separate immediately; freeze","Hormones"],
+  ["LB0026","ALKALINE PHOSPHATASE","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting preferred 8 hrs; separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0730","ALKALINE PHOSPHATASE (FLUID)","Sterile Container","Body Fluid","Random","Sterile container; note fluid type","Biochemistry"],
+  ["LB0027","ALPHA FETO PROTEIN (AMNIOTIC FLUID)","Sterile Container","Amniotic Fluid","Random","Sterile container; protect from light; send cold","Biochemistry"],
+  ["LB0028","ALPHA FETO PROTEIN (SERUM)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay; avoid hemolysis","Biochemistry"],
+  ["LB0383","ALPHA-1 ANTITRYPSIN (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Biochemistry"],
+  ["LB0305","AMMONIA LEVELS","Green Heparin (Lithium)","Plasma Heparin","Random","Ice bath immediately; separate within 15 min; freeze; avoid tourniquet too long","Biochemistry"],
+  ["LB0465","AMOEBIASIS-IHA (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Serology"],
+  ["LB0029","AMYLASE","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0030","ANA / ANF","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Serology"],
+  ["LB0497","ANA /ANF SCREENING","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0811","ANA ANTI NUCLEAR ANTIBODY (BY IFA)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0686","ANA GROUP FOR FIVE ANTIGEN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0327","ANA GROUP TEST (WITH 19 ANTIGEN)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0515","ANAEMIA PROFILE","Gold SST (Yellow) + Purple EDTA","Serum + Whole Blood","Fasting 8H Preferred","Fasting 8 hrs; SST for iron studies; EDTA for CBC","Biochemistry"],
+  ["LB0315","ANCA (C & P)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0555","ANDROSTINEDIONE (IDC)","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0345","ANGIOTENSIN CONVERTING ENZYME (ACE)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Biochemistry"],
+  ["LB0623","ANION GAP","Gold SST (Yellow)","Serum","Random","No fasting; separate serum","Biochemistry"],
+  ["LB0031","ANTI CARDIOLIPIN IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0032","ANTI CARDIOLIPIN IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0033","ANTI CCP","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0034","ANTI DS DNA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; protect from light","Serology"],
+  ["LB0427","ANTI ENDOMYSIAL IGA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0517","ANTI GANGLIOSIDE ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0659","ANTI GBM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0329","ANTI GLIADIN IGA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0330","ANTI GLIADIN IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0760","ANTI MEASLES IGG ABS (CSF)","Sterile Container","CSF","Random","Sterile container; send immediately; also send serum","Serology"],
+  ["LB0337","ANTI MITOCHONDRIAL ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0785","ANTI MOG ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0595","ANTI MULLERIAN HORMONE (AMH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; any day of cycle","Hormones"],
+  ["LB0716","ANTI NEURONAL PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0706","ANTI PARIETAL CELL IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0697","ANTI PHOSPHOLIPASE A2 RECEPTOR ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0691","ANTI PLA2R ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0035","ANTI STREPTOLYSIN O TITRE (ASOT)","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Serology"],
+  ["LB0348","ANTI TRANSGLUTAMINASE IGA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0349","ANTI TRANSGLUTAMINASE IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0771","ANTI VGKC ASSOCIATED PROTEIN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0784","ANTIBODY IDENTIFICATION","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Blood Bank"],
+  ["LB0635","ANTIBODY SCREENING","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Blood Bank"],
+  ["LB0488","ANTI-GAD ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0764","ANTIGEN SPECIFIC IGE (FOOD)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Allergy"],
+  ["LB0763","ANTIGEN SPECIFIC IGE (INHALATION)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Allergy"],
+  ["LB0490","ANTI-INSULIN ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0489","ANTI-ISLET CELL ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0567","ANTI-MUSK ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0624","ANTI-NEUROLOGICAL PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0781","ANTI-PARVOVIRUS B19 IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0535","ANTI-PHOSPHOLIPID ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0477","ANTI-SPERM ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0328","ANTITHROMBIN III","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; centrifuge within 1 hr; freeze plasma","Hematology"],
+  ["LB0312","ANTI-TRANSGLUTAMINAST (IGG)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0306","ANTI-TTG (ANTIBODY IGA)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0797","APOLIPOPROTEIN A-1 (APOA1)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0257","APOLIPOPROTEIN B (APOB)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0677","AQUAPORIN ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0037","ARTERIAL BLOOD GASES","Heparinized Syringe (Green)","Arterial Blood","Random","Anaerobic; no air bubbles; ice transport; analyze within 30 min","Blood Gas"],
+  ["LB0648","ASCA ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0439","ASCITIC FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Ascitic Fluid","Random","Aseptic; blood culture bottle; before antibiotics","Microbiology"],
+  ["LB0440","ASCITIC FLUID CULTURE & SENSITIVITY","Sterile Container","Ascitic Fluid","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0445","ASCITIC FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Ascitic Fluid","Random","Aseptic; blood culture bottle","Microbiology"],
+  ["LB0446","ASCITIC FLUID CULTURE & SENSITIVITY","Sterile Container","Ascitic Fluid","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0387","ASCITIC FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Ascitic Fluid","Random","Aseptic; blood culture bottle","Microbiology"],
+  ["LB0389","ASCITIC FLUID CYTOLOGY","Sterile Container + Slide","Ascitic Fluid","Random","Sterile container; slide fixative; send immediately","Cytology"],
+  ["LB0450","ASCITIC FLUID CYTOLOGY","Sterile Container + Slide","Ascitic Fluid","Random","Sterile container; slide fixative","Cytology"],
+  ["LB0373","ASCITIC FLUID R/E","Sterile Container","Ascitic Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0038","ASCITIC FLUID R/E","Sterile Container","Ascitic Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0258","ASMA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0346","AUTO IMMUNE LIVER DISEASE PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0259","AUTOCLAVE SPORE TEST","Special Strip","Spore Strip","Random","Follow autoclave protocol","Microbiology"],
+  ["LB0671","AUTOIMMUNE ENCEPHALITIS PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0817","AUTOIMMUNE PROFILE FOR INFLAMMATORY MYOPATHIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
 
-/* ===== TOAST ===== */
-.toast{
-  position:fixed;bottom:100px;left:50%;
-  transform:translateX(-50%) translateY(100px);
-  background:linear-gradient(135deg,#10b981,#059669);
-  color:#fff;
-  padding:12px 24px;border-radius:14px;
-  font-size:13px;font-weight:600;
-  box-shadow:0 10px 30px rgba(16,185,129,0.4);
-  z-index:200;opacity:0;
-  transition:all 0.3s;
-  pointer-events:none;
-}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  // ===== B TESTS =====
+  ["LB0708","BCR ABL BY FISH METHOD","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 5 mL; do not freeze; send within 24 hrs","Genetics"],
+  ["LB0806","BCR ABL BY PCR (QUALITATIVE)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 5 mL; do not freeze; send within 24 hrs","Genetics"],
+  ["LB0707","BCR ABL BY PCR (QUANTITATIVE)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 5 mL; do not freeze; send within 24 hrs","Genetics"],
+  ["LB0684","B-D GLUCAN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Microbiology"],
+  ["LB0039","BENCE JONES PROTEIN","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold","Biochemistry"],
+  ["LB0669","BETA 2 GYLCOPROTEIN AB IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0670","BETA 2 GYLCOPROTEIN AB IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0731","BETA HCG (FLUID)","Sterile Container","Body Fluid","Random","Sterile container; note fluid type","Biochemistry"],
+  ["LB0040","B-HCG","Gold SST (Yellow)","Serum","Random","Separate serum; no fasting","Hormones"],
+  ["LB0041","BICARBONATE (TCO2)","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0042","BILIRUBIN DIRECT","Gold SST (Yellow)","Serum","Random","Protect from light; separate serum within 1 hr","Biochemistry"],
+  ["LB0043","BILIRUBIN INDIRECT","Gold SST (Yellow)","Serum","Random","Protect from light; separate serum","Biochemistry"],
+  ["LB0044","BILIRUBIN PROFILE (T,D,ID)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs preferred; protect from light","Biochemistry"],
+  ["LB0045","BILIRUBIN TOTAL","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; protect from light; separate serum","Biochemistry"],
+  ["LB0424","BIOCHEMISTRY","—","—","—","Refer to specific test","Biochemistry"],
+  ["LB0425","BIOCHEMISTRY","—","—","—","Refer to specific test","Biochemistry"],
+  ["LB0766","BIOPSY EXTRA LARGE","Formalin Container","Tissue","Random","Fix in 10% formalin; clinical history; orientation required","Histopathology"],
+  ["LB0696","BIOPSY HISTOPATHOLOGY (SKMCH)","Formalin Container","Tissue","Random","Fix in 10% formalin; clinical history","Histopathology"],
+  ["LB0046","BIOPSY LARGE","Formalin Container","Tissue","Random","Fix in 10% formalin; clinical history","Histopathology"],
+  ["LB0711","BIOPSY LARGE WITH IHC","Formalin Container","Tissue","Random","Fix in 10% formalin; IHC required","Histopathology"],
+  ["LB0765","BIOPSY MEDIUM","Formalin Container","Tissue","Random","Fix in 10% formalin","Histopathology"],
+  ["LB0047","BIOPSY SMALL","Formalin Container","Tissue","Random","Fix in 10% formalin","Histopathology"],
+  ["LB0710","BIOPSY SMALL WITH IHC","Formalin Container","Tissue","Random","Fix in 10% formalin; IHC required","Histopathology"],
+  ["LB0796","BK POLYOMAVIRUS (QUANTITATIVE) - PLASMA","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0048","BLEEDING TIME","—","Capillary Blood","Random","Ivy method; skin puncture","Hematology"],
+  ["LB0689","BLOOD ALCOHOL LEVEL","Grey Fluoride (Sodium Fluoride)","Whole Blood","Random","No alcohol swab; special kit; send immediately","Toxicology"],
+  ["LB0690","BLOOD ALCOHOL LEVEL","Grey Fluoride (Sodium Fluoride)","Whole Blood","Random","No alcohol swab; special kit; send immediately","Toxicology"],
+  ["LB0809","BLOOD ALCOHOL LEVEL (REKODIQ)","Grey Fluoride (Sodium Fluoride)","Whole Blood","Random","No alcohol swab; special kit","Toxicology"],
+  ["LB0476","BLOOD COPPER (AKUH)","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; avoid copper-rich food 24H; separate serum; freeze","Biochemistry"],
+  ["LB0049","BLOOD CP (CBC)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times immediately; 3 mL; no clot","Hematology"],
+  ["LB0050","BLOOD CP & ESR","Purple EDTA (Lavender) + Black Citrate","Whole Blood EDTA + Citrate","Random","CBC: mix 8-10 times; ESR: black tube; 2 mL each","Hematology"],
+  ["LB0721","BLOOD CP FOR DENGUE PATIENT ONLY","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot; check platelets","Hematology"],
+  ["LB0645","BLOOD CP WITH PERIPHERAL FILM","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; peripheral film required","Hematology"],
+  ["LB0818","BLOOD FOR HSV-I & HSV-II BY PCR","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0051","BLOOD GROUPING (ABO & RH)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; label correctly","Blood Bank"],
+  ["LB0308","BLOOD KETONES","Grey Fluoride (Sodium Fluoride)","Whole Blood","Random","No fasting; send immediately","Biochemistry"],
+  ["LB0052","BLOOD UREA NITROGEN (BUN)","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0636","BNP LEVEL","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Cardiac"],
+  ["LB0054","BODY FLUID ALBUMIN","Sterile Container","Body Fluid","Random","Sterile container; note fluid type","Biochemistry"],
+  ["LB0055","BODY FLUID AMYLASE","Sterile Container","Body Fluid","Random","Sterile container; note fluid type","Biochemistry"],
+  ["LB0819","BODY FLUID BILIRUBIN","Sterile Container","Body Fluid","Random","Protect from light; sterile container","Biochemistry"],
+  ["LB0056","BODY FLUID CELL COUNT","Sterile Container + EDTA","Body Fluid","Random","Sterile container; EDTA for cell count","Biochemistry"],
+  ["LB0057","BODY FLUID CRYSTALS","Sterile Container","Body Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0058","BODY FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Body Fluid","Random","Aseptic; blood culture bottle; before antibiotics","Microbiology"],
+  ["LB0059","BODY FLUID GLUCOSE","Sterile Container + Grey","Body Fluid","Random","Sterile + grey fluoride; send immediately","Biochemistry"],
+  ["LB0060","BODY FLUID LDH","Sterile Container","Body Fluid","Random","Sterile container; also send serum","Biochemistry"],
+  ["LB0675","BODY FLUID LIPASE","Sterile Container","Body Fluid","Random","Sterile container","Biochemistry"],
+  ["LB0061","BODY FLUID PH","Sterile Container","Body Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0062","BODY FLUID PROTEIN","Sterile Container","Body Fluid","Random","Sterile container","Biochemistry"],
+  ["LB0063","BODY FLUID R/E (ANY)","Sterile Container","Body Fluid","Random","Sterile container; note fluid type","Biochemistry"],
+  ["LB0064","BONE MARROW ASPIRATION AND PROCEDURE","EDTA + Slides","Bone Marrow","Random","Slides, EDTA sample, clinical history","Hematology"],
+  ["LB0571","BONE MARROW ASPIRATION AND TREPHINE (PVT DAYCARE)","EDTA + Formalin + Slides","Bone Marrow","Random","Under G/A; slides, EDTA, formalin","Hematology"],
+  ["LB0572","BONE MARROW ASPIRATION AND TREPHINE (SEMI PVT)","EDTA + Formalin + Slides","Bone Marrow","Random","Under G/A; slides, EDTA, formalin","Hematology"],
+  ["LB0573","BONE MARROW ASPIRATION AND TREPHINE (WARD)","EDTA + Formalin + Slides","Bone Marrow","Random","Under G/A; slides, EDTA, formalin","Hematology"],
+  ["LB0574","BONE MARROW ASPIRATION FOR PIMS PATIENTS","EDTA + Slides","Bone Marrow","Random","Slides, EDTA sample","Hematology"],
+  ["LB0795","BONE MARROW ASPIRATION (DISPOSABLE NEEDLE)","EDTA + Slides","Bone Marrow","Random","Slides, EDTA sample","Hematology"],
+  ["LB0260","BONE MARROW FOR CROMOSOMAL BREAKAGES","Green Heparin (Sodium Heparin)","Bone Marrow","Random","Heparin tube; send immediately; do not freeze","Genetics"],
+  ["LB0066","BONE MARROW SLIDES","Slides","Bone Marrow","Random","Air-dried slides; clinical history","Hematology"],
+  ["LB0575","BONE MARROW TREPHINE BIOPSY FOR PIMS","Formalin Container","Bone Marrow Trephine","Random","Fix in 10% formalin; slides","Histopathology"],
+  ["LB0067","BONE MARROW TREPHINE BIOPSY","Formalin Container","Bone Marrow Trephine","Random","Fix in 10% formalin; slides","Histopathology"],
+  ["LB0068","BRUCELLA ANTIBODY (ABORTUS & MELLITENSIS)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0729","BRUCELLA IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0727","BRUCELLA IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
 
-/* ===== DESKTOP ===== */
-@media(min-width:768px){
-  .app{max-width:1100px;padding:0 20px 100px}
-  .stats-grid{grid-template-columns:repeat(6,1fr)}
-  .staff-grid{grid-template-columns:repeat(4,1fr)}
-  .bottom-nav{max-width:1100px;border-radius:20px 20px 0 0}
-  .header{border-radius:0 0 20px 20px}
-}
-</style>
-</head>
-<body>
+  // ===== C TESTS =====
+  ["LB0507","C1 ESTERASE LEVEL","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0069","C3","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0070","C4","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0071","CA 125","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0473","CA 15-3 (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0377","CA 19-9","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0546","CALCITONIN (AFIP)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Hormones"],
+  ["LB0378","CALCITONIN (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0072","CALCIUM","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum; avoid tourniquet too long","Biochemistry"],
+  ["LB0746","CALRETININ (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0262","CALRITININ","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0347","CANNABINOIDES","Urine Sterile Container","Urine","Random","Random urine; sterile container","Toxicology"],
+  ["LB0073","CARBAMEZIPINE (TEGRETOL)","Gold SST (Yellow)","Serum","Random","Trough level; separate serum; freeze","Toxicology"],
+  ["LB0074","CARCINO EMBRYONIC ANTIGEN (CEA)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0075","CARDIAC PROFILE (CK-MB,TROP-I,CPK, LDH)","Gold SST (Yellow)","Serum","Random","Separate serum; STAT; freeze if delay","Cardiac"],
+  ["LB0622","CARDIAC RISK ASSESMENT PROFILE","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Cardiac"],
+  ["LB0582","CATECHOLAMINE PROFILE (DOPAMINE, ADRENALINE, NOR ADRENALINE)","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; supine 30 min; ice bath; separate immediately; freeze","Hormones"],
+  ["LB0772","CBC (ONLY MACHINE PRINT FOR NORI HOSPITAL)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0263","CD-10","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0638","CD-15","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0264","CD-20","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0739","CD20 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0265","CD-3","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0738","CD3 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0639","CD-30","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0266","CD-34","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0740","CD34 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0761","CD4 AND CD8","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Flow Cytometry"],
+  ["LB0267","CD-45","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0741","CD45 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0268","CD-5","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0742","CD56 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0269","CD-66E","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0743","CD68 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0737","CELIAC PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0301","CERULOPLASMIN (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Biochemistry"],
+  ["LB0322","CHEM 12 (LFT, GLU, CHOL, TG, UA, ALB, TP, CAL, PHOS)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0321","CHEM 7 (RFTS, GLU, BICARB)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs preferred; separate serum","Biochemistry"],
+  ["LB0568","CHIKUNGUNYA SEROLOGY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0783","CHLAMYDIA TRACHOMATIS AND NEISSERIA GONORRHOEAE (CTNG)","Sterile Swab","Swab","Random","Sterile swab; specific transport medium","Molecular"],
+  ["LB0076","CHLORIDE","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0077","CHOLESTEROL","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0745","CHROMOGRAIN (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0502","CHROMOGRANIN A","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0270","CHROMOGRANINE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0271","CHYLOMICRONS","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum; keep cold","Biochemistry"],
+  ["LB0078","CK (CPK)","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis; STAT if cardiac","Cardiac"],
+  ["LB0744","CK AE1/AE3 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0272","CK-20","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0273","CK-7","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0079","CK-MB (STAT)","Gold SST (Yellow)","Serum","Random","STAT; separate serum; freeze if delay","Cardiac"],
+  ["LB0125","CLOSED","—","—","—","Discontinued test","Misc"],
+  ["LB0379","CLOSTRIDIUM DIFFICILE ANTIGEN (AKUH)","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Microbiology"],
+  ["LB0576","CLOSTRIDIUM DIFFICILE PCR QUALITATIVE","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately; do not freeze","Molecular"],
+  ["LB0463","CLOSTRIDIUM DIFFICILE TOXIN (AKUH)","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Microbiology"],
+  ["LB0080","CLOTTING TIME","—","Capillary Blood","Random","Lee-White method; skin puncture","Hematology"],
+  ["LB0081","CMV IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0082","CMV IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0514","COAGULATION PROFILE","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; centrifuge within 1 hr; freeze plasma","Hematology"],
+  ["LB0526","COAGULATION PROFILE/CLOTTING SCREEN","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0736","COMPREHENSIVE METABOLIC PANEL (CMP)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0617","CONGO VIRUS PCR","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0083","COOMB'S TEST (DIRECT)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Blood Bank"],
+  ["LB0084","COOMB'S TEST (INDIRECT)","Gold SST (Yellow)","Serum","Random","Separate serum; no fasting","Blood Bank"],
+  ["LB0656","CORONAVIRUS PCR (URGENT)","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; specific collection; send cold; urgent","Molecular"],
+  ["LB0637","CORONAVIRUS TEST","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; specific collection; send cold","Molecular"],
+  ["LB0640","CORONAVIRUS TEST WITH HOME SAMPLING","VTM Swab","Nasopharyngeal Swab","Random","Home sampling; VTM swab; send cold","Molecular"],
+  ["LB0531","CORRECTION STUDIES","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; both patient and normal plasma","Hematology"],
+  ["LB0085","CORTISOL AM","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze; avoid stress","Hormones"],
+  ["LB0086","CORTISOL PM","Gold SST (Yellow)","Serum","Evening 4PM","Collect 4 PM; separate serum; freeze","Hormones"],
+  ["LB0641","COVID 19 ANTIBODY TEST (IGG & IGM)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0662","COVID ANTIBODIES SERVICES CHARGES","—","—","—","Service charge only","Misc"],
+  ["LB0699","COVID ANTIGEN DEVICE ONLY","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; device test; send cold","Molecular"],
+  ["LB0672","COVID PANEL 1 (CP,CRP,FERR,LDH, D-D)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; STAT","Biochemistry"],
+  ["LB0674","COVID PANEL 2 (CRP,FERR)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0673","COVID PANEL 3 (CP,CRP,FERR,LDH,D-D,IL6)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; STAT","Biochemistry"],
+  ["LB0657","COVID-19 (IGG ANTIBODY)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0658","COVID-19 (IGM ANTIBODY)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0678","COVID-19 ANTIBODY TEST AGAINST SPIKE PROTEIN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0650","COVID-19 ANTIGEN (RAPID TEST)","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; rapid test; send cold","Molecular"],
+  ["LB0261","C-PEPTIDE","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum; freeze","Hormones"],
+  ["LB0088","CREATININE","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0774","CRP HS (EXACT VALUE)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Biochemistry"],
+  ["LB0631","CRYPTOCOCCAL ANTIGEN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0274","CRYPTOSPORIDIUM","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Microbiology"],
+  ["LB0475","CSF FOR HSV-1 & HSV-11 BY PCR (AKUH)","Sterile Container","CSF","Random","Sterile container; send immediately; do not freeze","Molecular"],
+  ["LB0089","CSF ROUTINE EXAMINATION","Sterile Container","CSF","Random","Sterile container; send immediately; 3 tubes if possible","Biochemistry"],
+  ["LB0773","CULTURE FOR TRACHEAL SWAB/SECRETIONS","Sterile Container","Tracheal Secretions","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0090","CULTURE & SENSITIVITY (ANY SPECIMEN)","Sterile Container","Any Specimen","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0091","CULTURE FOR BLOOD","Blood Culture Bottle","Blood","Random","Aseptic technique; before antibiotics; 10 mL per bottle","Microbiology"],
+  ["LB0092","CULTURE FOR BONE MARROW","Blood Culture Bottle","Bone Marrow","Random","Aseptic; blood culture bottle","Microbiology"],
+  ["LB0668","CULTURE FOR BRONCHIAL LAVAGE","Sterile Container","Bronchial Lavage","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0093","CULTURE FOR CSF","Blood Culture Bottle","CSF","Random","Aseptic; blood culture bottle; before antibiotics","Microbiology"],
+  ["LB0094","CULTURE FOR EAR SWAB","Sterile Swab","Ear Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0095","CULTURE FOR EYE SWAB","Sterile Swab","Eye Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0096","CULTURE FOR HVS","Sterile Swab","High Vaginal Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0097","CULTURE FOR NASAL SWAB","Sterile Swab","Nasal Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0098","CULTURE FOR PUS","Sterile Container","Pus","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0099","CULTURE FOR SEMEN","Sterile Container","Semen","Random","Sterile container; 3-5 days abstinence","Microbiology"],
+  ["LB0100","CULTURE FOR SPUTUM","Sterile Container","Sputum","Random","Early morning sputum; sterile container","Microbiology"],
+  ["LB0101","CULTURE FOR STOOL","Sterile Container","Stool","Random","Fresh stool; sterile container","Microbiology"],
+  ["LB0102","CULTURE FOR THROAT SWAB","Sterile Swab","Throat Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0103","CULTURE FOR URETHRAL SWAB","Sterile Swab","Urethral Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0104","CULTURE FOR URINE","Sterile Container","Urine","Random","Midstream clean catch; sterile container","Microbiology"],
+  ["LB0105","CULTURE FOR WATER","Sterile Container","Water","Random","Sterile container; specific volume","Microbiology"],
+  ["LB0651","CYCLOSPORIN LEVEL","Purple EDTA (Lavender)","Whole Blood EDTA","Trough Level","Trough level; EDTA tube; do not freeze","Toxicology"],
+  ["LB0275","CYTOGENETICS FROM BONE MARROW","Green Heparin (Sodium Heparin)","Bone Marrow","Random","Heparin tube; send immediately; do not freeze","Genetics"],
+  ["LB0276","CYTOGENETICS FROM FANCONI ANAEMMIA","Green Heparin (Sodium Heparin)","Whole Blood Heparin","Random","Heparin tube; send immediately; do not freeze","Genetics"],
+  ["LB0277","CYTOGENETICS FROM PERIPHERAL BLOOD","Green Heparin (Sodium Heparin)","Whole Blood Heparin","Random","Heparin tube; send immediately; do not freeze","Genetics"],
+  ["LB0278","CYTOLOGY ANY SITE","Slide + Fixative","Cytology","Random","Slides, fixative, clinical history","Cytology"],
 
-<div class="app">
+  // ===== D TESTS =====
+  ["LB0106","D-DIMER","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; centrifuge within 1 hr; freeze plasma","Hematology"],
+  ["LB0792","DELTA 508 MUTATION IN CYSTIC FIBROSIS","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0310","DENGUE COMBO TEST (NS1AG, IGM, IGG)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Serology"],
+  ["LB0374","DENGUE COMBO TEST (NS1AG, IGM, IGG)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0107","DENGUE IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0722","DENGUE IGM BY ELISA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0718","DENGUE NS1 (ELISA)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0279","DESMIN","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0545","DHEAS (AFIP)","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0363","DHEA-SO4","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0108","DIFFERENTIAL LEUKOCYTE COUNT (DLC)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0109","DIGOXIN (LINOXIN)","Gold SST (Yellow)","Serum","Trough Level","Trough level 6-8 hrs post dose; separate serum; freeze","Toxicology"],
+  ["LB0801","DIPHTHERIA TOXOID IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0470","DRUG OF ABUSE PROFILE","Urine Sterile Container","Urine","Random","Random urine; sterile container; no preservative","Toxicology"],
+  ["LB0808","DRUG OF ABUSE PROFILE (REKODIQ)","Urine Sterile Container","Urine","Random","Random urine; sterile container","Toxicology"],
 
-  <!-- ===== HEADER ===== -->
-  <div class="header">
-    <div class="header-left">
-      <div class="logo">🧪</div>
-      <div class="header-title">
-        Phlebotomy Roster
-        <span>Kulsum International Hospital</span>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="icon-btn">🔔<div class="badge-dot"></div></div>
-      <div class="avatar">IK</div>
-    </div>
-  </div>
+  // ===== E TESTS =====
+  ["LB0644","EBV IGG AND IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0748","E-CADHERIN (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0361","ECHINCOCCUS ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0381","ECHINOCOCCUS ANTIBODIES/HYDATID CYST SEROLOGY (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0533","EGFR","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0110","ELECTROLYTES (NA, K, CL)","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0747","EMA (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0313","ENA PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0586","ENTAMOEBA HISTOLYTICA AB (IGG)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0505","ENTAMOEBA HISTOLYTICA AMOEBIASIS IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0280","ER","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0749","ER (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0525","ER/PR/HER 2 NEU","Formalin Container","Tissue","Random","IHC marker; fix in formalin; breast cancer panel","Histopathology"],
+  ["LB0523","ERYTHROPOIETIN (AFIP)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Hormones"],
+  ["LB0458","ERYTHROPOIETIN (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0111","ESR","Black Citrate (or Purple EDTA)","Whole Blood","Random","Black citrate tube preferred; 2 mL; 4 hrs stability","Hematology"],
+  ["LB0112","ESTRADIOL","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0666","EVEROLIMUS (CERTICAN)","Purple EDTA (Lavender)","Whole Blood EDTA","Trough Level","Trough level; EDTA tube; freeze","Toxicology"],
 
-  <!-- ===== VIEW: DASHBOARD ===== -->
-  <div id="view-dashboard" class="view active">
-    <div class="page-title">Dashboard Analytics <span class="sparkle">✦</span></div>
-    <div class="page-sub">Oct 08, 2026 • Week 41</div>
+  // ===== F TESTS =====
+  ["LB0529","FACTOR 13 SCREEN","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0484","FACTOR II PROTHROMBIN","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0593","FACTOR IX ASSAY","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0513","FACTOR IX INHIBITOR ASSAY","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0511","FACTOR IX INHIBITOR SCREENING","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0364","FACTOR V LEIDEN (AKUH)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0778","FACTOR V LEIDEN (FVL) MUTATION DETECTION BY PCR","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0799","FACTOR VII ASSAY","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0592","FACTOR VIII ASSAY (AKUH)","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0512","FACTOR VIII INHIBITOR ASSAY","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0510","FACTOR VIII INHIBITOR SCREENING","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0627","FACTOR XIII (SCREENING)","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0524","FAECAL CALPROTECTIN","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Biochemistry"],
+  ["LB0626","FAT GLOBULES","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Biochemistry"],
+  ["LB0113","FDPS","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0114","FERRITIN","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Biochemistry"],
+  ["LB0115","FIBRINOGEN LEVEL","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0803","FISH FOR TP 53","Purple EDTA (Lavender) + Formalin","Blood/Tissue","Random","EDTA for blood; formalin for tissue; do not freeze","Genetics"],
+  ["LB0723","FLOWCYTOMETRY","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze; send immediately","Flow Cytometry"],
+  ["LB0733","FLU A&B AND COVID 19 RAPID TEST","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; rapid test; send cold","Molecular"],
+  ["LB0734","FLU A&B RAPID TEST","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; rapid test","Molecular"],
+  ["LB0782","FLU A, FLU B & RSV BY PCR (MULTIPLEX PCR)","VTM Swab","Nasopharyngeal Swab","Random","VTM swab; specific collection; send cold","Molecular"],
+  ["LB0281","FLU VACCINE (SEASONAL)","—","—","—","Vaccine administration","Vaccine"],
+  ["LB0282","FLUID A/G RATIO","Sterile Container","Body Fluid","Random","Sterile container; also send serum","Biochemistry"],
+  ["LB0621","FLUID CREATININE","Sterile Container","Body Fluid","Random","Sterile container; also send serum","Biochemistry"],
+  ["LB0283","FLUID FOR RBC","Sterile Container","Body Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0775","FLUID PH","Sterile Container","Body Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0116","FNA CYTOLOGY","Slide + Fixative","Cytology","Random","Slides, fixative, clinical history","Cytology"],
+  ["LB0117","FOLIC ACID","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum; protect from light; freeze","Biochemistry"],
+  ["LB0615","FRACTIONAL EXCRETION OF SODIUM","Gold SST + Urine Container","Serum + Urine","Random","Serum + spot urine; note collection time","Biochemistry"],
+  ["LB0284","FREE ANDROGEN INDEX","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0728","FREE CORTISOL (24 HOURS URINE)","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; note volume","Hormones"],
+  ["LB0356","FREE PSA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0118","FREE T3","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0564","FREE T3 (AFIP)","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0120","FREE T4","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0487","FREE TESTOSTERONE","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0560","FREE TESTOSTERONE (AFIP)","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0725","FROZEN SECTION","Formalin Container + Saline","Tissue","Random","Fresh tissue in saline; send immediately; no formalin","Histopathology"],
+  ["LB0119","FSH","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0339","FUNGAL CULTURE","Sterile Container","Any Specimen","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0121","FUNGUS SMEAR (KOH)","Sterile Container + Slide","Skin/Nail/Hair","Random","Sterile container; KOH prep","Microbiology"],
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">🧪</div>
-        <div class="stat-label">Shifts Filled</div>
-        <div class="stat-value purple">86%</div>
-        <div class="stat-sub">↑4% vs last week</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-label">Active Staff</div>
-        <div class="stat-value">24</div>
-        <div class="stat-sub">5 on shift now</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🛡️</div>
-        <div class="stat-label">Safety</div>
-        <div class="stat-value green">98%</div>
-        <div class="stat-sub">Female 100%</div>
-      </div>
-    </div>
+  // ===== G TESTS =====
+  ["LB0122","G6PD","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0703","GAD ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0541","GAD ANTIBODY (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0685","GALACTOMINAN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0460","GALL STONE ANALYSIS (AKUH)","Sterile Container","Gall Stone","Random","Sterile container; send dry","Biochemistry"],
+  ["LB0123","GAMMA GT","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum","Biochemistry"],
+  ["LB0501","GASTRIN","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum; freeze","Hormones"],
+  ["LB0478","GENE XPERT/MTB-RIF","Sterile Container","Sputum","Random","Early morning sputum; sterile container","Molecular"],
+  ["LB0124","GLOBULIN","Gold SST (Yellow)","Serum","Random","Separate serum","Biochemistry"],
+  ["LB0504","GLUCAGON","Purple EDTA (Lavender) + Aprotinin","Plasma EDTA","Fasting 10-12H Required","Fasting 10-12 hrs; ice bath; aprotinin tube; separate immediately; freeze","Hormones"],
+  ["LB0318","GLUCOSE 2H PP","Gold SST + Grey Fluoride","Serum + Whole Blood","2H PP","Collect 2 hrs after meal; note time","Biochemistry"],
+  ["LB0126","GLUCOSE CHALLENGE TEST (50 GMS)","Gold SST + Grey Fluoride","Serum + Whole Blood","Fasting 8H Preferred","50g glucose; collect at 1 hr; no fasting needed","Biochemistry"],
+  ["LB0316","GLUCOSE FASTING","Gold SST + Grey Fluoride","Serum + Whole Blood","Fasting 10-12H Required","Fasting 10-12 hrs; water allowed; morning sample","Biochemistry"],
+  ["LB0317","GLUCOSE RANDOM","Gold SST + Grey Fluoride","Serum + Whole Blood","Random","Any time; no fasting","Biochemistry"],
+  ["LB0127","GLUCOSE TOLERANCE TEST (75 GMS)","Gold SST + Grey Fluoride","Serum + Whole Blood","Fasting 10-12H Required","Fasting 10-12 hrs; 75g glucose; collect fasting, 1hr, 2hr","Biochemistry"],
+  ["LB0285","GLUCOSE TOLERENCE TEST (100GM)","Gold SST + Grey Fluoride","Serum + Whole Blood","Fasting 10-12H Required","Fasting 10-12 hrs; 100g glucose; collect fasting, 1hr, 2hr, 3hr","Biochemistry"],
+  ["LB0128","GLYCOSYLATED HB (HBA1C)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no fasting needed","Biochemistry"],
+  ["LB0129","GRAM STAIN","Sterile Swab/Container","Any Specimen","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0331","GROWTH HORMONE","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; fasting; separate serum; freeze","Hormones"],
+  ["LB0553","GROWTH HORMONE STIMULATION TEST","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; multiple samples after stimulation","Hormones"],
 
-    <div class="section-card">
-      <div class="section-title">Shift Coverage Today</div>
+  // ===== H TESTS =====
+  ["LB0130","H. PYLORI ANTIBODY (IG G)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0516","H. PYLORI ANTIBODY (IGA)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0131","H. PYLORI ANTIGEN (STOOL)","Sterile Container","Stool","Random","Fresh stool; sterile container","Microbiology"],
+  ["LB0286","HAEMOSIDRINE","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0596","HAPTOGLOBIN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0371","HB CORE IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0370","HB CORE TOTAL AB","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0367","HB E ANTIGEN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0132","HB ELECTROPHORESIS","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0368","HBE ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0369","HBS ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0314","HBVPCR QUANTITATIVE","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0287","HCV AG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0133","HCV ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0134","HCV GENOTYPING","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0135","HCV PCR QUALITATIVE","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0136","HCV PCR QUANTITATIVE","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0698","HCV PCR QUANTITATIVE (LCC)","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0137","HDL CHOLESTEROL","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0138","HEMATOCRIT (HCT)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0139","HEMOGLOBIN (HB)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0288","HEP A VIRUS AB IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0140","HEP A VIRUS IGM ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0141","HEP B CORE IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0142","HEP B CORE TOTAL","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0143","HEP B PCR QUALITATIVE","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0144","HEP B PCR QUANTITATIVE","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0145","HEP BE ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0146","HEP BE ANTIGEN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0147","HEP BS ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0148","HEP BS ANTIGEN (HBSAG)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0472","HEP D PCR QUALITATIVE (AKUH)","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0700","HEP D PCR QUANTITATIVE PCR","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0362","HEP DELTA VIRUS ANTIBODY (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0602","HEPATITIS E VIRUS IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0469","HEPB/HEPC SCREENING (ICT)","Gold SST (Yellow)","Serum","Random","Separate serum; ICT screening","Serology"],
+  ["LB0769","HER2NEU BY FISH (SIH)","Formalin Container","Tissue","Random","Fix in formalin; FISH test","Genetics"],
+  ["LB0750","HER2NUE (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0527","HESS TEST","—","Capillary Blood","Random","Capillary fragility test","Hematology"],
+  ["LB0350","HEV IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0087","HIGH SENSITIVE CRP","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Biochemistry"],
+  ["LB0603","HIGH SENSITIVE TROPONIN I","Gold SST (Yellow)","Serum","Random","STAT; separate serum; freeze if delay","Cardiac"],
+  ["LB0495","HISTO SLIDES","Slides","Histology","Random","Slides; clinical history","Histopathology"],
+  ["LB0654","HISTOPATHOLOGY BLOCKS","Paraffin Block","Tissue","Random","Paraffin blocks; clinical history","Histopathology"],
+  ["LB0589","HIV (ICT)","Gold SST (Yellow)","Serum","Random","Separate serum; ICT screening","Serology"],
+  ["LB0340","HIV BY WESTERN BLOT (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0149","HIV I/II ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0366","HIV I/II COMBI TEST","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0372","HIV WESTERN BLOT","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0579","HLA B 27 BY PCR (AFIP)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0694","HLA CLASS I","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0790","HLA DQ2/DQ8","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0800","HOMA-IR","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0311","HOME COLLECTION (PATIENT CONVEYANCE)","—","—","—","Home collection service","Misc"],
+  ["LB0289","HOME COLLECTION (SERVICE CHARGES)","—","—","—","Home collection service","Misc"],
+  ["LB0150","HOMOCYSTEINE","Purple EDTA (Lavender)","Plasma EDTA","Fasting 10-12H Required","Fasting 10-12 hrs; ice bath; separate immediately; freeze","Biochemistry"],
+  ["LB0464","HSV 1/11 1GG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0151","HSV I/II IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
 
-      <div class="shift-row">
-        <div class="shift-badge m">M</div>
-        <div class="shift-info">
-          <div class="shift-info-top"><b>Morning</b><span>06:00 – 14:00</span></div>
-          <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
-        </div>
-      </div>
+  // ===== I TESTS =====
+  ["LB0152","ICT-MP","Gold SST (Yellow)","Serum","Random","Separate serum; ICT malaria","Serology"],
+  ["LB0153","ICT-TB","Gold SST (Yellow)","Serum","Random","Separate serum; ICT TB","Serology"],
+  ["LB0751","IG67 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0154","IGA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0155","IGE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0561","IGF-1 (AFIP)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Hormones"],
+  ["LB0156","IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0715","IGG GANGLIOSIDES PROFILE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0653","IGG SUBCLASS (PROFILE)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0157","IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0591","IHC EACH MARKER","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0481","IL28B GENOTYPING","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0682","IMMUNOFLUORESCENCE","Formalin Container + Saline","Tissue","Random","Fresh tissue in saline; send immediately","Histopathology"],
+  ["LB0500","IMMUNOGLOBULIN G-4 SUBCLASS (IGG-4) (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0494","IMMUNOHISTOCHEMISTRY","Formalin Container","Tissue","Random","Fix in 10% formalin; IHC required","Histopathology"],
+  ["LB0643","IMMUNOPHENOTYPING FOR ACUTE LEUKEMIA ON PERIPHERAL BLOOD","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze; send immediately","Flow Cytometry"],
+  ["LB0580","IMMUNOPHENOTYPING FOR CLL","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Flow Cytometry"],
+  ["LB0804","IMMUNOPHENOTYPING FOR LYMPHOMA","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Flow Cytometry"],
+  ["LB0158","INDIA INK FOR CSF","Sterile Container","CSF","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0530","INHIBITOR SCREEN","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0159","INSULIN","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum; freeze","Hormones"],
+  ["LB0542","INSULIN (AFIP)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum; freeze","Hormones"],
+  ["LB0693","INSULIN AUTOANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0332","INSULIN LIKE GROWTH FACTOR (IGF-1)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0642","INTERLEUKIN 6","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; STAT if sepsis","Biochemistry"],
+  ["LB0702","INTRINSIC FACTOR ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0160","IONIZED CALCIUM","Green Heparin (Lithium)","Whole Blood Heparin","Random","Anaerobic; no air bubbles; ice transport; analyze within 30 min","Biochemistry"],
+  ["LB0161","IRON","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; freeze","Biochemistry"],
+  ["LB0695","IUI SPERM PREPRATION","Sterile Container","Semen","Random","Sterile container; 3-5 days abstinence","Andrology"],
 
-      <div class="shift-row">
-        <div class="shift-badge e">E</div>
-        <div class="shift-info">
-          <div class="shift-info-top"><b>Evening</b><span>14:00 – 22:00</span></div>
-          <div class="progress-bar"><div class="progress-fill green" style="width:70%"></div></div>
-        </div>
-      </div>
+  // ===== J TESTS =====
+  ["LB0461","JAK2 MUTATION DETECTION BY PCR (AKUH)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
 
-      <div class="shift-row">
-        <div class="shift-badge n">N</div>
-        <div class="shift-info">
-          <div class="shift-info-top"><b>Night</b><span>22:00 – 06:00</span></div>
-          <div class="progress-bar"><div class="progress-fill blue" style="width:60%"></div></div>
-        </div>
-      </div>
+  // ===== K TESTS =====
+  ["LB0612","KIDNEY PROFILE (CHEM7, CALCIUM, PHOSPHATE, ALBUMIN)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum","Biochemistry"],
+  ["LB0776","KLB CULTURE AND SENSITIVITY (AKUH)","Sterile Container","Any Specimen","Random","Sterile container; send immediately","Microbiology"],
 
-      <div style="margin-top:14px">
-        <div class="segmented">
-          <button class="active">Primary</button>
-          <button>Secondary</button>
-        </div>
-      </div>
-    </div>
+  // ===== L TESTS =====
+  ["LB0467","LAP SCORE","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0162","LDH","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0163","LDL CHOLESTEROL","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0164","LE CELL","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0165","LEISHMANIA TROPICA","Sterile Container","Skin Scraping","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0253","LEISHMEN STAIN","Sterile Container","Skin Scraping","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0629","LEPTOSPIRA ANTIBODIES","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0652","LEVETIRACETAM BLOOD LEVELS","Gold SST (Yellow)","Serum","Trough Level","Trough level; separate serum; freeze","Toxicology"],
+  ["LB0166","LFTS (T.BILI, D.BILI, IND.BILI, AST, ALT, ALP,GGT,ALB)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; protect from light; separate serum","Biochemistry"],
+  ["LB0167","LH","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0168","LIPASE","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0169","LIPID PROFILE (CHOL,HDL,LDL,TG,TL)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; water allowed; separate serum","Biochemistry"],
+  ["LB0798","LIPID PROFILE (EXTENDED-CARDIAC)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Cardiac"],
+  ["LB0605","LIPID PROFILE (FASTING)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0791","LIPID PROFILE WITH APO LIPOPROTEIN B (APOB)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Cardiac"],
+  ["LB0290","LIPOPROTIEN A LP(A)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Cardiac"],
+  ["LB0344","LITHIUM LEVEL","Gold SST (Yellow)","Serum","Trough Level","Trough level 12 hrs post dose; separate serum; freeze","Toxicology"],
+  ["LB0351","LIVER KIDNEY MICROSOMAL AB (LKM AB)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0352","LUPUS ANTICOAGULANT","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0581","LYMPHOMA WITH LAP 70","Formalin Container","Tissue","Random","Fix in formalin; IHC panel","Histopathology"],
 
-    <div class="safety-banner">
-      <span class="icon">🛡️</span>
-      <span>All female staff have safety compliance active</span>
-    </div>
-  </div>
+  // ===== M TESTS =====
+  ["LB0770","MACRO PROLACTIN","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0170","MAGNESIUM","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum; avoid tourniquet too long","Biochemistry"],
+  ["LB0171","MALARIAL PARASITE (THIN/THICK SMEAR)","Purple EDTA (Lavender) + Slides","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; make thin and thick smears","Hematology"],
+  ["LB0172","MANTOUX TEST","—","Intradermal","Random","Intradermal injection; read after 48-72 hrs","Microbiology"],
+  ["LB0610","MEASLES IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0614","MEASLES IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0787","MEDICAL TESTS FOR STUDENTS BY ICT METHOD","Gold SST (Yellow)","Serum","Random","Separate serum; ICT screening","Serology"],
+  ["LB0604","MET HEMOGLOBIN","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; ice transport","Hematology"],
+  ["LB0667","METHOTREXATE LEVEL","Gold SST (Yellow)","Serum","Trough Level","Trough level; separate serum; freeze","Toxicology"],
+  ["LB0486","METHYLENTETRAHYDROFOLTAE REDUCTASE C677T","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0393","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0429","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0430","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0431","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0432","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0433","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0434","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0435","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0436","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0437","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0438","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0398","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0399","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0400","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0401","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0402","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0403","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0404","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0405","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0406","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0407","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0408","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0409","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0410","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0411","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0412","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0413","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0414","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0415","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0416","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0417","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0418","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0419","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0420","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0421","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0422","MICROBIOLOGY","—","—","—","Refer to specific test","Microbiology"],
+  ["LB0173","MICROFILARIAE","Purple EDTA (Lavender) + Slides","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; make smears; collect at night if possible","Hematology"],
+  ["LB0788","MICROSATELLITE INSTABILITY PROFILE - MSI - OUTSOURCE","Formalin Container","Tissue","Random","Fix in formalin; outsource","Genetics"],
+  ["LB0539","MID-NIGHT SALIVARY CORTISOL (AFIP)","Saliva Container","Saliva","Midnight","Collect at midnight; special container","Hormones"],
+  ["LB0309","MITOCHONDRIAL ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0609","MMR","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0174","MONOSPOT","Gold SST (Yellow)","Serum","Random","Separate serum; no fasting","Serology"],
+  ["LB0789","MPN-MLPA (FOR MYELOPROLIFERATIVE DISORDER)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0365","MRSA SCREENING","Sterile Swab","Nasal Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0518","MTB BY GENE EXPERT","Sterile Container","Sputum","Random","Early morning sputum; sterile container","Molecular"],
+  ["LB0326","MTB DNA PCR","Sterile Container","Sputum","Random","Early morning sputum; sterile container","Molecular"],
+  ["LB0611","MUMPS IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0687","MUMPS IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0498","MYCOPLASMA ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
 
-  <!-- ===== VIEW: ROSTER ===== -->
-  <div id="view-roster" class="view">
-    <div class="page-title">Staff Roster</div>
-    <div class="page-sub">Managing 12 Staff • Oct 2026</div>
+  // ===== N TESTS =====
+  ["LB0447","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0448","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0441","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0451","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0452","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0453","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0454","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0455","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0456","NA","—","—","—","Refer to specific test","Misc"],
+  ["LB0759","NAPSIN (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0291","NEEDLE BIOPSY WITH IHC","Formalin Container","Tissue","Random","Fix in formalin; IHC required","Histopathology"],
+  ["LB0491","NIL","—","—","—","Refer to specific test","Misc"],
+  ["LB0492","NIL","—","—","—","Refer to specific test","Misc"],
+  ["LB0175","NIL","—","—","—","Refer to specific test","Misc"],
+  ["LB0676","NIL","—","—","—","Refer to specific test","Misc"],
+  ["LB0620","NMDA RECEPTOR AB CSF","Sterile Container","CSF","Random","Sterile container; send immediately; also send serum","Serology"],
+  ["LB0794","NMDA RECEPTOR AB IGG BY SERUM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Serology"],
+  ["LB0720","NT PRO BNP (ABBOTTABAD ONLY)","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze","Cardiac"],
 
-    <div style="padding:0 20px 16px">
-      <div class="segmented">
-        <button class="active" onclick="switchSeg(this)">Primary Shift</button>
-        <button onclick="switchSeg(this)">Secondary Shift</button>
-      </div>
-    </div>
+  // ===== O TESTS =====
+  ["LB0752","OLIG2 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0630","OLIGOCLONAL BANDS","Sterile Container","CSF","Random","Sterile container; also send serum; send immediately","Serology"],
+  ["LB0353","OPIATES","Urine Sterile Container","Urine","Random","Random urine; sterile container","Toxicology"],
+  ["LB0292","OSMOTIC FRAGILITY","Purple EDTA (Lavender) + Heparin","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
 
-    <div class="section-card">
-      <div class="section-title">
-        Today's Roster
-        <span class="count">12 Staff</span>
-      </div>
-      <div class="staff-grid" id="rosterGrid"></div>
-    </div>
+  // ===== P TESTS =====
+  ["LB0753","P-53 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0754","P-63 (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0519","PANCREATIC ELASTASE (FECAL ELASTASE)","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Biochemistry"],
+  ["LB0176","PAP SMEAR","Slide + Fixative","Cytology","Random","Slides, fixative, clinical history","Cytology"],
+  ["LB0303","PARATHYROID HORMONES","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; fasting; separate serum; freeze","Hormones"],
+  ["LB0468","PAROXYSMAL NOCTURNAL HEMOGLOBINURIA (PNH)/ CD-55/59 ANALYSIS (AKUH)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze; send immediately","Flow Cytometry"],
+  ["LB0599","PCR FOR CALR EXON 9 MUTATION","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0705","PCR FOR CMV - OUTSOURCE","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0598","PCR FOR JAK-2 EXON 12 MUTATION","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0597","PCR FOR JAK-2 V617F MUTATION","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0600","PCR FOR MPL EXON 10 MUTATION","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0701","PCR FOR THALASSEMIA","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0442","PERICARDIAL FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Pericardial Fluid","Random","Aseptic; blood culture bottle","Microbiology"],
+  ["LB0385","PERICARDIAL FLUID CULTURE & SENSITIVITY","Sterile Container","Pericardial Fluid","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0391","PERICARDIAL FLUID CYTOLOGY","Sterile Container + Slide","Pericardial Fluid","Random","Sterile container; slide fixative","Cytology"],
+  ["LB0457","PERICARDIAL FLUID CYTOLOGY","Sterile Container + Slide","Pericardial Fluid","Random","Sterile container; slide fixative","Cytology"],
+  ["LB0384","PERICARDIAL FLUID ROUTINE EXAMINATION","Sterile Container","Pericardial Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0704","PHENYTOIN LEVEL","Gold SST (Yellow)","Serum","Trough Level","Trough level; separate serum; freeze","Toxicology"],
+  ["LB0177","PHOSPHATE","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0681","PIVKA-II","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0375","PLASMA LACTATE LEVEL","Grey Fluoride (Sodium Fluoride)","Plasma Fluoride","Random","No tourniquet too long; ice bath; separate immediately; freeze","Biochemistry"],
+  ["LB0479","PLASMA LEAD LEVEL (AKUH)","Purple EDTA (Lavender)","Plasma EDTA","Random","Special metal-free tube; separate plasma; freeze","Toxicology"],
+  ["LB0566","PLASMA METANEPHRINES (AKUH)","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; supine 30 min; ice bath; separate immediately; freeze","Hormones"],
+  ["LB0587","PLASMA METANEPHRINES (SKMCH)","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; supine 30 min; ice bath; freeze","Hormones"],
+  ["LB0376","PLASMA RENIN LEVEL (AKUH)","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; upright 2 hrs; ice bath; separate immediately; freeze","Hormones"],
+  ["LB0649","PLATELET RICH PLASMA (PRP)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 10 mL; do not freeze","Blood Bank"],
+  ["LB0178","PLATELETS","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0807","PLATELETS IMMUNOPHENOTYPING","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Flow Cytometry"],
+  ["LB0386","PLEURAL FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Pleural Fluid","Random","Aseptic; blood culture bottle","Microbiology"],
+  ["LB0390","PLEURAL FLUID CYTOLOGY","Sterile Container + Slide","Pleural Fluid","Random","Sterile container; slide fixative","Cytology"],
+  ["LB0179","PLEURAL FLUID R/E","Sterile Container","Pleural Fluid","Random","Sterile container; send immediately","Biochemistry"],
+  ["LB0755","PR (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0634","PREDIALYSIS PROFILE","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum","Biochemistry"],
+  ["LB0180","PREGNANCY TEST (URINE)","Urine Sterile Container","Urine","Random","First morning urine preferred; sterile container","Biochemistry"],
+  ["LB0616","PRO C GLOBAL","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0053","PRO-BNP","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; STAT","Cardiac"],
+  ["LB0577","PRO-CALCITONIN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; STAT if sepsis","Biochemistry"],
+  ["LB0474","PRO-CALCITONIN (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; STAT","Biochemistry"],
+  ["LB0181","PROGESTERONE","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0293","PROGESTERONE RECEPTOR (IHC)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0182","PROLACTIN","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; fasting; avoid stress; separate serum; freeze","Hormones"],
+  ["LB0354","PROTEIN C","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0333","PROTEIN C","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0583","PROTEIN ELECTROPHORESIS","Gold SST (Yellow)","Serum","Random","Separate serum; freeze if delay","Biochemistry"],
+  ["LB0584","PROTEIN ELECTROPHORESIS (STAT)","Gold SST (Yellow)","Serum","Random","Separate serum; STAT","Biochemistry"],
+  ["LB0334","PROTEIN S","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0355","PROTEIN S","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0793","PROTHROMBIN GENE MUTATION G20210A","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0319","PROTHROMBIN TIME","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; centrifuge within 1 hr","Hematology"],
+  ["LB0183","PROTHROMBIN TIME (PT) / INR","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0184","PSA-TOTAL","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0543","PTH RELATED PEPTIDE (AFIP)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; send on ice","Hormones"],
 
-    <div class="safety-banner">
-      <span class="icon">🛡️</span>
-      <span>Female Safety Active — No N / N12 / E4 assigned</span>
-    </div>
-  </div>
+  // ===== Q TESTS =====
+  ["LB0810","QUANTIFERON TB GOLD (REKODIQ)","Special Kit","Whole Blood","Random","Special kit; incubate within 16 hrs","Microbiology"],
+  ["LB0506","QUANTIFERON TB GOLD TEST","Special Kit","Whole Blood","Random","Special kit; incubate within 16 hrs","Microbiology"],
 
-  <!-- ===== VIEW: ADD STAFF ===== -->
-  <div id="view-add" class="view">
-    <div class="page-title">Add New Staff</div>
-    <div class="page-sub">Create new roster member</div>
+  // ===== R TESTS =====
+  ["LB0185","RA FACTOR (QUANTITATIVE)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0719","RBC FOLATE","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; protect from light; freeze","Biochemistry"],
+  ["LB0625","REAL TIME PCR FOR HIV-I/HIV-II","Purple EDTA (Lavender)","Plasma EDTA","Random","Separate plasma; freeze; send on ice","Molecular"],
+  ["LB0186","RED BLOOD CELL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0683","RENAL BIOPSY","Formalin Container + Saline","Tissue","Random","Fresh tissue in saline; send immediately; special fixative","Histopathology"],
+  ["LB0191","RENAL FUNCTION TEST (BUN,CREAT,ELECT,BICARB)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs; separate serum","Biochemistry"],
+  ["LB0423","RENAL STONE ANSLYSIS (AKUH)","Sterile Container","Stone","Random","Sterile container; send dry","Biochemistry"],
+  ["LB0538","RENIN ACTIVITY","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; upright 2 hrs; ice bath; separate immediately; freeze","Hormones"],
+  ["LB0537","RENIN ACTIVITY (AFIP)","Purple EDTA (Lavender)","Plasma EDTA","Morning 8AM","Collect 8 AM; upright 2 hrs; ice bath; freeze","Hormones"],
+  ["LB0187","RETICULOCYTE COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0590","REVIEW WITH IMMUNOHISTOCHEMISTRY","Formalin Container","Tissue","Random","Fix in formalin; review slides + blocks","Histopathology"],
+  ["LB0188","RH ANTIBODY (TITRE)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Blood Bank"],
+  ["LB0189","RUBELLA IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0190","RUBELLA IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
 
-    <div class="section-card">
-      <div class="photo-upload" onclick="showToast('Photo upload coming soon')">
-        <div class="photo-upload-icon">📷</div>
-        <div class="photo-upload-text">Upload<br>Photo</div>
-      </div>
+  // ===== S TESTS =====
+  ["LB0294","S-100 PROTEIN","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0786","SAMPLE COLLECTION FACILITATION FOR DANTE LAB","—","—","—","Sample collection service","Misc"],
+  ["LB0192","SEMEN ANALYSIS","Sterile Container","Semen","Random","3-5 days abstinence; sterile container; deliver within 1 hr","Andrology"],
+  ["LB0816","SERUM ARSENIC LEVEL","Purple EDTA (Lavender)","Plasma EDTA","Random","Special metal-free tube; separate plasma; freeze","Toxicology"],
+  ["LB0613","SERUM ASCITES ALBUMIN GRADIENT (SAAG)","Gold SST + Sterile Container","Serum + Ascitic Fluid","Random","Serum + ascitic fluid; note collection time","Biochemistry"],
+  ["LB0558","SERUM BETA 2 MICROGLOBULIN (SIH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0768","SERUM BILE ACIDCHOLEGLYCINS (FASTING)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum; freeze","Biochemistry"],
+  ["LB0780","SERUM CHLAMYDIA IGG AND IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0601","SERUM ERYTHROPOIETIN","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0557","SERUM FREE CHAIN KAPPA LAMBDA RATIO (SIH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0493","SERUM IMMUNOFIXATION (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0559","SERUM IMMUNOFIXATION (SIH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0815","SERUM LEAD LEVEL","Purple EDTA (Lavender)","Plasma EDTA","Random","Special metal-free tube; separate plasma; freeze","Toxicology"],
+  ["LB0359","SERUM LITHIUM LEVEL","Gold SST (Yellow)","Serum","Trough Level","Trough level 12 hrs post dose; separate serum; freeze","Toxicology"],
+  ["LB0814","SERUM MERCURY LEVEL","Purple EDTA (Lavender)","Plasma EDTA","Random","Special metal-free tube; separate plasma; freeze","Toxicology"],
+  ["LB0520","SERUM MYOGLOBIN LEVEL (SKMCH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze; STAT if cardiac","Cardiac"],
+  ["LB0342","SERUM OSMOLALITY","Gold SST (Yellow)","Serum","Random","Separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0193","SERUM PROTEIN ELECTROPHORESIS","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Biochemistry"],
+  ["LB0483","SERVICE CHARGES FOR H1N1","—","—","—","Service charge only","Misc"],
+  ["LB0660","SERVICES CHARGES ANTIGEN","—","—","—","Service charge only","Misc"],
+  ["LB0194","SEX HORMONE BINDING GLOBULIN","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0195","SGOT (AST)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs preferred; separate serum; avoid hemolysis","Biochemistry"],
+  ["LB0196","SGPT (ALT)","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs preferred; separate serum","Biochemistry"],
+  ["LB0552","SHORT SYNACTHEN TEST (COSYNTROPIN 250MG IM)","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; baseline + 30/60 min post injection","Hormones"],
+  ["LB0197","SICKLING TEST","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0757","SMA (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0521","SMEAR FOR LEISHMANIASIS","Sterile Container + Slide","Skin Scraping","Random","Sterile container; make smears","Microbiology"],
+  ["LB0357","SMOOTH MUSCLE ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0692","SPOT URINE PROTEIN","Urine Sterile Container","Urine","Random","Spot urine; sterile container; note collection time","Biochemistry"],
+  ["LB0655","SPUTUM ROUTINE EXAMINATION","Sterile Container","Sputum","Random","Early morning sputum; sterile container","Microbiology"],
+  ["LB0618","STOOL FOR CRYPTOSPORIDIUM","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Microbiology"],
+  ["LB0735","STOOL FOR VIBRIO CHOLERA","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Microbiology"],
+  ["LB0198","STOOL OCCULT BLOOD","Sterile Container","Stool","Random","Fresh stool; sterile container","Biochemistry"],
+  ["LB0199","STOOL PH","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Biochemistry"],
+  ["LB0200","STOOL REDUCING SUBSTANCE","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Biochemistry"],
+  ["LB0201","STOOL ROUTINE EXAMINATION","Sterile Container","Stool","Random","Fresh stool; sterile container; send immediately","Biochemistry"],
+  ["LB0202","STOOL WITH CONC. TECHNIQUE","Sterile Container","Stool","Random","Fresh stool; sterile container; concentration method","Microbiology"],
+  ["LB0756","SYNAPTO (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0443","SYNOVIAL FLUID CULTURE & SENSITIVITY","Blood Culture Bottle","Synovial Fluid","Random","Aseptic; blood culture bottle","Microbiology"],
+  ["LB0388","SYNOVIAL FLUID CULTURE & SENSITIVITY","Sterile Container","Synovial Fluid","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0203","SYNOVIAL FLUID ROUTUINE EXAMINATION","Sterile Container","Synovial Fluid","Random","Sterile container; send immediately","Biochemistry"],
 
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" placeholder="e.g. Emma Rodriguez" id="newName">
-      </div>
+  // ===== T TESTS =====
+  ["LB0335","T. SPOT TB","Special Kit","Whole Blood","Random","Special kit; incubate within 16 hrs","Microbiology"],
+  ["LB0588","TACROLIMUS","Purple EDTA (Lavender)","Whole Blood EDTA","Trough Level","Trough level; EDTA tube; do not freeze","Toxicology"],
+  ["LB0663","TDT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze","Genetics"],
+  ["LB0204","TESTOSTERONE","Gold SST (Yellow)","Serum","Morning 8AM","Collect 8 AM; separate serum; freeze","Hormones"],
+  ["LB0802","TETANUS TOXOID IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0717","TFT (ABBOTABAD ONLY)","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0307","THERAPEUTIC PHLEBOTOMY","—","Whole Blood","Random","Therapeutic procedure","Hematology"],
+  ["LB0534","THROMBOPHILIA SCREENING","Blue Citrate 3.2% + Purple EDTA","Citrated Plasma + EDTA","Random","Exact fill to mark; 9:1 ratio; EDTA for genetic","Hematology"],
+  ["LB0758","THYROGLOBIN (IHC MARKER)","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0562","THYROGLOBULIN (AFIP)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Tumor Markers"],
+  ["LB0205","THYROGLOBULIN ANTIBODY (ANTI TG)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0323","THYROID FUNCTION TEST","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0324","THYROID FUNCTION TEST","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0207","THYROID FUNCTION TESTS (T3, FREE T4, TSH)","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0206","THYROID PEROXIDASE ANTIBODY (ANTI TPO)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0554","THYROID RECEPTOR AB (IDC)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0551","THYROID STIMULATING ANTIBODIES (AFIP)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0208","TIBC","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; freeze","Biochemistry"],
+  ["LB0428","TIP FOR CULTURE","Sterile Container","Any Specimen","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0449","TIP FOR CULTURE","Sterile Container","Any Specimen","Random","Sterile container","Microbiology"],
+  ["LB0444","TIP FOR CULTURE & SENSITIVITY","Sterile Container","Any Specimen","Random","Sterile container","Microbiology"],
+  ["LB0688","TISSUE FOR CULTURE AND SENSITIVITY","Sterile Container","Tissue","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0646","TORCH SCREENING","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0209","TOTAL EOSINOPHIL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0210","TOTAL LIPIDS","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0211","TOTAL NEUTROPHIL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL","Hematology"],
+  ["LB0212","TOTAL PROTEIN","Gold SST (Yellow)","Serum","Random","Separate serum","Biochemistry"],
+  ["LB0213","TOTAL T3","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0647","TOTAL T3,TOTAL T4 & TSH","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0214","TOTAL T4","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0215","TOXOPLASMA IGG","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0216","TOXOPLASMA IGM","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0336","TPHA","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0459","TPHA (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0217","TRANSFERRIN (IRON) SATURATION","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; freeze","Biochemistry"],
+  ["LB0218","TRIGLYCERIDES","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0726","TRISOMY 13,18 & 21 FROM TISSUE SAMPLE","Sterile Container","Tissue","Random","Sterile container; send immediately","Genetics"],
+  ["LB0219","TROPONIN I","Gold SST (Yellow)","Serum","Random","STAT; separate serum; freeze if delay","Cardiac"],
+  ["LB0220","TROPONIN T","Gold SST (Yellow)","Serum","Random","STAT; separate serum; freeze if delay","Cardiac"],
+  ["LB0619","TROPONIN T (HS)","Gold SST (Yellow)","Serum","Random","STAT; separate serum; freeze if delay","Cardiac"],
+  ["LB0221","TSH","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0724","TSH (ABBOTABAD ONLY)","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; separate serum; freeze","Hormones"],
+  ["LB0496","TSH RECEPTOR ANTIBODY","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Hormones"],
+  ["LB0528","TT","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio","Hematology"],
+  ["LB0222","TYPHIDOT (IGG & IGM)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0295","TYPHOID VACCINE","—","—","—","Vaccine administration","Vaccine"],
 
-      <div class="form-group">
-        <label class="form-label">Role</label>
-        <select class="form-select" id="newRole">
-          <option>Phlebotomist</option>
-          <option>Support Staff</option>
-          <option>Supervisor</option>
-        </select>
-      </div>
+  // ===== U TESTS =====
+  ["LB0633","UIBC","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; freeze","Biochemistry"],
+  ["LB0606","UREA BREATH TEST","Special Kit","Breath","Fasting 10-12H Required","Fasting 10-12 hrs; special kit","Microbiology"],
+  ["LB0779","URETHRAL SWAB FOR GONORRHEA C/S","Sterile Swab","Urethral Swab","Random","Sterile swab; specific transport medium","Microbiology"],
+  ["LB0223","URIC ACID","Gold SST (Yellow)","Serum","Fasting 8H Preferred","Fasting 8 hrs preferred; separate serum","Biochemistry"],
+  ["LB0302","URINARY COPPER (AKUH)","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold; acid-washed container","Biochemistry"],
+  ["LB0499","URINARY LEGIONELLA ANTIGEN","Urine Sterile Container","Urine","Random","Random urine; sterile container","Microbiology"],
+  ["LB0426","URINARY OXALATE (AKUH)","24 Hrs Urine Container (Acid Washed)","24H Urine","24H Collection","Acid-washed container; discard first morning; collect 24H; keep cold","Biochemistry"],
+  ["LB0224","URINE AMYLASE (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0225","URINE BILE PIGMENTS","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0226","URINE BILE SALTS","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0227","URINE CALCIUM (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container; note time","Biochemistry"],
+  ["LB0228","URINE CORTISOL (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Hormones"],
+  ["LB0296","URINE CREATININE (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container; note time","Biochemistry"],
+  ["LB0392","URINE CYTOLOGY","Urine Sterile Container + Slide","Urine","Random","Sterile container; slide fixative","Cytology"],
+  ["LB0229","URINE ELECTROLYTES (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0297","URINE FOR AFB","Sterile Container","Urine","Random","Early morning urine; sterile container","Microbiology"],
+  ["LB0709","URINE FOR DYSMORPHIC RBCS","Urine Sterile Container","Urine","Random","Fresh urine; sterile container; send immediately","Hematology"],
+  ["LB0536","URINE FOR HEMOSIDERIN","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0679","URINE FOR MYOGLOBIN","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0230","URINE GLUCOSE","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0231","URINE HB","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0556","URINE IMMUNOFIXATION (SIH)","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold","Biochemistry"],
+  ["LB0232","URINE KETONES","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0233","URINE MAGNESIUM (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0234","URINE MICROALBUMIN (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container; avoid exercise","Biochemistry"],
+  ["LB0235","URINE MICROALBUMIN/CREATININE RATIO (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0343","URINE OSMOLALITY","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0236","URINE PH","Urine Sterile Container","Urine","Random","Fresh urine; sterile container","Biochemistry"],
+  ["LB0237","URINE PHOSPHORUS (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0238","URINE PROTEIN (QUALITATIVE)","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0239","URINE PROTEIN ELECTROPHORESIS","24 Hrs Urine Container","24H Urine","24H Collection","Discard first morning; collect 24H; keep cold","Biochemistry"],
+  ["LB0240","URINE PROTEIN/CREATININE RATIO (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0241","URINE REDUCING SUBSTANCE","Urine Sterile Container","Urine","Random","Fresh urine; sterile container","Biochemistry"],
+  ["LB0242","URINE ROUTINE EXAMINATION","Urine Sterile Container","Urine","Random","Midstream clean catch; 10-20 mL; sterile container","Biochemistry"],
+  ["LB0243","URINE SPECIFIC GRAVITY","Urine Sterile Container","Urine","Random","Random urine; sterile container","Biochemistry"],
+  ["LB0244","URINE UREA/BUN (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
+  ["LB0245","URINE URIC ACID (SPOT)","Urine Sterile Container","Urine","Random","Spot urine; sterile container","Biochemistry"],
 
-      <div class="form-group">
-        <label class="form-label">Gender (Safety Rule)</label>
-        <select class="form-select" id="newGender">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-      </div>
+  // ===== V TESTS =====
+  ["LB0298","VACCINE FOR HBV (ADULT)","—","—","—","Vaccine administration","Vaccine"],
+  ["LB0299","VACCINE FOR HBV (CHILDREN)","—","—","—","Vaccine administration","Vaccine"],
+  ["LB0246","VALPROIC ACID","Gold SST (Yellow)","Serum","Trough Level","Trough level; separate serum; freeze","Toxicology"],
+  ["LB0380","VANCOMYCIN (AKUH)","Gold SST (Yellow)","Serum","Trough Level","Trough level; separate serum; freeze","Toxicology"],
+  ["LB0578","VARICELLA ZOSTER VIRUS (AKUH)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0503","VASOACTIVE INTESTINAL PEPTIDE","Purple EDTA (Lavender) + Aprotinin","Plasma EDTA","Fasting 10-12H Required","Fasting 10-12 hrs; ice bath; aprotinin tube; freeze","Hormones"],
+  ["LB0247","VDRL (SYPHILLIS TP ANTIBODY)","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
+  ["LB0628","VENOUS BLOOD GASES","Heparinized Syringe (Green)","Venous Blood","Random","Anaerobic; no air bubbles; ice transport; 30 min","Blood Gas"],
+  ["LB0300","VIMENTIN","Formalin Container","Tissue","Random","IHC marker; fix in formalin","Histopathology"],
+  ["LB0585","VITAMIN B1 (THAIMINE) WHOLE BLOOD","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; protect from light; freeze","Biochemistry"],
+  ["LB0248","VITAMIN B12","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; protect from light; freeze","Biochemistry"],
+  ["LB0013","VITAMIN D3 (25-OH)","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; freeze","Biochemistry"],
+  ["LB0812","VITAMINS AND MINRAL PROFILE","Gold SST (Yellow) + Purple EDTA","Serum + Whole Blood","Fasting 10-12H Required","Fasting 10-12 hrs; SST for vitamins; EDTA for minerals","Biochemistry"],
+  ["LB0813","VITAMINS AND MINRAL PROFILE EXTENDED","Gold SST (Yellow) + Purple EDTA","Serum + Whole Blood","Fasting 10-12H Required","Fasting 10-12 hrs; SST + EDTA","Biochemistry"],
+  ["LB0249","VLDL CHOLESTEROL","Gold SST (Yellow)","Serum","Fasting 10-12H Required","Fasting 10-12 hrs; separate serum","Biochemistry"],
+  ["LB0594","VON WILLEBRAND FACTOR (VWF) ANTIGEN ASSAY","Blue Citrate 3.2%","Citrated Plasma","Random","Exact fill to mark; 9:1 ratio; freeze plasma","Hematology"],
+  ["LB0805","VYSIS TP53/ CEP17 BY FISH","Formalin Container","Tissue","Random","Fix in formalin; FISH test","Genetics"],
 
-      <div class="toggle-row">
-        <span class="toggle-label">🩷 Female Safety Protocol</span>
-        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
-      </div>
+  // ===== W TESTS =====
+  ["LB0250","WET SMEAR","Sterile Container","Any Specimen","Random","Sterile container; send immediately","Microbiology"],
+  ["LB0251","WHITE BLOOD CELL COUNT","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; no clot","Hematology"],
+  ["LB0820","WHOLE EXOME SEQUENCING (WES)","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 5 mL; do not freeze","Genetics"],
+  ["LB0252","WIDAL TEST","Gold SST (Yellow)","Serum","Random","Separate serum; freeze","Serology"],
 
-      <div class="form-group">
-        <label class="form-label">Shift Assignment</label>
-        <div class="segmented">
-          <button class="active" onclick="switchSeg(this)">Primary</button>
-          <button onclick="switchSeg(this)">Secondary</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Shift Type</label>
-        <div class="segmented">
-          <button class="active" onclick="switchSeg(this)">☀️ Morning</button>
-          <button onclick="switchSeg(this)">🌆 Evening</button>
-          <button onclick="switchSeg(this)">🌙 Night</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Department</label>
-        <select class="form-select">
-          <option>Lab A - Phlebotomy</option>
-          <option>Lab B - Pediatric</option>
-          <option>Lab C - Emergency</option>
-        </select>
-      </div>
-
-      <div class="safety-banner" style="margin:14px 0">
-        <span class="icon">🔔</span>
-        <span>Will notify staff via secure app alert</span>
-      </div>
-
-      <button class="btn-primary" onclick="addStaff()">
-        <span>＋</span> Add Staff to Roster
-      </button>
-    </div>
-  </div>
-
-  <!-- ===== VIEW: PROFILE ===== -->
-  <div id="view-profile" class="view">
-    <div class="page-title">Admin Profile</div>
-    <div class="page-sub">Ikram Ullah Khan • Super Admin</div>
-
-    <div class="section-card">
-      <div class="toggle-row">
-        <span class="toggle-label">🛡️ Female Safety Toggle</span>
-        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
-      </div>
-      <div class="toggle-row">
-        <span class="toggle-label">🌊 Full Roster Wave</span>
-        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
-      </div>
-      <div class="toggle-row">
-        <span class="toggle-label">🔔 WhatsApp Auto Notify</span>
-        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
-      </div>
-      <div class="toggle-row">
-        <span class="toggle-label">📱 Desktop + Mobile Sync</span>
-        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
-      </div>
-    </div>
-
-    <div class="section-card">
-      <div class="section-title">Display Theme</div>
-      <div class="segmented">
-        <button class="active" onclick="switchSeg(this)">🌙 Dark</button>
-        <button onclick="switchSeg(this)">☀️ Light</button>
-        <button onclick="switchSeg(this)">💧 Glass</button>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ===== BOTTOM NAV ===== -->
-<div class="bottom-nav">
-  <button class="nav-item active" onclick="showView('dashboard',this)">
-    <span class="nav-icon">📊</span>Dashboard
-  </button>
-  <button class="nav-item" onclick="showView('roster',this)">
-    <span class="nav-icon">📋</span>Roster
-  </button>
-  <button class="nav-item add" onclick="showView('add',this)">
-    <span class="nav-icon">＋</span>
-  </button>
-  <button class="nav-item" onclick="showView('profile',this)">
-    <span class="nav-icon">👤</span>Profile
-  </button>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-// ===== STAFF DATA =====
-const staff = [
-  {name:'Noreen Akhtar', gender:'female', role:'Phlebotomy', primary:'M', seen:true},
-  {name:'Habiba Fiaz', gender:'female', role:'Phlebotomy', primary:'E', seen:true},
-  {name:'Dunya Bashir', gender:'female', role:'Phlebotomy', primary:'M', seen:false},
-  {name:'Quratul Ain', gender:'female', role:'Phlebotomy', primary:'M', seen:true},
-  {name:'Bushra Safeer', gender:'female', role:'Phlebotomy', primary:'M', seen:true},
-  {name:'Tasleem Fatima', gender:'female', role:'Phlebotomy', primary:'E', seen:false},
-  {name:'Syed Sajid', gender:'male', role:'Phlebotomy', primary:'M', seen:true},
-  {name:'Shehryar Khan', gender:'male', role:'Phlebotomy', primary:'E', seen:true},
-  {name:'Waqas Aziz', gender:'male', role:'Phlebotomy', primary:'N', seen:false, changed:true},
-  {name:'Asim Ali', gender:'male', role:'Phlebotomy', primary:'E4', seen:true},
-  {name:'M. Zakria', gender:'male', role:'Phlebotomy', primary:'E4', seen:true},
-  {name:'Imran Mubarak', gender:'male', role:'Phlebotomy', primary:'M', seen:true}
+  // ===== Z TESTS =====
+  ["LB0680","ZAP70/CD38","Purple EDTA (Lavender)","Whole Blood EDTA","Random","Mix 8-10 times; 3 mL; do not freeze; send immediately","Flow Cytometry"],
+  ["LB0358","ZINC LEVEL","Gold SST (Yellow)","Serum","Morning 8AM","Collect morning; fasting; separate serum; freeze","Biochemistry"]
 ];
 
-function getInitials(name){
-  return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+// Search function
+function searchTests(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return TESTS_DB;
+  return TESTS_DB.filter(t => 
+    t[0].toLowerCase().includes(q) ||  // code
+    t[1].toLowerCase().includes(q) ||  // name
+    t[2].toLowerCase().includes(q) ||  // tube
+    t[4].toLowerCase().includes(q)     // fasting
+  );
 }
 
-function renderRoster(){
-  const grid = document.getElementById('rosterGrid');
-  grid.innerHTML = staff.map(s => {
-    const isFemale = s.gender === 'female';
-    const tags = [];
-    if(isFemale) tags.push('<span class="tag safety">🩷 Female Safety</span>');
-    tags.push(`<span class="tag shift-${s.primary.toLowerCase().charAt(0)}">${s.primary} Roster: Primary</span>`);
-    tags.push(`<span class="tag">Lab A - Phlebotomy</span>`);
-    
-    return `
-      <div class="staff-card ${s.changed ? 'changed' : ''} ${s.seen ? 'seen' : ''}">
-        <div class="staff-top">
-          <div class="staff-avatar ${s.gender}">
-            ${getInitials(s.name)}
-            ${s.seen ? '<div class="check">✓</div>' : ''}
-          </div>
-          <div>
-            <div class="staff-name">${s.name}</div>
-            <div class="staff-role">${s.role}</div>
-          </div>
-        </div>
-        <div class="staff-tags">${tags.join('')}</div>
-        <div class="staff-footer">
-          ${s.seen ? '✅ Seen 09:15' : '⏳ Pending'}
-        </div>
-      </div>
-    `;
-  }).join('');
+// Get badge color for tube type
+function getTubeBadge(tube) {
+  if (tube.includes('Gold SST')) return 'gold';
+  if (tube.includes('Purple EDTA')) return 'purple';
+  if (tube.includes('Blue Citrate')) return 'blue';
+  if (tube.includes('Grey Fluoride')) return 'green';
+  if (tube.includes('24 Hrs')) return 'orange';
+  if (tube.includes('Blood Culture')) return 'red';
+  if (tube.includes('Sterile')) return 'cyan';
+  if (tube.includes('Green Heparin')) return 'teal';
+  return 'gray';
 }
 
-function showView(id, btn){
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  if(btn && !btn.classList.contains('add')) btn.classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
+// Get badge color for fasting
+function getFastingBadge(fasting) {
+  if (fasting.includes('Fasting 10-12H')) return 'red';
+  if (fasting.includes('Fasting 8H')) return 'yellow';
+  if (fasting.includes('Random')) return 'green';
+  if (fasting.includes('2H PP')) return 'blue';
+  if (fasting.includes('24H')) return 'orange';
+  if (fasting.includes('Morning')) return 'cyan';
+  if (fasting.includes('Trough')) return 'purple';
+  if (fasting.includes('Midnight')) return 'indigo';
+  return 'gray';
 }
-
-function switchSeg(btn){
-  const parent = btn.parentElement;
-  parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function addStaff(){
-  const name = document.getElementById('newName').value.trim();
-  if(!name){ showToast('⚠️ Enter staff name'); return; }
-  const gender = document.getElementById('newGender').value;
-  const role = document.getElementById('newRole').value;
-  staff.push({
-    name: name,
-    gender: gender,
-    role: role,
-    primary: 'M',
-    seen: false
-  });
-  renderRoster();
-  document.getElementById('newName').value = '';
-  showToast('✅ ' + name + ' added to roster!');
-  setTimeout(() => showView('roster', document.querySelectorAll('.nav-item')[1]), 800);
-}
-
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-// Initialize
-renderRoster();
-</script>
-</body>
-</html>
