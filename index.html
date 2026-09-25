@@ -12934,3 +12934,386 @@ console.log('✅ Part 17 loaded — Splash KIH logo applied');
 </script>
 
 <!-- ============ END OF PART 17 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 18 — LEAVE SYSTEM ROSTER INTEGRATION FIX
+     EL · CPL · CL · SL · AL · PH → Roster
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 18 — LEAVE INTEGRATION FIX
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ UNIFIED LEAVE GETTER ============ */
+function getAllApprovedLeaves(){
+  // Read from BOTH keys (old + new)
+  const leaves1 = LocalDB.get('leaves', []);
+  const leaves2 = LocalDB.get('leaveRequests', []);
+  
+  // Merge with deduplication
+  const merged = [...leaves1];
+  leaves2.forEach(l => {
+    if(!merged.find(x => x._id === l._id)){
+      merged.push(l);
+    }
+  });
+  
+  // Only approved
+  return merged.filter(l => l.status === 'approved');
+}
+
+/* ============ OVERRIDE wizApplyLockedEntries ============ */
+window.wizApplyLockedEntries = function(){
+  wizLog && wizLog('Applying locked entries...');
+  
+  const staffIds = new Set(WIZ.staffArr.map(s => s._id));
+  
+  // ============ 1. Special OFF Dates (Staff Profile) ============
+  WIZ.staffArr.forEach(s => {
+    (s.specialOffDates || []).forEach(d => {
+      if(WIZ.grid[d] && WIZ.grid[d][s._id] !== undefined){
+        WIZ.grid[d][s._id] = 'OFF';
+        WIZ.locked[d][s._id] = true;
+        if(!WIZ.offCount[s._id]) WIZ.offCount[s._id] = 0;
+        WIZ.offCount[s._id]++;
+      }
+    });
+  });
+  
+  // ============ 2. Special OFF (New System — Part 14) ============
+  const specialOffs = State.specialOffs || LocalDB.get('specialOffs', []);
+  let specialOffApplied = 0;
+  
+  specialOffs.forEach(off => {
+    if(!staffIds.has(off.staffId)) return;
+    if(!WIZ.grid[off.date]) return;
+    if(WIZ.grid[off.date][off.staffId] === undefined) return;
+    if(WIZ.locked[off.date][off.staffId]) return;
+    
+    WIZ.grid[off.date][off.staffId] = 'OFF';
+    WIZ.locked[off.date][off.staffId] = true;
+    if(!WIZ.offCount[off.staffId]) WIZ.offCount[off.staffId] = 0;
+    WIZ.offCount[off.staffId]++;
+    specialOffApplied++;
+  });
+  
+  wizLog && wizLog(`✅ ${specialOffApplied} special OFF dates locked`);
+  
+  // ============ 3. Approved Leaves (EL/CPL/CL/SL/AL/PH) ============
+  const approvedLeaves = getAllApprovedLeaves();
+  let leavesApplied = 0;
+  let leavesSkipped = 0;
+  
+  approvedLeaves.forEach(leave => {
+    // Skip if staff not in current roster
+    if(!staffIds.has(leave.staffId)) return;
+    
+    // Get date range
+    const startDate = leave.startDate;
+    const endDate = leave.endDate || leave.startDate;
+    
+    if(!startDate) return;
+    
+    const dates = dateRange(startDate, endDate);
+    
+    dates.forEach(d => {
+      // Skip if date not in period
+      if(!WIZ.grid[d]) return;
+      if(WIZ.grid[d][leave.staffId] === undefined) return;
+      
+      // Skip if already locked (special OFF)
+      if(WIZ.locked[d][leave.staffId]){
+        leavesSkipped++;
+        return;
+      }
+      
+      // Apply leave code
+      const leaveCode = leave.type || 'CL';
+      WIZ.grid[d][leave.staffId] = leaveCode;
+      WIZ.locked[d][leave.staffId] = true;
+      
+      // PH has its own counter
+      if(leaveCode === 'PH'){
+        if(!WIZ.phCount[leave.staffId]) WIZ.phCount[leave.staffId] = 0;
+        WIZ.phCount[leave.staffId]++;
+      }
+      
+      leavesApplied++;
+    });
+  });
+  
+  wizLog && wizLog(`✅ ${leavesApplied} leave days applied`);
+  if(leavesSkipped > 0){
+    wizLog && wizLog(`⚠️ ${leavesSkipped} leave days skipped (locked)`);
+  }
+  
+  // ============ 4. Manual Overrides from Wizard ============
+  if(WIZ.mode === 'manual' && WIZ.manual){
+    WIZ.manual.offs.forEach(x => {
+      const dates = x.end ? dateRange(x.start, x.end) : [x.start];
+      dates.forEach(d => {
+        if(WIZ.grid[d] && WIZ.grid[d][x.staffId] !== undefined){
+          WIZ.grid[d][x.staffId] = 'OFF';
+          WIZ.locked[d][x.staffId] = true;
+          if(!WIZ.offCount[x.staffId]) WIZ.offCount[x.staffId] = 0;
+          WIZ.offCount[x.staffId]++;
+        }
+      });
+    });
+    
+    WIZ.manual.leaves.forEach(x => {
+      const dates = x.end ? dateRange(x.start, x.end) : [x.start];
+      dates.forEach(d => {
+        if(WIZ.grid[d] && WIZ.grid[d][x.staffId] !== undefined){
+          WIZ.grid[d][x.staffId] = x.type || 'CL';
+          WIZ.locked[d][x.staffId] = true;
+        }
+      });
+    });
+  }
+  
+  // ============ Summary Log ============
+  wizLog && wizLog(`🔒 Total locked: ${countLockedCells()}`);
+};
+
+/* ============ COUNT LOCKED CELLS ============ */
+function countLockedCells(){
+  let count = 0;
+  Object.keys(WIZ.locked || {}).forEach(date => {
+    Object.keys(WIZ.locked[date] || {}).forEach(staffId => {
+      if(WIZ.locked[date][staffId]) count++;
+    });
+  });
+  return count;
+}
+
+/* ============ OVERRIDE finalizeGeneration ============ */
+const _origFinalizeGeneration = window.finalizeGeneration;
+window.finalizeGeneration = function(){
+  if(typeof _origFinalizeGeneration === 'function'){
+    _origFinalizeGeneration.call(this);
+  }
+  
+  // Add leave validation to warnings
+  const approvedLeaves = getAllApprovedLeaves();
+  const staffIds = new Set(WIZ.staffArr.map(s => s._id));
+  let missingLeaves = 0;
+  
+  approvedLeaves.forEach(leave => {
+    if(!staffIds.has(leave.staffId)) return;
+    
+    const dates = dateRange(leave.startDate, leave.endDate || leave.startDate);
+    dates.forEach(d => {
+      if(!WIZ.grid[d]) return;
+      const cell = WIZ.grid[d][leave.staffId];
+      // Check if leave code is present
+      if(cell !== leave.type && cell !== 'OFF'){
+        // Leave might have been overwritten — this is a warning
+        missingLeaves++;
+      }
+    });
+  });
+  
+  if(missingLeaves > 0){
+    WIZ.warnings.push(`⚠️ ${missingLeaves} leave days may not be applied correctly`);
+  }
+  
+  wizLog && wizLog(`📊 Final: ${WIZ.warnings.length} warnings`);
+};
+
+/* ============ ADD LEAVE SUMMARY IN PREVIEW ============ */
+const _origRenderWizPreview = window.renderWizPreview;
+window.renderWizPreview = function(){
+  let html = '';
+  if(typeof _origRenderWizPreview === 'function'){
+    html = _origRenderWizPreview.call(this) || '';
+  }
+  
+  // Count leave stats
+  const leaveStats = { EL: 0, CPL: 0, CL: 0, SL: 0, AL: 0, PH: 0, OFF: 0 };
+  const staffIds = new Set(WIZ.staffArr.map(s => s._id));
+  
+  // From roster
+  Object.keys(WIZ.grid).forEach(d => {
+    Object.keys(WIZ.grid[d]).forEach(sid => {
+      const code = WIZ.grid[d][sid];
+      if(leaveStats[code] !== undefined){
+        leaveStats[code]++;
+      }
+    });
+  });
+  
+  // Insert leave summary at top of preview
+  const summaryHtml = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      ${leaveStats.EL > 0 ? `<div style="padding:10px;background:rgba(236,72,153,.15);border:1px solid rgba(236,72,153,.3);border-radius:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#f472b6">${leaveStats.EL}</div>
+        <div style="font-size:9px;color:#a0aec0;font-weight:700;text-transform:uppercase">EL Days</div>
+      </div>` : ''}
+      ${leaveStats.CPL > 0 ? `<div style="padding:10px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);border-radius:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#c4b5fd">${leaveStats.CPL}</div>
+        <div style="font-size:9px;color:#a0aec0;font-weight:700;text-transform:uppercase">CPL Days</div>
+      </div>` : ''}
+      ${leaveStats.CL > 0 ? `<div style="padding:10px;background:rgba(20,184,166,.15);border:1px solid rgba(20,184,166,.3);border-radius:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#5eead4">${leaveStats.CL}</div>
+        <div style="font-size:9px;color:#a0aec0;font-weight:700;text-transform:uppercase">CL Days</div>
+      </div>` : ''}
+      ${leaveStats.SL > 0 ? `<div style="padding:10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#fcd34d">${leaveStats.SL}</div>
+        <div style="font-size:9px;color:#a0aec0;font-weight:700;text-transform:uppercase">SL Days</div>
+      </div>` : ''}
+      ${leaveStats.AL > 0 ? `<div style="padding:10px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#93c5fd">${leaveStats.AL}</div>
+        <div style="font-size:9px;color:#a0aec0;font-weight:700;text-transform:uppercase">AL Days</div>
+      </div>` : ''}
+      ${leaveStats.PH > 0 ? `<div style="padding:10px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#34d399">${leaveStats.PH}</div>
+        <div style="font-size:9px;color:#a0aec0;font-weight:700;text-transform:uppercase">PH Days</div>
+      </div>` : ''}
+    </div>
+  `;
+  
+  // Wrap with leave summary
+  const wrappedHtml = `
+    <div class="info-box" style="background:rgba(108,92,255,.1);border-color:#8b5cf6">
+      <b>📋 Leave Summary</b>
+    </div>
+    ${summaryHtml}
+    ${html}
+  `;
+  
+  return wrappedHtml;
+};
+
+/* ============ FIX: markLeaveForRoster ============ */
+function markLeaveForRoster(leaveId){
+  const leaves = LocalDB.get('leaveRequests', []);
+  const idx = leaves.findIndex(l => l._id === leaveId);
+  if(idx === -1) return;
+  leaves[idx].includeInRoster = true;
+  LocalDB.set('leaveRequests', leaves);
+  toast('✅ Leave will be included in next roster');
+}
+
+/* ============ APPROVE LEAVE — Auto-add to next roster ============ */
+const _origApproveLeaveReq18 = window.approveLeaveReq;
+window.approveLeaveReq = function(id){
+  // Get leave info BEFORE approval
+  const leaves = LocalDB.get('leaveRequests', []);
+  const leave = leaves.find(l => l._id === id);
+  
+  if(typeof _origApproveLeaveReq18 === 'function'){
+    _origApproveLeaveReq18.call(this, id);
+  }
+  
+  // Show notification about roster inclusion
+  if(leave){
+    const staff = State.staff.find(s => s._id === leave.staffId);
+    setTimeout(() => {
+      toast(`✅ ${staff?.name}'s ${leave.type} approved — will show in next roster`);
+    }, 800);
+  }
+};
+
+/* ============ DEBUG HELPER ============ */
+window.debugLeaves = function(){
+  const leaves = getAllApprovedLeaves();
+  console.log('═══════════════════════════════════');
+  console.log('📋 APPROVED LEAVES');
+  console.log('═══════════════════════════════════');
+  console.log('Total:', leaves.length);
+  
+  leaves.forEach(l => {
+    const s = State.staff.find(x => x._id === l.staffId);
+    console.log(`• ${s?.name || 'Unknown'} — ${l.type} — ${l.startDate} to ${l.endDate}`);
+  });
+  
+  return leaves;
+};
+
+/* ============ RE-APPLY LEAVES TO EXISTING ROSTER ============ */
+function reapplyLeavesToRoster(){
+  if(!State.roster){
+    toast('⚠️ No roster to update', 'warn');
+    return;
+  }
+  
+  const grid = State.roster.grid;
+  if(!grid) return;
+  
+  const approvedLeaves = getAllApprovedLeaves();
+  let applied = 0;
+  
+  approvedLeaves.forEach(leave => {
+    const dates = dateRange(leave.startDate, leave.endDate || leave.startDate);
+    dates.forEach(d => {
+      if(!grid[d]) return;
+      if(grid[d][leave.staffId] === undefined) return;
+      
+      const current = grid[d][leave.staffId];
+      // Only apply if not already the correct leave code
+      if(current !== leave.type){
+        grid[d][leave.staffId] = leave.type;
+        applied++;
+      }
+    });
+  });
+  
+  if(applied > 0){
+    // Save to LocalDB
+    const pid = State.roster.start + '_' + State.roster.end;
+    LocalDB.set('roster_' + pid, State.roster);
+    
+    toast(`✅ ${applied} leave days applied to roster`);
+    showView('roster');
+  } else {
+    toast('ℹ️ No changes needed');
+  }
+}
+
+/* ============ ADD BUTTON TO ROSTER VIEW ============ */
+const _origRenderRosterView18 = window.renderRosterView;
+window.renderRosterView = function(){
+  if(typeof _origRenderRosterView18 === 'function'){
+    _origRenderRosterView18.call(this);
+  }
+  
+  // Add "Apply Leaves" button if there are approved leaves
+  const approvedLeaves = getAllApprovedLeaves();
+  if(approvedLeaves.length > 0 && State.roster){
+    const view = document.getElementById('view-roster');
+    if(!view) return;
+    
+    // Check if button already exists
+    if(view.querySelector('.apply-leaves-btn')) return;
+    
+    const pageHead = view.querySelector('.page-head');
+    if(pageHead){
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary btn-block apply-leaves-btn';
+      btn.style.cssText = 'width:calc(100% - 32px);margin:12px 16px;background:linear-gradient(135deg,#f59e0b,#f97316)';
+      btn.innerHTML = `📋 Apply ${approvedLeaves.length} Approved Leave${approvedLeaves.length > 1 ? 's' : ''} to Roster`;
+      btn.onclick = reapplyLeavesToRoster;
+      pageHead.after(btn);
+    }
+  }
+};
+
+/* ============ APPLY ON LOAD ============ */
+setTimeout(() => {
+  // Sync leaves from both sources on load
+  const approved = getAllApprovedLeaves();
+  if(approved.length > 0){
+    console.log('📋 Approved leaves found:', approved.length);
+    approved.forEach(l => {
+      const s = State.staff.find(x => x._id === l.staffId);
+      console.log(`  • ${s?.name} — ${l.type}`);
+    });
+  }
+}, 2000);
+
+console.log('✅ Part 18 loaded — Leave integration fixed');
+</script>
+
+<!-- ============ END OF PART 18 ============ -->
