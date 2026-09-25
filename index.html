@@ -13694,3 +13694,295 @@ console.log('✅ Part 19 loaded — Minimum rotation + Leave allocation fixed');
 </script>
 
 <!-- ============ END OF PART 19 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 20 — STABLE SHIFT ENGINE (Minimum Rotation)
+     Home shift priority · Only rotate when forced
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 20 — STABLE SHIFT ENGINE
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ HOME SHIFT RESOLVER ============ */
+function getHomeShift(staff){
+  // Priority: fixed > primary > first from multi
+  if(staff.fixed) return staff.fixed;
+  if(staff.primary) return staff.primary;
+  if(staff.multi && staff.multi.length > 0) return staff.multi[0];
+  return 'M';
+}
+
+/* ============ MINIMUM REQUIREMENTS (not exact) ============ */
+function getMinimumRequirements(date, isSun, isHol, isSat){
+  if(isSun || isHol){
+    // Sunday/Holiday: minimum coverage only
+    return { M: 2, E: 2, N: 1 };
+  }
+  if(isSat){
+    return { M: 3, E: 3, N12: 1, E4: 1 };
+  }
+  // Weekday
+  return { M: 4, E: 4, N12: 1, E4: 1 };
+}
+
+/* ============ REWRITTEN: wizFillDailyShifts ============ */
+window.wizFillDailyShifts = function(){
+  wizLog && wizLog('Filling shifts (STABLE engine — minimum rotation)...');
+  
+  // Track last shift per staff (initialized from primary/fixed)
+  const lastShift = {};
+  WIZ.staffArr.forEach(s => {
+    lastShift[s._id] = getHomeShift(s);
+  });
+  
+  let totalRotations = 0;
+  
+  WIZ.dates.forEach((date, dayIdx) => {
+    const isHol = !!WIZ.confirmedHolidays.find(h => h.date === date);
+    const isSun = isSunday(date);
+    const isSat = isSaturday(date);
+    const prevDate = dayIdx > 0 ? WIZ.dates[dayIdx - 1] : null;
+    
+    /* ============ STEP 1: N/N12 REST PRIORITY ============ */
+    if(prevDate){
+      WIZ.staffArr.forEach(s => {
+        if(WIZ.grid[date][s._id] !== '') return;
+        if(WIZ.locked[date][s._id]) return;
+        
+        const prevCode = WIZ.grid[prevDate][s._id];
+        
+        if(prevCode === 'N' || prevCode === 'N12'){
+          // Rest priority: OFF → E4 → E → X
+          const currentOff = WIZ.staffArr.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+          const maxOff = (isSun || isHol) ? 7 : isSat ? 2 : 1;
+          
+          if(currentOff < maxOff){
+            WIZ.grid[date][s._id] = 'OFF';
+            WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+            wizLog && wizLog(`  🔒 ${s.name}: OFF (post-N rest)`);
+          } else {
+            // No OFF slot — give E4 (male) or E (female)
+            WIZ.grid[date][s._id] = s.gender === 'Male' ? 'E4' : 'E';
+            wizLog && wizLog(`  ⚠️ ${s.name}: ${s.gender === 'Male' ? 'E4' : 'E'} (no OFF slot)`);
+          }
+        }
+      });
+    }
+    
+    /* ============ STEP 2: LOCKED / LEAVE / SPECIAL OFF ============ */
+    // Already locked in Step B — grid cell has value, skip
+    
+    /* ============ STEP 3: ASSIGN HOME SHIFT (continuity priority) ============ */
+    WIZ.staffArr.forEach(s => {
+      if(WIZ.grid[date][s._id] !== '') return;  // already assigned
+      if(WIZ.locked[date][s._id]) return;       // locked
+      
+      // Female safety check
+      let home = getHomeShift(s);
+      
+      // If female and home is N/N12/E4, change to M
+      if(s.gender === 'Female' && ['N','N12','E4'].includes(home)){
+        home = 'M';
+      }
+      
+      // On Sunday/Holiday, avoid N12/E4 if not required
+      if((isSun || isHol) && ['N12','E4'].includes(home)){
+        home = 'M'; // or E
+      }
+      
+      // Continuity: use lastShift if it's valid
+      const contCode = lastShift[s._id];
+      if(contCode && contCode !== 'X' && !['N','N12'].includes(contCode)){
+        // Check gender
+        const shift = SHIFTS[contCode];
+        if(!shift || shift.gender === 'Any' || shift.gender === s.gender){
+          // On Sunday/Holiday skip N12/E4
+          if(!((isSun || isHol) && ['N12','E4'].includes(contCode))){
+            home = contCode;
+          }
+        }
+      }
+      
+      WIZ.grid[date][s._id] = home;
+    });
+    
+    /* ============ STEP 4: COMPUTE COVERAGE ============ */
+    const coverage = { M:0, E:0, N:0, N12:0, E4:0, D:0, X:0, OFF:0 };
+    WIZ.staffArr.forEach(s => {
+      const c = WIZ.grid[date][s._id];
+      if(coverage[c] !== undefined) coverage[c]++;
+    });
+    
+    wizLog && wizLog(`  📊 ${fmtDisplay(date)} — M:${coverage.M} E:${coverage.E} N12:${coverage.N12} E4:${coverage.E4} D:${coverage.D} X:${coverage.X} OFF:${coverage.OFF}`);
+    
+    /* ============ STEP 5: FILL MINIMUMS FROM X/FLEXIBLE ============ */
+    const mins = getMinimumRequirements(date, isSun, isHol, isSat);
+    let shortages = 0;
+    
+    Object.entries(mins).forEach(([code, min]) => {
+      const current = coverage[code] || 0;
+      const short = min - current;
+      if(short <= 0) return;
+      
+      shortages += short;
+      
+      // Find candidates: staff on X, or flexible staff
+      const shift = SHIFTS[code];
+      const candidates = WIZ.staffArr.filter(s => {
+        if(WIZ.locked[date][s._id]) return false;
+        const c = WIZ.grid[date][s._id];
+        if(c !== 'X') return false;  // Only X can be moved
+        if(shift.gender !== 'Any' && s.gender !== shift.gender) return false;
+        return true;
+      });
+      
+      // Sort: multi-preference for this code first
+      candidates.sort((a, b) => {
+        const aM = (a.multi || []).includes(code) ? 0 : 1;
+        const bM = (b.multi || []).includes(code) ? 0 : 1;
+        return aM - bM;
+      });
+      
+      for(let i = 0; i < short && i < candidates.length; i++){
+        WIZ.grid[date][candidates[i]._id] = code;
+      }
+    });
+    
+    if(shortages > 0){
+      wizLog && wizLog(`  🔧 Filled ${shortages} shortage(s) from X`);
+    }
+    
+    /* ============ STEP 6: REMAINING → X ============ */
+    WIZ.staffArr.forEach(s => {
+      if(WIZ.grid[date][s._id] === '' && !WIZ.locked[date][s._id]){
+        WIZ.grid[date][s._id] = 'X';
+      }
+    });
+    
+    /* ============ STEP 7: UPDATE lastShift (only working shifts) ============ */
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[date][s._id];
+      if(code && !['OFF','PH','CPL','EL','CL','SL','AL','GH','X'].includes(code)){
+        lastShift[s._id] = code;
+      }
+    });
+    
+    /* ============ STEP 8: COUNT ROTATIONS FROM PREVIOUS DAY ============ */
+    if(prevDate){
+      let dayRotations = 0;
+      WIZ.staffArr.forEach(s => {
+        const todayCode = WIZ.grid[date][s._id];
+        const prevCode = WIZ.grid[prevDate][s._id];
+        
+        // Both working shifts and different → rotation
+        const workingShifts = ['M','E','N','N12','E4','D'];
+        if(workingShifts.includes(todayCode) && workingShifts.includes(prevCode)){
+          if(todayCode !== prevCode) dayRotations++;
+        }
+      });
+      totalRotations += dayRotations;
+      
+      if(dayRotations > 2){
+        wizLog && wizLog(`  ⚠️ ${dayRotations} rotations on ${fmtDisplay(date)}`);
+      }
+    }
+  });
+  
+  wizLog && wizLog(`🎯 Total rotations: ${totalRotations} (target: minimal)`);
+  wizLog && wizLog('✅ Shifts assigned with STABLE engine');
+  
+  // Store rotation count for preview
+  WIZ.rotationCount = totalRotations;
+};
+
+/* ============ OVERRIDE autoFixMissingShifts (no-op, engine handles it) ============ */
+window.autoFixMissingShifts = function(date, need, isOff){
+  // New engine handles shortages in wizFillDailyShifts
+  // This is now a no-op
+};
+
+/* ============ ADD ROTATION METER TO PREVIEW ============ */
+const _origRenderWizPreview20 = window.renderWizPreview;
+window.renderWizPreview = function(){
+  let html = '';
+  if(typeof _origRenderWizPreview20 === 'function'){
+    html = _origRenderWizPreview20.call(this) || '';
+  }
+  
+  // Rotation meter
+  const rotations = WIZ.rotationCount || 0;
+  const staffCount = WIZ.staffArr?.length || 1;
+  const avgRotations = (rotations / staffCount).toFixed(1);
+  
+  let rotationColor = '#34d399'; // green
+  let rotationMsg = 'Excellent — very stable';
+  if(rotations > 15){ rotationColor = '#fcd34d'; rotationMsg = 'Moderate rotation'; }
+  if(rotations > 30){ rotationColor = '#fca5a5'; rotationMsg = 'High rotation — check shortages'; }
+  
+  const meterHtml = `
+    <div class="info-box" style="background:rgba(108,92,255,.08);border-color:#8b5cf6;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <b>🎯 Shift Stability</b>
+          <div style="font-size:10px;color:#a0aec0;margin-top:2px">${rotationMsg}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:900;color:${rotationColor}">${rotations}</div>
+          <div style="font-size:9px;color:#64748b;font-weight:700">rotations</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:#64748b">
+        Avg per staff: <b style="color:#a0aec0">${avgRotations}</b> · Lower is better
+      </div>
+    </div>
+  `;
+  
+  return meterHtml + html;
+};
+
+/* ============ DEBUG TOOL ============ */
+window.debugShifts = function(){
+  console.log('═══════════════════════════════════════');
+  console.log('📊 SHIFT STABILITY REPORT');
+  console.log('═══════════════════════════════════════');
+  console.log('Rotations:', WIZ.rotationCount || 0);
+  console.log('Staff count:', WIZ.staffArr?.length || 0);
+  console.log('');
+  
+  if(!WIZ.grid || !WIZ.dates) {
+    console.log('No roster generated yet');
+    return;
+  }
+  
+  // Show shift pattern per staff
+  WIZ.staffArr.forEach(s => {
+    const shifts = WIZ.dates.map(d => WIZ.grid[d]?.[s._id] || '-');
+    console.log(`${s.name.padEnd(20)} | ${shifts.join(' ')}`);
+  });
+  
+  console.log('═══════════════════════════════════════');
+};
+
+/* ============ APPLY ON LOAD ============ */
+setTimeout(() => {
+  console.log('═══════════════════════════════════════');
+  console.log('🎯 Part 20 — STABLE SHIFT ENGINE Active');
+  console.log('═══════════════════════════════════════');
+  console.log('Key changes:');
+  console.log('  ✅ Home shift priority (fixed > primary > last)');
+  console.log('  ✅ Minimum coverage (not exact pattern)');
+  console.log('  ✅ Only rotate when forced');
+  console.log('  ✅ Rotation meter in preview');
+  console.log('');
+  console.log('Commands:');
+  console.log('  debugShifts()     — See shift patterns');
+  console.log('  debugAllLeaves()  — See all leaves');
+  console.log('═══════════════════════════════════════');
+}, 2500);
+
+console.log('✅ Part 20 loaded — Stable shift engine active');
+</script>
+
+<!-- ============ END OF PART 20 ============ -->
