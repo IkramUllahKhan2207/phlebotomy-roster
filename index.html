@@ -5598,3 +5598,506 @@ console.log('✅ Part 6 loaded — All views ready');
 
 <!-- ============ END OF PART 6 ============ -->
   
+<!-- ═══════════════════════════════════════════════════════════
+     PART 7 — STAFF MANAGEMENT FIX
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 7 — STAFF MANAGEMENT FIX
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ FIX 1: Load staff properly ============ */
+const _originalLoadInitialData = window.loadInitialData;
+
+window.loadInitialData = function(){
+  // Force refresh staff — always ensure 12 staff exist
+  let staff = LocalDB.get('staff', null);
+  
+  // If only admin is present or staff missing fields, reload full list
+  if(!staff || staff.length <= 1 || !staff.some(s => s.role !== 'admin')){
+    // Keep existing admin, add 12 default staff
+    const admins = (staff || []).filter(s => s.role === 'admin');
+    const defaultStaff = JSON.parse(JSON.stringify(DEFAULT_STAFF));
+    
+    // Fix any undefined fields in admin
+    admins.forEach(a => {
+      if(!a.primary) a.primary = 'M';
+      if(!a.multi) a.multi = ['M','E','D','X'];
+      if(!a.fixed) a.fixed = null;
+      if(!a.gender) a.gender = 'Male';
+      if(!a.active) a.active = true;
+    });
+    
+    const fullList = [...admins, ...defaultStaff];
+    LocalDB.set('staff', fullList);
+    staff = fullList;
+    console.log('✅ Staff list initialized with', staff.length, 'members');
+  }
+  
+  State.staff = staff;
+  
+  // Load settings
+  const settings = LocalDB.get('settings', null);
+  if(settings) Object.assign(State, settings);
+  
+  // Load last roster
+  const lastRosterId = LocalDB.get('lastRoster', null);
+  if(lastRosterId){
+    const roster = LocalDB.get('roster_' + lastRosterId, null);
+    if(roster) State.roster = roster;
+  }
+  
+  updateStats();
+  
+  const lastUpdateEl = $('lastUpdate');
+  if(lastUpdateEl) lastUpdateEl.textContent = fmtDateTime(State.lastUpdate);
+  
+  applySettings();
+  console.log('📊 Loaded:', State.staff.length, 'staff (including admin)');
+};
+
+/* ============ FIX 2: Staff list rendering ============ */
+const _originalRenderRosterView = window.renderRosterView;
+
+window.renderRosterView = function(){
+  // Staff list
+  const listEl = $('staffList');
+  if(listEl){
+    // Only show non-admin staff
+    const staffOnly = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+    
+    if(staffOnly.length === 0){
+      listEl.innerHTML = '<div class="empty">No staff added yet. Click "+ Add Staff" above.</div>';
+    } else {
+      listEl.innerHTML = staffOnly.map(s => {
+        const isFemale = s.gender === 'Female';
+        const primary = s.primary || s.fixed || 'M';
+        return `
+          <div class="list-row">
+            <div class="grow">
+              <b>${escapeHtml(s.name)}</b>
+              <small>${isFemale ? '🩷 Female' : '👨 Male'} · Primary: ${primary}${s.fixed ? ' · Fixed: ' + s.fixed : ''}</small>
+            </div>
+            <div style="display:flex;gap:4px;align-items:center">
+              <span class="badge ${isFemale ? 'badge-pink' : 'badge-blue'}">${s.gender || 'Any'}</span>
+              <button class="btn btn-ghost btn-sm" onclick="editStaff('${s._id}')" style="padding:4px 8px">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteStaff('${s._id}')" style="padding:4px 8px">🗑</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Add Staff button (if not already)
+    if(!listEl.previousElementSibling?.classList?.contains('add-staff-btn')){
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn-primary btn-block add-staff-btn';
+      addBtn.style.cssText = 'width:calc(100% - 32px);margin:0 16px 12px';
+      addBtn.innerHTML = '➕ Add New Staff';
+      addBtn.onclick = openAddStaffModal;
+      listEl.parentElement.insertBefore(addBtn, listEl);
+    }
+  }
+
+  // Current period info
+  const periodEl = $('currentPeriodInfo');
+  if(periodEl){
+    if(State.roster){
+      periodEl.className = '';
+      periodEl.innerHTML = `
+        <div class="list-row">
+          <div class="grow">
+            <b>📅 ${escapeHtml(State.roster.label || 'Current Period')}</b>
+            <small>Saved ${fmtDateTime(State.roster.createdAt)} by ${escapeHtml(State.roster.createdBy || 'Admin')}</small>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="viewRoster()">View</button>
+        </div>
+      `;
+    } else {
+      periodEl.className = 'empty';
+      periodEl.textContent = 'No roster generated yet';
+    }
+  }
+};
+
+/* ============ FIX 3: Add Staff Modal ============ */
+function openAddStaffModal(){
+  openModal('➕ Add New Staff', `
+    <div class="field">
+      <label>Full Name *</label>
+      <input type="text" id="nsName" placeholder="e.g., Ahmed Khan" autocomplete="off">
+    </div>
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Gender *</label>
+        <select id="nsGender">
+          <option value="Male">👨 Male</option>
+          <option value="Female">🩷 Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select id="nsRole">
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Primary Shift *</label>
+        <select id="nsPrimary">
+          <option value="M">M — Morning (07-15)</option>
+          <option value="E">E — Evening (15-23)</option>
+          <option value="N">N — Night (23-07)</option>
+          <option value="D">D — Day (09-17)</option>
+          <option value="E4">E4 — Evening-4 (16-00)</option>
+          <option value="N12">N12 — Night-12 (00-08)</option>
+          <option value="X">X — Standby (11-19)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Fixed Shift (optional)</label>
+        <select id="nsFixed">
+          <option value="">None (rotate)</option>
+          <option value="M">M — Morning</option>
+          <option value="E">E — Evening</option>
+          <option value="N">N — Night</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label>Multi Shifts (comma separated)</label>
+      <input type="text" id="nsMulti" placeholder="e.g., M,E,D,X" value="M,E,D,X">
+    </div>
+    
+    <div class="field">
+      <label>Mobile (for login)</label>
+      <input type="tel" id="nsMobile" placeholder="03XXXXXXXXX" maxlength="11">
+    </div>
+    
+    <div class="field">
+      <label>Password (for login)</label>
+      <input type="text" id="nsPassword" placeholder="Minimum 4 characters" value="1234">
+    </div>
+    
+    <div class="ok-box">
+      <b>🩷 Female Safety:</b> Female staff will automatically be blocked from N, N12, and E4 shifts.
+    </div>
+    
+    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="saveNewStaff()">
+      💾 Save Staff Member
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+  
+  setTimeout(() => $('nsName')?.focus(), 200);
+}
+
+/* ============ FIX 4: Save Staff ============ */
+function saveNewStaff(){
+  const name = ($('nsName')?.value || '').trim();
+  const gender = $('nsGender')?.value || 'Male';
+  const role = $('nsRole')?.value || 'staff';
+  const primary = $('nsPrimary')?.value || 'M';
+  const fixed = $('nsFixed')?.value || null;
+  const multi = ($('nsMulti')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const mobile = ($('nsMobile')?.value || '').trim();
+  const password = ($('nsPassword')?.value || '1234').trim();
+  
+  if(!name){
+    toast('⚠️ Name required', 'error');
+    $('nsName')?.focus();
+    return;
+  }
+  
+  if(name.length < 3){
+    toast('⚠️ Name too short', 'error');
+    return;
+  }
+  
+  // Validate multi shifts
+  const validShifts = ['M','D','X','E','E4','N','N12'];
+  const cleanMulti = multi.filter(m => validShifts.includes(m));
+  if(cleanMulti.length === 0) cleanMulti.push('M');
+  
+  // Female safety: remove N, N12, E4 from multi if female
+  const finalMulti = gender === 'Female' 
+    ? cleanMulti.filter(m => !['N','N12','E4'].includes(m))
+    : cleanMulti;
+  
+  if(gender === 'Female' && finalMulti.length === 0){
+    finalMulti.push('M');
+  }
+  
+  const newStaff = {
+    _id: 's_' + nowTs() + '_' + Math.random().toString(36).slice(2, 6),
+    name: name,
+    gender: gender,
+    role: role,
+    primary: primary,
+    fixed: fixed,
+    multi: finalMulti,
+    mobile: mobile,
+    password: password,
+    active: true,
+    createdAt: nowTs()
+  };
+  
+  // Add to LocalDB
+  const staffList = LocalDB.get('staff', []);
+  staffList.push(newStaff);
+  LocalDB.set('staff', staffList);
+  
+  // Update State
+  State.staff = staffList;
+  
+  // Success
+  toast('✅ ' + name + ' added!');
+  vibrate(100);
+  fireConfetti();
+  closeModal();
+  
+  // Re-render
+  renderRosterView();
+  updateStats();
+  
+  console.log('➕ Staff added:', name);
+}
+
+/* ============ FIX 5: Edit Staff ============ */
+function editStaff(id){
+  const s = State.staff.find(x => x._id === id);
+  if(!s) return;
+  
+  openModal('✏️ Edit ' + s.name, `
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="esName" value="${escapeHtml(s.name)}">
+    </div>
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Gender</label>
+        <select id="esGender">
+          <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>👨 Male</option>
+          <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>🩷 Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select id="esRole">
+          <option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Staff</option>
+          <option value="admin" ${s.role === 'admin' ? 'selected' : ''}>Admin</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Primary Shift</label>
+        <select id="esPrimary">
+          ${['M','E','N','D','E4','N12','X'].map(p => 
+            `<option value="${p}" ${s.primary === p ? 'selected' : ''}>${p}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Fixed Shift</label>
+        <select id="esFixed">
+          <option value="" ${!s.fixed ? 'selected' : ''}>None</option>
+          ${['M','E','N','D','E4','N12'].map(p => 
+            `<option value="${p}" ${s.fixed === p ? 'selected' : ''}>${p}</option>`
+          ).join('')}
+        </select>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label>Multi Shifts</label>
+      <input type="text" id="esMulti" value="${(s.multi || []).join(',')}">
+    </div>
+    
+    <div class="field">
+      <label>Active</label>
+      <select id="esActive">
+        <option value="true" ${s.active !== false ? 'selected' : ''}>✅ Active</option>
+        <option value="false" ${s.active === false ? 'selected' : ''}>❌ Inactive</option>
+      </select>
+    </div>
+    
+    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="updateStaff('${s._id}')">
+      💾 Save Changes
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+function updateStaff(id){
+  const name = ($('esName')?.value || '').trim();
+  const gender = $('esGender')?.value;
+  const role = $('esRole')?.value;
+  const primary = $('esPrimary')?.value;
+  const fixed = $('esFixed')?.value || null;
+  const multi = ($('esMulti')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const active = $('esActive')?.value === 'true';
+  
+  if(!name){ toast('⚠️ Name required', 'error'); return; }
+  
+  const staffList = LocalDB.get('staff', []);
+  const idx = staffList.findIndex(x => x._id === id);
+  if(idx === -1) return;
+  
+  // Female safety
+  const finalMulti = gender === 'Female'
+    ? multi.filter(m => !['N','N12','E4'].includes(m))
+    : multi;
+  
+  staffList[idx] = {
+    ...staffList[idx],
+    name: name,
+    gender: gender,
+    role: role,
+    primary: primary,
+    fixed: fixed,
+    multi: finalMulti.length > 0 ? finalMulti : ['M'],
+    active: active,
+    updatedAt: nowTs()
+  };
+  
+  LocalDB.set('staff', staffList);
+  State.staff = staffList;
+  
+  toast('✅ Updated successfully');
+  closeModal();
+  renderRosterView();
+}
+
+/* ============ FIX 6: Delete Staff ============ */
+function deleteStaff(id){
+  const s = State.staff.find(x => x._id === id);
+  if(!s) return;
+  
+  if(!confirm('Delete "' + s.name + '"? This cannot be undone.')) return;
+  
+  const staffList = LocalDB.get('staff', []).filter(x => x._id !== id);
+  LocalDB.set('staff', staffList);
+  State.staff = staffList;
+  
+  toast('🗑️ ' + s.name + ' deleted');
+  vibrate(50);
+  renderRosterView();
+  updateStats();
+}
+
+/* ============ FIX 7: Update doLogin to save all staff ============ */
+const _originalDoLogin = window.doLogin;
+
+window.doLogin = function(){
+  const mobile = ($('loginMobile')?.value || '').trim();
+  const password = ($('loginPassword')?.value || '').trim();
+  const keep = $('keepSignedIn')?.checked;
+  
+  if(!mobile || mobile.length < 10){
+    toast('⚠️ Enter valid mobile', 'error');
+    return;
+  }
+  if(!password){
+    toast('⚠️ Enter password', 'error');
+    return;
+  }
+  
+  // Ensure staff list exists with all 12 staff + admin
+  let staffList = LocalDB.get('staff', []);
+  
+  // Fix: Ensure 12 staff always exist
+  if(staffList.length <= 1){
+    const defaultStaff = JSON.parse(JSON.stringify(DEFAULT_STAFF));
+    const admins = staffList.filter(s => s.role === 'admin');
+    
+    admins.forEach(a => {
+      if(!a.primary) a.primary = 'M';
+      if(!a.multi) a.multi = ['M','E','D','X'];
+      if(!a.gender) a.gender = 'Male';
+    });
+    
+    if(admins.length === 0){
+      admins.push({ ...DEFAULT_ADMIN, primary: 'M', gender: 'Male', multi: ['M','E','D','X'] });
+    }
+    
+    staffList = [...admins, ...defaultStaff];
+    LocalDB.set('staff', staffList);
+  }
+  
+  // Find user (admin or staff with mobile+password)
+  const user = staffList.find(s => 
+    s.mobile === mobile && 
+    s.password === password && 
+    s.active !== false
+  );
+  
+  // Default admin fallback
+  if(!user && mobile === '03001234567' && password === 'admin123'){
+    const admin = staffList.find(s => s.role === 'admin') || { ...DEFAULT_ADMIN, primary: 'M', gender: 'Male', multi: ['M','E','D','X'] };
+    State.user = admin;
+    if(keep) saveSession(admin); else clearSession();
+    showApp();
+    toast('👋 Welcome ' + admin.name + '!');
+    return;
+  }
+  
+  if(!user){
+    toast('❌ Invalid mobile or password', 'error');
+    vibrate(200);
+    return;
+  }
+  
+  State.user = user;
+  if(keep) saveSession(user); else clearSession();
+  showApp();
+  toast('👋 Welcome ' + user.name.split(' ')[0] + '!');
+};
+
+/* ============ FIX 8: Clean "undefined" primary in existing staff ============ */
+(function fixUndefinedFields(){
+  const staff = LocalDB.get('staff', []);
+  let changed = false;
+  
+  staff.forEach(s => {
+    if(!s.primary){
+      s.primary = s.fixed || 'M';
+      changed = true;
+    }
+    if(!s.multi || !Array.isArray(s.multi) || s.multi.length === 0){
+      s.multi = ['M','E','D','X'];
+      changed = true;
+    }
+    if(!s.gender){
+      s.gender = 'Male';
+      changed = true;
+    }
+    if(s.active === undefined){
+      s.active = true;
+      changed = true;
+    }
+  });
+  
+  if(changed){
+    LocalDB.set('staff', staff);
+    console.log('🔧 Fixed undefined fields in staff records');
+  }
+})();
+
+/* ============ OVERRIDE PLACEHOLDERS ============ */
+window.openAddStaffModal = openAddStaffModal;
+window.saveNewStaff = saveNewStaff;
+window.editStaff = editStaff;
+window.updateStaff = updateStaff;
+window.deleteStaff = deleteStaff;
+
+console.log('✅ Part 7 loaded — Staff management ready');
+</script>
+
+<!-- ============ END OF PART 7 ============ -->
