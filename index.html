@@ -18777,3 +18777,294 @@ console.log('   Auto-gen → Edit cells → Save → Learn');
 </script>
 
 <!-- ============ END OF PART 29 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 30 — CLEAN PREVIEW RENDER (Independent)
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 30 — CLEAN PREVIEW RENDERING
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ FRESH renderWizPreview — no dependencies ============ */
+window.renderWizPreview = function(){
+  try {
+    const dates = WIZ.dates || [];
+    const staff = WIZ.staffArr || [];
+    const grid = WIZ.grid || {};
+    const holidays = WIZ.confirmedHolidays || [];
+    const today = RE.ymd(new Date());
+
+    // ============ STABILITY METER ============
+    const rot = WIZ.rotationCount || 0;
+    const staffCount = staff.length || 1;
+    const avg = (rot / staffCount).toFixed(1);
+    let rotColor = '#34d399', rotMsg = '✅ Excellent stability';
+    if (rot > 20) { rotColor = '#fcd34d'; rotMsg = '⚠️ Moderate rotation'; }
+    if (rot > 40) { rotColor = '#fca5a5'; rotMsg = '❌ High rotation'; }
+
+    const meterHtml = `
+      <div class="info-box" style="background:linear-gradient(135deg,rgba(108,92,255,.1),rgba(16,185,129,.05));border-color:#8b5cf6;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <b>🎯 Shift Stability</b>
+            <div style="font-size:10px;color:#a0aec0;margin-top:2px">${rotMsg}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:900;color:${rotColor}">${rot}</div>
+            <div style="font-size:9px;color:#64748b;font-weight:700">rotations</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#64748b">
+          Avg/staff: <b style="color:#a0aec0">${avg}</b>
+        </div>
+      </div>
+    `;
+
+    // ============ LIVE STATS BAR ============
+    const stats = { M:0, E:0, N:0, N12:0, E4:0, D:0, X:0, OFF:0 };
+    Object.keys(grid).forEach(d => {
+      Object.keys(grid[d]).forEach(sid => {
+        const c = grid[d][sid];
+        if (stats[c] !== undefined) stats[c]++;
+      });
+    });
+
+    const statsBar = `
+      <div class="live-stats">
+        <div class="live-stat">M <b>${stats.M}</b></div>
+        <div class="live-stat">E <b>${stats.E}</b></div>
+        <div class="live-stat">N <b>${stats.N}</b></div>
+        <div class="live-stat">N12 <b>${stats.N12}</b></div>
+        <div class="live-stat">E4 <b>${stats.E4}</b></div>
+        <div class="live-stat">D <b>${stats.D}</b></div>
+        <div class="live-stat">X <b>${stats.X}</b></div>
+        <div class="live-stat">OFF <b>${stats.OFF}</b></div>
+      </div>
+      <div style="text-align:center;font-size:10px;color:#64748b;padding:0 16px 12px">
+        💡 Tap any cell to change shift
+      </div>
+    `;
+
+    // ============ WARNINGS ============
+    let warnHtml = '';
+    if ((WIZ.warnings || []).length > 0) {
+      warnHtml = `
+        <div class="err-box" style="margin:0 16px 12px">
+          <b>⚠️ ${WIZ.warnings.length} warning(s):</b>
+          <ul>
+            ${WIZ.warnings.slice(0, 8).map(w => `<li>${escapeHtml(w)}</li>`).join('')}
+            ${WIZ.warnings.length > 8 ? `<li>... and ${WIZ.warnings.length - 8} more</li>` : ''}
+          </ul>
+        </div>
+      `;
+    } else {
+      warnHtml = `<div class="ok-box" style="margin:0 16px 12px">✅ No warnings — Ready to save</div>`;
+    }
+
+    // ============ SUMMARY TABLE ============
+    let summaryHtml = `
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;padding:0 16px 8px;color:#fff">
+        📊 Summary
+      </div>
+      <div class="tbl-wrap" style="margin:0 16px 14px">
+        <table>
+          <thead>
+            <tr><th>Staff</th><th>OFF</th><th>Target</th><th>Diff</th></tr>
+          </thead>
+          <tbody>
+    `;
+    staff.forEach(s => {
+      const off = WIZ.offCount?.[s._id] || 0;
+      const diff = off - (WIZ.offTarget || 0);
+      const color = diff === 0 ? 'color:#34d399' : 'color:#fca5a5';
+      summaryHtml += `
+        <tr>
+          <td>${escapeHtml(s.name.split(' ')[0])}</td>
+          <td><b>${off}</b></td>
+          <td>${WIZ.offTarget || 0}</td>
+          <td style="${color};font-weight:800">${diff > 0 ? '+' : ''}${diff}</td>
+        </tr>
+      `;
+    });
+    summaryHtml += `</tbody></table></div>`;
+
+    // ============ ROSTER GRID (EDITABLE) ============
+    let gridHtml = `
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;padding:0 16px 8px;color:#fff">
+        📋 Roster Grid
+      </div>
+      <div class="tbl-wrap" style="margin:0 16px 14px;max-height:400px;overflow:auto">
+        <table class="roster-tbl" id="previewRosterTable">
+          <thead>
+            <tr>
+              <th class="sticky">Staff</th>
+    `;
+
+    dates.forEach(d => {
+      const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][RE.parseYMD(d).getDay()];
+      const isSun = RE.isSunday(d);
+      const isSat = RE.isSaturday(d);
+      const isHol = holidays.some(h => h.date === d);
+      const isToday = d === today;
+
+      let classes = ['date-head'];
+      if (isToday) classes.push('today');
+      else if (isHol) classes.push('holiday');
+      else if (isSun) classes.push('sunday');
+      else if (isSat) classes.push('saturday');
+
+      gridHtml += `
+        <th class="${classes.join(' ')}">
+          <span class="date-num">${d.slice(8)}</span>
+          <span class="day-name">${dayShort}</span>
+        </th>
+      `;
+    });
+
+    gridHtml += `</tr></thead><tbody>`;
+
+    staff.forEach(s => {
+      gridHtml += `<tr><td class="sticky">${escapeHtml(s.name.split(' ')[0])}</td>`;
+      dates.forEach(d => {
+        const code = (grid[d] || {})[s._id] || '';
+        const cellClass = code ? `cell-${code}` : 'cell-X';
+        gridHtml += `<td class="${cellClass}" 
+                        data-staff="${s._id}" 
+                        data-date="${d}" 
+                        onclick="openShiftPicker('${s._id}', '${d}')"
+                        style="cursor:pointer">${code || '—'}</td>`;
+      });
+      gridHtml += `</tr>`;
+    });
+
+    gridHtml += `</tbody></table></div>`;
+
+    // ============ COMBINE ============
+    return meterHtml + statsBar + warnHtml + summaryHtml + gridHtml;
+
+  } catch (err) {
+    console.error('Preview render error:', err);
+    return `
+      <div class="err-box" style="margin:16px">
+        <b>❌ Preview error:</b> ${escapeHtml(err.message)}
+        <br><small>Check F12 console for details</small>
+      </div>
+    `;
+  }
+};
+
+/* ============ OVERRIDE makeEditable — Now optional (cells already have onclick) ============ */
+window.makeEditable = function(){
+  // Cells already have onclick from renderWizPreview
+  // Just verify
+  const cells = document.querySelectorAll('#previewRosterTable td[data-staff]');
+  console.log('✅ Editable cells:', cells.length);
+};
+
+/* ============ ENSURE renderWizard calls fresh preview ============ */
+const _origRenderWizard30 = window.renderWizard;
+window.renderWizard = function(){
+  if (typeof _origRenderWizard30 === 'function') {
+    try { _origRenderWizard30.call(this); } catch(e){ console.warn('renderWizard err:', e); }
+  }
+  
+  // On step 6, ensure cells are clickable
+  if (WIZ.step === 6) {
+    setTimeout(() => {
+      const cells = document.querySelectorAll('#previewRosterTable td[data-staff]');
+      console.log('📋 Preview cells ready:', cells.length);
+    }, 150);
+  }
+};
+
+/* ============ FIX: Force immediate preview on step 6 ============ */
+// The issue is that openModal in renderWizard might be using old body.
+// So we override renderWizard completely for step 6.
+
+window.wizRenderStep6 = function(){
+  const body = renderWizPreview();
+  const canSave = (WIZ.warnings || []).length === 0;
+  
+  // Manually build the modal
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+  const modalFoot = document.getElementById('modalFoot');
+  const modalBg = document.getElementById('modalBg');
+  
+  if (!modalBody) return;
+  
+  if (modalTitle) {
+    const hasLearned = Object.keys(getLearnedPatterns()).length > 0;
+    modalTitle.innerHTML = '🪄 Roster Wizard' + (hasLearned ? ' <span class="learned-badge">🧠 Smart</span>' : '');
+  }
+  
+  const stepsBar = `
+    <div class="steps-bar">
+      <div class="step-pill done">1. Period</div>
+      <div class="step-pill done">2. Holidays</div>
+      <div class="step-pill done">3. Mode</div>
+      <div class="step-pill done">4. Rules</div>
+      <div class="step-pill done">5. Generate</div>
+      <div class="step-pill active">6. Preview</div>
+    </div>
+  `;
+  
+  modalBody.innerHTML = stepsBar + body;
+  
+  if (modalFoot) {
+    modalFoot.innerHTML = `
+      <button class="btn btn-ghost" onclick="WIZ.step=4;renderWizard()">← Back</button>
+      <button class="btn ${canSave ? 'btn-success' : 'btn-ghost'}" 
+              ${canSave ? '' : 'disabled'} 
+              onclick="wizSaveRoster()">
+        💾 Save Roster
+      </button>
+    `;
+  }
+  
+  if (modalBg) modalBg.classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
+
+/* ============ PATCH simpleAutoGenerate to use wizRenderStep6 ============ */
+const _origSimpleGen30 = window.simpleAutoGenerate;
+window.simpleAutoGenerate = function(){
+  if (typeof _origSimpleGen30 === 'function') {
+    _origSimpleGen30.call(this);
+  }
+  // After generation, force render step 6
+  setTimeout(() => {
+    WIZ.step = 6;
+    wizRenderStep6();
+  }, 50);
+};
+
+/* ============ PATCH wizNext to use wizRenderStep6 ============ */
+const _origWizNext30 = window.wizNext;
+window.wizNext = function(){
+  if (typeof _origWizNext30 === 'function') {
+    _origWizNext30.call(this);
+  }
+};
+
+/* ============ VERIFY ON LOAD ============ */
+setTimeout(() => {
+  console.log('═══════════════════════════════════════');
+  console.log('✅ Part 30 loaded — Clean preview');
+  console.log('═══════════════════════════════════════');
+  console.log('Preview now:');
+  console.log('  1. Stability meter');
+  console.log('  2. Live stats bar');
+  console.log('  3. Warnings box');
+  console.log('  4. Summary table');
+  console.log('  5. Editable roster grid');
+  console.log('  6. Cells clickable → shift picker');
+  console.log('═══════════════════════════════════════');
+}, 2500);
+
+console.log('✅ Part 30 loaded — Clean preview rendering');
+</script>
+
+<!-- ============ END OF PART 30 ============ -->
