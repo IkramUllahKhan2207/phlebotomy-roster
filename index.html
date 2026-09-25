@@ -8533,3 +8533,747 @@ console.log('✅ Part 10 loaded — Duty roster, KIH logo, forms upload, admin c
 </script>
 
 <!-- ============ END OF PART 10 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 11 — LANGUAGE SYSTEM + LOGO FIX + PASHTO
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== HIDE OLD LOGO ===== */
+.header-left .logo,
+.header-left .header-title,
+.header-left .kih-logo {
+  display: none !important;
+}
+
+/* ===== HIDE DUPLICATE KULSUM TEXT ===== */
+.header-left .kih-official-logo + .kih-official-logo,
+.header-left .kih-official-logo + .kih-logo,
+.header-left .kih-logo + .kih-official-logo {
+  display: none !important;
+}
+
+/* ===== PASHTUN FONT SUPPORT ===== */
+[data-lang="ps"] {
+  font-family: 'Noto Naskh Arabic', 'Segoe UI', 'Tahoma', sans-serif;
+  direction: rtl;
+}
+
+[data-lang="ur"] {
+  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', 'Tahoma', sans-serif;
+  direction: rtl;
+}
+
+/* ===== LANGUAGE SEGMENT ===== */
+.segmented button {
+  font-family: inherit;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 11 — LANGUAGE SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ TRANSLATIONS ============ */
+const TRANSLATIONS = {
+  en: {
+    // Sidebar
+    dashboard: 'Dashboard',
+    roster: 'Roster',
+    testProtocols: 'Test Protocols',
+    chat: 'Chat',
+    management: 'Management',
+    addStaff: 'Add Staff',
+    allStaff: 'All Staff',
+    adminPolicy: 'Admin Policy',
+    historyForms: 'History Forms',
+    tools: 'Tools',
+    emergency: 'Emergency',
+    startDraw: 'Start Draw',
+    difficultDraw: 'Difficult Draw',
+    rejectionGuide: 'Rejection Guide',
+    scripts: 'Scripts',
+    account: 'Account',
+    settings: 'Settings',
+    profile: 'Profile',
+    logout: 'Logout',
+    
+    // Dashboard
+    dashboardTitle: 'Dashboard',
+    activeStaff: 'Active Staff',
+    rosterStatus: 'Roster Status',
+    onShift: 'on shift',
+    ready: 'Ready',
+    pending: 'Pending',
+    todayDuty: "Today's Duty",
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    yesterday: 'Yesterday',
+    morning: 'Morning',
+    evening: 'Evening',
+    night: 'Night',
+    offDuty: 'Off Duty',
+    noStaffAssigned: 'No staff assigned',
+    shiftCoverage: 'Shift Coverage',
+    total: 'Total',
+    allFemaleSafety: 'All female staff have safety compliance active',
+    quickActions: 'Quick Actions',
+    searchTest: 'Search Test Protocol',
+    difficultGuide: 'Difficult Draw Guide',
+    rejectionSpecimen: 'Specimen Rejection Guide',
+    commScripts: 'Communication Scripts',
+    historyFormsBtn: 'History Forms',
+    recentAnnouncements: 'Recent Announcements',
+    noAnnouncements: 'No announcements yet',
+    
+    // Settings
+    theme: 'Theme',
+    dark: 'Dark',
+    light: 'Light',
+    glass: 'Glass',
+    language: 'Language',
+    english: 'English',
+    urdu: 'اردو',
+    pashto: 'پښتو',
+    fontSize: 'Font Size',
+    current: 'Current',
+    safetyRoster: 'Safety & Roster',
+    femaleSafety: 'Female Safety',
+    femaleSafetyDesc: 'Auto-block N/N12/E4 for female staff',
+    fullRosterWave: 'Full Roster Wave',
+    fullRosterWaveDesc: 'Everyone can view full month roster',
+    notifications: 'Notifications',
+    dailyReminder: 'Daily Reminder',
+    dailyReminderDesc: '8 PM reminder for tomorrow\'s duty',
+    whatsappNotify: 'WhatsApp Auto Notify',
+    whatsappNotifyDesc: 'Send WhatsApp on duty change',
+    export: 'Export',
+    exportPDF: 'Export Roster as PDF',
+    exportExcel: 'Export Roster as Excel',
+    exportCSV: 'Export 804 Tests CSV',
+    data: 'Data',
+    backupData: 'Backup All Data',
+    restoreData: 'Restore from Backup',
+    resetAll: 'Reset All Data',
+    about: 'About',
+    app: 'App',
+    version: 'Version',
+    hospital: 'Hospital',
+    staff: 'Staff',
+    tests: 'Tests',
+    lastUpdate: 'Last Update',
+    
+    // Staff
+    addNewStaff: 'Add New Staff',
+    fullName: 'Full Name',
+    role: 'Role',
+    phlebotomist: 'Phlebotomist',
+    supervisor: 'Supervisor',
+    gender: 'Gender',
+    male: 'Male',
+    female: 'Female',
+    primaryShift: 'Primary Shift',
+    fixedShift: 'Fixed Shift',
+    multiShifts: 'Multi Shifts',
+    mobile: 'Mobile',
+    password: 'Password',
+    saveStaff: 'Save Staff Member',
+    none: 'None (rotate)',
+    
+    // Common
+    save: 'Save',
+    cancel: 'Cancel',
+    close: 'Close',
+    edit: 'Edit',
+    delete: 'Delete',
+    view: 'View',
+    print: 'Print',
+    upload: 'Upload',
+    share: 'Share',
+    yes: 'Yes',
+    no: 'No',
+    confirm: 'Confirm',
+    nameRequired: 'Name required',
+    saved: 'Saved',
+    deleted: 'Deleted',
+    updated: 'Updated'
+  },
+  
+  ur: {
+    // Sidebar
+    dashboard: 'ڈیش بورڈ',
+    roster: 'روسٹر',
+    testProtocols: 'ٹیسٹ پروٹوکول',
+    chat: 'چیٹ',
+    management: 'انتظامیہ',
+    addStaff: 'عملہ شامل کریں',
+    allStaff: 'تمام عملہ',
+    adminPolicy: 'ایڈمن پالیسی',
+    historyForms: 'ہسٹری فارم',
+    tools: 'ٹولز',
+    emergency: 'ہنگامی',
+    startDraw: 'نمونہ شروع',
+    difficultDraw: 'مشکل ڈرا',
+    rejectionGuide: 'مسترد گائیڈ',
+    scripts: 'اسکرپٹ',
+    account: 'اکاؤنٹ',
+    settings: 'ترتیبات',
+    profile: 'پروفائل',
+    logout: 'لاگ آؤٹ',
+    
+    // Dashboard
+    dashboardTitle: 'ڈیش بورڈ',
+    activeStaff: 'فعال عملہ',
+    rosterStatus: 'روسٹر کی حیثیت',
+    onShift: 'ڈیوٹی پر',
+    ready: 'تیار',
+    pending: 'زیر التواء',
+    todayDuty: 'آج کی ڈیوٹی',
+    today: 'آج',
+    tomorrow: 'کل',
+    yesterday: 'گزشتہ کل',
+    morning: 'صبح',
+    evening: 'شام',
+    night: 'رات',
+    offDuty: 'چھٹی',
+    noStaffAssigned: 'کوئی عملہ نہیں',
+    shiftCoverage: 'شفٹ کوریج',
+    total: 'کل',
+    allFemaleSafety: 'تمام خواتین عملہ سیفٹی کے تحت',
+    quickActions: 'فوری کام',
+    searchTest: 'ٹیسٹ پروٹوکول تلاش کریں',
+    difficultGuide: 'مشکل ڈرا گائیڈ',
+    rejectionSpecimen: 'نمونہ مسترد گائیڈ',
+    commScripts: 'رابطہ اسکرپٹ',
+    historyFormsBtn: 'ہسٹری فارم',
+    recentAnnouncements: 'حالیہ اعلانات',
+    noAnnouncements: 'کوئی اعلان نہیں',
+    
+    // Settings
+    theme: 'تھیم',
+    dark: 'تاریک',
+    light: 'روشن',
+    glass: 'شیشہ',
+    language: 'زبان',
+    english: 'English',
+    urdu: 'اردو',
+    pashto: 'پښتو',
+    fontSize: 'فونٹ سائز',
+    current: 'موجودہ',
+    safetyRoster: 'سیفٹی اور روسٹر',
+    femaleSafety: 'خواتین سیفٹی',
+    femaleSafetyDesc: 'خواتین عملہ کو N/N12/E4 سے روکیں',
+    fullRosterWave: 'مکمل روسٹر',
+    fullRosterWaveDesc: 'سب مکمل مہینے کا روسٹر دیکھ سکیں',
+    notifications: 'اطلاعات',
+    dailyReminder: 'روزانہ یاد دہانی',
+    dailyReminderDesc: 'کل کی ڈیوٹی کی شام 8 بجے یاد دہانی',
+    whatsappNotify: 'واٹس ایپ اطلاع',
+    whatsappNotifyDesc: 'ڈیوٹی تبدیلی پر واٹس ایپ بھیجیں',
+    export: 'ایکسپورٹ',
+    exportPDF: 'روسٹر PDF میں',
+    exportExcel: 'روسٹر Excel میں',
+    exportCSV: '804 ٹیسٹ CSV',
+    data: 'ڈیٹا',
+    backupData: 'ڈیٹا بیک اپ',
+    restoreData: 'بیک اپ سے بحال',
+    resetAll: 'تمام ڈیٹا ری سیٹ',
+    about: 'کے بارے میں',
+    app: 'ایپ',
+    version: 'ورژن',
+    hospital: 'ہسپتال',
+    staff: 'عملہ',
+    tests: 'ٹیسٹ',
+    lastUpdate: 'آخری اپ ڈیٹ',
+    
+    // Staff
+    addNewStaff: 'نیا عملہ شامل کریں',
+    fullName: 'پورا نام',
+    role: 'کردار',
+    phlebotomist: 'فلیبوٹومسٹ',
+    supervisor: 'سپروائزر',
+    gender: 'جنس',
+    male: 'مرد',
+    female: 'عورت',
+    primaryShift: 'پرائمری شفٹ',
+    fixedShift: 'مقررہ شفٹ',
+    multiShifts: 'کئی شفٹیں',
+    mobile: 'موبائل',
+    password: 'پاس ورڈ',
+    saveStaff: 'عملہ محفوظ کریں',
+    none: 'کوئی نہیں',
+    
+    // Common
+    save: 'محفوظ',
+    cancel: 'منسوخ',
+    close: 'بند',
+    edit: 'ترمیم',
+    delete: 'حذف',
+    view: 'دیکھیں',
+    print: 'پرنٹ',
+    upload: 'اپلوڈ',
+    share: 'شیئر',
+    yes: 'ہاں',
+    no: 'نہیں',
+    confirm: 'تصدیق',
+    nameRequired: 'نام ضروری ہے',
+    saved: 'محفوظ ہوگیا',
+    deleted: 'حذف ہوگیا',
+    updated: 'اپ ڈیٹ ہوگیا'
+  },
+  
+  ps: {
+    // Sidebar — Pashto
+    dashboard: 'ډشبورډ',
+    roster: 'رستر',
+    testProtocols: 'د ټیسټ پروتوکول',
+    chat: 'چیټ',
+    management: 'اداره',
+    addStaff: 'عملې اضافه کړه',
+    allStaff: 'ټوله عملې',
+    adminPolicy: 'د اډمین پالیسي',
+    historyForms: 'د تاریخ فورمې',
+    tools: 'وسایل',
+    emergency: 'بیړنی',
+    startDraw: 'نمونه پیل کړه',
+    difficultDraw: 'ستونزه لرونکی ډرا',
+    rejectionGuide: 'د ردولو لارښود',
+    scripts: 'سکریپټونه',
+    account: 'حساب',
+    settings: 'تنظیمات',
+    profile: 'پروفایل',
+    logout: 'وتل',
+    
+    // Dashboard
+    dashboardTitle: 'ډشبورډ',
+    activeStaff: 'فعاله عملې',
+    rosterStatus: 'د رستر حالت',
+    onShift: 'په ډیوټي',
+    ready: 'چمتو',
+    pending: 'پاتې',
+    todayDuty: 'د نن ډیوټي',
+    today: 'نن',
+    tomorrow: 'سبا',
+    yesterday: 'پرون',
+    morning: 'سهار',
+    evening: 'ماښام',
+    night: 'شپه',
+    offDuty: 'رخصتي',
+    noStaffAssigned: 'هیڅ عملې نه ده ټاکل شوې',
+    shiftCoverage: 'د شفټ پوښښ',
+    total: 'ټول',
+    allFemaleSafety: 'ټوله ښځینه عملې د خوندیتوب لاندې ده',
+    quickActions: 'بیړني کارونه',
+    searchTest: 'د ټیسټ پروتوکول پلټنه',
+    difficultGuide: 'د ستونزمن ډرا لارښود',
+    rejectionSpecimen: 'د نمونې د ردولو لارښود',
+    commScripts: 'د اړیکو سکریپټونه',
+    historyFormsBtn: 'د تاریخ فورمې',
+    recentAnnouncements: 'نوي اعلانونه',
+    noAnnouncements: 'هیڅ اعلان نشته',
+    
+    // Settings
+    theme: 'تیم',
+    dark: 'تیاره',
+    light: 'روښانه',
+    glass: 'شیشه',
+    language: 'ژبه',
+    english: 'English',
+    urdu: 'اردو',
+    pashto: 'پښتو',
+    fontSize: 'د فونټ اندازه',
+    current: 'اوسنی',
+    safetyRoster: 'خوندیتوب او رستر',
+    femaleSafety: 'د ښځو خوندیتوب',
+    femaleSafetyDesc: 'ښځینه عملې له N/N12/E4 منع کړه',
+    fullRosterWave: 'بشپړ رستر',
+    fullRosterWaveDesc: 'هرڅوک ټول میاشت رستر وګوري',
+    notifications: 'خبرتیاوې',
+    dailyReminder: 'ورځنی یادونه',
+    dailyReminderDesc: 'د سبا ډیوټي لپاره د ماښام 8 بجې یادونه',
+    whatsappNotify: 'واټساپ خبرتیا',
+    whatsappNotifyDesc: 'د ډیوټي بدلون په اړه واټساپ',
+    export: 'صادرول',
+    exportPDF: 'رستر PDF کې',
+    exportExcel: 'رستر Excel کې',
+    exportCSV: '804 ټیسټونه CSV',
+    data: 'ډاټا',
+    backupData: 'د ډاټا بیک اپ',
+    restoreData: 'د بیک اپ بحالي',
+    resetAll: 'ټول ډاټا ری سیټ',
+    about: 'په اړه',
+    app: 'اپلیکیشن',
+    version: 'نسخه',
+    hospital: 'روغتون',
+    staff: 'عملې',
+    tests: 'ټیسټونه',
+    lastUpdate: 'وروستی تازه',
+    
+    // Staff
+    addNewStaff: 'نوې عملې اضافه کړه',
+    fullName: 'بشپړ نوم',
+    role: 'رول',
+    phlebotomist: 'فلیبوټومیسټ',
+    supervisor: 'سپروایزر',
+    gender: 'جنسیت',
+    male: 'نر',
+    female: 'ښځه',
+    primaryShift: 'لومړنی شفټ',
+    fixedShift: 'ټاکل شوی شفټ',
+    multiShifts: 'ډیر شفټونه',
+    mobile: 'موبایل',
+    password: 'پټ نوم',
+    saveStaff: 'عملې خوندي کړه',
+    none: 'هیڅ نه',
+    
+    // Common
+    save: 'خوندي کړه',
+    cancel: 'لغوه',
+    close: 'بند',
+    edit: 'سمون',
+    delete: 'ړنګول',
+    view: 'کتل',
+    print: 'چاپ',
+    upload: 'اپلوډ',
+    share: 'شریکول',
+    yes: 'هو',
+    no: 'نه',
+    confirm: 'تصدیق',
+    nameRequired: 'نوم اړین دی',
+    saved: 'خوندي شو',
+    deleted: 'ړنګ شو',
+    updated: 'تازه شو'
+  }
+};
+
+/* ============ TRANSLATE FUNCTION ============ */
+function t(key){
+  const lang = State.language || 'en';
+  const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  return dict[key] || TRANSLATIONS.en[key] || key;
+}
+
+/* ============ APPLY LANGUAGE ============ */
+function applyLanguage(){
+  const lang = State.language || 'en';
+  const html = document.documentElement;
+  const body = document.body;
+  
+  // Set direction and data attribute
+  if(lang === 'ur' || lang === 'ps'){
+    html.setAttribute('dir', 'rtl');
+    body.setAttribute('data-lang', lang);
+  } else {
+    html.setAttribute('dir', 'ltr');
+    body.removeAttribute('data-lang');
+  }
+  
+  // Save
+  LocalDB.set('language', lang);
+  
+  // Re-render current view
+  if(State.activeView){
+    showView(State.activeView);
+  }
+  
+  // Re-render sidebar
+  updateSidebarLanguage();
+}
+
+/* ============ UPDATE SIDEBAR ============ */
+function updateSidebarLanguage(){
+  const items = document.querySelectorAll('.sidebar-item');
+  items.forEach(item => {
+    const view = item.dataset.view;
+    const spanEl = item.querySelector('span:not(.s-icon):not(.s-badge)');
+    if(spanEl && view){
+      spanEl.textContent = t(view);
+    }
+  });
+  
+  // Section headers
+  const sections = document.querySelectorAll('.sidebar-section');
+  if(sections.length >= 4){
+    sections[0].textContent = t('dashboard') === 'Dashboard' ? 'MAIN' : (State.language === 'ur' ? 'بنیادی' : 'اصلي');
+    sections[1].textContent = t('management');
+    sections[2].textContent = t('tools');
+    sections[3].textContent = t('account');
+  }
+}
+
+/* ============ SET LANGUAGE ============ */
+function setLanguage(lang){
+  State.language = lang;
+  LocalDB.set('language', lang);
+  applyLanguage();
+  
+  const langNames = { en: 'English', ur: 'اردو', ps: 'پښتو' };
+  toast('🌍 ' + langNames[lang]);
+  vibrate(30);
+}
+
+/* ============ LANGUAGE BUTTONS ============ */
+function renderLanguageSelector(){
+  return `
+    <div class="segmented">
+      <button class="${State.language === 'en' ? 'active' : ''}" onclick="setLanguage('en')">English</button>
+      <button class="${State.language === 'ur' ? 'active' : ''}" onclick="setLanguage('ur')">اردو</button>
+      <button class="${State.language === 'ps' ? 'active' : ''}" onclick="setLanguage('ps')">پښتو</button>
+    </div>
+  `;
+}
+
+/* ============ NEW SETTINGS VIEW ============ */
+window.renderSettingsView = function(){
+  const view = document.getElementById('view-settings');
+  if(!view) return;
+
+  view.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">⚙️ ${t('settings')}</div>
+      <div class="page-sub">${State.language === 'en' ? 'Customize your app' : State.language === 'ur' ? 'اپنی ایپ کو حسب ضرورت بنائیں' : 'خپل اپلیکیشن تنظیم کړه'}</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">🎨 ${t('theme')}</div>
+      <div class="segmented">
+        <button class="${State.theme === 'dark' ? 'active' : ''}" onclick="switchThemeNew('dark', this)">🌙 ${t('dark')}</button>
+        <button class="${State.theme === 'light' ? 'active' : ''}" onclick="switchThemeNew('light', this)">☀️ ${t('light')}</button>
+        <button class="${State.theme === 'glass' ? 'active' : ''}" onclick="switchThemeNew('glass', this)">💧 ${t('glass')}</button>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">🌍 ${t('language')}</div>
+      ${renderLanguageSelector()}
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">🔤 ${t('fontSize')}</div>
+      <input type="range" id="fontSizeSlider" min="12" max="18" value="${State.fontSize}" 
+             style="width:100%;accent-color:var(--primary)" oninput="changeFontSize(${State.fontSize})">
+      <div style="font-size:11px;color:var(--fg-3);margin-top:6px">
+        ${t('current')}: <span id="fontSizeLabel">${State.fontSize}px</span>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">🛡️ ${t('safetyRoster')}</div>
+      <div class="list-row">
+        <div class="grow">
+          <b>${t('femaleSafety')}</b>
+          <small>${t('femaleSafetyDesc')}</small>
+        </div>
+        <input type="checkbox" ${State.femaleSafety ? 'checked' : ''} 
+               style="width:auto;accent-color:var(--primary)" onchange="toggleSetting('femaleSafety', this.checked)">
+      </div>
+      <div class="list-row">
+        <div class="grow">
+          <b>${t('fullRosterWave')}</b>
+          <small>${t('fullRosterWaveDesc')}</small>
+        </div>
+        <input type="checkbox" ${State.fullWave ? 'checked' : ''} 
+               style="width:auto;accent-color:var(--primary)" onchange="toggleSetting('fullWave', this.checked)">
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">🔔 ${t('notifications')}</div>
+      <div class="list-row">
+        <div class="grow">
+          <b>${t('dailyReminder')}</b>
+          <small>${t('dailyReminderDesc')}</small>
+        </div>
+        <input type="checkbox" ${State.dailyReminder ? 'checked' : ''} 
+               style="width:auto;accent-color:var(--primary)" onchange="toggleSetting('dailyReminder', this.checked)">
+      </div>
+      <div class="list-row">
+        <div class="grow">
+          <b>${t('whatsappNotify')}</b>
+          <small>${t('whatsappNotifyDesc')}</small>
+        </div>
+        <input type="checkbox" ${State.whatsappNotify ? 'checked' : ''} 
+               style="width:auto;accent-color:var(--primary)" onchange="toggleSetting('whatsappNotify', this.checked)">
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">📤 ${t('export')}</div>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="exportRoster('pdf')">
+        📄 ${t('exportPDF')}
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="exportRoster('excel')">
+        📊 ${t('exportExcel')}
+      </button>
+      <button class="btn btn-ghost btn-block" onclick="exportTestsCSV()">
+        📥 ${t('exportCSV')}
+      </button>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">🔄 ${t('data')}</div>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="backupData()">
+        💾 ${t('backupData')}
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="restoreData()">
+        📥 ${t('restoreData')}
+      </button>
+      <button class="btn btn-danger btn-block" onclick="resetAllData()">
+        🗑️ ${t('resetAll')}
+      </button>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">ℹ️ ${t('about')}</div>
+      <div style="font-size:12px;color:var(--fg-2);line-height:1.8">
+        <div><b>${t('app')}:</b> KIH Phlebotomy Pro</div>
+        <div><b>${t('version')}:</b> 3.1.0</div>
+        <div><b>${t('hospital')}:</b> Kulsum International Hospital</div>
+        <div><b>${t('staff')}:</b> ${State.staff.filter(s => s.role !== 'admin').length}</div>
+        <div><b>${t('tests')}:</b> ${(window.TESTS_DB || []).length}</div>
+        <div><b>${t('lastUpdate')}:</b> ${fmtDateTime(State.lastUpdate)}</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:20px;color:var(--fg-4);font-size:10px">
+      Made with ❤️ for KIH · 2026
+    </div>
+  `;
+};
+
+/* ============ THEME SWITCH (New) ============ */
+function switchThemeNew(theme, btn){
+  State.theme = theme;
+  LocalDB.set('theme', theme);
+  document.querySelectorAll('.segmented button').forEach(b => {
+    if(b.parentElement.parentElement.querySelector('.card-title')?.textContent.includes(t('theme'))){
+      b.classList.remove('active');
+    }
+  });
+  if(btn) btn.classList.add('active');
+  toast('🎨 ' + theme);
+}
+
+/* ============ LOAD LANGUAGE ON INIT ============ */
+const _origShowApp4 = window.showApp;
+window.showApp = function(){
+  _origShowApp4.call(this);
+  // Load saved language
+  const savedLang = LocalDB.get('language', 'en');
+  State.language = savedLang;
+  applyLanguage();
+  
+  // Fix duplicate logo
+  fixDuplicateLogo();
+  
+  console.log('🌍 Language loaded:', savedLang);
+};
+
+/* ============ FIX DUPLICATE LOGO ============ */
+function fixDuplicateLogo(){
+  const headerLeft = document.querySelector('.header-left');
+  if(!headerLeft) return;
+  
+  // Find all logo elements
+  const logos = headerLeft.querySelectorAll('.kih-official-logo, .logo, .header-title, .kih-logo');
+  
+  // If more than 1 logo, keep only the last official one
+  if(logos.length > 1){
+    logos.forEach((logo, idx) => {
+      if(idx < logos.length - 1){
+        logo.remove();
+      }
+    });
+    console.log('🔧 Fixed duplicate logos');
+  }
+  
+  // Ensure only ONE official logo
+  const officialLogos = headerLeft.querySelectorAll('.kih-official-logo');
+  if(officialLogos.length > 1){
+    for(let i = 0; i < officialLogos.length - 1; i++){
+      officialLogos[i].remove();
+    }
+  }
+}
+
+/* ============ APPLY ON LOAD ============ */
+setTimeout(() => {
+  const savedLang = LocalDB.get('language', 'en');
+  State.language = savedLang;
+  applyLanguage();
+  fixDuplicateLogo();
+  console.log('🌍 Part 11 — Language system active:', savedLang);
+}, 500);
+
+/* ============ OVERRIDE RENDER HOME FOR TRANSLATIONS ============ */
+const _origRenderHome = window.renderHomeView;
+window.renderHomeView = function(){
+  _origRenderHome.call(this);
+  
+  // Translate dashboard elements
+  setTimeout(() => {
+    const dashTitle = document.querySelector('.dash-title');
+    if(dashTitle) dashTitle.innerHTML = `${t('dashboardTitle')} <span class="sparkle-gold">✦</span>`;
+    
+    // Update stat labels
+    const statLabels = document.querySelectorAll('.pstat-label');
+    if(statLabels[0]) statLabels[0].textContent = t('activeStaff');
+    if(statLabels[1]) statLabels[1].textContent = t('rosterStatus');
+    
+    // Duty card
+    const dutyTitle = document.querySelector('.duty-title');
+    if(dutyTitle) dutyTitle.textContent = '👥 ' + t('todayDuty');
+    
+    // Shift labels
+    const shiftBadges = document.querySelectorAll('.duty-shift-badge');
+    if(shiftBadges[0]) shiftBadges[0].textContent = '☀️ ' + t('morning');
+    if(shiftBadges[1]) shiftBadges[1].textContent = '🌆 ' + t('evening');
+    if(shiftBadges[2]) shiftBadges[2].textContent = '🌙 ' + t('night');
+    if(shiftBadges[3]) shiftBadges[3].textContent = '🛏️ ' + t('offDuty');
+    
+    // Shift coverage
+    const coverageTitle = document.querySelector('.shift-coverage-title');
+    if(coverageTitle){
+      const small = coverageTitle.querySelector('small');
+      coverageTitle.innerHTML = t('shiftCoverage');
+      if(small) coverageTitle.appendChild(small);
+    }
+    
+    // Safety banner
+    const safetyBanner = document.querySelector('.safety-banner-premium div:last-child');
+    if(safetyBanner) safetyBanner.textContent = t('allFemaleSafety');
+    
+    // Quick actions
+    const cardTitles = document.querySelectorAll('.card-title');
+    cardTitles.forEach(ct => {
+      if(ct.textContent.includes('Quick Actions')) ct.textContent = '⚡ ' + t('quickActions');
+      if(ct.textContent.includes('Recent Announcements')) ct.textContent = '📢 ' + t('recentAnnouncements');
+    });
+    
+    // Quick action buttons
+    const quickBtns = document.querySelectorAll('.btn-ghost.btn-block');
+    const btnKeys = ['searchTest', 'difficultGuide', 'rejectionSpecimen', 'commScripts', 'historyFormsBtn'];
+    quickBtns.forEach((btn, idx) => {
+      if(idx < btnKeys.length){
+        const icon = btn.textContent.match(/^[^\s]+/)?.[0] || '';
+        btn.textContent = icon + ' ' + t(btnKeys[idx]);
+      }
+    });
+    
+    // Date navigation labels
+    const dateDisplay = document.querySelector('.duty-date-display');
+    if(dateDisplay){
+      const text = dateDisplay.textContent;
+      if(text === 'Today') dateDisplay.textContent = t('today');
+      else if(text === 'Tomorrow') dateDisplay.textContent = t('tomorrow');
+      else if(text === 'Yesterday') dateDisplay.textContent = t('yesterday');
+    }
+  }, 100);
+};
+
+console.log('✅ Part 11 loaded — Language system ready');
+</script>
+
+<!-- ============ END OF PART 11 ============ -->
