@@ -17260,3 +17260,241 @@ console.log('   Commands: debugShifts()');
 </script>
 
 <!-- ============ END OF PART 28 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 28.1 — BUG FIX (isSun → RE.isSunday)
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 28.1 — QUICK FIX
+   ═══════════════════════════════════════════════════════════ */
+
+/* Override wizRunGeneration with corrected function names */
+const _origRE = window.wizRunGeneration;
+
+window.wizRunGeneration = function(){
+  try {
+    RE.log('═══════════════════════════════════');
+    RE.log('🎯 ENGINE v2.1 START');
+    RE.log('═══════════════════════════════════');
+
+    // Init
+    WIZ.dates = RE.dateRange(WIZ.start, WIZ.end);
+    WIZ.staffArr = (State.staff || []).filter(s => s.role !== 'admin' && s.active !== false);
+    WIZ.offTarget = RE.countSundays(WIZ.start, WIZ.end);
+
+    if (WIZ.staffArr.length === 0) {
+      WIZ.warnings = ['❌ No active staff'];
+      WIZ.step = 6;
+      renderWizard();
+      return;
+    }
+
+    const staff = WIZ.staffArr;
+    const dates = WIZ.dates;
+    const target = WIZ.offTarget;
+
+    RE.log(`Period: ${dates.length} days, ${target} Sundays, ${staff.length} staff`);
+
+    // Init grid
+    WIZ.grid = {};
+    WIZ.locked = {};
+    WIZ.offCount = {};
+    WIZ.phCount = {};
+
+    dates.forEach(d => {
+      WIZ.grid[d] = {};
+      WIZ.locked[d] = {};
+      staff.forEach(s => {
+        WIZ.grid[d][s._id] = '';
+        WIZ.locked[d][s._id] = false;
+      });
+    });
+    staff.forEach(s => { WIZ.offCount[s._id] = 0; WIZ.phCount[s._id] = 0; });
+
+    /* === STEP 1: LOCKED ENTRIES === */
+    RE.log('Applying locked entries...');
+
+    staff.forEach(s => {
+      (s.specialOffDates || []).forEach(d => {
+        if (WIZ.grid[d] && WIZ.grid[d][s._id] !== undefined) {
+          WIZ.grid[d][s._id] = 'OFF';
+          WIZ.locked[d][s._id] = true;
+          WIZ.offCount[s._id]++;
+        }
+      });
+    });
+
+    (State.specialOffs || []).forEach(off => {
+      if (WIZ.grid[off.date] && WIZ.grid[off.date][off.staffId] !== undefined) {
+        if (!WIZ.locked[off.date][off.staffId]) {
+          WIZ.grid[off.date][off.staffId] = 'OFF';
+          WIZ.locked[off.date][off.staffId] = true;
+          WIZ.offCount[off.staffId] = (WIZ.offCount[off.staffId] || 0) + 1;
+        }
+      }
+    });
+
+    const leaves1 = LocalDB.get('leaves', []);
+    const leaves2 = LocalDB.get('leaveRequests', []);
+    const allLeaves = [...leaves1];
+    leaves2.forEach(l => { if (!allLeaves.find(x => x._id === l._id)) allLeaves.push(l); });
+    const approvedLeaves = allLeaves.filter(l => l.status === 'approved');
+
+    RE.log(`Found ${approvedLeaves.length} approved leave(s)`);
+
+    approvedLeaves.forEach(leave => {
+      const lDates = RE.dateRange(leave.startDate, leave.endDate || leave.startDate);
+      lDates.forEach(d => {
+        if (WIZ.grid[d] && WIZ.grid[d][leave.staffId] !== undefined) {
+          if (!WIZ.locked[d][leave.staffId]) {
+            WIZ.grid[d][leave.staffId] = leave.type || 'CL';
+            WIZ.locked[d][leave.staffId] = true;
+          }
+        }
+      });
+    });
+
+    /* === STEP 2: DISTRIBUTE OFF === */
+    RE.log('Distributing OFF...');
+    const holidays = (WIZ.confirmedHolidays || []).filter(h => dates.includes(h.date));
+    reDistributeOff(dates, staff, WIZ.grid, WIZ.locked, WIZ.offCount, target, holidays);
+
+    RE.log('OFF distribution:');
+    staff.forEach(s => {
+      const diff = WIZ.offCount[s._id] - target;
+      const icon = diff === 0 ? '✅' : diff > 0 ? '❌' : '⚠️';
+      RE.log(`  ${icon} ${s.name}: ${WIZ.offCount[s._id]}/${target}`);
+    });
+
+    /* === STEP 3: IDENTIFY OWNERS === */
+    const owners = reIdentifyOwners(staff);
+
+    /* === STEP 4: ASSIGN SHIFTS === */
+    RE.log('Assigning shifts...');
+    let totalRotations = 0;
+
+    dates.forEach((date, idx) => {
+      const isHol = holidays.some(h => h.date === date);
+      // ✅ FIX: Use RE.isSunday and RE.isSaturday
+      const dayIsSunday = RE.isSunday(date);
+      const dayIsSaturday = RE.isSaturday(date);
+      const prevDay = idx > 0 ? dates[idx - 1] : null;
+
+      const dayOffCount = staff.filter(s => WIZ.grid[date][s._id] === 'OFF').length;
+
+      let pattern;
+      if (dayIsSunday || isHol) {
+        pattern = { ...RE_PATTERNS.SUNDAY };
+      } else if (dayIsSaturday) {
+        pattern = { ...RE_PATTERNS.SATURDAY };
+      } else {
+        pattern = dayOffCount === 0 ? { ...RE_PATTERNS.WEEKDAY } : { ...RE_PATTERNS.WEEKDAY_1OFF };
+      }
+
+      reAssignDay(date, prevDay, staff, WIZ.grid, WIZ.locked, pattern, owners);
+
+      // Coverage log
+      const cov = {};
+      staff.forEach(s => {
+        const c = WIZ.grid[date][s._id];
+        cov[c] = (cov[c] || 0) + 1;
+      });
+      const label = dayIsSunday ? 'SUN' : isHol ? 'HOL' : dayIsSaturday ? 'SAT' : 'WK ';
+      RE.log(`  ${date.slice(5)} [${label}] M:${cov.M||0} E:${cov.E||0} E4:${cov.E4||0} N12:${cov.N12||0} N:${cov.N||0} D:${cov.D||0} X:${cov.X||0} OFF:${cov.OFF||0}`);
+
+      if (prevDay) {
+        staff.forEach(s => {
+          const t = WIZ.grid[date][s._id];
+          const p = WIZ.grid[prevDay][s._id];
+          const working = ['M','E','N','N12','E4','D'];
+          if (working.includes(t) && working.includes(p)) {
+            if (RE.familyOf(t) !== RE.familyOf(p)) totalRotations++;
+          }
+        });
+      }
+    });
+
+    WIZ.rotationCount = totalRotations;
+    RE.log(`Cross-family rotations: ${totalRotations}`);
+
+    /* === STEP 5: VALIDATION === */
+    WIZ.warnings = [];
+
+    // V1: OFF target
+    staff.forEach(s => {
+      const diff = WIZ.offCount[s._id] - target;
+      if (diff !== 0) {
+        const icon = diff > 0 ? '❌' : '⚠️';
+        WIZ.warnings.push(`${icon} ${s.name}: ${WIZ.offCount[s._id]} OFF (${diff > 0 ? '+' : ''}${diff} vs ${target})`);
+      }
+    });
+
+    // V2: Female safety
+    dates.forEach(d => {
+      staff.forEach(s => {
+        const code = WIZ.grid[d][s._id];
+        if (RE.isFemale(s) && RE.maleOnly(code)) {
+          WIZ.warnings.push(`❌ ${s.name} on ${d}: Female + ${code}`);
+        }
+      });
+    });
+
+    // V3: No empty
+    dates.forEach(d => {
+      staff.forEach(s => {
+        if (!WIZ.grid[d][s._id]) {
+          WIZ.warnings.push(`⚠️ ${s.name} on ${d}: empty`);
+        }
+      });
+    });
+
+    // V4: Sunday strict — ✅ FIXED with RE.isSunday
+    dates.forEach(d => {
+      const isHol = holidays.some(h => h.date === d);
+      const dIsSunday = RE.isSunday(d);
+      if (dIsSunday || isHol) {
+        const duty = staff.filter(s => ['M','E','N'].includes(WIZ.grid[d][s._id])).length;
+        if (duty !== 5) {
+          WIZ.warnings.push(`⚠️ ${d} (Sun/Hol): ${duty} duty, should be 5`);
+        }
+        const bad = staff.filter(s => ['E4','N12','D'].includes(WIZ.grid[d][s._id])).length;
+        if (bad > 0) {
+          WIZ.warnings.push(`❌ ${d}: E4/N12/D not allowed on Sun/Hol`);
+        }
+      }
+    });
+
+    // V5: N/N12 rest
+    dates.forEach((d, idx) => {
+      if (idx === 0) return;
+      const prev = dates[idx - 1];
+      staff.forEach(s => {
+        const p = WIZ.grid[prev][s._id];
+        const c = WIZ.grid[d][s._id];
+        if (['N','N12'].includes(p)) {
+          if (!['OFF','E4','E','X'].includes(c)) {
+            WIZ.warnings.push(`⚠️ ${s.name}: N on ${prev}, ${c} on ${d}`);
+          }
+        }
+      });
+    });
+
+    RE.log(`Warnings: ${WIZ.warnings.length}`);
+
+    WIZ.step = 6;
+    renderWizard();
+
+  } catch (err) {
+    console.error('Engine error:', err);
+    WIZ.warnings = ['❌ Engine error: ' + err.message];
+    WIZ.step = 6;
+    renderWizard();
+  }
+};
+
+console.log('✅ Part 28.1 loaded — isSun bug fixed');
+</script>
+
+<!-- ============ END OF PART 28.1 ============ -->
