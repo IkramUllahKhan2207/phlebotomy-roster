@@ -14345,3 +14345,253 @@ console.log('✅ Part 21 loaded — Strict patterns + N12 enforcement');
 </script>
 
 <!-- ============ END OF PART 21 ============ -->
+   
+<!-- ═══════════════════════════════════════════════════════════
+     PART 22 — DATE + DAY NAME IN ROSTER HEADERS
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== ROSTER HEADER WITH DAY NAME ===== */
+.roster-tbl th.date-head{
+  padding:6px 4px;
+  line-height:1.2;
+  min-width:42px;
+}
+.roster-tbl th.date-head .date-num{
+  font-size:12px;
+  font-weight:900;
+  color:#fff;
+  display:block;
+  letter-spacing:-.3px;
+}
+.roster-tbl th.date-head .day-name{
+  font-size:8.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+  display:block;
+  margin-top:1px;
+  opacity:.85;
+}
+/* Sunday highlight */
+.roster-tbl th.date-head.sunday{
+  background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(245,158,11,.15));
+  border-color:rgba(239,68,68,.4);
+}
+.roster-tbl th.date-head.sunday .day-name{
+  color:#fca5a5;
+}
+/* Holiday highlight */
+.roster-tbl th.date-head.holiday{
+  background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(6,182,212,.15));
+  border-color:rgba(16,185,129,.4);
+}
+.roster-tbl th.date-head.holiday .day-name{
+  color:#6ee7b7;
+}
+/* Saturday highlight */
+.roster-tbl th.date-head.saturday{
+  background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(139,92,246,.15));
+  border-color:rgba(59,130,246,.35);
+}
+.roster-tbl th.date-head.saturday .day-name{
+  color:#93c5fd;
+}
+/* Today highlight */
+.roster-tbl th.date-head.today{
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  border-color:transparent;
+  box-shadow:0 0 0 2px rgba(255,255,255,.15) inset;
+}
+.roster-tbl th.date-head.today .date-num,
+.roster-tbl th.date-head.today .day-name{
+  color:#fff;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 22 — DATE + DAY NAME HEADERS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ HELPER: Get day short name ============ */
+function getDayShortName(dateStr){
+  const d = parseYMD(dateStr);
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+}
+
+/* ============ OVERRIDE renderWizPreview ============ */
+const _origRenderWizPreview22 = window.renderWizPreview;
+window.renderWizPreview = function(){
+  // Get original HTML (rotation meter etc)
+  let html = '';
+  if(typeof _origRenderWizPreview22 === 'function'){
+    html = _origRenderWizPreview22.call(this) || '';
+  }
+  
+  // Now replace the roster grid's headers with day-name version
+  const dates = WIZ.dates || [];
+  const staff = WIZ.staffArr || [];
+  const grid = WIZ.grid || {};
+  const holidays = WIZ.confirmedHolidays || [];
+  const today = ymd(new Date());
+  
+  // Find the roster table in html and replace headers
+  // Build new grid HTML from scratch
+  let newGridHtml = `
+    <div class="tbl-wrap" style="max-height:420px;overflow:auto;margin-bottom:12px">
+      <table class="roster-tbl">
+        <thead>
+          <tr>
+            <th class="sticky">Staff</th>
+  `;
+  
+  dates.forEach(d => {
+    const dayShort = getDayShortName(d);
+    const isSun = isSunday(d);
+    const isSat = isSaturday(d);
+    const isHol = holidays.find(h => h.date === d);
+    const isToday = d === today;
+    
+    let classes = ['date-head'];
+    if(isToday) classes.push('today');
+    else if(isHol) classes.push('holiday');
+    else if(isSun) classes.push('sunday');
+    else if(isSat) classes.push('saturday');
+    
+    newGridHtml += `
+      <th class="${classes.join(' ')}">
+        <span class="date-num">${d.slice(8)}</span>
+        <span class="day-name">${dayShort}</span>
+      </th>
+    `;
+  });
+  
+  newGridHtml += `</tr></thead><tbody>`;
+  
+  staff.forEach(s => {
+    newGridHtml += `<tr><td class="sticky">${escapeHtml(s.name.split(' ')[0])}</td>`;
+    dates.forEach(d => {
+      const code = (grid[d] || {})[s._id] || '';
+      newGridHtml += `<td class="cell-${code || 'X'}">${code || '—'}</td>`;
+    });
+    newGridHtml += `</tr>`;
+  });
+  
+  newGridHtml += `</tbody></table></div>`;
+  
+  // Replace the old grid with new
+  // Find "Roster Grid" heading section
+  const gridMarker = /<div class="tbl-wrap"[^>]*>[\s\S]*?<\/table>\s*<\/div>/;
+  if(html.match(gridMarker)){
+    html = html.replace(gridMarker, newGridHtml);
+  } else {
+    // Fallback: append new grid
+    html += newGridHtml;
+  }
+  
+  return html;
+};
+
+/* ============ ALSO UPDATE renderRosterView (main roster tab) ============ */
+const _origRenderRosterView22 = window.renderRosterView;
+window.renderRosterView = function(){
+  if(typeof _origRenderRosterView22 === 'function'){
+    _origRenderRosterView22.call(this);
+  }
+  
+  // Update any roster tables with day names
+  setTimeout(() => {
+    updateAllRosterHeaders();
+  }, 100);
+};
+
+function updateAllRosterHeaders(){
+  document.querySelectorAll('.roster-tbl').forEach(table => {
+    const thead = table.querySelector('thead tr');
+    if(!thead) return;
+    
+    // Check if already updated
+    if(thead.querySelector('.day-name')) return;
+    
+    // Get staff header (first th)
+    const ths = thead.querySelectorAll('th');
+    if(ths.length < 2) return;
+    
+    // First th = Staff, rest are dates
+    const dateHeaders = Array.from(ths).slice(1);
+    
+    dateHeaders.forEach((th, idx) => {
+      const originalText = th.textContent.trim();
+      // Extract date number (26, 27, etc)
+      const dateNum = originalText.replace(/\D/g, '') || originalText;
+      if(!dateNum) return;
+      
+      // Try to find matching date from roster
+      let matchedDate = null;
+      if(State.roster && State.roster.start){
+        const periodDates = dateRange(State.roster.start, State.roster.end);
+        matchedDate = periodDates[idx];
+      }
+      
+      if(!matchedDate) return;
+      
+      const dayShort = getDayShortName(matchedDate);
+      const isSun = isSunday(matchedDate);
+      const isSat = isSaturday(matchedDate);
+      const isToday = matchedDate === ymd(new Date());
+      const isHol = (State.roster?.holidays || []).find(h => h.date === matchedDate);
+      
+      // Build new HTML
+      let classes = ['date-head'];
+      if(isToday) classes.push('today');
+      else if(isHol) classes.push('holiday');
+      else if(isSun) classes.push('sunday');
+      else if(isSat) classes.push('saturday');
+      
+      th.className = classes.join(' ');
+      th.innerHTML = `
+        <span class="date-num">${dateNum}</span>
+        <span class="day-name">${dayShort}</span>
+      `;
+    });
+  });
+}
+
+/* ============ AUTO-UPDATE ON ROSTER RENDER ============ */
+// Watch for DOM changes in roster view
+const rosterObserver = new MutationObserver((mutations) => {
+  let shouldUpdate = false;
+  for(const m of mutations){
+    if(m.type === 'childList'){
+      shouldUpdate = true;
+      break;
+    }
+  }
+  if(shouldUpdate){
+    updateAllRosterHeaders();
+  }
+});
+
+// Start observing after DOM ready
+setTimeout(() => {
+  const appMain = document.getElementById('appMain') || document.body;
+  if(appMain){
+    rosterObserver.observe(appMain, {
+      childList: true,
+      subtree: true
+    });
+  }
+}, 2000);
+
+/* ============ APPLY ON LOAD ============ */
+setTimeout(() => {
+  updateAllRosterHeaders();
+  console.log('📅 Part 22 — Date + Day names in roster headers');
+}, 2500);
+
+console.log('✅ Part 22 loaded — Date + Day name headers');
+</script>
+
+<!-- ============ END OF PART 22 ============ -->
