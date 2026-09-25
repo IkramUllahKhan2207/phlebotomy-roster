@@ -17959,3 +17959,821 @@ console.log('✅ Part 28.2 loaded — N/N12 overlap + Sunday fix');
 </script>
 
 <!-- ============ END OF PART 28.2 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 29 — EDITABLE ROSTER + AI LEARNING SYSTEM
+     Simple auto-gen → Manual edit → Learn → Smart-gen
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== EDITABLE ROSTER CELLS ===== */
+.roster-tbl td.editable{
+  cursor:pointer;
+  position:relative;
+  transition:all .15s;
+}
+.roster-tbl td.editable:hover{
+  outline:2px solid #8b5cf6;
+  outline-offset:-2px;
+  filter:brightness(1.2);
+  z-index:5;
+}
+.roster-tbl td.editable::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:rgba(139,92,246,0);
+  pointer-events:none;
+  transition:background .15s;
+}
+.roster-tbl td.editable:hover::after{
+  background:rgba(139,92,246,.15);
+}
+
+/* ===== EDIT MODAL ===== */
+.shift-picker{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:16px;
+}
+.shift-btn{
+  padding:14px 8px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);
+  color:#e6ecf5;
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .15s;
+  text-align:center;
+}
+.shift-btn:active{transform:scale(.95)}
+.shift-btn.m{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.4);color:#93c5fd}
+.shift-btn.e{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.4);color:#fcd34d}
+.shift-btn.n{background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.4);color:#c4b5fd}
+.shift-btn.n12{background:rgba(236,72,153,.2);border-color:rgba(236,72,153,.4);color:#f9a8d4}
+.shift-btn.e4{background:rgba(20,184,166,.2);border-color:rgba(20,184,166,.4);color:#5eead4}
+.shift-btn.d{background:rgba(244,63,94,.2);border-color:rgba(244,63,94,.4);color:#fda4af}
+.shift-btn.x{background:rgba(100,116,139,.2);border-color:rgba(100,116,139,.4);color:#cbd5e1}
+.shift-btn.off{background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.15);color:#94a3b8}
+.shift-btn.el{background:rgba(236,72,153,.2);border-color:rgba(236,72,153,.4);color:#f9a8d4}
+.shift-btn.cpl{background:rgba(168,85,247,.2);border-color:rgba(168,85,247,.4);color:#d8b4fe}
+.shift-btn.ph{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.4);color:#fcd34d}
+.shift-btn.cl{background:rgba(20,184,166,.2);border-color:rgba(20,184,166,.4);color:#5eead4}
+.shift-btn.female-blocked{
+  opacity:.35;
+  cursor:not-allowed;
+  position:relative;
+}
+.shift-btn.female-blocked::after{
+  content:'🩷';
+  position:absolute;
+  top:4px;right:4px;
+  font-size:10px;
+}
+
+/* ===== LIVE STATS BAR ===== */
+.live-stats{
+  display:flex;
+  gap:6px;
+  padding:10px 16px;
+  margin:0 16px 12px;
+  background:rgba(0,0,0,.3);
+  border-radius:12px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.live-stats::-webkit-scrollbar{display:none}
+.live-stat{
+  padding:6px 10px;
+  border-radius:8px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:10px;
+  font-weight:700;
+  white-space:nowrap;
+  color:#a0aec0;
+}
+.live-stat b{
+  color:#fff;
+  font-size:12px;
+  margin-left:3px;
+}
+
+/* ===== LEARNED BADGE ===== */
+.learned-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:3px 8px;
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(16,185,129,.2),rgba(6,182,212,.15));
+  border:1px solid rgba(16,185,129,.4);
+  color:#6ee7b7;
+  font-size:9px;
+  font-weight:800;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 29 — EDITABLE ROSTER + AI LEARNING
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ SHIFT DEFINITIONS ============ */
+const SHIFT_CODES = {
+  'M':   { label: 'M',   full: 'Morning',   class: 'm',   gender: 'Any' },
+  'E':   { label: 'E',   full: 'Evening',   class: 'e',   gender: 'Any' },
+  'N':   { label: 'N',   full: 'Night',     class: 'n',   gender: 'Male' },
+  'N12': { label: 'N12', full: 'Night-12',  class: 'n12', gender: 'Male' },
+  'E4':  { label: 'E4',  full: 'Evening-4', class: 'e4',  gender: 'Male' },
+  'D':   { label: 'D',   full: 'Day',       class: 'd',   gender: 'Any' },
+  'X':   { label: 'X',   full: 'Standby',   class: 'x',   gender: 'Any' },
+  'OFF': { label: 'OFF', full: 'Off',       class: 'off', gender: 'Any' },
+  'EL':  { label: 'EL',  full: 'Earned Leave',  class: 'el',  gender: 'Any' },
+  'CPL': { label: 'CPL', full: 'Comp Leave',    class: 'cpl', gender: 'Any' },
+  'PH':  { label: 'PH',  full: 'Public Holiday', class: 'ph',  gender: 'Any' },
+  'CL':  { label: 'CL',  full: 'Casual Leave',   class: 'cl',  gender: 'Any' }
+};
+
+/* ============ SIMPLE AUTO GENERATOR ============ */
+window.simpleAutoGenerate = function(){
+  WIZ = WIZ || {};
+  WIZ.dates = RE.dateRange(WIZ.start, WIZ.end);
+  WIZ.staffArr = (State.staff || []).filter(s => s.role !== 'admin' && s.active !== false);
+  WIZ.offTarget = RE.countSundays(WIZ.start, WIZ.end);
+  WIZ.grid = {};
+  WIZ.locked = {};
+  WIZ.offCount = {};
+
+  WIZ.dates.forEach(d => {
+    WIZ.grid[d] = {};
+    WIZ.locked[d] = {};
+    WIZ.staffArr.forEach(s => {
+      WIZ.grid[d][s._id] = '';
+      WIZ.locked[d][s._id] = false;
+    });
+  });
+  WIZ.staffArr.forEach(s => { WIZ.offCount[s._id] = 0; });
+
+  // Apply locked (leaves + special off)
+  applyLockedSimple();
+
+  // For each day
+  WIZ.dates.forEach(date => {
+    const isSun = RE.isSunday(date);
+    const isSat = RE.isSaturday(date);
+    const prevDate = RE.prevDate(date);
+    const prevGrid = WIZ.grid[prevDate] || {};
+
+    // Sunday strict: 2M + 2E + 1N + 7OFF
+    if (isSun) {
+      assignSundaySimple(date);
+      return;
+    }
+
+    // Weekday/Saturday: Use LEARNED preferences
+    assignWeekdaySimple(date, isSat, prevGrid);
+  });
+
+  // Recount OFF
+  recountOff();
+
+  WIZ.rotationCount = 0;
+  WIZ.step = 6;
+  renderWizard();
+};
+
+/* ============ APPLY LOCKED ENTRIES ============ */
+function applyLockedSimple(){
+  // Special offs
+  (State.specialOffs || []).forEach(off => {
+    if (WIZ.grid[off.date] && WIZ.grid[off.date][off.staffId] !== undefined) {
+      WIZ.grid[off.date][off.staffId] = 'OFF';
+      WIZ.locked[off.date][off.staffId] = true;
+    }
+  });
+
+  // Staff special dates
+  WIZ.staffArr.forEach(s => {
+    (s.specialOffDates || []).forEach(d => {
+      if (WIZ.grid[d] && WIZ.grid[d][s._id] !== undefined) {
+        WIZ.grid[d][s._id] = 'OFF';
+        WIZ.locked[d][s._id] = true;
+      }
+    });
+  });
+
+  // Approved leaves
+  const leaves1 = LocalDB.get('leaves', []);
+  const leaves2 = LocalDB.get('leaveRequests', []);
+  const allLeaves = [...leaves1];
+  leaves2.forEach(l => { if (!allLeaves.find(x => x._id === l._id)) allLeaves.push(l); });
+
+  allLeaves.filter(l => l.status === 'approved').forEach(leave => {
+    const dates = RE.dateRange(leave.startDate, leave.endDate || leave.startDate);
+    dates.forEach(d => {
+      if (WIZ.grid[d] && WIZ.grid[d][leave.staffId] !== undefined) {
+        WIZ.grid[d][leave.staffId] = leave.type || 'CL';
+        WIZ.locked[d][leave.staffId] = true;
+      }
+    });
+  });
+}
+
+/* ============ SUNDAY ASSIGN ============ */
+function assignSundaySimple(date){
+  const staff = WIZ.staffArr;
+  const assigned = new Set();
+
+  // Lock existing
+  staff.forEach(s => {
+    if (WIZ.grid[date][s._id] && WIZ.grid[date][s._id] !== 'OFF') {
+      assigned.add(s._id);
+    }
+  });
+
+  const isFree = s => !assigned.has(s._id) && !WIZ.locked[date][s._id] && WIZ.grid[date][s._id] === '';
+
+  // N slot — N12 owner
+  const nightOwner = staff.find(s => 
+    !RE.isFemale(s) && 
+    (RE.getHomeShift(s) === 'N' || RE.getHomeShift(s) === 'N12') &&
+    isFree(s)
+  );
+  if (nightOwner) {
+    WIZ.grid[date][nightOwner._id] = 'N';
+    assigned.add(nightOwner._id);
+  }
+
+  // 2 E slots — evening family
+  for (let i = 0; i < 2; i++) {
+    const eStaff = staff.filter(s => isFree(s))
+      .sort((a,b) => {
+        const aF = RE.familyOf(RE.getHomeShift(a)) === 'EVENING' ? 0 : 1;
+        const bF = RE.familyOf(RE.getHomeShift(b)) === 'EVENING' ? 0 : 1;
+        return aF - bF;
+      })[0];
+    if (eStaff) {
+      WIZ.grid[date][eStaff._id] = 'E';
+      assigned.add(eStaff._id);
+    }
+  }
+
+  // 2 M slots — morning family
+  for (let i = 0; i < 2; i++) {
+    const mStaff = staff.filter(s => isFree(s))
+      .sort((a,b) => {
+        const aF = RE.familyOf(RE.getHomeShift(a)) === 'MORNING' ? 0 : 1;
+        const bF = RE.familyOf(RE.getHomeShift(b)) === 'MORNING' ? 0 : 1;
+        return aF - bF;
+      })[0];
+    if (mStaff) {
+      WIZ.grid[date][mStaff._id] = 'M';
+      assigned.add(mStaff._id);
+    }
+  }
+
+  // Rest → OFF
+  staff.forEach(s => {
+    if (isFree(s)) {
+      WIZ.grid[date][s._id] = 'OFF';
+    }
+  });
+}
+
+/* ============ WEEKDAY ASSIGN WITH LEARNING ============ */
+function assignWeekdaySimple(date, isSat, prevGrid){
+  const staff = WIZ.staffArr;
+  const assigned = new Set();
+
+  // Lock existing
+  staff.forEach(s => {
+    if (WIZ.grid[date][s._id] && WIZ.grid[date][s._id] !== 'OFF') {
+      assigned.add(s._id);
+    }
+  });
+
+  const isFree = s => !assigned.has(s._id) && !WIZ.locked[date][s._id] && WIZ.grid[date][s._id] === '';
+
+  // Check night rest
+  const hasNightRest = s => {
+    const p = prevGrid[s._id];
+    return p === 'N' || p === 'N12';
+  };
+
+  // ═══════════════════════════════════════════
+  // STEP 1: Use LEARNED preferences first
+  // ═══════════════════════════════════════════
+  const learned = getLearnedPatterns();
+  
+  staff.forEach(s => {
+    if (!isFree(s)) return;
+    if (hasNightRest(s)) return; // Will handle later
+    
+    const pattern = learned[s._id];
+    if (pattern && pattern.preferredShift) {
+      const pref = pattern.preferredShift;
+      // Check if valid
+      if (SHIFT_CODES[pref] && !RE.maleOnly(pref) || !RE.isFemale(s)) {
+        WIZ.grid[date][s._id] = pref;
+        assigned.add(s._id);
+      }
+    }
+  });
+
+  // ═══════════════════════════════════════════
+  // STEP 2: Fill slots (N12, E4, D, X, then M, E)
+  // ═══════════════════════════════════════════
+  
+  // N12 slot
+  if (!staff.some(s => WIZ.grid[date][s._id] === 'N12')) {
+    const n12Staff = staff.find(s => 
+      !RE.isFemale(s) && 
+      !hasNightRest(s) &&
+      isFree(s) &&
+      (RE.getHomeShift(s) === 'N12' || RE.getHomeShift(s) === 'N')
+    );
+    if (n12Staff) {
+      WIZ.grid[date][n12Staff._id] = 'N12';
+      assigned.add(n12Staff._id);
+    }
+  }
+
+  // E4 slot
+  if (!staff.some(s => WIZ.grid[date][s._id] === 'E4')) {
+    const e4Staff = staff.find(s => 
+      !RE.isFemale(s) && 
+      !hasNightRest(s) &&
+      isFree(s) &&
+      RE.getHomeShift(s) === 'E4'
+    );
+    if (e4Staff) {
+      WIZ.grid[date][e4Staff._id] = 'E4';
+      assigned.add(e4Staff._id);
+    }
+  }
+
+  // D slot
+  if (!isSat && !staff.some(s => WIZ.grid[date][s._id] === 'D')) {
+    const dStaff = staff.find(s => 
+      RE.isFemale(s) && 
+      !hasNightRest(s) &&
+      isFree(s) &&
+      (s.multi || []).includes('D')
+    );
+    if (dStaff) {
+      WIZ.grid[date][dStaff._id] = 'D';
+      assigned.add(dStaff._id);
+    }
+  }
+
+  // X slot
+  if (!isSat && !staff.some(s => WIZ.grid[date][s._id] === 'X')) {
+    const xStaff = staff.find(s => isFree(s) && !hasNightRest(s));
+    if (xStaff) {
+      WIZ.grid[date][xStaff._id] = 'X';
+      assigned.add(xStaff._id);
+    }
+  }
+
+  // Fill remaining M and E slots
+  // Count current
+  const currentM = staff.filter(s => WIZ.grid[date][s._id] === 'M').length;
+  const currentE = staff.filter(s => WIZ.grid[date][s._id] === 'E').length;
+  
+  const targetM = isSat ? 3 : 4;
+  const targetE = isSat ? 3 : 4;
+
+  // M slots
+  while (currentM + staff.filter(s => WIZ.grid[date][s._id] === 'M').length - currentM < targetM) {
+    const candidates = staff.filter(s => isFree(s) && !hasNightRest(s));
+    if (candidates.length === 0) break;
+    
+    const sorted = candidates.sort((a,b) => {
+      const aM = RE.familyOf(RE.getHomeShift(a)) === 'MORNING' ? 0 : 1;
+      const bM = RE.familyOf(RE.getHomeShift(b)) === 'MORNING' ? 0 : 1;
+      return aM - bM;
+    });
+    
+    if (staff.filter(s => WIZ.grid[date][s._id] === 'M').length >= targetM) break;
+    
+    WIZ.grid[date][sorted[0]._id] = 'M';
+    assigned.add(sorted[0]._id);
+  }
+
+  // E slots
+  while (staff.filter(s => WIZ.grid[date][s._id] === 'E').length < targetE) {
+    const candidates = staff.filter(s => isFree(s) && !hasNightRest(s));
+    if (candidates.length === 0) break;
+    
+    const sorted = candidates.sort((a,b) => {
+      const aE = RE.familyOf(RE.getHomeShift(a)) === 'EVENING' ? 0 : 1;
+      const bE = RE.familyOf(RE.getHomeShift(b)) === 'EVENING' ? 0 : 1;
+      return aE - bE;
+    });
+    
+    WIZ.grid[date][sorted[0]._id] = 'E';
+    assigned.add(sorted[0]._id);
+  }
+
+  // ═══════════════════════════════════════════
+  // STEP 3: Night-rest staff get E4/E
+  // ═══════════════════════════════════════════
+  staff.forEach(s => {
+    if (isFree(s) && hasNightRest(s)) {
+      if (!RE.isFemale(s)) {
+        WIZ.grid[date][s._id] = 'E4';
+      } else {
+        WIZ.grid[date][s._id] = 'E';
+      }
+      assigned.add(s._id);
+    }
+  });
+
+  // ═══════════════════════════════════════════
+  // STEP 4: Remaining → X or OFF
+  // ═══════════════════════════════════════════
+  staff.forEach(s => {
+    if (!isFree(s)) return;
+    
+    const currentOff = (WIZ.offCount[s._id] || 0);
+    const maxOffForDay = isSat ? 2 : 1;
+    const dayOffs = staff.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+    
+    if (currentOff < WIZ.offTarget && dayOffs < maxOffForDay) {
+      WIZ.grid[date][s._id] = 'OFF';
+      WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+    } else {
+      WIZ.grid[date][s._id] = 'X';
+    }
+  });
+}
+
+/* ============ RECOUNT OFF ============ */
+function recountOff(){
+  WIZ.staffArr.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.dates.forEach(d => {
+      const c = WIZ.grid[d][s._id];
+      if (c === 'OFF') WIZ.offCount[s._id]++;
+    });
+  });
+}
+
+/* ============ LEARNING SYSTEM ============ */
+function getLearnedPatterns(){
+  return LocalDB.get('learned_patterns', {});
+}
+
+function learnFromRoster(){
+  if (!WIZ.grid || !WIZ.dates || !WIZ.staffArr) return;
+  
+  const patterns = getLearnedPatterns();
+  
+  WIZ.staffArr.forEach(s => {
+    // Count each shift for this staff
+    const counts = {};
+    WIZ.dates.forEach(d => {
+      const c = WIZ.grid[d][s._id];
+      if (c && c !== 'OFF' && c !== 'X') {
+        counts[c] = (counts[c] || 0) + 1;
+      }
+    });
+    
+    // Find most common shift
+    let topShift = null;
+    let topCount = 0;
+    Object.keys(counts).forEach(code => {
+      if (counts[code] > topCount) {
+        topCount = counts[code];
+        topShift = code;
+      }
+    });
+    
+    // Store
+    patterns[s._id] = {
+      preferredShift: topShift,
+      count: topCount,
+      totalDays: WIZ.dates.length,
+      confidence: topCount / WIZ.dates.length,
+      lastUpdate: Date.now()
+    };
+  });
+  
+  LocalDB.set('learned_patterns', patterns);
+  console.log('🧠 Learned patterns saved:', Object.keys(patterns).length);
+  return patterns;
+}
+
+/* ============ OVERRIDE WIZ START — Simple gen by default ============ */
+window.wizGenerate = function(){
+  WIZ.step = 5;
+  WIZ.warnings = [];
+  WIZ.conflictLog = [];
+  renderWizard();
+  setTimeout(() => {
+    simpleAutoGenerate();
+  }, 100);
+};
+
+/* ============ OVERRIDE wizSaveRoster — Learn on save ============ */
+const _origSave = window.wizSaveRoster;
+window.wizSaveRoster = function(){
+  // Learn from this roster
+  learnFromRoster();
+  
+  // Save via original
+  if (typeof _origSave === 'function') {
+    try { _origSave.call(this); } catch(e) {}
+  } else {
+    // Fallback save
+    const pid = WIZ.start + '_' + WIZ.end;
+    LocalDB.set('roster_' + pid, {
+      start: WIZ.start,
+      end: WIZ.end,
+      grid: WIZ.grid,
+      offCount: WIZ.offCount,
+      offTarget: WIZ.offTarget,
+      createdAt: Date.now()
+    });
+    LocalDB.set('lastRoster', pid);
+    State.roster = LocalDB.get('roster_' + pid);
+    toast('✅ Roster saved + pattern learned!');
+    closeModal();
+    showView('roster');
+  }
+};
+
+/* ============ MAKE ROSTER EDITABLE IN PREVIEW ============ */
+const _origRenderPreview = window.renderWizPreview;
+window.renderWizPreview = function(){
+  // Get base HTML
+  let html = '';
+  if (typeof _origRenderPreview === 'function') {
+    try { html = _origRenderPreview.call(this) || ''; } catch(e){}
+  }
+  
+  // Don't modify if no grid
+  if (!WIZ.grid || !WIZ.dates) return html;
+  
+  // Add live stats bar
+  const stats = calcLiveStats();
+  const statsBar = `
+    <div class="live-stats">
+      <div class="live-stat">M <b>${stats.M}</b></div>
+      <div class="live-stat">E <b>${stats.E}</b></div>
+      <div class="live-stat">N <b>${stats.N}</b></div>
+      <div class="live-stat">N12 <b>${stats.N12}</b></div>
+      <div class="live-stat">E4 <b>${stats.E4}</b></div>
+      <div class="live-stat">D <b>${stats.D}</b></div>
+      <div class="live-stat">X <b>${stats.X}</b></div>
+      <div class="live-stat">OFF <b>${stats.OFF}</b></div>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#64748b;padding:0 0 12px">
+      💡 Tap any cell to change shift · Changes are saved on Save Roster
+    </div>
+  `;
+  
+  // Insert stats after first warning box
+  html = html.replace(/(<div class="ok-box">|<div class="err-box">)/, statsBar + '$1');
+  
+  // Make cells editable
+  html = html.replace(/<td class="cell-([A-Z0-9]+)">([^<]*)<\/td>/g, (match, code, content) => {
+    const staffMatch = match.match(/data-staff="([^"]+)"/);
+    return match;
+  });
+  
+  // Add onclick via a simple post-render step
+  setTimeout(makeEditable, 100);
+  
+  return html;
+};
+
+function calcLiveStats(){
+  const stats = { M:0, E:0, N:0, N12:0, E4:0, D:0, X:0, OFF:0, EL:0, CPL:0, PH:0, CL:0 };
+  if (!WIZ.grid) return stats;
+  Object.keys(WIZ.grid).forEach(d => {
+    Object.keys(WIZ.grid[d]).forEach(sid => {
+      const c = WIZ.grid[d][sid];
+      if (stats[c] !== undefined) stats[c]++;
+    });
+  });
+  return stats;
+}
+
+function makeEditable(){
+  // Find all roster tables
+  document.querySelectorAll('.roster-tbl').forEach(table => {
+    const ths = table.querySelectorAll('thead th');
+    if (ths.length < 2) return;
+    
+    // Get dates from headers
+    const dates = [];
+    for (let i = 1; i < ths.length; i++) {
+      const dateNum = ths[i].querySelector('.date-num')?.textContent || ths[i].textContent.trim();
+      dates.push(dateNum);
+    }
+    
+    // Get staff rows
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach((row, rowIdx) => {
+      if (rowIdx >= WIZ.staffArr.length) return;
+      const staff = WIZ.staffArr[rowIdx];
+      
+      const tds = row.querySelectorAll('td');
+      for (let i = 1; i < tds.length; i++) {
+        const dateIdx = i - 1;
+        if (dateIdx >= WIZ.dates.length) break;
+        const date = WIZ.dates[dateIdx];
+        
+        tds[i].classList.add('editable');
+        tds[i].dataset.staffId = staff._id;
+        tds[i].dataset.date = date;
+        tds[i].onclick = () => openShiftPicker(staff._id, date);
+      }
+    });
+  });
+}
+
+/* ============ OPEN SHIFT PICKER ============ */
+function openShiftPicker(staffId, date){
+  const staff = State.staff.find(s => s._id === staffId);
+  if (!staff) return;
+  
+  const currentShift = WIZ.grid[date]?.[staffId] || '';
+  const isFemale = RE.isFemale(staff);
+  
+  const buttons = Object.keys(SHIFT_CODES).map(code => {
+    const info = SHIFT_CODES[code];
+    const blocked = isFemale && RE.maleOnly(code);
+    return `
+      <button class="shift-btn ${info.class} ${blocked ? 'female-blocked' : ''}" 
+              onclick="setShift('${staffId}', '${date}', '${code}')">
+        <div style="font-size:16px;font-weight:900">${info.label}</div>
+        <div style="font-size:9px;opacity:.7;margin-top:2px">${info.full}</div>
+      </button>
+    `;
+  }).join('');
+  
+  openModal('✏️ Change Shift', `
+    <div class="info-box" style="margin-bottom:16px">
+      <b>👤 ${staff.name}</b><br>
+      <small>📅 ${fmtDisplay(date)} · Current: <b style="color:#67e8f9">${currentShift || '—'}</b></small>
+    </div>
+    <div class="shift-picker">${buttons}</div>
+    <button class="btn btn-danger btn-block" onclick="clearShift('${staffId}', '${date}')">
+      🗑️ Clear Cell
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+/* ============ SET SHIFT ============ */
+function setShift(staffId, date, code){
+  const staff = State.staff.find(s => s._id === staffId);
+  if (!staff) return;
+  
+  // Female safety check
+  if (RE.isFemale(staff) && RE.maleOnly(code)) {
+    toast('❌ Female cannot take ' + code, 'error');
+    return;
+  }
+  
+  // Set
+  WIZ.grid[date][staffId] = code;
+  recountOff();
+  
+  // Close + refresh
+  closeModal();
+  WIZ.step = 6;
+  renderWizard();
+  
+  toast('✅ ' + code + ' set');
+}
+
+function clearShift(staffId, date){
+  WIZ.grid[date][staffId] = '';
+  recountOff();
+  closeModal();
+  WIZ.step = 6;
+  renderWizard();
+}
+
+/* ============ ADD REVIEW MODE INDICATOR ============ */
+const _origRenderWizard29 = window.renderWizard;
+window.renderWizard = function(){
+  if (typeof _origRenderWizard29 === 'function') {
+    _origRenderWizard29.call(this);
+  }
+  
+  // Add review badge on step 6
+  if (WIZ.step === 6) {
+    setTimeout(() => {
+      const modal = document.querySelector('.modal-head h3');
+      if (modal && !modal.querySelector('.learned-badge')) {
+        const learned = getLearnedPatterns();
+        const hasLearned = Object.keys(learned).length > 0;
+        
+        if (hasLearned) {
+          modal.innerHTML = modal.textContent + ' <span class="learned-badge">🧠 Smart</span>';
+        }
+      }
+      makeEditable();
+    }, 100);
+  }
+};
+
+/* ============ SHOW LEARNED PATTERNS ============ */
+window.showLearnedPatterns = function(){
+  const patterns = getLearnedPatterns();
+  const staff = State.staff.filter(s => s.role !== 'admin');
+  
+  let html = '<div style="font-size:12px;color:#a0aec0;line-height:2">';
+  staff.forEach(s => {
+    const p = patterns[s._id];
+    if (p && p.preferredShift) {
+      const conf = Math.round(p.confidence * 100);
+      html += `
+        <div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div><b style="color:#fff">${escapeHtml(s.name)}</b></div>
+          <div>
+            <span style="color:#6ee7b7;font-weight:800">${p.preferredShift}</span>
+            <span style="font-size:10px;color:#64748b">(${conf}%)</span>
+          </div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div style="padding:8px;border-bottom:1px solid rgba(255,255,255,.05);opacity:.5">
+          <b>${escapeHtml(s.name)}</b> — No data yet
+        </div>
+      `;
+    }
+  });
+  html += '</div>';
+  
+  html += `
+    <div class="info-box" style="margin-top:16px">
+      <b>🧠 How Learning Works:</b><br>
+      • Edit any roster → Save → App learns patterns<br>
+      • Next generation uses these patterns<br>
+      • More edits = Smarter suggestions
+    </div>
+  `;
+  
+  openModal('🧠 Learned Patterns', html, [
+    { label: 'Reset Learning', cls: 'btn-danger', onclick: 'resetLearned()' },
+    { label: 'Close', cls: 'btn-ghost', onclick: 'closeModal()' }
+  ]);
+};
+
+function resetLearned(){
+  if (!confirm('Reset all learned patterns? The app will start fresh.')) return;
+  LocalDB.remove('learned_patterns');
+  toast('🔄 Learning reset');
+  closeModal();
+}
+
+/* ============ SIDEBAR — Add Learning Item ============ */
+function addLearningSidebarItem(){
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  if (sidebar.querySelector('[data-view="learned"]')) return;
+  
+  const btn = document.createElement('button');
+  btn.className = 'sidebar-item';
+  btn.dataset.view = 'learned';
+  btn.innerHTML = `
+    <span class="s-icon">🧠</span>
+    <span>Learned Patterns</span>
+  `;
+  btn.onclick = () => {
+    toggleSidebar(false);
+    setTimeout(showLearnedPatterns, 200);
+  };
+  
+  const policyBtn = sidebar.querySelector('[data-view="policy"]');
+  if (policyBtn) policyBtn.before(btn);
+}
+
+/* ============ APPLY ON LOAD ============ */
+const _origShowApp29 = window.showApp;
+window.showApp = function(){
+  _origShowApp29.call(this);
+  setTimeout(addLearningSidebarItem, 800);
+};
+
+setTimeout(addLearningSidebarItem, 2000);
+
+/* ============ DISABLE OLD PATCHES (no-op) ============ */
+window.wizRunGeneration = function(){ simpleAutoGenerate(); };
+
+console.log('✅ Part 29 loaded — Editable Roster + AI Learning');
+console.log('   Auto-gen → Edit cells → Save → Learn');
+</script>
+
+<!-- ============ END OF PART 29 ============ -->
