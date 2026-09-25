@@ -7547,3 +7547,989 @@ console.log('✅ Part 9 loaded — Design overhaul ready');
 </script>
 
 <!-- ============ END OF PART 9 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 10 — DUTY ROSTER · KIH LOGO · FORMS UPLOAD · ADMIN CTRL
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== KIH OFFICIAL LOGO ===== */
+.kih-official-logo{
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;
+}
+.kih-logo-symbol{
+  display:flex;align-items:center;
+  width:52px;height:44px;
+  position:relative;flex-shrink:0;
+}
+.kih-logo-red{
+  width:20px;height:44px;
+  background:#e11d48;
+  border-radius:3px 0 0 3px;
+}
+.kih-logo-cyan{
+  width:28px;height:44px;
+  background:#06b6d4;
+  border-radius:0 3px 3px 0;
+  margin-left:2px;
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.kih-logo-cyan::before{
+  content:'';
+  position:absolute;
+  width:26px;height:32px;
+  border:2.5px solid #fff;
+  border-radius:50%;
+  border-right-color:transparent;
+  border-top-color:transparent;
+  transform:rotate(-30deg);
+  top:6px;left:-2px;
+}
+.kih-logo-cyan::after{
+  content:'';
+  position:absolute;
+  width:20px;height:2.5px;
+  background:#fff;
+  transform:rotate(-40deg);
+  top:22px;left:4px;
+  border-radius:2px;
+}
+.kih-logo-text-block{
+  font-family:'Outfit',sans-serif;
+  line-height:1;
+}
+.kih-logo-text-block .kih-kulsum{
+  font-size:15px;font-weight:900;
+  color:#e11d48;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.kih-logo-text-block .kih-intl{
+  font-size:9px;font-weight:600;
+  color:#06b6d4;
+  letter-spacing:.3px;
+  margin-top:2px;
+  text-transform:uppercase;
+}
+
+/* ===== TODAY'S DUTY STAFF (Swipeable) ===== */
+.duty-card{
+  margin:0 16px 14px;
+  background:linear-gradient(145deg,rgba(108,92,255,.08),rgba(19,24,38,.95));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;
+  padding:18px;
+  backdrop-filter:blur(20px);
+  position:relative;overflow:hidden;
+}
+.duty-card::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,92,246,.5),transparent);
+}
+.duty-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.duty-title{
+  font-family:'Outfit',sans-serif;
+  font-size:15px;font-weight:800;
+  color:#fff;
+  display:flex;align-items:center;gap:6px;
+}
+.duty-date-nav{
+  display:flex;align-items:center;gap:8px;
+}
+.duty-nav-btn{
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  color:#e6ecf5;font-size:14px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.duty-nav-btn:active{transform:scale(.9);background:rgba(108,92,255,.2)}
+.duty-nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.duty-date-display{
+  font-size:11px;font-weight:700;
+  color:#a0aec0;
+  min-width:80px;text-align:center;
+}
+.duty-day-label{
+  font-size:20px;font-weight:900;
+  color:#fff;
+  font-family:'Outfit',sans-serif;
+  letter-spacing:-.3px;
+  margin-bottom:4px;
+}
+.duty-full-date{
+  font-size:11px;color:#64748b;
+  font-weight:600;
+  margin-bottom:16px;
+}
+.duty-shift-group{margin-bottom:14px}
+.duty-shift-header{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:8px;
+}
+.duty-shift-badge{
+  padding:4px 10px;
+  border-radius:8px;
+  font-family:'Outfit',sans-serif;
+  font-size:11px;font-weight:800;
+  display:flex;align-items:center;gap:4px;
+}
+.duty-shift-badge.m{background:linear-gradient(135deg,#8b5cf6,#a78bfa);color:#fff}
+.duty-shift-badge.e{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000}
+.duty-shift-badge.n{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff}
+.duty-shift-badge.off{background:rgba(100,116,139,.3);color:#cbd5e1}
+.duty-shift-count{
+  font-size:10px;color:#64748b;font-weight:700;
+}
+.duty-staff-chips{
+  display:flex;flex-wrap:wrap;gap:6px;
+}
+.duty-staff-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  font-size:11px;font-weight:600;
+  color:#e6ecf5;
+}
+.duty-staff-chip .avatar-dot{
+  width:20px;height:20px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;color:#fff;
+}
+.duty-staff-chip .avatar-dot.female{background:linear-gradient(135deg,#ec4899,#f472b6)}
+.duty-staff-chip .avatar-dot.male{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
+.duty-empty{
+  font-size:11px;color:#475569;font-style:italic;
+  padding:8px 0;
+}
+
+/* ===== PREMIUM STATS — 2 columns now ===== */
+.premium-stats-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:0 16px;
+  margin-bottom:16px;
+}
+
+/* ===== ADMIN MENU (3-dot) ===== */
+.admin-menu-btn{
+  position:absolute;top:10px;right:10px;
+  width:28px;height:28px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.1);
+  color:#e6ecf5;
+  font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:all .2s;
+  z-index:5;
+}
+.admin-menu-btn:active{
+  transform:scale(.9);
+  background:rgba(239,68,68,.3);
+}
+.admin-menu-dropdown{
+  position:absolute;
+  top:42px;right:10px;
+  background:rgba(19,24,38,.98);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:6px;
+  z-index:10;
+  min-width:130px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+  display:none;
+}
+.admin-menu-dropdown.show{display:block}
+.admin-menu-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;
+  border-radius:8px;
+  font-size:12px;font-weight:600;
+  color:#e6ecf5;
+  cursor:pointer;
+  transition:all .15s;
+  border:none;background:none;width:100%;text-align:left;
+}
+.admin-menu-item:hover{background:rgba(108,92,255,.15)}
+.admin-menu-item.danger{color:#fca5a5}
+.admin-menu-item.danger:hover{background:rgba(239,68,68,.15)}
+
+/* ===== HISTORY FORMS — Upload Based ===== */
+.forms-upload-zone{
+  margin:0 16px 14px;
+  padding:24px 20px;
+  border:2px dashed rgba(139,92,246,.4);
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(255,46,147,.03));
+  text-align:center;
+  cursor:pointer;
+  transition:all .25s;
+}
+.forms-upload-zone:active{
+  transform:scale(.98);
+  border-color:rgba(139,92,246,.8);
+  background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(255,46,147,.08));
+}
+.forms-upload-icon{font-size:32px;margin-bottom:8px}
+.forms-upload-title{
+  font-family:'Outfit',sans-serif;
+  font-size:14px;font-weight:800;
+  color:#fff;
+  margin-bottom:4px;
+}
+.forms-upload-sub{
+  font-size:11px;color:#64748b;font-weight:600;
+}
+.form-item-card{
+  margin:0 16px 10px;
+  padding:14px;
+  background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(19,24,38,.95));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  display:flex;align-items:center;gap:12px;
+  position:relative;
+}
+.form-item-thumb{
+  width:48px;height:48px;
+  border-radius:10px;
+  background:linear-gradient(135deg,rgba(108,92,255,.2),rgba(255,46,147,.15));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  flex-shrink:0;
+  overflow:hidden;
+}
+.form-item-thumb img{width:100%;height:100%;object-fit:cover}
+.form-item-info{flex:1;min-width:0}
+.form-item-name{
+  font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:800;
+  color:#fff;
+  margin-bottom:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.form-item-code{
+  font-size:10px;color:#64748b;font-weight:600;
+}
+.form-item-actions{
+  display:flex;gap:6px;
+}
+.form-action-btn{
+  width:34px;height:34px;
+  border-radius:10px;
+  border:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  cursor:pointer;
+  transition:all .2s;
+}
+.form-action-btn.print{
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  color:#fff;
+}
+.form-action-btn.view{
+  background:rgba(108,92,255,.2);
+  color:#a78bfa;
+  border:1px solid rgba(108,92,255,.3);
+}
+.form-action-btn:active{transform:scale(.9)}
+
+/* ===== ADMIN BADGE ===== */
+.admin-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#000;
+  border-radius:20px;
+  font-size:9px;font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+}
+
+/* ===== SWIPE INDICATOR ===== */
+.swipe-hint{
+  text-align:center;
+  font-size:10px;
+  color:#475569;
+  font-weight:600;
+  padding:8px 0;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.swipe-hint::before{content:'← '}
+.swipe-hint::after{content:' →'}
+
+/* ===== CONFIRM DIALOG ===== */
+.admin-confirm{
+  padding:8px 0;
+}
+.admin-confirm-text{
+  font-size:13px;color:#e6ecf5;
+  margin-bottom:16px;
+  line-height:1.5;
+}
+.admin-confirm-btns{
+  display:flex;gap:8px;
+}
+.admin-confirm-btns .btn{flex:1}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 10 — DUTY ROSTER · LOGO · FORMS · ADMIN CONTROLS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ STATE ============ */
+if(!window.DUTY_VIEW){
+  window.DUTY_VIEW = { offset: 0 };
+}
+
+/* ============ KIH LOGO — Replace header ============ */
+function applyKIHLogo(){
+  const headerLeft = document.querySelector('.header-left');
+  if(!headerLeft) return;
+  if(headerLeft.querySelector('.kih-official-logo')) return;
+
+  // Remove existing logos
+  headerLeft.querySelectorAll('.logo, .header-title, .kih-logo').forEach(el => el.remove());
+
+  const logoHtml = `
+    <div class="kih-official-logo" onclick="showView('home')">
+      <div class="kih-logo-symbol">
+        <div class="kih-logo-red"></div>
+        <div class="kih-logo-cyan"></div>
+      </div>
+      <div class="kih-logo-text-block">
+        <div class="kih-kulsum">KULSUM</div>
+        <div class="kih-intl">International Hospital</div>
+      </div>
+    </div>
+  `;
+  headerLeft.insertAdjacentHTML('afterbegin', logoHtml);
+}
+
+/* ============ TODAY'S DUTY — Get roster for a specific day ============ */
+function getDutyForDate(dateStr){
+  const staff = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const result = { M: [], E: [], N: [], OFF: [] };
+
+  // If we have a roster, use it
+  if(State.roster && State.roster.grid && State.roster.grid[dateStr]){
+    const dayGrid = State.roster.grid[dateStr];
+    staff.forEach(s => {
+      const code = dayGrid[s._id];
+      if(['M','D','X'].includes(code)) result.M.push({ ...s, code });
+      else if(['E','E4'].includes(code)) result.E.push({ ...s, code });
+      else if(['N','N12'].includes(code)) result.N.push({ ...s, code });
+      else if(code === 'OFF' || !code) result.OFF.push({ ...s, code: code || 'OFF' });
+      else result.OFF.push({ ...s, code });
+    });
+  } else {
+    // Fallback: use primary shift
+    staff.forEach(s => {
+      const primary = s.primary || s.fixed || 'M';
+      if(['M','D','X'].includes(primary)) result.M.push({ ...s, code: primary });
+      else if(['E','E4'].includes(primary)) result.E.push({ ...s, code: primary });
+      else if(['N','N12'].includes(primary)) result.N.push({ ...s, code: primary });
+      else result.OFF.push({ ...s, code: 'OFF' });
+    });
+  }
+
+  return result;
+}
+
+/* ============ RENDER TODAY'S DUTY ============ */
+function renderTodayDuty(){
+  const offset = window.DUTY_VIEW.offset || 0;
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  const dateStr = ymd(date);
+
+  const dayName = date.toLocaleDateString('en-PK', { weekday: 'long' });
+  const fullDate = date.toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const duty = getDutyForDate(dateStr);
+
+  const renderGroup = (label, icon, cls, staffArr, codeLabel) => {
+    if(staffArr.length === 0){
+      return `
+        <div class="duty-shift-group">
+          <div class="duty-shift-header">
+            <div class="duty-shift-badge ${cls}">${icon} ${label}</div>
+            <div class="duty-shift-count">0 staff</div>
+          </div>
+          <div class="duty-empty">No staff assigned</div>
+        </div>
+      `;
+    }
+    return `
+      <div class="duty-shift-group">
+        <div class="duty-shift-header">
+          <div class="duty-shift-badge ${cls}">${icon} ${label}</div>
+          <div class="duty-shift-count">${staffArr.length} staff</div>
+        </div>
+        <div class="duty-staff-chips">
+          ${staffArr.map(s => {
+            const initials = s.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
+            const isF = s.gender === 'Female';
+            return `
+              <div class="duty-staff-chip">
+                <div class="avatar-dot ${isF ? 'female' : 'male'}">${initials}</div>
+                <span>${escapeHtml(s.name.split(' ')[0])}${s.code && s.code !== label ? ' · ' + s.code : ''}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  };
+
+  return `
+    <div class="duty-card">
+      <div class="duty-header">
+        <div class="duty-title">👥 Today's Duty</div>
+        <div class="duty-date-nav">
+          <button class="duty-nav-btn" onclick="changeDutyDay(-1)" ${offset <= 0 ? 'disabled' : ''}>‹</button>
+          <div class="duty-date-display">${offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : offset === -1 ? 'Yesterday' : offset > 0 ? '+' + offset + 'd' : offset + 'd'}</div>
+          <button class="duty-nav-btn" onclick="changeDutyDay(1)">›</button>
+        </div>
+      </div>
+      <div class="duty-day-label">${dayName}</div>
+      <div class="duty-full-date">${fullDate}</div>
+
+      ${renderGroup('Morning', '☀️', 'm', duty.M)}
+      ${renderGroup('Evening', '🌆', 'e', duty.E)}
+      ${renderGroup('Night', '🌙', 'n', duty.N)}
+      ${renderGroup('Off Duty', '🛏️', 'off', duty.OFF)}
+    </div>
+  `;
+}
+
+function changeDutyDay(delta){
+  window.DUTY_VIEW.offset = (window.DUTY_VIEW.offset || 0) + delta;
+  if(window.DUTY_VIEW.offset < 0) window.DUTY_VIEW.offset = 0;
+  if(window.DUTY_VIEW.offset > 30) window.DUTY_VIEW.offset = 30;
+  renderHomeView();
+  vibrate(20);
+}
+
+/* ============ NEW HOME VIEW (2 stats + duty roster) ============ */
+window.renderHomeView = function(){
+  const today = new Date();
+  const weekNum = Math.ceil((today - new Date(today.getFullYear(),0,1)) / 86400000 / 7);
+  const staffCount = State.staff.filter(s => s.role !== 'admin' && s.active !== false).length;
+  const testsCount = (window.TESTS_DB || []).length;
+
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  let mCount = 0, eCount = 0, nCount = 0;
+  staffList.forEach(s => {
+    const p = s.primary || s.fixed || 'M';
+    if(['M','D','X'].includes(p)) mCount++;
+    else if(['E','E4'].includes(p)) eCount++;
+    else if(['N','N12'].includes(p)) nCount++;
+  });
+
+  const mPct = Math.min(100, Math.round((mCount / 6) * 100));
+  const ePct = Math.min(100, Math.round((eCount / 6) * 100));
+  const nPct = Math.min(100, Math.round((nCount / 3) * 100));
+
+  const html = `
+    <!-- Dashboard Header -->
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">
+          Dashboard <span class="sparkle-gold">✦</span>
+        </div>
+        <div class="dash-subtitle">
+          ${today.toLocaleDateString('en-PK', {day:'numeric',month:'short',year:'numeric'})} · Week ${weekNum}
+        </div>
+      </div>
+      <div class="dash-header-right">
+        <div class="notif-btn" onclick="showNotifications()">
+          🔔
+          <div class="badge-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium Stats — 2 columns (Safety Rate removed) -->
+    <div class="premium-stats-2">
+      <div class="pstat cyan" onclick="openStaffListModal()">
+        <span class="pstat-icon">👥</span>
+        <div class="pstat-value">${staffCount}</div>
+        <div class="pstat-label">Active Staff</div>
+        <div class="pstat-trend up">${mCount + eCount + nCount} on shift</div>
+      </div>
+      <div class="pstat purple" onclick="showView('roster')">
+        <span class="pstat-icon">📅</span>
+        <div class="pstat-value">${State.roster ? '100%' : '—'}</div>
+        <div class="pstat-label">Roster Status</div>
+        <div class="pstat-trend ${State.roster ? 'up' : 'down'}">${State.roster ? '✅ Ready' : '⏳ Pending'}</div>
+      </div>
+    </div>
+
+    <!-- TODAY'S DUTY (NEW — Swipeable) -->
+    ${renderTodayDuty()}
+
+    <!-- Shift Coverage -->
+    <div class="glass-card">
+      <div class="shift-coverage-title">
+        Shift Coverage
+        <small>Total: ${staffList.length}</small>
+      </div>
+
+      <div class="shift-bar-row">
+        <div class="shift-chip m">M</div>
+        <div class="shift-info">
+          <div class="shift-info-top">
+            <b>Morning</b>
+            <span>06:00 – 14:00</span>
+          </div>
+          <div class="shift-progress">
+            <div class="shift-progress-fill m" style="width:${mPct}%"></div>
+          </div>
+        </div>
+        <div class="shift-count">${mCount}</div>
+      </div>
+
+      <div class="shift-bar-row">
+        <div class="shift-chip e">E</div>
+        <div class="shift-info">
+          <div class="shift-info-top">
+            <b>Evening</b>
+            <span>14:00 – 22:00</span>
+          </div>
+          <div class="shift-progress">
+            <div class="shift-progress-fill e" style="width:${ePct}%"></div>
+          </div>
+        </div>
+        <div class="shift-count">${eCount}</div>
+      </div>
+
+      <div class="shift-bar-row">
+        <div class="shift-chip n">N</div>
+        <div class="shift-info">
+          <div class="shift-info-top">
+            <b>Night</b>
+            <span>22:00 – 06:00</span>
+          </div>
+          <div class="shift-progress">
+            <div class="shift-progress-fill n" style="width:${nPct}%"></div>
+          </div>
+        </div>
+        <div class="shift-count">${nCount}</div>
+      </div>
+    </div>
+
+    <!-- Safety Banner -->
+    <div class="safety-banner-premium">
+      <div class="icon">🛡️</div>
+      <div>All female staff have safety compliance active</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="glass-card">
+      <div class="card-title">⚡ Quick Actions</div>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('tests')">
+        🧪 Search Test Protocol
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('difficult')">
+        🩸 Difficult Draw Guide
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('rejection')">
+        ⚠️ Specimen Rejection Guide
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('communication')">
+        💬 Communication Scripts
+      </button>
+      <button class="btn btn-ghost btn-block" onclick="showView('historyForms')">
+        📋 History Forms
+      </button>
+    </div>
+  `;
+
+  const view = document.getElementById('view-home');
+  if(view) view.innerHTML = html;
+
+  updateStats();
+};
+
+/* ============ HISTORY FORMS — Upload Based ============ */
+window.renderHistoryFormsView = function(){
+  const view = document.getElementById('view-historyForms');
+  if(!view) return;
+
+  const forms = LocalDB.get('history_forms', []);
+  const isAdmin = State.user?.role === 'admin';
+
+  let formsHtml = '';
+  if(forms.length === 0){
+    formsHtml = `
+      <div class="empty" style="padding:30px 20px">
+        No forms uploaded yet.<br>
+        <span style="font-size:10px;color:#475569">${isAdmin ? 'Upload your first form template above.' : 'Admin will upload forms.'}</span>
+      </div>
+    `;
+  } else {
+    formsHtml = forms.map(f => `
+      <div class="form-item-card">
+        <div class="form-item-thumb">${f.image ? `<img src="${f.image}">` : '📋'}</div>
+        <div class="form-item-info">
+          <div class="form-item-name">${escapeHtml(f.name)}</div>
+          <div class="form-item-code">${f.code ? 'Code: ' + escapeHtml(f.code) : 'Uploaded: ' + fmtDateTime(f.createdAt)}</div>
+        </div>
+        <div class="form-item-actions">
+          <button class="form-action-btn view" onclick="viewForm('${f._id}')" title="View">👁️</button>
+          <button class="form-action-btn print" onclick="printForm('${f._id}')" title="Print">🖨️</button>
+        </div>
+        ${isAdmin ? `
+          <div class="admin-menu-btn" onclick="toggleAdminMenu(event, '${f._id}')">⋮</div>
+          <div class="admin-menu-dropdown" id="menu-${f._id}">
+            <button class="admin-menu-item" onclick="editForm('${f._id}')">✏️ Edit</button>
+            <button class="admin-menu-item danger" onclick="deleteForm('${f._id}')">🗑️ Delete</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  }
+
+  view.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">📋 History Forms</div>
+      <div class="page-sub">${forms.length} form${forms.length !== 1 ? 's' : ''} uploaded</div>
+    </div>
+
+    ${isAdmin ? `
+      <div class="forms-upload-zone" onclick="triggerFormUpload()">
+        <div class="forms-upload-icon">📤</div>
+        <div class="forms-upload-title">Upload Form Template</div>
+        <div class="forms-upload-sub">Tap to upload form image or PDF</div>
+      </div>
+      <input type="file" id="formUploadInput" accept="image/*,.pdf" style="display:none" onchange="handleFormUpload(event)">
+    ` : ''}
+
+    <div id="formsList">${formsHtml}</div>
+  `;
+};
+
+/* ============ FORM UPLOAD ============ */
+function triggerFormUpload(){
+  document.getElementById('formUploadInput')?.click();
+}
+
+function handleFormUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    // Ask for form name
+    openModal('📋 Form Details', `
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Form Name *</label>
+        <input type="text" class="add-staff-input" id="formName" placeholder="e.g., CBC History Form" value="${file.name.replace(/\.[^.]+$/, '')}">
+      </div>
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Test Code (optional)</label>
+        <input type="text" class="add-staff-input" id="formCode" placeholder="e.g., LB0049">
+      </div>
+      <div class="form-item-thumb" style="width:100%;height:200px;margin-bottom:16px">
+        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:contain">
+      </div>
+      <button class="add-staff-submit" onclick="saveForm('${e.target.result.replace(/'/g, "\\'")}')">
+        💾 Save Form
+      </button>
+    `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveForm(imageData){
+  const name = document.getElementById('formName')?.value?.trim();
+  const code = document.getElementById('formCode')?.value?.trim();
+  if(!name){ toast('⚠️ Form name required', 'error'); return; }
+
+  const forms = LocalDB.get('history_forms', []);
+  forms.push({
+    _id: uid(),
+    name,
+    code: code || '',
+    image: imageData,
+    createdAt: nowTs(),
+    createdBy: State.user?.name || 'Admin'
+  });
+  LocalDB.set('history_forms', forms);
+  toast('✅ Form uploaded');
+  closeModal();
+  renderHistoryFormsView();
+}
+
+function viewForm(id){
+  const form = LocalDB.get('history_forms', []).find(f => f._id === id);
+  if(!form) return;
+  openModal('👁️ ' + form.name, `
+    <div style="text-align:center;padding:8px 0">
+      <img src="${form.image}" style="max-width:100%;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    </div>
+  `, [
+    { label: '🖨️ Print', cls: 'btn-primary', onclick: `printForm('${id}')` },
+    { label: 'Close', cls: 'btn-ghost', onclick: 'closeModal()' }
+  ]);
+}
+
+function printForm(id){
+  const form = LocalDB.get('history_forms', []).find(f => f._id === id);
+  if(!form) return;
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>${form.name}</title>
+    <style>
+      @page{margin:10mm}
+      body{margin:0;padding:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
+      img{max-width:100%;max-height:100vh;display:block}
+      @media print{body{background:#fff}img{width:100%}}
+    </style></head>
+    <body><img src="${form.image}" onload="setTimeout(()=>window.print(),300)"></body></html>
+  `);
+  w.document.close();
+}
+
+function editForm(id){
+  const form = LocalDB.get('history_forms', []).find(f => f._id === id);
+  if(!form) return;
+  openModal('✏️ Edit Form', `
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Form Name</label>
+      <input type="text" class="add-staff-input" id="editFormName" value="${escapeHtml(form.name)}">
+    </div>
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Test Code</label>
+      <input type="text" class="add-staff-input" id="editFormCode" value="${escapeHtml(form.code || '')}">
+    </div>
+    <button class="add-staff-submit" onclick="updateForm('${id}')">💾 Save Changes</button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+function updateForm(id){
+  const name = document.getElementById('editFormName')?.value?.trim();
+  const code = document.getElementById('editFormCode')?.value?.trim();
+  if(!name){ toast('⚠️ Name required', 'error'); return; }
+
+  const forms = LocalDB.get('history_forms', []);
+  const idx = forms.findIndex(f => f._id === id);
+  if(idx === -1) return;
+  forms[idx].name = name;
+  forms[idx].code = code;
+  forms[idx].updatedAt = nowTs();
+  LocalDB.set('history_forms', forms);
+  toast('✅ Form updated');
+  closeModal();
+  renderHistoryFormsView();
+}
+
+function deleteForm(id){
+  if(!confirm('Delete this form?')) return;
+  const forms = LocalDB.get('history_forms', []).filter(f => f._id !== id);
+  LocalDB.set('history_forms', forms);
+  toast('🗑️ Form deleted');
+  renderHistoryFormsView();
+}
+
+/* ============ ADMIN MENU (3-dot) ============ */
+function toggleAdminMenu(event, id){
+  event.stopPropagation();
+  // Close all menus first
+  document.querySelectorAll('.admin-menu-dropdown').forEach(m => {
+    if(m.id !== 'menu-' + id) m.classList.remove('show');
+  });
+  const menu = document.getElementById('menu-' + id);
+  if(menu) menu.classList.toggle('show');
+}
+
+// Close menus on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.admin-menu-dropdown').forEach(m => m.classList.remove('show'));
+});
+
+/* ============ STAFF CARDS — Add Admin Menu ============ */
+window.renderStaffList = function(){
+  const el = $('staffList');
+  if(!el) return;
+
+  const staffOnly = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const isAdmin = State.user?.role === 'admin';
+
+  if(staffOnly.length === 0){
+    el.className = 'empty';
+    el.innerHTML = 'No staff added yet';
+    return;
+  }
+
+  el.className = 'staff-grid-premium';
+  el.innerHTML = staffOnly.map(s => {
+    const isF = s.gender === 'Female';
+    const initials = s.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
+    const primary = s.primary || s.fixed || 'M';
+
+    return `
+      <div class="staff-card-premium">
+        ${isAdmin ? `
+          <div class="admin-menu-btn" onclick="toggleAdminMenu(event, 'staff-${s._id}')">⋮</div>
+          <div class="admin-menu-dropdown" id="menu-staff-${s._id}">
+            <button class="admin-menu-item" onclick="editStaff('${s._id}')">✏️ Edit</button>
+            <button class="admin-menu-item danger" onclick="deleteStaff('${s._id}')">🗑️ Delete</button>
+          </div>
+        ` : ''}
+        <div class="staff-card-top" onclick="editStaff('${s._id}')">
+          <div class="staff-avatar ${isF ? 'female' : 'male'}">
+            ${initials}
+            <div class="check-badge">✓</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="staff-name-premium">${escapeHtml(s.name.split(' ').slice(0,2).join(' '))}</div>
+            <div class="staff-role-premium">Phlebotomist</div>
+          </div>
+        </div>
+        <div class="staff-tags-premium">
+          ${isF ? '<span class="staff-tag safety">🩷 Female Safety</span>' : '<span class="staff-tag shift">🛡️ Certified</span>'}
+          <span class="staff-tag shift">${primary} Roster</span>
+          <span class="staff-tag lab">Lab A · Phlebotomy</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+/* ============ POLICY VIEW — Admin Controls ============ */
+window.renderPolicyView = function(){
+  const view = document.getElementById('view-policy');
+  if(!view) return;
+
+  const policies = LocalDB.get('policies', []);
+  const isAdmin = State.user?.role === 'admin';
+
+  let listHtml = '';
+  if(policies.length === 0){
+    listHtml = '<div class="empty">No policies yet</div>';
+  } else {
+    listHtml = policies.map(p => {
+      const ack = LocalDB.get('ack_' + p._id, []);
+      const myAck = ack.find(a => a.userId === State.user?._id);
+      return `
+        <div class="card" style="position:relative">
+          ${isAdmin ? `
+            <div class="admin-menu-btn" onclick="toggleAdminMenu(event, 'policy-${p._id}')">⋮</div>
+            <div class="admin-menu-dropdown" id="menu-policy-${p._id}">
+              <button class="admin-menu-item" onclick="editPolicy('${p._id}')">✏️ Edit</button>
+              <button class="admin-menu-item danger" onclick="deletePolicy('${p._id}')">🗑️ Delete</button>
+            </div>
+          ` : ''}
+          <div class="card-title">📢 ${escapeHtml(p.title)}</div>
+          <div style="font-size:12px;color:var(--fg-2);line-height:1.6;margin-bottom:12px">${escapeHtml(p.body)}</div>
+          <div style="font-size:10px;color:var(--fg-4);margin-bottom:8px">
+            ${fmtDateTime(p.createdAt)} · ${ack.length} acknowledged
+          </div>
+          ${myAck
+            ? `<div class="ok-box">✅ Acknowledged ${fmtDateTime(myAck.at)}</div>`
+            : `<button class="btn btn-primary btn-sm" onclick="acknowledgePolicy('${p._id}')">✓ I Acknowledge</button>
+               <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="questionPolicy('${p._id}')">❓ Question</button>`
+          }
+        </div>
+      `;
+    }).join('');
+  }
+
+  view.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">📢 Admin Policy</div>
+      <div class="page-sub">${policies.length} policies · Acknowledgment required</div>
+    </div>
+    ${isAdmin ? `
+      <button class="btn btn-primary btn-block" style="width:calc(100% - 32px);margin:0 16px 12px" onclick="openPolicyModal()">
+        ➕ New Policy
+      </button>
+    ` : ''}
+    ${listHtml}
+  `;
+};
+
+function editPolicy(id){
+  const policies = LocalDB.get('policies', []);
+  const p = policies.find(x => x._id === id);
+  if(!p) return;
+  openModal('✏️ Edit Policy', `
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Title</label>
+      <input type="text" class="add-staff-input" id="editPolicyTitle" value="${escapeHtml(p.title)}">
+    </div>
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Body</label>
+      <textarea class="add-staff-input" id="editPolicyBody" rows="6">${escapeHtml(p.body)}</textarea>
+    </div>
+    <button class="add-staff-submit" onclick="updatePolicy('${id}')">💾 Save Changes</button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+function updatePolicy(id){
+  const title = document.getElementById('editPolicyTitle')?.value?.trim();
+  const body = document.getElementById('editPolicyBody')?.value?.trim();
+  if(!title || !body){ toast('⚠️ Fill both fields', 'error'); return; }
+  const policies = LocalDB.get('policies', []);
+  const idx = policies.findIndex(x => x._id === id);
+  if(idx === -1) return;
+  policies[idx].title = title;
+  policies[idx].body = body;
+  policies[idx].updatedAt = nowTs();
+  LocalDB.set('policies', policies);
+  toast('✅ Policy updated');
+  closeModal();
+  renderPolicyView();
+}
+
+function deletePolicy(id){
+  if(!confirm('Delete this policy?')) return;
+  const policies = LocalDB.get('policies', []).filter(x => x._id !== id);
+  LocalDB.set('policies', policies);
+  LocalDB.remove('ack_' + id);
+  toast('🗑️ Policy deleted');
+  renderPolicyView();
+}
+
+/* ============ APPLY LOGO ON LOAD ============ */
+const _origShowApp3 = window.showApp;
+window.showApp = function(){
+  _origShowApp3.call(this);
+  setTimeout(applyKIHLogo, 100);
+};
+
+setTimeout(() => {
+  if($('appHeader')?.style.display !== 'none'){
+    applyKIHLogo();
+  }
+}, 1000);
+
+/* ============ NAV MENU CLOSE ON VIEW CHANGE ============ */
+const _origShowView3 = window.showView;
+window.showView = function(name){
+  _origShowView3.call(this, name);
+  document.querySelectorAll('.admin-menu-dropdown').forEach(m => m.classList.remove('show'));
+};
+
+console.log('✅ Part 10 loaded — Duty roster, KIH logo, forms upload, admin controls');
+</script>
+
+<!-- ============ END OF PART 10 ============ -->
