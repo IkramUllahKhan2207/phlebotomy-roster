@@ -21151,3 +21151,612 @@ console.log('✅ Part 33.1 loaded');
 
 <!-- ============ END OF PART 33.1 ============ -->
    
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 34 — WORKING EDIT + FULL NAMES
+     Fresh clean implementation
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== FULL NAME IN STAFF COLUMN ===== */
+.fe-roster-table td.staff-cell{
+  min-width:180px !important;
+  font-size:12px !important;
+  padding:8px 12px !important;
+  white-space:nowrap;
+}
+.fe-roster-table th.staff-col{
+  min-width:180px !important;
+}
+
+/* ===== CELL FOCUS ===== */
+.fe-roster-table td.editable-cell{
+  cursor:pointer;
+  transition:all .15s;
+}
+.fe-roster-table td.editable-cell.selected{
+  outline:3px solid #22d3ee !important;
+  outline-offset:-3px;
+  background:rgba(34,211,238,.2) !important;
+  z-index:20;
+  box-shadow:0 0 20px rgba(34,211,238,.6);
+  animation:cellPulse .6s ease-out;
+}
+@keyframes cellPulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.15)}
+  100%{transform:scale(1)}
+}
+
+/* ===== TOAST ===== */
+.edit-toast{
+  position:fixed;
+  top:90px;
+  left:50%;
+  transform:translateX(-50%) translateY(-30px);
+  padding:12px 20px;
+  border-radius:12px;
+  font-family:'Outfit',sans-serif;
+  font-size:14px;
+  font-weight:800;
+  color:#fff;
+  z-index:9999;
+  opacity:0;
+  transition:all .25s;
+  pointer-events:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+}
+.edit-toast.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
+.edit-toast.success{background:linear-gradient(135deg,#10b981,#06b6d4)}
+.edit-toast.error{background:linear-gradient(135deg,#ef4444,#dc2626)}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 34 — WORKING EDIT SYSTEM (CLEAN)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ GLOBAL STATE ============ */
+window.__EDITOR = window.__EDITOR || {
+  selectedCell: null,
+  selectedStaffId: null,
+  selectedDate: null
+};
+
+/* ============ SHOW TOAST ============ */
+function showEditToast(msg, type = 'success'){
+  let t = document.getElementById('editToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'editToast';
+    t.className = 'edit-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.className = `edit-toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1200);
+}
+
+/* ============ CLICK HANDLER (Document Level, Capture) ============ */
+document.addEventListener('click', function(e){
+  // Find if clicked element is a roster cell
+  let el = e.target;
+  let cell = null;
+  
+  while (el && el !== document.body) {
+    if (el.classList && el.classList.contains('editable-cell') && el.dataset.staff) {
+      cell = el;
+      break;
+    }
+    el = el.parentElement;
+  }
+  
+  if (!cell) return;
+  
+  // Prevent default
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // Clear previous selection
+  if (window.__EDITOR.selectedCell && window.__EDITOR.selectedCell !== cell) {
+    window.__EDITOR.selectedCell.classList.remove('selected');
+  }
+  
+  // Select new
+  window.__EDITOR.selectedCell = cell;
+  window.__EDITOR.selectedStaffId = cell.dataset.staff;
+  window.__EDITOR.selectedDate = cell.dataset.date;
+  
+  cell.classList.add('selected');
+  cell.setAttribute('tabindex', '0');
+  cell.focus();
+  
+  // Show on-screen keyboard
+  if (typeof showOnScreenKeyboard === 'function') {
+    showOnScreenKeyboard();
+  }
+  
+  console.log('👆 CELL SELECTED:', window.__EDITOR.selectedStaffId, window.__EDITOR.selectedDate);
+}, true);  // capture phase
+
+/* ============ KEYBOARD HANDLER (Document Level, Capture) ============ */
+document.addEventListener('keydown', function(e){
+  // Editor must be open
+  const editor = document.getElementById('fullRosterEditor');
+  if (!editor || !editor.classList.contains('open')) return;
+  
+  // Cell must be selected
+  const sel = window.__EDITOR.selectedCell;
+  if (!sel) return;
+  
+  const key = e.key.toLowerCase();
+  
+  // Prevent browser defaults
+  if (['m','e','n','2','4','d','x','o','l','c','p','k',
+       'arrowup','arrowdown','arrowleft','arrowright',
+       'enter','escape','backspace','delete','tab'].includes(key)) {
+    e.preventDefault();
+    e.stopPropagation();
+  } else {
+    return;
+  }
+  
+  console.log('⌨️ KEY:', key);
+  
+  // ===== CLEAR =====
+  if (key === 'backspace' || key === 'delete') {
+    doEdit(sel, '');
+    return;
+  }
+  
+  // ===== ESCAPE =====
+  if (key === 'escape') {
+    sel.classList.remove('selected');
+    window.__EDITOR.selectedCell = null;
+    if (typeof hideOnScreenKeyboard === 'function') hideOnScreenKeyboard();
+    return;
+  }
+  
+  // ===== NAVIGATE =====
+  if (key.startsWith('arrow') || key === 'enter' || key === 'tab') {
+    let dir = key;
+    if (key === 'enter') dir = 'arrowdown';
+    if (key === 'tab') dir = e.shiftKey ? 'arrowleft' : 'arrowright';
+    navigateEditCell(dir);
+    return;
+  }
+  
+  // ===== SET SHIFT =====
+  const KEY_MAP = {
+    'm': 'M', 'e': 'E', 'n': 'N', '2': 'N12',
+    '4': 'E4', 'd': 'D', 'x': 'X', 'o': 'OFF',
+    'l': 'EL', 'c': 'CPL', 'p': 'PH', 'k': 'CL'
+  };
+  
+  if (KEY_MAP[key]) {
+    doEdit(sel, KEY_MAP[key]);
+    // Auto-advance
+    setTimeout(() => navigateEditCell('arrowright'), 150);
+  }
+}, true);  // capture
+
+/* ============ DO EDIT ============ */
+function doEdit(cell, code){
+  if (!cell) return;
+  
+  const staffId = cell.dataset.staff;
+  const date = cell.dataset.date;
+  
+  console.log('✏️ EDIT:', staffId, date, '→', code);
+  
+  // Validate
+  if (!staffId || !date) {
+    console.error('❌ Missing staff/date');
+    return;
+  }
+  
+  if (!WIZ || !WIZ.grid || !WIZ.grid[date]) {
+    console.error('❌ No grid for', date);
+    showEditToast('❌ Grid error', 'error');
+    return;
+  }
+  
+  const staff = State.staff.find(s => s._id === staffId);
+  if (!staff) {
+    console.error('❌ Staff not found:', staffId);
+    return;
+  }
+  
+  // Female safety
+  if (code && RE.isFemale(staff) && RE.maleOnly(code)) {
+    showEditToast('❌ Female cannot take ' + code, 'error');
+    return;
+  }
+  
+  // Check if same
+  const oldCode = WIZ.grid[date][staffId] || '';
+  if (oldCode === code) {
+    console.log('⏩ Same value, skip');
+    return;
+  }
+  
+  // APPLY
+  WIZ.grid[date][staffId] = code;
+  
+  // Update cell visual
+  cell.className = 'editable-cell selected ' + (code ? `cell-${code}` : 'cell-X');
+  cell.textContent = code || '—';
+  
+  // Flash
+  cell.style.transition = 'background .3s';
+  cell.style.background = 'rgba(16,185,129,.5)';
+  setTimeout(() => {
+    cell.style.background = '';
+  }, 300);
+  
+  // Update counters
+  if (typeof recountOff === 'function') recountOff();
+  if (typeof revalidate === 'function') revalidate();
+  if (typeof updateLiveStatsBar === 'function') updateLiveStatsBar();
+  if (typeof updateSummaryInEditor === 'function') updateSummaryInEditor();
+  if (typeof incrementEditCount === 'function') incrementEditCount();
+  
+  // Feedback
+  showEditToast(code ? `✅ ${code} set` : '🗑️ Cleared');
+  
+  console.log('✅ DONE:', staffId, date, '=', code);
+}
+
+/* ============ NAVIGATE CELLS ============ */
+function navigateEditCell(direction){
+  const sel = window.__EDITOR.selectedCell;
+  if (!sel) return;
+  
+  const table = document.getElementById('feRosterTable');
+  if (!table) return;
+  
+  // Find current row/col
+  const allRows = table.querySelectorAll('tbody tr');
+  let currentRow = -1, currentCol = -1;
+  let currentCell;
+  
+  allRows.forEach((row, rIdx) => {
+    const cells = row.querySelectorAll('td.editable-cell');
+    cells.forEach((c, cIdx) => {
+      if (c === sel) {
+        currentRow = rIdx;
+        currentCol = cIdx;
+        currentCell = c;
+      }
+    });
+  });
+  
+  if (currentRow === -1) return;
+  
+  let newRow = currentRow;
+  let newCol = currentCol;
+  
+  if (direction === 'arrowup') newRow = Math.max(0, currentRow - 1);
+  if (direction === 'arrowdown') newRow = Math.min(allRows.length - 1, currentRow + 1);
+  if (direction === 'arrowleft') newCol = Math.max(0, currentCol - 1);
+  if (direction === 'arrowright') newCol = Math.min(50, currentCol + 1);
+  
+  const newRowEl = allRows[newRow];
+  if (!newRowEl) return;
+  
+  const newCells = newRowEl.querySelectorAll('td.editable-cell');
+  const newCell = newCells[newCol];
+  if (!newCell) return;
+  
+  // Clear old selection
+  sel.classList.remove('selected');
+  
+  // Select new
+  window.__EDITOR.selectedCell = newCell;
+  window.__EDITOR.selectedStaffId = newCell.dataset.staff;
+  window.__EDITOR.selectedDate = newCell.dataset.date;
+  
+  newCell.classList.add('selected');
+  newCell.focus();
+  newCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+}
+
+/* ============ OSK TAP ============ */
+window.oskTap = function(code){
+  const sel = window.__EDITOR.selectedCell;
+  if (!sel) {
+    showEditToast('⚠️ Tap a cell first', 'error');
+    return;
+  }
+  doEdit(sel, code);
+  
+  // Flash
+  sel.style.transform = 'scale(1.15)';
+  setTimeout(() => { sel.style.transform = ''; }, 150);
+};
+
+/* ============ OVERRIDE renderStaffRow TO SHOW FULL NAME ============ */
+window.renderStaffRow = function(s, dates, grid){
+  const isFemale = RE.isFemale(s);
+  const fullName = s.name;  // ✅ FULL NAME
+  
+  const cells = dates.map(d => {
+    const code = (grid[d] || {})[s._id] || '';
+    const cellClass = code ? `cell-${code}` : 'cell-X';
+    return `<td class="${cellClass} editable-cell" 
+                data-staff="${s._id}" 
+                data-date="${d}">${code || '—'}</td>`;
+  }).join('');
+  
+  return `
+    <tr>
+      <td class="staff-cell">
+        ${isFemale ? '🩷' : '👨'} ${escapeHtml(fullName)}
+      </td>
+      ${cells}
+    </tr>
+  `;
+};
+
+/* ============ FORCE REBUILD EDITOR (override buildFullEditor) ============ */
+window.buildFullEditor = function(){
+  const editor = document.getElementById('fullRosterEditor');
+  if (!editor) return;
+  
+  const dates = WIZ.dates || [];
+  const staff = WIZ.staffArr || [];
+  const grid = WIZ.grid || {};
+  const holidays = WIZ.confirmedHolidays || [];
+  const today = RE.ymd(new Date());
+  const hasWarnings = (WIZ.warnings || []).length > 0;
+  
+  // Stats
+  const stats = { M:0, E:0, N:0, N12:0, E4:0, D:0, X:0, OFF:0 };
+  Object.keys(grid).forEach(d => {
+    Object.keys(grid[d]).forEach(sid => {
+      const c = grid[d][sid];
+      if (stats[c] !== undefined) stats[c]++;
+    });
+  });
+  
+  // Grid HTML - INLINE (not using renderStaffRow)
+  let gridHtml = '';
+  staff.forEach(s => {
+    const isFemale = RE.isFemale(s);
+    gridHtml += `<tr><td class="staff-cell">${isFemale ? '🩷' : '👨'} ${escapeHtml(s.name)}</td>`;
+    dates.forEach(d => {
+      const code = (grid[d] || {})[s._id] || '';
+      const cellClass = code ? `cell-${code}` : 'cell-X';
+      gridHtml += `<td class="${cellClass} editable-cell" 
+                      data-staff="${s._id}" 
+                      data-date="${d}"
+                      tabindex="0">${code || '—'}</td>`;
+    });
+    gridHtml += `</tr>`;
+  });
+  
+  // Date headers
+  let headerHtml = '';
+  dates.forEach(d => {
+    const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][RE.parseYMD(d).getDay()];
+    const isSun = RE.isSunday(d);
+    const isSat = RE.isSaturday(d);
+    const isHol = holidays.some(h => h.date === d);
+    const isToday = d === today;
+    
+    let cls = 'fe-date-head';
+    if (isToday) cls += ' today';
+    else if (isHol) cls += ' holiday';
+    else if (isSun) cls += ' sunday';
+    else if (isSat) cls += ' saturday';
+    
+    headerHtml += `<th class="${cls}">
+      <span class="date-num">${d.slice(8)}</span>
+      <span class="day-name">${dayShort}</span>
+    </th>`;
+  });
+  
+  // Summary rows
+  let summaryRows = '';
+  staff.forEach(s => {
+    const off = WIZ.offCount?.[s._id] || 0;
+    const target = WIZ.offTarget || 0;
+    const diff = off - target;
+    const diffClass = diff === 0 ? 'diff-ok' : 'diff-bad';
+    summaryRows += `
+      <tr>
+        <td>${escapeHtml(s.name)}</td>
+        <td><b>${off}</b></td>
+        <td>${target}</td>
+        <td class="${diffClass}">${diff > 0 ? '+' : ''}${diff}</td>
+      </tr>
+    `;
+  });
+  
+  // Build editor
+  editor.innerHTML = `
+    <div class="fe-header">
+      <div class="fe-header-left">
+        <button class="fe-back-btn" onclick="closeFullRosterEditor();WIZ.step=4;renderWizard()">←</button>
+        <div style="flex:1;min-width:0">
+          <div class="fe-title">📋 Roster Editor</div>
+          <div class="fe-subtitle">${WIZ.label || (WIZ.start + ' → ' + WIZ.end)}</div>
+        </div>
+      </div>
+      <div class="fe-header-right">
+        <button class="fe-icon-btn" onclick="showLearnedPatterns()">🧠</button>
+        <button class="fe-save-btn" ${hasWarnings ? 'disabled' : ''} onclick="saveFullEditor()">💾 Save</button>
+      </div>
+    </div>
+    
+    <div class="fe-stats-bar" id="feStatsBar">
+      <div class="fe-stat">M <b>${stats.M}</b></div>
+      <div class="fe-stat">E <b>${stats.E}</b></div>
+      <div class="fe-stat">N <b>${stats.N}</b></div>
+      <div class="fe-stat">N12 <b>${stats.N12}</b></div>
+      <div class="fe-stat">E4 <b>${stats.E4}</b></div>
+      <div class="fe-stat">D <b>${stats.D}</b></div>
+      <div class="fe-stat">X <b>${stats.X}</b></div>
+      <div class="fe-stat">OFF <b>${stats.OFF}</b></div>
+    </div>
+    
+    <div class="kb-hint-bar">
+      <div class="kb-hint">💡 <b>Tap cell</b> then type</div>
+      <div class="kb-hint"><b>M</b>Morning</div>
+      <div class="kb-hint"><b>E</b>Evening</div>
+      <div class="kb-hint"><b>N</b>Night</div>
+      <div class="kb-hint"><b>2</b>N12</div>
+      <div class="kb-hint"><b>4</b>E4</div>
+      <div class="kb-hint"><b>D</b>Day</div>
+      <div class="kb-hint"><b>X</b>Standby</div>
+      <div class="kb-hint"><b>O</b>OFF</div>
+      <div class="kb-hint"><b>⌫</b>Clear</div>
+    </div>
+    
+    <div class="fe-content" id="feContent">
+      ${hasWarnings ? `
+        <div class="fe-warning error">
+          ⚠️ <b>${WIZ.warnings.length} warning(s)</b> — Please fix before saving
+        </div>
+      ` : `
+        <div class="fe-warning success">
+          ✅ Ready to save · Tap cell then type shift key
+        </div>
+      `}
+      
+      <div class="fe-grid-wrap">
+        <div class="fe-grid-scroll">
+          <table class="fe-roster-table" id="feRosterTable">
+            <thead>
+              <tr>
+                <th class="staff-col">STAFF</th>
+                ${headerHtml}
+              </tr>
+            </thead>
+            <tbody>
+              ${gridHtml}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="fe-summary">
+        <div class="fe-summary-title">📊 Summary</div>
+        <table class="fe-summary-table">
+          <thead>
+            <tr>
+              <th>Staff</th>
+              <th>OFF</th>
+              <th>Target</th>
+              <th>Diff</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summaryRows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="fe-bottom-bar">
+      <button class="btn btn-ghost" onclick="regenerateFullRoster()">🔄 Regenerate</button>
+      <button class="btn btn-primary" onclick="shareRosterWhatsApp()" ${hasWarnings ? 'disabled' : ''}>📱 Share</button>
+      <button class="btn btn-success" ${hasWarnings ? 'disabled' : ''} onclick="saveFullEditor()">💾 Save</button>
+    </div>
+  `;
+  
+  // Reset selection
+  window.__EDITOR.selectedCell = null;
+  
+  console.log('✅ Editor rebuilt with', staff.length, 'staff,', dates.length, 'days');
+};
+
+/* ============ UPDATE LIVE STATS (override to work) ============ */
+window.updateLiveStatsBar = function(){
+  const stats = { M:0, E:0, N:0, N12:0, E4:0, D:0, X:0, OFF:0 };
+  Object.keys(WIZ.grid).forEach(d => {
+    Object.keys(WIZ.grid[d]).forEach(sid => {
+      const c = WIZ.grid[d][sid];
+      if (stats[c] !== undefined) stats[c]++;
+    });
+  });
+  
+  const statEls = document.querySelectorAll('.fe-stat');
+  statEls.forEach(el => {
+    const label = el.textContent.trim().split(' ')[0];
+    const b = el.querySelector('b');
+    if (b && stats[label] !== undefined) {
+      b.textContent = stats[label];
+    }
+  });
+};
+
+/* ============ UPDATE SUMMARY (override to work) ============ */
+window.updateSummaryInEditor = function(){
+  const summaryTable = document.querySelector('.fe-summary-table tbody');
+  if (!summaryTable) return;
+  
+  const rows = summaryTable.querySelectorAll('tr');
+  WIZ.staffArr.forEach((s, idx) => {
+    if (idx >= rows.length) return;
+    const row = rows[idx];
+    const off = WIZ.offCount[s._id] || 0;
+    const target = WIZ.offTarget || 0;
+    const diff = off - target;
+    
+    const cells = row.querySelectorAll('td');
+    if (cells[1]) cells[1].innerHTML = `<b>${off}</b>`;
+    if (cells[3]) {
+      cells[3].textContent = (diff > 0 ? '+' : '') + diff;
+      cells[3].className = diff === 0 ? 'diff-ok' : 'diff-bad';
+    }
+  });
+  
+  // Update warning box
+  const warnBox = document.querySelector('.fe-warning');
+  if (warnBox) {
+    if ((WIZ.warnings || []).length > 0) {
+      warnBox.className = 'fe-warning error';
+      warnBox.innerHTML = `⚠️ <b>${WIZ.warnings.length} warning(s)</b> — Please fix before saving`;
+    } else {
+      warnBox.className = 'fe-warning success';
+      warnBox.innerHTML = `✅ Ready to save · Tap cell then type shift key`;
+    }
+  }
+  
+  // Update save buttons
+  const hasWarnings = (WIZ.warnings || []).length > 0;
+  document.querySelectorAll('.fe-save-btn, .fe-bottom-bar .btn-success, .fe-bottom-bar .btn-primary').forEach(btn => {
+    if (hasWarnings) {
+      btn.disabled = true;
+      btn.style.opacity = '.4';
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  });
+};
+
+/* ============ INIT LOG ============ */
+setTimeout(() => {
+  console.log('═══════════════════════════════════════');
+  console.log('✅ Part 34 — Working Edit System');
+  console.log('═══════════════════════════════════════');
+  console.log('Debug tags:');
+  console.log('  👆 = Cell clicked');
+  console.log('  ⌨️ = Key pressed');
+  console.log('  ✏️ = About to edit');
+  console.log('  ✅ = Edit success');
+  console.log('  ❌ = Error');
+  console.log('═══════════════════════════════════════');
+}, 2500);
+
+console.log('✅ Part 34 loaded');
+</script>
+
+<!-- ============ END OF PART 34 ============ -->
