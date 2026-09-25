@@ -10217,3 +10217,942 @@ console.log('✅ Part 12 loaded — Calendar + Exchange + Leaves');
 </script>
 
 <!-- ============ END OF PART 12 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 13 — COMPLETE NOTIFICATION SYSTEM
+     In-App · WhatsApp · Broadcast · Auto-Trigger
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== NOTIFICATION BADGE ===== */
+.notif-btn .notif-count{
+  position:absolute;
+  top:-2px;right:-2px;
+  min-width:18px;height:18px;
+  padding:0 5px;
+  border-radius:9px;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:#fff;
+  font-size:9px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #0a0e1a;
+  box-shadow:0 2px 8px rgba(239,68,68,.6);
+  animation:pulse 2s infinite;
+}
+
+/* ===== NOTIFICATIONS PANEL ===== */
+.notif-panel{
+  position:fixed;
+  top:0;right:0;bottom:0;
+  width:100%;
+  max-width:420px;
+  background:linear-gradient(180deg,#0a0e1a 0%,#131826 100%);
+  z-index:300;
+  transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  display:flex;
+  flex-direction:column;
+  border-left:1px solid rgba(255,255,255,.08);
+  box-shadow:-10px 0 40px rgba(0,0,0,.6);
+}
+.notif-panel.open{transform:translateX(0)}
+
+.notif-panel-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:rgba(10,14,26,.95);
+  backdrop-filter:blur(20px);
+  flex-shrink:0;
+}
+.notif-panel-title{
+  font-family:'Outfit',sans-serif;
+  font-size:17px;
+  font-weight:800;
+  color:#fff;
+  display:flex;align-items:center;gap:8px;
+}
+.notif-panel-close{
+  width:36px;height:36px;
+  border-radius:50%;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  color:#e6ecf5;
+  font-size:18px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.notif-panel-close:active{transform:scale(.9);background:rgba(239,68,68,.2)}
+
+.notif-panel-actions{
+  display:flex;gap:6px;
+  padding:12px 18px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  flex-shrink:0;
+}
+.notif-action-btn{
+  flex:1;
+  padding:8px 12px;
+  border-radius:10px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  color:#a0aec0;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.notif-action-btn:active{transform:scale(.96)}
+.notif-action-btn.primary{
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:#fff;
+  border-color:transparent;
+}
+
+.notif-panel-body{
+  flex:1;
+  overflow-y:auto;
+  padding:12px 0;
+}
+
+/* ===== NOTIFICATION ITEM ===== */
+.notif-item{
+  display:flex;
+  gap:12px;
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+}
+.notif-item:active{background:rgba(108,92,255,.05)}
+.notif-item.unread{
+  background:linear-gradient(90deg,rgba(108,92,255,.08) 0%,transparent 100%);
+}
+.notif-item.unread::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,#8b5cf6,#ec4899);
+  border-radius:0 2px 2px 0;
+}
+.notif-icon{
+  width:42px;height:42px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  flex-shrink:0;
+  position:relative;
+}
+.notif-icon.roster{background:linear-gradient(135deg,#8b5cf6,#a78bfa);box-shadow:0 4px 12px rgba(139,92,246,.35)}
+.notif-icon.exchange{background:linear-gradient(135deg,#06b6d4,#3b82f6);box-shadow:0 4px 12px rgba(6,182,212,.35)}
+.notif-icon.leave{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.35)}
+.notif-icon.policy{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 12px rgba(245,158,11,.35)}
+.notif-icon.emergency{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 12px rgba(239,68,68,.35)}
+.notif-icon.info{background:linear-gradient(135deg,#64748b,#475569);box-shadow:0 4px 12px rgba(100,116,139,.35)}
+
+.notif-content{flex:1;min-width:0}
+.notif-title{
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  font-weight:800;
+  color:#fff;
+  margin-bottom:3px;
+  line-height:1.3;
+}
+.notif-body{
+  font-size:11.5px;
+  color:#a0aec0;
+  line-height:1.4;
+  margin-bottom:6px;
+}
+.notif-time{
+  font-size:10px;
+  color:#64748b;
+  font-weight:600;
+  display:flex;align-items:center;gap:4px;
+}
+.notif-unread-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  flex-shrink:0;
+  margin-top:6px;
+  box-shadow:0 0 8px rgba(139,92,246,.6);
+  animation:pulse 2s infinite;
+}
+
+.notif-actions{
+  display:flex;gap:6px;
+  margin-top:8px;
+}
+.notif-action-mini{
+  padding:5px 10px;
+  border-radius:8px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  color:#a0aec0;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .15s;
+  font-family:inherit;
+  display:flex;align-items:center;gap:3px;
+}
+.notif-action-mini:active{transform:scale(.95)}
+.notif-action-mini.wa{
+  background:rgba(37,211,102,.15);
+  border-color:rgba(37,211,102,.3);
+  color:#6ee7b7;
+}
+
+/* ===== EMPTY ===== */
+.notif-empty{
+  text-align:center;
+  padding:60px 20px;
+  color:#475569;
+}
+.notif-empty-icon{
+  font-size:48px;
+  margin-bottom:12px;
+  opacity:.4;
+}
+.notif-empty-text{
+  font-size:13px;
+  font-weight:600;
+}
+
+/* ===== TOAST NOTIFICATION (Auto) ===== */
+.toast-notif{
+  position:fixed;
+  top:80px;left:50%;
+  transform:translateX(-50%) translateY(-120px);
+  background:linear-gradient(135deg,rgba(19,24,38,.98),rgba(10,14,26,.98));
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:12px 16px;
+  min-width:280px;
+  max-width:90%;
+  z-index:250;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 10px 40px rgba(0,0,0,.6);
+  opacity:0;
+  transition:all .4s cubic-bezier(.68,-.55,.27,1.55);
+  pointer-events:none;
+  backdrop-filter:blur(20px);
+}
+.toast-notif.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
+.toast-notif-icon{
+  width:34px;height:34px;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  flex-shrink:0;
+}
+.toast-notif-content{flex:1;min-width:0}
+.toast-notif-title{
+  font-size:12px;
+  font-weight:800;
+  color:#fff;
+  margin-bottom:2px;
+}
+.toast-notif-body{
+  font-size:10.5px;
+  color:#a0aec0;
+  line-height:1.3;
+}
+
+/* ===== BROADCAST MODAL ===== */
+.broadcast-types{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px;
+  margin-bottom:14px;
+}
+.broadcast-type{
+  padding:12px 8px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  color:#a0aec0;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  font-size:10px;
+  font-weight:700;
+}
+.broadcast-type.active{
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 4px 14px rgba(139,92,246,.4);
+}
+.broadcast-type-icon{
+  display:block;
+  font-size:20px;
+  margin-bottom:4px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(min-width:768px){
+  .notif-panel{max-width:460px}
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 13 — NOTIFICATION SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ NOTIFICATION STATE ============ */
+if(!State.notifications) State.notifications = [];
+
+/* ============ NOTIFICATION TYPES ============ */
+const NOTIF_TYPES = {
+  roster:    { icon: '📅', color: 'roster',    label: 'Roster' },
+  exchange:  { icon: '🔄', color: 'exchange',  label: 'Exchange' },
+  leave:     { icon: '🌴', color: 'leave',     label: 'Leave' },
+  policy:    { icon: '📢', color: 'policy',    label: 'Policy' },
+  emergency: { icon: '🚨', color: 'emergency', label: 'Emergency' },
+  info:      { icon: 'ℹ️', color: 'info',      label: 'Info' }
+};
+
+/* ============ CREATE NOTIFICATION ============ */
+function createNotification(type, title, body, options = {}){
+  const notif = {
+    _id: uid(),
+    type: type,
+    title: title,
+    body: body,
+    target: options.target || 'all',        // 'all' | staffId
+    targetName: options.targetName || '',
+    data: options.data || {},
+    whatsappText: options.whatsappText || (title + '\n\n' + body),
+    read: false,
+    readBy: [],
+    createdAt: nowTs(),
+    createdBy: State.user?.name || 'System'
+  };
+  
+  const list = LocalDB.get('notifications', []);
+  list.push(notif);
+  // Keep max 100
+  if(list.length > 100) list.splice(0, list.length - 100);
+  LocalDB.set('notifications', list);
+  State.notifications = list;
+  
+  // Update badge
+  updateNotificationBadge();
+  
+  // Show toast
+  showNotifToast(type, title, body);
+  
+  console.log('🔔 Notification created:', title);
+  return notif;
+}
+
+/* ============ UPDATE BADGE ============ */
+function updateNotificationBadge(){
+  const unread = State.notifications.filter(n => !n.read).length;
+  const notifBtn = document.querySelector('.notif-btn');
+  if(!notifBtn) return;
+  
+  let badge = notifBtn.querySelector('.notif-count');
+  if(!badge){
+    badge = document.createElement('div');
+    badge.className = 'notif-count';
+    notifBtn.appendChild(badge);
+  }
+  
+  if(unread > 0){
+    badge.textContent = unread > 99 ? '99+' : unread;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/* ============ TOAST NOTIFICATION (Auto popup) ============ */
+function showNotifToast(type, title, body){
+  const existing = document.querySelector('.toast-notif');
+  if(existing) existing.remove();
+  
+  const typeInfo = NOTIF_TYPES[type] || NOTIF_TYPES.info;
+  
+  const toast = document.createElement('div');
+  toast.className = 'toast-notif';
+  toast.innerHTML = `
+    <div class="toast-notif-icon notif-icon ${typeInfo.color}">${typeInfo.icon}</div>
+    <div class="toast-notif-content">
+      <div class="toast-notif-title">${escapeHtml(title)}</div>
+      <div class="toast-notif-body">${escapeHtml(body)}</div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.classList.add('show'), 50);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 3500);
+}
+
+/* ============ OPEN NOTIFICATION PANEL ============ */
+function openNotificationPanel(){
+  if(document.querySelector('.notif-panel')) return;
+  
+  const panel = document.createElement('div');
+  panel.className = 'notif-panel';
+  panel.innerHTML = `
+    <div class="notif-panel-header">
+      <div class="notif-panel-title">🔔 Notifications</div>
+      <button class="notif-panel-close" onclick="closeNotificationPanel()">✕</button>
+    </div>
+    <div class="notif-panel-actions">
+      <button class="notif-action-btn primary" onclick="markAllRead()">
+        ✓ Mark All Read
+      </button>
+      <button class="notif-action-btn" onclick="clearAllNotifications()">
+        🗑️ Clear All
+      </button>
+    </div>
+    <div class="notif-panel-body" id="notifListBody">
+      ${renderNotificationList()}
+    </div>
+  `;
+  document.body.appendChild(panel);
+  setTimeout(() => panel.classList.add('open'), 50);
+  
+  // Mark all as read after 1 second
+  setTimeout(() => {
+    markAllRead(true);
+  }, 1000);
+}
+
+function closeNotificationPanel(){
+  const panel = document.querySelector('.notif-panel');
+  if(panel){
+    panel.classList.remove('open');
+    setTimeout(() => panel.remove(), 300);
+  }
+}
+
+/* ============ RENDER NOTIFICATION LIST ============ */
+function renderNotificationList(){
+  const notifs = State.notifications.slice().reverse();
+  
+  if(notifs.length === 0){
+    return `
+      <div class="notif-empty">
+        <div class="notif-empty-icon">🔕</div>
+        <div class="notif-empty-text">No notifications yet</div>
+        <div style="font-size:11px;color:#475569;margin-top:6px">
+          You'll be notified of roster updates, exchanges, and more.
+        </div>
+      </div>
+    `;
+  }
+  
+  return notifs.map(n => {
+    const typeInfo = NOTIF_TYPES[n.type] || NOTIF_TYPES.info;
+    const timeAgo = getTimeAgo(n.createdAt);
+    
+    return `
+      <div class="notif-item ${n.read ? '' : 'unread'}" onclick="openNotificationDetail('${n._id}')">
+        <div class="notif-icon ${typeInfo.color}">${typeInfo.icon}</div>
+        <div class="notif-content">
+          <div class="notif-title">${escapeHtml(n.title)}</div>
+          <div class="notif-body">${escapeHtml(n.body)}</div>
+          <div class="notif-time">
+            🕐 ${timeAgo}
+            ${n.targetName ? '· 👤 ' + escapeHtml(n.targetName) : ''}
+          </div>
+          <div class="notif-actions">
+            <button class="notif-action-mini wa" onclick="event.stopPropagation();shareNotifWhatsApp('${n._id}')">
+              📱 WhatsApp
+            </button>
+            <button class="notif-action-mini" onclick="event.stopPropagation();deleteNotification('${n._id}')">
+              🗑️ Delete
+            </button>
+          </div>
+        </div>
+        ${n.read ? '' : '<div class="notif-unread-dot"></div>'}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ============ TIME AGO ============ */
+function getTimeAgo(ts){
+  const diff = nowTs() - ts;
+  const sec = Math.floor(diff / 1000);
+  const min = Math.floor(sec / 60);
+  const hr = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+  
+  if(sec < 60) return 'Just now';
+  if(min < 60) return min + ' min ago';
+  if(hr < 24) return hr + ' hr ago';
+  if(day < 7) return day + ' day' + (day > 1 ? 's' : '') + ' ago';
+  return fmtDateTime(ts);
+}
+
+/* ============ MARK ALL READ ============ */
+function markAllRead(silent){
+  State.notifications.forEach(n => { n.read = true; });
+  LocalDB.set('notifications', State.notifications);
+  updateNotificationBadge();
+  
+  if(!silent){
+    toast('✅ All marked as read');
+    const body = document.getElementById('notifListBody');
+    if(body) body.innerHTML = renderNotificationList();
+  }
+}
+
+/* ============ CLEAR ALL ============ */
+function clearAllNotifications(){
+  if(!confirm('Clear all notifications?')) return;
+  State.notifications = [];
+  LocalDB.set('notifications', []);
+  updateNotificationBadge();
+  const body = document.getElementById('notifListBody');
+  if(body) body.innerHTML = renderNotificationList();
+  toast('🗑️ All cleared');
+}
+
+/* ============ DELETE ONE ============ */
+function deleteNotification(id){
+  State.notifications = State.notifications.filter(n => n._id !== id);
+  LocalDB.set('notifications', State.notifications);
+  updateNotificationBadge();
+  const body = document.getElementById('notifListBody');
+  if(body) body.innerHTML = renderNotificationList();
+  toast('🗑️ Deleted');
+}
+
+/* ============ OPEN DETAIL ============ */
+function openNotificationDetail(id){
+  const n = State.notifications.find(x => x._id === id);
+  if(!n) return;
+  
+  // Mark as read
+  n.read = true;
+  LocalDB.set('notifications', State.notifications);
+  updateNotificationBadge();
+  
+  const typeInfo = NOTIF_TYPES[n.type] || NOTIF_TYPES.info;
+  
+  openModal(typeInfo.icon + ' ' + n.title, `
+    <div style="padding:4px 0">
+      <div style="font-size:11px;color:#64748b;margin-bottom:12px">
+        🕐 ${fmtDateTime(n.createdAt)} · 👤 ${escapeHtml(n.createdBy || 'System')}
+        ${n.targetName ? ' · 🎯 ' + escapeHtml(n.targetName) : ''}
+      </div>
+      <div style="font-size:13px;color:#e6ecf5;line-height:1.7;padding:14px;background:rgba(0,0,0,.25);border-radius:12px;margin-bottom:16px">
+        ${escapeHtml(n.body)}
+      </div>
+      <button class="btn btn-success btn-block" style="margin-bottom:8px" onclick="shareNotifWhatsApp('${n._id}')">
+        📱 Share on WhatsApp
+      </button>
+      <button class="btn btn-ghost btn-block" onclick="closeModal();deleteNotification('${n._id}');openNotificationPanel();">
+        🗑️ Delete Notification
+      </button>
+    </div>
+  `, [{ label: 'Close', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+/* ============ SHARE ON WHATSAPP ============ */
+function shareNotifWhatsApp(id){
+  const n = State.notifications.find(x => x._id === id);
+  if(!n) return;
+  
+  const text = `🔔 *${n.title}*\n\n${n.body}\n\n— KIH Phlebotomy Pro\n${fmtDateTime(n.createdAt)}`;
+  const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+  toast('📱 Opening WhatsApp...');
+}
+
+/* ============ AUTO-TRIGGER NOTIFICATIONS ============ */
+
+/* 1. Roster Saved */
+const _origWizSaveRoster = window.wizSaveRoster;
+window.wizSaveRoster = function(){
+  try{
+    _origWizSaveRoster.call(this);
+  } catch(e){ console.warn(e); }
+  
+  // Wait a moment then notify
+  setTimeout(() => {
+    createNotification(
+      'roster',
+      '📅 New Roster Published',
+      `Roster for ${WIZ.label || (WIZ.start + ' → ' + WIZ.end)} is now live. Check your duty schedule.`,
+      {
+        whatsappText: `📅 *New Roster Published*\n\nPeriod: ${WIZ.label || (WIZ.start + ' → ' + WIZ.end)}\nGenerated: ${fmtDateTime(nowTs())}\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 2. Exchange Request Created */
+const _origSaveExchange = window.saveExchange;
+window.saveExchange = function(){
+  try{
+    _origSaveExchange.call(this);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    const exchanges = LocalDB.get('exchanges', []);
+    const latest = exchanges[exchanges.length - 1];
+    if(!latest) return;
+    
+    const s1 = State.staff.find(s => s._id === latest.staff1Id);
+    const s2 = State.staff.find(s => s._id === latest.staff2Id);
+    
+    createNotification(
+      'exchange',
+      '🔄 Exchange Request',
+      `${s1?.name || 'Staff'} wants to swap ${latest.shift1} with ${s2?.name || 'Staff'}'s ${latest.shift2} on ${fmtDisplay(latest.date)}. Awaiting admin approval.`,
+      {
+        data: { exchangeId: latest._id },
+        whatsappText: `🔄 *Exchange Request*\n\nStaff: ${s1?.name}\nWants: ${s2?.name}'s ${latest.shift2}\nDate: ${fmtDisplay(latest.date)}\nStatus: Pending Approval\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 3. Exchange Approved */
+const _origApproveExchange = window.approveExchange;
+window.approveExchange = function(id){
+  const ex = State.exchanges?.find(e => e._id === id);
+  try{
+    _origApproveExchange.call(this, id);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    if(!ex) return;
+    const s1 = State.staff.find(s => s._id === ex.staff1Id);
+    const s2 = State.staff.find(s => s._id === ex.staff2Id);
+    
+    createNotification(
+      'exchange',
+      '✅ Exchange Approved',
+      `Exchange on ${fmtDisplay(ex.date)} approved. ${s1?.name} ⇄ ${s2?.name}. Roster updated.`,
+      {
+        whatsappText: `✅ *Exchange Approved*\n\n${s1?.name} ⇄ ${s2?.name}\nDate: ${fmtDisplay(ex.date)}\nApproved by: ${State.user?.name || 'Admin'}\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 4. Exchange Rejected */
+const _origRejectExchange = window.rejectExchange;
+window.rejectExchange = function(id){
+  const ex = State.exchanges?.find(e => e._id === id);
+  try{
+    _origRejectExchange.call(this, id);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    if(!ex) return;
+    const s1 = State.staff.find(s => s._id === ex.staff1Id);
+    const s2 = State.staff.find(s => s._id === ex.staff2Id);
+    
+    createNotification(
+      'exchange',
+      '❌ Exchange Rejected',
+      `Exchange between ${s1?.name} and ${s2?.name} on ${fmtDisplay(ex.date)} was rejected.`,
+      {
+        whatsappText: `❌ *Exchange Rejected*\n\n${s1?.name} ⇄ ${s2?.name}\nDate: ${fmtDisplay(ex.date)}\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 5. Leave Request Created */
+const _origSaveLeaveRequest = window.saveLeaveRequest;
+window.saveLeaveRequest = function(){
+  try{
+    _origSaveLeaveRequest.call(this);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    const leaves = LocalDB.get('leaveRequests', []);
+    const latest = leaves[leaves.length - 1];
+    if(!latest) return;
+    
+    const s = State.staff.find(x => x._id === latest.staffId);
+    
+    createNotification(
+      'leave',
+      '🌴 Leave Request',
+      `${s?.name || 'Staff'} requested ${latest.type} from ${fmtDisplay(latest.startDate)} to ${fmtDisplay(latest.endDate)}. Awaiting approval.`,
+      {
+        data: { leaveId: latest._id },
+        whatsappText: `🌴 *Leave Request*\n\nStaff: ${s?.name}\nType: ${latest.type}\nFrom: ${fmtDisplay(latest.startDate)}\nTo: ${fmtDisplay(latest.endDate)}\nReason: ${latest.reason || 'N/A'}\nStatus: Pending\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 6. Leave Approved */
+const _origApproveLeaveReq = window.approveLeaveReq;
+window.approveLeaveReq = function(id){
+  const leave = State.leaveRequests?.find(l => l._id === id);
+  try{
+    _origApproveLeaveReq.call(this, id);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    if(!leave) return;
+    const s = State.staff.find(x => x._id === leave.staffId);
+    
+    createNotification(
+      'leave',
+      '✅ Leave Approved',
+      `${s?.name}'s ${leave.type} leave from ${fmtDisplay(leave.startDate)} to ${fmtDisplay(leave.endDate)} has been approved.`,
+      {
+        whatsappText: `✅ *Leave Approved*\n\nStaff: ${s?.name}\nType: ${leave.type}\nFrom: ${fmtDisplay(leave.startDate)}\nTo: ${fmtDisplay(leave.endDate)}\nApproved by: ${State.user?.name}\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 7. Policy Published */
+const _origSavePolicy = window.savePolicy;
+window.savePolicy = function(){
+  const title = document.getElementById('policyTitle')?.value?.trim();
+  const body = document.getElementById('policyBody')?.value?.trim();
+  
+  try{
+    _origSavePolicy.call(this);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    if(!title) return;
+    createNotification(
+      'policy',
+      '📢 New Policy: ' + title,
+      body ? body.substring(0, 100) + (body.length > 100 ? '...' : '') : 'Please acknowledge.',
+      {
+        whatsappText: `📢 *New Policy*\n\n*${title}*\n\n${body || ''}\n\n— KIH Phlebotomy Pro`
+      }
+    );
+  }, 500);
+};
+
+/* 8. Staff Added */
+const _origSaveNewStaff = window.saveNewStaff;
+window.saveNewStaff = function(){
+  const name = document.getElementById('nsName')?.value?.trim();
+  
+  try{
+    _origSaveNewStaff.call(this);
+  } catch(e){ console.warn(e); }
+  
+  setTimeout(() => {
+    if(!name) return;
+    createNotification(
+      'info',
+      '👤 New Staff Added',
+      `${name} has been added to the roster by ${State.user?.name || 'Admin'}.`,
+      { whatsappText: `👤 *New Staff Added*\n\nName: ${name}\nAdded by: ${State.user?.name || 'Admin'}\n\n— KIH Phlebotomy Pro` }
+    );
+  }, 500);
+};
+
+/* ============ BROADCAST NOTIFICATION ============ */
+function openBroadcastModal(){
+  if(State.user?.role !== 'admin'){
+    toast('🔒 Admin only', 'error');
+    return;
+  }
+  
+  openModal('📢 Send Broadcast', `
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Type</label>
+      <div class="broadcast-types">
+        <div class="broadcast-type active" data-type="info" onclick="setBroadcastType(this)">
+          <span class="broadcast-type-icon">ℹ️</span>
+          Info
+        </div>
+        <div class="broadcast-type" data-type="policy" onclick="setBroadcastType(this)">
+          <span class="broadcast-type-icon">📢</span>
+          Policy
+        </div>
+        <div class="broadcast-type" data-type="emergency" onclick="setBroadcastType(this)">
+          <span class="broadcast-type-icon">🚨</span>
+          Urgent
+        </div>
+      </div>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Title *</label>
+      <input type="text" class="add-staff-input" id="bcTitle" placeholder="e.g., Timing change tomorrow">
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Message *</label>
+      <textarea class="add-staff-input" id="bcBody" rows="4" placeholder="Type your message..."></textarea>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Send To</label>
+      <select class="add-staff-input" id="bcTarget">
+        <option value="all">👥 All Staff</option>
+        ${State.staff.filter(s => s.role !== 'admin').map(s => 
+          `<option value="${s._id}">👤 ${escapeHtml(s.name)}</option>`
+        ).join('')}
+      </select>
+    </div>
+    
+    <button class="add-staff-submit" onclick="sendBroadcast()">
+      📢 Send Broadcast
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+function setBroadcastType(el){
+  el.parentElement.querySelectorAll('.broadcast-type').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function sendBroadcast(){
+  const typeEl = document.querySelector('.broadcast-type.active');
+  const type = typeEl?.dataset?.type || 'info';
+  const title = document.getElementById('bcTitle')?.value?.trim();
+  const body = document.getElementById('bcBody')?.value?.trim();
+  const target = document.getElementById('bcTarget')?.value || 'all';
+  
+  if(!title || !body){
+    toast('⚠️ Fill title and message', 'error');
+    return;
+  }
+  
+  const targetStaff = target === 'all' ? null : State.staff.find(s => s._id === target);
+  
+  createNotification(type, title, body, {
+    target: target,
+    targetName: targetStaff?.name || 'All Staff',
+    whatsappText: `${NOTIF_TYPES[type].icon} *${title}*\n\n${body}\n\n— KIH Phlebotomy Pro`
+  });
+  
+  toast('✅ Broadcast sent');
+  vibrate(100);
+  closeModal();
+}
+
+/* ============ OVERRIDE showNotifications ============ */
+window.showNotifications = function(){
+  openNotificationPanel();
+};
+
+/* ============ INJECT NOTIF BUTTON COUNT ============ */
+function injectNotifButton(){
+  const notifBtn = document.querySelector('.notif-btn');
+  if(!notifBtn) return;
+  
+  // Remove old badge dot
+  const oldDot = notifBtn.querySelector('.badge-dot');
+  if(oldDot) oldDot.style.display = 'none';
+  
+  updateNotificationBadge();
+}
+
+/* ============ SIDEBAR — Broadcast Item ============ */
+function addBroadcastSidebarItem(){
+  const sidebar = document.querySelector('.sidebar');
+  if(!sidebar) return;
+  if(sidebar.querySelector('[data-view="broadcast"]')) return;
+  if(State.user?.role !== 'admin') return;
+  
+  const broadcastBtn = document.createElement('button');
+  broadcastBtn.className = 'sidebar-item';
+  broadcastBtn.dataset.view = 'broadcast';
+  broadcastBtn.innerHTML = `
+    <span class="s-icon">📢</span><span>Broadcast</span>
+  `;
+  broadcastBtn.onclick = () => {
+    toggleSidebar(false);
+    setTimeout(openBroadcastModal, 200);
+  };
+  
+  const policyBtn = sidebar.querySelector('[data-view="policy"]');
+  if(policyBtn) policyBtn.after(broadcastBtn);
+}
+
+/* ============ APPLY ON LOAD ============ */
+const _origShowApp13 = window.showApp;
+window.showApp = function(){
+  _origShowApp13.call(this);
+  
+  State.notifications = LocalDB.get('notifications', []);
+  
+  setTimeout(() => {
+    injectNotifButton();
+    addBroadcastSidebarItem();
+    
+    // Welcome notification on first login
+    if(State.notifications.length === 0){
+      setTimeout(() => {
+        createNotification(
+          'info',
+          '👋 Welcome to KIH Phlebotomy Pro',
+          'You\'ll receive notifications for roster updates, exchanges, leaves, and broadcasts here.',
+          { whatsappText: '👋 Welcome to KIH Phlebotomy Pro!' }
+        );
+      }, 1000);
+    }
+  }, 500);
+};
+
+/* ============ APPLY ON LOAD (for already loaded) ============ */
+setTimeout(() => {
+  State.notifications = LocalDB.get('notifications', []);
+  injectNotifButton();
+  addBroadcastSidebarItem();
+}, 1500);
+
+/* ============ OVERRIDE renderPolicyView (for broadcast button) ============ */
+const _origRenderPolicyView = window.renderPolicyView;
+window.renderPolicyView = function(){
+  _origRenderPolicyView.call(this);
+  
+  // Add broadcast button for admin
+  if(State.user?.role === 'admin'){
+    const view = document.getElementById('view-policy');
+    if(view){
+      const pageHead = view.querySelector('.page-head');
+      if(pageHead && !pageHead.querySelector('.broadcast-btn')){
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-block broadcast-btn';
+        btn.style.cssText = 'width:calc(100% - 32px);margin:12px 16px;background:linear-gradient(135deg,#f59e0b,#ef4444)';
+        btn.innerHTML = '📢 Send Broadcast Notification';
+        btn.onclick = openBroadcastModal;
+        pageHead.after(btn);
+      }
+    }
+  }
+};
+
+console.log('✅ Part 13 loaded — Notification system ready');
+</script>
+
+<!-- ============ END OF PART 13 ============ -->
