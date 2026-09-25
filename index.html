@@ -6101,3 +6101,433 @@ console.log('✅ Part 7 loaded — Staff management ready');
 </script>
 
 <!-- ============ END OF PART 7 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 8 — LEFT SIDEBAR LAYOUT + STAFF/SETTINGS FIX
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== SIDEBAR LAYOUT ===== */
+.app-layout{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* Sidebar */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;
+  width:260px;
+  background:rgba(10,14,26,.98);
+  backdrop-filter:blur(20px);
+  border-right:1px solid var(--border);
+  z-index:150;
+  transform:translateX(-100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  padding:16px 12px;
+  overflow-y:auto;
+}
+.sidebar.open{transform:translateX(0)}
+
+.sidebar-header{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 8px 20px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:16px;
+}
+.sidebar-logo{
+  width:40px;height:40px;border-radius:12px;
+  background:var(--grad-primary);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+  box-shadow:var(--shadow-glow-primary);
+}
+.sidebar-title{font-family:var(--font-display);font-size:14px;font-weight:800;line-height:1.2}
+.sidebar-title span{display:block;font-size:10px;font-weight:400;color:var(--fg-3);margin-top:2px}
+
+.sidebar-section{
+  font-size:9px;color:var(--fg-4);
+  text-transform:uppercase;letter-spacing:1px;
+  font-weight:700;padding:12px 12px 6px;
+}
+.sidebar-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;border-radius:10px;
+  color:var(--fg-2);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  border:none;background:none;width:100%;
+  text-align:left;font-family:inherit;
+  margin-bottom:2px;
+}
+.sidebar-item:hover{background:var(--glass-2);color:var(--fg-1)}
+.sidebar-item.active{
+  background:var(--grad-primary);color:#fff;
+  box-shadow:0 4px 14px rgba(108,92,255,.35);
+}
+.sidebar-item .s-icon{
+  font-size:18px;width:24px;text-align:center;flex-shrink:0;
+}
+.sidebar-item .s-badge{
+  margin-left:auto;font-size:9px;padding:2px 7px;
+  border-radius:20px;background:rgba(255,255,255,.15);
+  font-weight:700;
+}
+
+/* Overlay */
+.sidebar-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(4px);z-index:140;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.sidebar-overlay.open{opacity:1;pointer-events:auto}
+
+/* Main content shift on desktop */
+@media(min-width:1024px){
+  .sidebar{transform:translateX(0)}
+  .sidebar-overlay{display:none}
+  .app{max-width:100%;margin-left:260px}
+  .bottom-nav{display:none!important}
+  .app-header{padding-left:16px}
+  .menu-btn{display:none!important}
+}
+@media(max-width:1023px){
+  .menu-btn{display:flex!important}
+}
+
+/* Menu button */
+.menu-btn{
+  width:40px;height:40px;border-radius:var(--r-sm);
+  background:var(--glass);border:1px solid var(--border);
+  display:none;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;color:var(--fg-1);
+  transition:all .2s;
+}
+.menu-btn:active{transform:scale(.92)}
+
+/* Sub-view for staff add */
+.sub-view{
+  padding:16px;
+}
+.staff-form-card{
+  background:var(--grad-glass);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  margin-bottom:14px;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 8 — SIDEBAR + STAFF + SETTINGS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ SIDEBAR HTML ============ */
+const SIDEBAR_HTML = `
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🩸</div>
+      <div class="sidebar-title">
+        KIH Phlebotomy
+        <span>Roster Management</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">Main</div>
+    <button class="sidebar-item active" data-view="home" onclick="navTo('home')">
+      <span class="s-icon">🏠</span><span>Dashboard</span>
+    </button>
+    <button class="sidebar-item" data-view="roster" onclick="navTo('roster')">
+      <span class="s-icon">📅</span><span>Roster</span>
+    </button>
+    <button class="sidebar-item" data-view="tests" onclick="navTo('tests')">
+      <span class="s-icon">🧪</span><span>Test Protocols</span>
+    </button>
+    <button class="sidebar-item" data-view="chat" onclick="navTo('chat')">
+      <span class="s-icon">💬</span><span>Chat</span>
+    </button>
+
+    <div class="sidebar-section">Management</div>
+    <button class="sidebar-item" data-view="staffAdd" onclick="navTo('staffAdd')">
+      <span class="s-icon">➕</span><span>Add Staff</span>
+    </button>
+    <button class="sidebar-item" data-view="staffList" onclick="navTo('staffList')">
+      <span class="s-icon">👥</span><span>All Staff</span>
+      <span class="s-badge" id="sidebarStaffCount">12</span>
+    </button>
+    <button class="sidebar-item" data-view="policy" onclick="navTo('policy')">
+      <span class="s-icon">📢</span><span>Admin Policy</span>
+    </button>
+    <button class="sidebar-item" data-view="historyForms" onclick="navTo('historyForms')">
+      <span class="s-icon">📋</span><span>History Forms</span>
+    </button>
+
+    <div class="sidebar-section">Tools</div>
+    <button class="sidebar-item" data-view="emergency" onclick="navTo('emergency')">
+      <span class="s-icon">🚨</span><span>Emergency</span>
+    </button>
+    <button class="sidebar-item" data-view="startDraw" onclick="navTo('startDraw')">
+      <span class="s-icon">🩸</span><span>Start Draw</span>
+    </button>
+    <button class="sidebar-item" data-view="difficult" onclick="navTo('difficult')">
+      <span class="s-icon">💉</span><span>Difficult Draw</span>
+    </button>
+    <button class="sidebar-item" data-view="rejection" onclick="navTo('rejection')">
+      <span class="s-icon">⚠️</span><span>Rejection Guide</span>
+    </button>
+    <button class="sidebar-item" data-view="communication" onclick="navTo('communication')">
+      <span class="s-icon">🗣️</span><span>Scripts</span>
+    </button>
+
+    <div class="sidebar-section">Account</div>
+    <button class="sidebar-item" data-view="settings" onclick="navTo('settings')">
+      <span class="s-icon">⚙️</span><span>Settings</span>
+    </button>
+    <button class="sidebar-item" onclick="showProfileMenu()">
+      <span class="s-icon">👤</span><span>Profile</span>
+    </button>
+    <button class="sidebar-item" onclick="doLogout()" style="color:#fca5a5">
+      <span class="s-icon">🚪</span><span>Logout</span>
+    </button>
+
+    <div style="flex:1"></div>
+    <div style="padding:16px 12px;font-size:10px;color:var(--fg-4);text-align:center;border-top:1px solid var(--border);margin-top:12px">
+      KIH Phlebotomy Pro v3.0<br>© 2026
+    </div>
+  </aside>
+`;
+
+/* ============ INJECT SIDEBAR ============ */
+function injectSidebar(){
+  if($('sidebar')) return;
+  
+  // Add hamburger button to header
+  const headerLeft = document.querySelector('.header-left');
+  if(headerLeft){
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'menu-btn';
+    menuBtn.innerHTML = '☰';
+    menuBtn.onclick = () => toggleSidebar(true);
+    headerLeft.insertBefore(menuBtn, headerLeft.firstChild);
+  }
+  
+  // Inject sidebar to body
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = SIDEBAR_HTML;
+  document.body.appendChild(wrapper.firstElementChild); // overlay
+  document.body.appendChild(wrapper.lastElementChild);  // sidebar
+}
+
+function toggleSidebar(open){
+  const sb = $('sidebar');
+  const ov = $('sidebarOverlay');
+  if(!sb) return;
+  if(open){
+    sb.classList.add('open');
+    ov?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  } else {
+    sb.classList.remove('open');
+    ov?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+/* ============ NAVIGATION ============ */
+function navTo(view){
+  // Special views
+  if(view === 'staffAdd'){
+    toggleSidebar(false);
+    openAddStaffModal();
+    return;
+  }
+  if(view === 'staffList'){
+    toggleSidebar(false);
+    openStaffListModal();
+    return;
+  }
+  
+  // Regular views
+  showView(view);
+  
+  // Update sidebar active
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === view);
+  });
+  
+  toggleSidebar(false);
+}
+
+/* ============ STAFF LIST MODAL ============ */
+function openStaffListModal(){
+  const staffOnly = State.staff.filter(s => s.role !== 'admin');
+  
+  const listHtml = staffOnly.length === 0 
+    ? '<div class="empty">No staff added yet</div>'
+    : staffOnly.map(s => {
+        const isF = s.gender === 'Female';
+        const primary = s.primary || s.fixed || 'M';
+        return `
+          <div class="list-row">
+            <div class="grow">
+              <b>${escapeHtml(s.name)}</b>
+              <small>${isF ? '🩷 Female' : '👨 Male'} · Primary: ${primary} · Multi: ${(s.multi || []).join(',')}</small>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="closeModal();setTimeout(()=>editStaff('${s._id}'),100)">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteStaffFromModal('${s._id}')">🗑</button>
+          </div>
+        `;
+      }).join('');
+  
+  openModal(
+    `👥 All Staff (${staffOnly.length})`,
+    `
+      <button class="btn btn-primary btn-block" style="margin-bottom:12px" onclick="closeModal();setTimeout(openAddStaffModal,100)">
+        ➕ Add New Staff
+      </button>
+      ${listHtml}
+    `,
+    [
+      { label: 'Close', cls: 'btn-ghost', onclick: 'closeModal()' }
+    ]
+  );
+}
+
+function deleteStaffFromModal(id){
+  if(!confirm('Delete this staff member?')) return;
+  const staffList = LocalDB.get('staff', []).filter(x => x._id !== id);
+  LocalDB.set('staff', staffList);
+  State.staff = staffList;
+  toast('🗑️ Deleted');
+  closeModal();
+  setTimeout(openStaffListModal, 200);
+  updateStats();
+}
+
+/* ============ FIX: renderRosterView (remove duplicate Add button) ============ */
+window.renderRosterView = function(){
+  // Staff list — only non-admin
+  const listEl = $('staffList');
+  if(listEl){
+    const staffOnly = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+    
+    if(staffOnly.length === 0){
+      listEl.innerHTML = '<div class="empty">No staff added yet</div>';
+    } else {
+      listEl.innerHTML = staffOnly.map(s => {
+        const isF = s.gender === 'Female';
+        const primary = s.primary || s.fixed || 'M';
+        return `
+          <div class="list-row">
+            <div class="grow">
+              <b>${escapeHtml(s.name)}</b>
+              <small>${isF ? '🩷 Female' : '👨 Male'} · Primary: ${primary}${s.fixed ? ' · Fixed: ' + s.fixed : ''}</small>
+            </div>
+            <span class="badge ${isF ? 'badge-pink' : 'badge-blue'}">${s.gender || 'Any'}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+  
+  // Period info
+  const periodEl = $('currentPeriodInfo');
+  if(periodEl){
+    if(State.roster){
+      periodEl.className = '';
+      periodEl.innerHTML = `
+        <div class="list-row">
+          <div class="grow">
+            <b>📅 ${escapeHtml(State.roster.label || 'Current Period')}</b>
+            <small>Saved ${fmtDateTime(State.roster.createdAt)}</small>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="viewRoster()">View</button>
+        </div>
+      `;
+    } else {
+      periodEl.className = 'empty';
+      periodEl.textContent = 'No roster generated yet';
+    }
+  }
+  
+  // Update sidebar count
+  const countEl = $('sidebarStaffCount');
+  if(countEl) countEl.textContent = State.staff.filter(s => s.role !== 'admin').length;
+};
+
+/* ============ INJECT ROSTER VIEW ACTIONS ============ */
+function injectRosterActions(){
+  const view = $('view-roster');
+  if(!view || view.querySelector('.roster-actions')) return;
+  
+  const actions = document.createElement('div');
+  actions.className = 'roster-actions';
+  actions.style.cssText = 'padding:0 16px 12px;display:flex;gap:8px';
+  actions.innerHTML = `
+    <button class="btn btn-primary btn-sm" style="flex:1" onclick="openAddStaffModal()">➕ Add Staff</button>
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openStaffListModal()">👥 Manage Staff</button>
+  `;
+  
+  const pageHead = view.querySelector('.page-head');
+  if(pageHead) pageHead.after(actions);
+}
+
+/* ============ SETTINGS FIX ============ */
+function renderSettingsView(){
+  applySettings();
+  
+  // Ensure settings actions work
+  setTimeout(() => {
+    // Attach any missing handlers
+    const slider = $('fontSizeSlider');
+    if(slider && !slider._bound){
+      slider._bound = true;
+      slider.addEventListener('input', e => changeFontSize(e.target.value));
+    }
+  }, 100);
+}
+
+/* ============ APPLY ON LOAD ============ */
+const _originalShowApp = window.showApp;
+
+window.showApp = function(){
+  _originalShowApp.call(this);
+  injectSidebar();
+  injectRosterActions();
+  
+  // Set initial active
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === 'home');
+  });
+  
+  console.log('📱 Sidebar injected');
+};
+
+/* Also inject on initial load if app already shown */
+setTimeout(() => {
+  if($('appHeader')?.style.display !== 'none'){
+    injectSidebar();
+    injectRosterActions();
+  }
+}, 2000);
+
+/* ============ OVERRIDE showView to update sidebar ============ */
+const _originalShowView = window.showView;
+
+window.showView = function(name){
+  _originalShowView.call(this, name);
+  
+  // Sync sidebar
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === name);
+  });
+  
+  // Sync bottom nav
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === name);
+  });
+};
+
+console.log('✅ Part 8 loaded — Sidebar + Staff/Settings ready');
+</script>
+
+<!-- ============ END OF PART 8 ============ -->
