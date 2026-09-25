@@ -11156,3 +11156,582 @@ console.log('✅ Part 13 loaded — Notification system ready');
 </script>
 
 <!-- ============ END OF PART 13 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 14 — SPECIAL OFF DATES + AUTO-LABEL ROSTER
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== SPECIAL OFF CARD ===== */
+.off-card{
+  margin:0 16px 10px;
+  padding:14px;
+  background:linear-gradient(145deg,rgba(245,158,11,.08),rgba(19,24,38,.95));
+  border:1px solid rgba(245,158,11,.25);
+  border-radius:16px;
+  position:relative;
+}
+.off-card-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.off-avatar{
+  width:36px;height:36px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#fff;
+  flex-shrink:0;
+}
+.off-avatar.female{background:linear-gradient(135deg,#ec4899,#f472b6)}
+.off-avatar.male{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
+.off-info{flex:1;min-width:0}
+.off-name{
+  font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:800;
+  color:#fff;
+  margin-bottom:2px;
+}
+.off-meta{
+  font-size:10px;color:#64748b;font-weight:600;
+}
+.off-dates-list{
+  display:flex;flex-wrap:wrap;gap:6px;
+}
+.off-date-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;
+  background:rgba(245,158,11,.15);
+  border:1px solid rgba(245,158,11,.35);
+  border-radius:20px;
+  font-size:10px;font-weight:700;
+  color:#fcd34d;
+}
+.off-date-chip .x{
+  width:14px;height:14px;
+  border-radius:50%;
+  background:rgba(239,68,68,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;
+  cursor:pointer;
+  color:#fca5a5;
+  margin-left:2px;
+}
+.off-empty{
+  font-size:11px;color:#475569;
+  font-style:italic;
+  padding:6px 0;
+}
+
+/* ===== AUTO-LABEL PREVIEW ===== */
+.label-preview{
+  padding:10px 14px;
+  background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(6,182,212,.08));
+  border:1px solid rgba(16,185,129,.3);
+  border-radius:12px;
+  font-size:12px;
+  font-weight:700;
+  color:#6ee7b7;
+  text-align:center;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.label-preview .icon{
+  font-size:14px;
+}
+
+/* ===== DATE RANGE PICKER ===== */
+.date-shortcuts{
+  display:flex;
+  gap:6px;
+  padding:8px 0;
+  overflow-x:auto;
+  scrollbar-width:none;
+  margin-bottom:8px;
+}
+.date-shortcuts::-webkit-scrollbar{display:none}
+.date-shortcut{
+  padding:6px 12px;
+  border-radius:20px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  color:#a0aec0;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+  font-family:inherit;
+  transition:all .2s;
+}
+.date-shortcut:active{transform:scale(.95)}
+.date-shortcut.active{
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:#fff;
+  border-color:transparent;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 14 — SPECIAL OFF + AUTO-LABEL
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ STATE EXTENSION ============ */
+if(!State.specialOffs) State.specialOffs = [];
+
+/* ============ AUTO-LABEL FUNCTION ============ */
+function generateAutoLabel(startDate, endDate){
+  const s = parseYMD(startDate);
+  const e = parseYMD(endDate);
+  
+  const sDay = s.getDate();
+  const sMonth = s.toLocaleDateString('en-PK', { month: 'short' });
+  const sYear = s.getFullYear();
+  
+  const eDay = e.getDate();
+  const eMonth = e.toLocaleDateString('en-PK', { month: 'short' });
+  const eYear = e.getFullYear();
+  
+  // Same year
+  if(sYear === eYear){
+    return `${sDay} ${sMonth} → ${eDay} ${eMonth} ${eYear}`;
+  }
+  // Different year
+  return `${sDay} ${sMonth} ${sYear} → ${eDay} ${eMonth} ${eYear}`;
+}
+
+/* ============ SPECIAL OFF VIEW ============ */
+function renderSpecialOffView(){
+  let view = document.getElementById('view-specialOff');
+  if(!view){
+    const main = document.getElementById('appMain') || document.querySelector('.app');
+    if(!main) return;
+    view = document.createElement('div');
+    view.id = 'view-specialOff';
+    view.className = 'view';
+    main.appendChild(view);
+  }
+  
+  const isAdmin = State.user?.role === 'admin';
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const specialOffs = State.specialOffs || [];
+  
+  // Group by staff
+  const grouped = {};
+  specialOffs.forEach(off => {
+    if(!grouped[off.staffId]) grouped[off.staffId] = [];
+    grouped[off.staffId].push(off);
+  });
+  
+  view.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">🎯 Special OFF</div>
+      <div class="page-sub">Staff ko specific din OFF chahiye — Roster automatically honor karega</div>
+    </div>
+
+    <div class="policy-info-card">
+      <div class="policy-info-title">📋 Kaise Kaam Karta Hai</div>
+      <ul class="policy-info-list">
+        <li>Staff ya Admin specific dates mark karein</li>
+        <li>Roster generate karte waqt yeh dates <b>locked OFF</b> hongi</li>
+        <li>Wizard in dates ko override nahi karega</li>
+        <li>Agar female staff ko N/N12/E4 ke din chahiye toh safety check</li>
+        <li>OFF target mein count honge (extra OFF nahi)</li>
+      </ul>
+    </div>
+
+    <button class="btn btn-primary btn-block" style="width:calc(100% - 32px);margin:0 16px 14px" onclick="openSpecialOffModal()">
+      ➕ Add Special OFF
+    </button>
+
+    <div id="specialOffList">
+      ${staffList.length === 0 
+        ? '<div class="empty" style="padding:20px">No staff added yet</div>' 
+        : staffList.map(s => {
+          const isF = s.gender === 'Female';
+          const init = s.name.split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+          const dates = grouped[s._id] || [];
+          
+          return `
+            <div class="off-card">
+              <div class="off-card-header">
+                <div class="off-avatar ${isF ? 'female' : 'male'}">${init}</div>
+                <div class="off-info">
+                  <div class="off-name">${escapeHtml(s.name)}</div>
+                  <div class="off-meta">${isF ? '🩷 Female' : '👨 Male'} · ${dates.length} special OFF${dates.length !== 1 ? 's' : ''}</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="openSpecialOffModal('${s._id}')" style="padding:6px 10px">➕</button>
+              </div>
+              ${dates.length === 0 
+                ? '<div class="off-empty">No special OFF dates added</div>'
+                : `<div class="off-dates-list">
+                    ${dates.sort((a,b) => a.date.localeCompare(b.date)).map((off, idx) => {
+                      const dateIdx = specialOffs.indexOf(off);
+                      return `
+                        <div class="off-date-chip">
+                          📅 ${fmtDisplay(off.date).split(' ').slice(0,2).join(' ')}
+                          <span class="x" onclick="removeSpecialOff(${dateIdx})">✕</span>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>`
+              }
+            </div>
+          `;
+        }).join('')
+      }
+    </div>
+  `;
+}
+
+/* ============ OPEN SPECIAL OFF MODAL ============ */
+function openSpecialOffModal(preselectStaffId){
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  if(staffList.length === 0){
+    toast('⚠️ Add staff first', 'error');
+    return;
+  }
+  
+  const staffOpts = staffList.map(s => 
+    `<option value="${s._id}" ${preselectStaffId === s._id ? 'selected' : ''}>${escapeHtml(s.name)} (${s.gender})</option>`
+  ).join('');
+  
+  const today = new Date();
+  const todayYMD = ymd(today);
+  const nextMonth = new Date(today);
+  nextMonth.setDate(nextMonth.getDate() + 30);
+  const nextMonthYMD = ymd(nextMonth);
+  
+  openModal('🎯 Add Special OFF', `
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Staff *</label>
+      <select class="add-staff-input" id="spStaff">${staffOpts}</select>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Quick Select</label>
+      <div class="date-shortcuts">
+        <button class="date-shortcut" onclick="setQuickDate('today')">Today</button>
+        <button class="date-shortcut" onclick="setQuickDate('tomorrow')">Tomorrow</button>
+        <button class="date-shortcut" onclick="setQuickDate('nextWeek')">Next Week</button>
+        <button class="date-shortcut" onclick="setQuickDate('next2Weeks')">Next 2 Weeks</button>
+      </div>
+    </div>
+    
+    <div class="field-row">
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">From Date *</label>
+        <input type="date" class="add-staff-input" id="spStart" value="${todayYMD}" min="${todayYMD}">
+      </div>
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">To Date (optional)</label>
+        <input type="date" class="add-staff-input" id="spEnd" value="${todayYMD}" min="${todayYMD}">
+      </div>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Reason (optional)</label>
+      <input type="text" class="add-staff-input" id="spReason" placeholder="e.g., Doctor appointment, family event">
+    </div>
+    
+    <div class="info-box">
+      <b>ℹ️ Note:</b> Yeh dates roster generate karte waqt <b>locked OFF</b> hongi. Extra OFF target mein count hongi.
+    </div>
+    
+    <button class="add-staff-submit" onclick="saveSpecialOff()">
+      🎯 Add Special OFF
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+  
+  setTimeout(fixDateInputs, 100);
+}
+
+/* ============ QUICK DATE SETTERS ============ */
+function setQuickDate(opt){
+  const startInput = document.getElementById('spStart');
+  const endInput = document.getElementById('spEnd');
+  if(!startInput || !endInput) return;
+  
+  const today = new Date();
+  let start = new Date(today);
+  let end = new Date(today);
+  
+  switch(opt){
+    case 'today':
+      start = today; end = today;
+      break;
+    case 'tomorrow':
+      start = new Date(today); start.setDate(start.getDate() + 1);
+      end = new Date(start);
+      break;
+    case 'nextWeek':
+      start = new Date(today); start.setDate(start.getDate() + 7);
+      end = new Date(start); end.setDate(end.getDate() + 6);
+      break;
+    case 'next2Weeks':
+      start = new Date(today); start.setDate(start.getDate() + 7);
+      end = new Date(start); end.setDate(end.getDate() + 13);
+      break;
+  }
+  
+  startInput.value = ymd(start);
+  endInput.value = ymd(end);
+  
+  // Highlight active
+  document.querySelectorAll('.date-shortcut').forEach(b => b.classList.remove('active'));
+  event?.target?.classList?.add('active');
+}
+
+/* ============ SAVE SPECIAL OFF ============ */
+function saveSpecialOff(){
+  const staffId = document.getElementById('spStaff')?.value;
+  const start = document.getElementById('spStart')?.value;
+  const end = document.getElementById('spEnd')?.value || start;
+  const reason = document.getElementById('spReason')?.value?.trim();
+  
+  if(!staffId || !start){ toast('⚠️ Fill required fields', 'error'); return; }
+  if(end < start){ toast('⚠️ End before start', 'error'); return; }
+  
+  const staff = State.staff.find(s => s._id === staffId);
+  const dates = dateRange(start, end);
+  
+  // Check for female safety
+  if(staff?.gender === 'Female'){
+    // Just informational - no block for special OFF
+    console.log('Female staff special OFF:', dates.length, 'days');
+  }
+  
+  // Add dates
+  const specialOffs = LocalDB.get('specialOffs', []);
+  let added = 0;
+  let skipped = 0;
+  
+  dates.forEach(d => {
+    const exists = specialOffs.find(o => o.staffId === staffId && o.date === d);
+    if(exists){
+      skipped++;
+      return;
+    }
+    specialOffs.push({
+      _id: uid(),
+      staffId: staffId,
+      staffName: staff?.name || 'Unknown',
+      date: d,
+      reason: reason || '',
+      createdBy: State.user?.name || 'Admin',
+      createdAt: nowTs()
+    });
+    added++;
+  });
+  
+  LocalDB.set('specialOffs', specialOffs);
+  State.specialOffs = specialOffs;
+  
+  toast(`✅ ${added} special OFF added${skipped > 0 ? ' (' + skipped + ' already existed)' : ''}`);
+  vibrate(80);
+  closeModal();
+  renderSpecialOffView();
+}
+
+/* ============ REMOVE SPECIAL OFF ============ */
+function removeSpecialOff(idx){
+  if(!confirm('Remove this special OFF?')) return;
+  const specialOffs = LocalDB.get('specialOffs', []);
+  specialOffs.splice(idx, 1);
+  LocalDB.set('specialOffs', specialOffs);
+  State.specialOffs = specialOffs;
+  toast('🗑️ Removed');
+  renderSpecialOffView();
+}
+
+/* ============ SIDEBAR — Add Special OFF ============ */
+function addSpecialOffSidebarItem(){
+  const sidebar = document.querySelector('.sidebar');
+  if(!sidebar) return;
+  if(sidebar.querySelector('[data-view="specialOff"]')) return;
+  
+  const btn = document.createElement('button');
+  btn.className = 'sidebar-item';
+  btn.dataset.view = 'specialOff';
+  btn.innerHTML = `
+    <span class="s-icon">🎯</span><span>Special OFF</span>
+    <span class="s-badge" id="specialOffBadge" style="display:none">0</span>
+  `;
+  btn.onclick = () => navTo('specialOff');
+  
+  const leavesBtn = sidebar.querySelector('[data-view="leaves"]');
+  if(leavesBtn) leavesBtn.after(btn);
+}
+
+/* ============ OVERRIDE showView ============ */
+const _origShowView14 = window.showView;
+window.showView = function(name){
+  _origShowView14.call(this, name);
+  
+  if(name === 'specialOff') renderSpecialOffView();
+  
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === name);
+  });
+  
+  // Update badge
+  if(name !== 'specialOff'){
+    const count = (State.specialOffs || []).length;
+    const badge = document.getElementById('specialOffBadge');
+    if(badge && count > 0){
+      badge.textContent = count;
+      badge.style.display = '';
+    }
+  }
+};
+
+/* ============ WIZARD UPDATE — SHOW SPECIAL OFFS ============ */
+const _origRenderWizard14 = window.renderWizard;
+window.renderWizard = function(){
+  // Inject special OFF count before rendering
+  const specialOffsInPeriod = (State.specialOffs || []).filter(o => 
+    o.date >= WIZ.start && o.date <= WIZ.end
+  );
+  WIZ.specialOffsInPeriod = specialOffsInPeriod;
+  
+  // Auto-label if empty
+  if(!WIZ.label || WIZ.label.includes('→') === false){
+    WIZ.label = generateAutoLabel(WIZ.start, WIZ.end);
+  }
+  
+  // Call original
+  _origRenderWizard14.call(this);
+  
+  // Enhance Step 1 with auto-label
+  setTimeout(() => {
+    const startInput = document.getElementById('wizStart');
+    const endInput = document.getElementById('wizEnd');
+    const labelInput = document.getElementById('wizLabel');
+    
+    if(startInput && !startInput._autoLabelBound){
+      startInput._autoLabelBound = true;
+      startInput.addEventListener('change', updateAutoLabel);
+      endInput.addEventListener('change', updateAutoLabel);
+    }
+    
+    // Show special OFF info on Step 4 (rules)
+    const rulesBox = document.getElementById('wizRulesBox');
+    if(rulesBox && specialOffsInPeriod.length > 0){
+      const info = document.createElement('div');
+      info.className = 'info-box';
+      info.style.marginTop = '12px';
+      info.innerHTML = `
+        <b>🎯 Special OFF Dates:</b> ${specialOffsInPeriod.length} locked OFF dates will be honored.<br>
+        <small>Staff: ${[...new Set(specialOffsInPeriod.map(o => o.staffName))].join(', ')}</small>
+      `;
+      rulesBox.appendChild(info);
+    }
+  }, 150);
+};
+
+/* ============ AUTO-LABEL UPDATER ============ */
+function updateAutoLabel(){
+  const start = document.getElementById('wizStart')?.value;
+  const end = document.getElementById('wizEnd')?.value;
+  const labelInput = document.getElementById('wizLabel');
+  
+  if(start && end && labelInput && !labelInput.dataset.manual){
+    labelInput.value = generateAutoLabel(start, end);
+  }
+  
+  // Update the info box
+  updateWizardInfoBox();
+}
+
+function updateWizardInfoBox(){
+  const start = document.getElementById('wizStart')?.value;
+  const end = document.getElementById('wizEnd')?.value;
+  if(!start || !end) return;
+  
+  const sundays = countSundays(start, end);
+  const totalDays = dateRange(start, end).length;
+  
+  const infoBox = document.querySelector('#wizStep1 .ok-box');
+  if(infoBox){
+    infoBox.innerHTML = `
+      📊 Total Days: <b>${totalDays}</b><br>
+      Sundays: <b>${sundays}</b><br>
+      Each staff gets exactly <b>${sundays} OFF</b>
+    `;
+  }
+}
+
+/* ============ ROSTER ENGINE — APPLY SPECIAL OFFS ============ */
+/* Patch wizApplyLockedEntries to include specialOffs */
+const _origWizApplyLockedEntries = window.wizApplyLockedEntries;
+window.wizApplyLockedEntries = function(){
+  // Apply staff profile special offs (existing)
+  if(typeof _origWizApplyLockedEntries === 'function'){
+    try{ _origWizApplyLockedEntries.call(this); }catch(e){ console.warn(e); }
+  }
+  
+  // Apply our new State.specialOffs
+  wizLog && wizLog('Applying Special OFF dates...');
+  
+  const specialOffs = State.specialOffs || [];
+  let applied = 0;
+  
+  specialOffs.forEach(off => {
+    if(WIZ.grid[off.date] && WIZ.grid[off.date][off.staffId] !== undefined){
+      if(!WIZ.locked[off.date][off.staffId]){
+        // Only apply if not already locked
+        WIZ.grid[off.date][off.staffId] = 'OFF';
+        WIZ.locked[off.date][off.staffId] = true;
+        WIZ.offCount[off.staffId] = (WIZ.offCount[off.staffId] || 0) + 1;
+        applied++;
+      }
+    }
+  });
+  
+  if(applied > 0){
+    wizLog && wizLog(`✅ ${applied} special OFF dates locked`);
+  }
+};
+
+/* ============ BADGE UPDATE ============ */
+function updateSpecialOffBadge(){
+  const count = (State.specialOffs || []).length;
+  const badge = document.getElementById('specialOffBadge');
+  if(badge){
+    if(count > 0){
+      badge.textContent = count;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+/* ============ APPLY ON LOAD ============ */
+const _origShowApp14 = window.showApp;
+window.showApp = function(){
+  _origShowApp14.call(this);
+  
+  State.specialOffs = LocalDB.get('specialOffs', []);
+  
+  setTimeout(() => {
+    addSpecialOffSidebarItem();
+    updateSpecialOffBadge();
+  }, 400);
+};
+
+setTimeout(() => {
+  State.specialOffs = LocalDB.get('specialOffs', []);
+  addSpecialOffSidebarItem();
+  updateSpecialOffBadge();
+}, 1800);
+
+console.log('✅ Part 14 loaded — Special OFF + Auto-Label');
+</script>
+
+<!-- ============ END OF PART 14 ============ -->
