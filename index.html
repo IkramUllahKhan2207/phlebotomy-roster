@@ -11735,3 +11735,1010 @@ console.log('✅ Part 14 loaded — Special OFF + Auto-Label');
 </script>
 
 <!-- ============ END OF PART 14 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 15 — ADMIN EXCLUDE + STAFF LOGIN CREATION
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== LOGIN FIELDS SECTION ===== */
+.login-fields-section{
+  padding:14px;
+  background:linear-gradient(135deg,rgba(6,182,212,.08),rgba(16,185,129,.05));
+  border:1px solid rgba(6,182,212,.25);
+  border-radius:14px;
+  margin-bottom:14px;
+}
+.login-fields-title{
+  font-family:'Outfit',sans-serif;
+  font-size:12px;
+  font-weight:800;
+  color:#22d3ee;
+  margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.login-fields-hint{
+  font-size:10px;
+  color:#64748b;
+  margin-top:6px;
+  line-height:1.4;
+}
+
+/* ===== LOGIN CREDS BADGE ===== */
+.login-cred-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;
+  border-radius:20px;
+  font-size:9px;
+  font-weight:700;
+  border:1px solid transparent;
+}
+.login-cred-badge.has-login{
+  background:rgba(16,185,129,.15);
+  border-color:rgba(16,185,129,.35);
+  color:#6ee7b7;
+}
+.login-cred-badge.no-login{
+  background:rgba(245,158,11,.15);
+  border-color:rgba(245,158,11,.35);
+  color:#fcd34d;
+}
+
+/* ===== STAFF CARD LOGIN INFO ===== */
+.staff-login-info{
+  margin-top:8px;
+  padding:6px 10px;
+  background:rgba(0,0,0,.25);
+  border-radius:8px;
+  font-size:9.5px;
+  color:#a0aec0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:monospace;
+}
+.staff-login-info .key{
+  color:#64748b;
+}
+.staff-login-info .val{
+  color:#67e8f9;
+  font-weight:700;
+}
+
+/* ===== GENERATE PASSWORD BUTTON ===== */
+.gen-pass-btn{
+  padding:6px 10px;
+  border-radius:8px;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#000;
+  border:none;
+  font-family:inherit;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+}
+.gen-pass-btn:active{transform:scale(.94)}
+
+/* ===== ADMIN EXCLUDE BANNER ===== */
+.admin-exclude-banner{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(239,68,68,.05));
+  border:1px solid rgba(245,158,11,.3);
+  border-radius:12px;
+  font-size:11px;
+  color:#fcd34d;
+  font-weight:600;
+  margin:0 16px 12px;
+}
+.admin-exclude-banner .icon{
+  font-size:14px;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 15 — ADMIN EXCLUDE + STAFF LOGIN CREATION
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ FIX 1: EXCLUDE ADMIN FROM ROSTER ============ */
+
+/* Override the staff filter to always exclude admin */
+function getRosterStaff(){
+  return State.staff.filter(s => 
+    s.role !== 'admin' && 
+    s.active !== false
+  );
+}
+
+/* Patch wizRunGeneration to use getRosterStaff */
+const _origWizRunGeneration = window.wizRunGeneration;
+window.wizRunGeneration = function(){
+  // Pre-filter staff to exclude admin
+  const originalStaff = State.staff;
+  try{
+    // Temporarily replace staffArr to exclude admin
+    if(typeof _origWizRunGeneration === 'function'){
+      // Call original — but we need to make sure it uses filtered staff
+      // The original uses State.staff.filter(...), so we patch State temporarily
+      const filtered = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+      
+      // Save original method
+      const origFilter = State.staff.filter;
+      
+      // Call original
+      _origWizRunGeneration.call(this);
+      
+      // After generation, ensure admin is not in WIZ.staffArr
+      if(WIZ && WIZ.staffArr){
+        WIZ.staffArr = WIZ.staffArr.filter(s => s.role !== 'admin');
+        console.log('🔒 Admin excluded from roster. Staff count:', WIZ.staffArr.length);
+      }
+    }
+  } catch(e){
+    console.warn('wizRunGeneration error:', e);
+  }
+};
+
+/* Also override wizStartGeneration if exists */
+const _origWizStartGeneration = window.wizStartGeneration;
+window.wizStartGeneration = function(){
+  if(typeof _origWizStartGeneration === 'function'){
+    _origWizStartGeneration.call(this);
+  }
+  if(WIZ && WIZ.staffArr){
+    WIZ.staffArr = WIZ.staffArr.filter(s => s.role !== 'admin');
+  }
+};
+
+/* ============ FIX 2: STAFF LOGIN CREATION ============ */
+
+/* Override openAddStaffModal to include login fields */
+window.openAddStaffModal = function(){
+  openModal('➕ Add New Staff', `
+    <div class="add-staff-container">
+      <!-- Upload Photo -->
+      <div class="upload-photo-box" onclick="document.getElementById('photoInput').click()">
+        <div class="upload-photo-icon">📷</div>
+        <div class="upload-photo-text">Upload<br>Photo</div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewStaffPhoto(event)">
+
+      <!-- Full Name -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Full Name *</label>
+        <input type="text" class="add-staff-input" id="nsName" placeholder="e.g. Emma Rodriguez">
+      </div>
+
+      <!-- Role -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Role</label>
+        <select class="add-staff-input" id="nsRole">
+          <option value="staff">Phlebotomist</option>
+          <option value="admin">Supervisor / Admin</option>
+        </select>
+      </div>
+
+      <!-- Gender -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Gender *</label>
+        <select class="add-staff-input" id="nsGender">
+          <option value="Male">👨 Male</option>
+          <option value="Female">🩷 Female</option>
+        </select>
+      </div>
+
+      <!-- Safety Tag -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Safety Tag</label>
+        <div class="safety-tag-row">
+          <div class="safety-tag-text">🩷 Female Safety · Active</div>
+          <div class="safety-tag-x" onclick="this.parentElement.style.display='none'">✕</div>
+        </div>
+      </div>
+
+      <!-- Enable Female Safety -->
+      <div class="safety-toggle-row">
+        <div class="safety-toggle-label">Enable Female Safety Protocol</div>
+        <div class="safety-toggle on" id="safetyToggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+
+      <!-- Shift Assignment -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Shift Assignment</label>
+        <div class="shift-segment-row">
+          <button class="shift-segment-btn active" onclick="setShiftSegment(this, 'primary')">Primary Shift</button>
+          <button class="shift-segment-btn" onclick="setShiftSegment(this, 'secondary')">Secondary Shift</button>
+        </div>
+      </div>
+
+      <!-- Shift Type -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Shift Type (M/E/N)</label>
+        <div class="shift-type-btns">
+          <button class="shift-type-btn active morning" onclick="setShiftType(this, 'M')">☀️ Morning</button>
+          <button class="shift-type-btn" onclick="setShiftType(this, 'E')">🌆 Evening</button>
+          <button class="shift-type-btn" onclick="setShiftType(this, 'N')">🌙 Night</button>
+        </div>
+      </div>
+
+      <!-- Multi Shifts -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Multi Shifts (comma separated)</label>
+        <input type="text" class="add-staff-input" id="nsMulti" value="M,E,D,X" placeholder="M,E,D,X">
+      </div>
+
+      <!-- Department -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Department</label>
+        <select class="add-staff-input" id="nsDept">
+          <option>Lab A · Phlebotomy</option>
+          <option>Lab B · Pediatric</option>
+          <option>Lab C · Emergency</option>
+        </select>
+      </div>
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- LOGIN CREDENTIALS SECTION (NEW) -->
+      <!-- ═══════════════════════════════════════ -->
+      <div class="login-fields-section">
+        <div class="login-fields-title">
+          🔐 Login Credentials
+        </div>
+        
+        <div class="add-staff-form-group">
+          <label class="add-staff-label">Mobile Number (Login ID) *</label>
+          <input type="tel" class="add-staff-input" id="nsMobile" 
+                 placeholder="03001234567" maxlength="11" inputmode="numeric"
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          <div class="login-fields-hint">
+            ℹ️ Is number se staff login karega (11 digits)
+          </div>
+        </div>
+        
+        <div class="add-staff-form-group">
+          <label class="add-staff-label">Password *</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" class="add-staff-input" id="nsPassword" 
+                   placeholder="Min 4 characters" value="1234" style="flex:1">
+            <button class="gen-pass-btn" onclick="generatePassword()">
+              🎲 Random
+            </button>
+          </div>
+          <div class="login-fields-hint">
+            ℹ️ Staff is password se login karega (admin ko bata dein)
+          </div>
+        </div>
+      </div>
+
+      <!-- Notify Banner -->
+      <div class="notify-banner">
+        🔔 Staff ko login credentials admin share karega
+      </div>
+
+      <!-- Submit -->
+      <button class="add-staff-submit" onclick="saveNewStaff()">
+        ➕ Add Staff to Roster
+      </button>
+    </div>
+  `, null, true);
+};
+
+/* ============ GENERATE RANDOM PASSWORD ============ */
+function generatePassword(){
+  const chars = '0123456789';
+  let pass = '';
+  for(let i = 0; i < 4; i++){
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  // Sometimes 6-digit
+  if(Math.random() > 0.5){
+    for(let i = 0; i < 2; i++){
+      pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+  const input = document.getElementById('nsPassword');
+  if(input){
+    input.value = pass;
+    input.select();
+  }
+  toast('🎲 Password: ' + pass);
+}
+
+/* ============ SAVE STAFF WITH LOGIN ============ */
+window.saveNewStaff = function(){
+  const name = ($('nsName')?.value || '').trim();
+  const gender = $('nsGender')?.value || 'Male';
+  const role = $('nsRole')?.value || 'staff';
+  const primary = $('nsPrimary')?.value || 
+                  document.querySelector('.shift-type-btn.active')?.dataset?.code || 'M';
+  const fixed = null;
+  const multi = ($('nsMulti')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const mobile = ($('nsMobile')?.value || '').trim();
+  const password = ($('nsPassword')?.value || '').trim();
+  
+  // Validation
+  if(!name){
+    toast('⚠️ Name required', 'error');
+    $('nsName')?.focus();
+    return;
+  }
+  
+  if(name.length < 3){
+    toast('⚠️ Name too short', 'error');
+    return;
+  }
+  
+  // Mobile validation (only for non-admin)
+  if(role !== 'admin'){
+    if(!mobile || mobile.length !== 11){
+      toast('⚠️ Mobile must be 11 digits', 'error');
+      $('nsMobile')?.focus();
+      return;
+    }
+    if(!mobile.startsWith('03')){
+      toast('⚠️ Mobile must start with 03', 'error');
+      $('nsMobile')?.focus();
+      return;
+    }
+    if(!password || password.length < 4){
+      toast('⚠️ Password min 4 characters', 'error');
+      $('nsPassword')?.focus();
+      return;
+    }
+  }
+  
+  // Check duplicate mobile
+  const existingStaff = LocalDB.get('staff', []);
+  if(mobile && existingStaff.some(s => s.mobile === mobile)){
+    toast('⚠️ Mobile number already registered', 'error');
+    $('nsMobile')?.focus();
+    return;
+  }
+  
+  // Validate multi shifts
+  const validShifts = ['M','D','X','E','E4','N','N12'];
+  const cleanMulti = multi.filter(m => validShifts.includes(m));
+  if(cleanMulti.length === 0) cleanMulti.push('M');
+  
+  // Female safety: remove N, N12, E4 from multi if female
+  const finalMulti = gender === 'Female' 
+    ? cleanMulti.filter(m => !['N','N12','E4'].includes(m))
+    : cleanMulti;
+  
+  if(gender === 'Female' && finalMulti.length === 0){
+    finalMulti.push('M');
+  }
+  
+  const newStaff = {
+    _id: 's_' + nowTs() + '_' + Math.random().toString(36).slice(2, 6),
+    name: name,
+    gender: gender,
+    role: role,
+    primary: primary,
+    fixed: fixed,
+    multi: finalMulti,
+    mobile: mobile,
+    password: password,
+    active: true,
+    createdAt: nowTs()
+  };
+  
+  // Add to LocalDB
+  const staffList = LocalDB.get('staff', []);
+  staffList.push(newStaff);
+  LocalDB.set('staff', staffList);
+  
+  // Update State
+  State.staff = staffList;
+  
+  // Success
+  toast('✅ ' + name + ' added!');
+  vibrate(100);
+  fireConfetti();
+  closeModal();
+  
+  // Re-render
+  renderRosterView();
+  updateStats();
+  
+  // Show credentials summary
+  if(role !== 'admin' && mobile && password){
+    setTimeout(() => {
+      openModal('🔐 Login Credentials Saved', `
+        <div class="info-box">
+          <b>Save these credentials:</b>
+        </div>
+        
+        <div style="padding:14px;background:rgba(0,0,0,.3);border-radius:12px;font-family:monospace;font-size:13px;line-height:2">
+          <div><span style="color:#64748b">Name:</span> <b style="color:#fff">${escapeHtml(name)}</b></div>
+          <div><span style="color:#64748b">Mobile:</span> <b style="color:#67e8f9">${escapeHtml(mobile)}</b></div>
+          <div><span style="color:#64748b">Password:</span> <b style="color:#67e8f9">${escapeHtml(password)}</b></div>
+          <div><span style="color:#64748b">Role:</span> <b style="color:#6ee7b7">${escapeHtml(role)}</b></div>
+        </div>
+        
+        <div class="warn-box" style="margin-top:12px">
+          ⚠️ Staff ko yeh credentials share karein. Password baad mein change nahi hoga (admin reset karega).
+        </div>
+        
+        <button class="btn btn-success btn-block" style="margin-top:16px" onclick="shareStaffCredentials('${escapeHtml(name)}', '${escapeHtml(mobile)}', '${escapeHtml(password)}')">
+          📱 Share via WhatsApp
+        </button>
+      `, [{ label: 'OK', cls: 'btn-primary', onclick: 'closeModal()' }]);
+    }, 400);
+  }
+  
+  console.log('➕ Staff added:', name);
+};
+
+/* ============ SHARE CREDENTIALS ============ */
+function shareStaffCredentials(name, mobile, password){
+  const text = `🔐 *KIH Phlebotomy Login*\n\n👤 Name: ${name}\n📱 Mobile: ${mobile}\n🔑 Password: ${password}\n\n🌐 Login: ${window.location.origin}\n\n— KIH Admin`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+/* ============ STAFF LIST — Show LOGIN INFO ============ */
+const _origRenderStaffList15 = window.renderStaffList;
+window.renderStaffList = function(){
+  const el = $('staffList');
+  if(!el) return;
+
+  const staffOnly = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const isAdmin = State.user?.role === 'admin';
+
+  if(staffOnly.length === 0){
+    el.className = 'empty';
+    el.innerHTML = 'No staff added yet';
+    return;
+  }
+
+  el.className = 'staff-grid-premium';
+  el.innerHTML = staffOnly.map(s => {
+    const isF = s.gender === 'Female';
+    const initials = s.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
+    const primary = s.primary || s.fixed || 'M';
+    const hasLogin = !!(s.mobile && s.password);
+
+    return `
+      <div class="staff-card-premium">
+        ${isAdmin ? `
+          <div class="admin-menu-btn" onclick="toggleAdminMenu(event, 'staff-${s._id}')">⋮</div>
+          <div class="admin-menu-dropdown" id="menu-staff-${s._id}">
+            <button class="admin-menu-item" onclick="editStaff('${s._id}')">✏️ Edit</button>
+            <button class="admin-menu-item" onclick="showStaffCredentials('${s._id}')">🔐 View Login</button>
+            <button class="admin-menu-item danger" onclick="deleteStaff('${s._id}')">🗑️ Delete</button>
+          </div>
+        ` : ''}
+        <div class="staff-card-top" onclick="editStaff('${s._id}')">
+          <div class="staff-avatar ${isF ? 'female' : 'male'}">
+            ${initials}
+            <div class="check-badge">✓</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="staff-name-premium">${escapeHtml(s.name.split(' ').slice(0,2).join(' '))}</div>
+            <div class="staff-role-premium">Phlebotomist</div>
+          </div>
+        </div>
+        <div class="staff-tags-premium">
+          ${isF ? '<span class="staff-tag safety">🩷 Female Safety</span>' : '<span class="staff-tag shift">🛡️ Certified</span>'}
+          <span class="staff-tag shift">${primary} Roster</span>
+          <span class="staff-tag lab">Lab A · Phlebotomy</span>
+        </div>
+        ${s.mobile ? `
+          <div class="staff-login-info">
+            <span class="key">📱</span><span class="val">${escapeHtml(s.mobile)}</span>
+            <span style="margin-left:auto">
+              <span class="login-cred-badge has-login">✓ Login Active</span>
+            </span>
+          </div>
+        ` : `
+          <div class="staff-login-info" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25)">
+            <span class="key">⚠️</span>
+            <span style="color:#fcd34d">No login created</span>
+            <button class="gen-pass-btn" style="margin-left:auto;padding:3px 8px;font-size:9px" onclick="event.stopPropagation();editStaff('${s._id}')">
+              + Add Login
+            </button>
+          </div>
+        `}
+      </div>
+    `;
+  }).join('');
+};
+
+/* ============ SHOW STAFF CREDENTIALS ============ */
+function showStaffCredentials(id){
+  const s = State.staff.find(x => x._id === id);
+  if(!s) return;
+  
+  if(!s.mobile || !s.password){
+    toast('⚠️ No login created for this staff', 'warn');
+    editStaff(id);
+    return;
+  }
+  
+  openModal('🔐 Login Credentials', `
+    <div style="padding:16px;background:rgba(0,0,0,.3);border-radius:12px;font-family:monospace;font-size:13px;line-height:2;margin-bottom:12px">
+      <div><span style="color:#64748b">Name:</span> <b style="color:#fff">${escapeHtml(s.name)}</b></div>
+      <div><span style="color:#64748b">Mobile:</span> <b style="color:#67e8f9">${escapeHtml(s.mobile)}</b></div>
+      <div><span style="color:#64748b">Password:</span> <b style="color:#67e8f9">${escapeHtml(s.password)}</b></div>
+      <div><span style="color:#64748b">Role:</span> <b style="color:#6ee7b7">${escapeHtml(s.role || 'staff')}</b></div>
+    </div>
+    
+    <button class="btn btn-success btn-block" style="margin-bottom:8px" onclick="shareStaffCredentials('${escapeHtml(s.name)}', '${escapeHtml(s.mobile)}', '${escapeHtml(s.password)}')">
+      📱 Share via WhatsApp
+    </button>
+    <button class="btn btn-ghost btn-block" onclick="copyStaffCredentials('${s._id}')">
+      📋 Copy Credentials
+    </button>
+  `, [{ label: 'Close', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+function copyStaffCredentials(id){
+  const s = State.staff.find(x => x._id === id);
+  if(!s) return;
+  const text = `Mobile: ${s.mobile}\nPassword: ${s.password}\nName: ${s.name}`;
+  navigator.clipboard.writeText(text).then(() => {
+    toast('📋 Copied to clipboard');
+  }).catch(() => {
+    toast('❌ Copy failed', 'error');
+  });
+}
+
+/* ============ EDIT STAFF — Include Login Fields ============ */
+window.editStaff = function(id){
+  const s = State.staff.find(x => x._id === id);
+  if(!s) return;
+  
+  openModal('✏️ Edit ' + s.name, `
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Full Name</label>
+      <input type="text" class="add-staff-input" id="esName" value="${escapeHtml(s.name)}">
+    </div>
+    
+    <div class="field-row">
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">Gender</label>
+        <select class="add-staff-input" id="esGender">
+          <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>👨 Male</option>
+          <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>🩷 Female</option>
+        </select>
+      </div>
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">Role</label>
+        <select class="add-staff-input" id="esRole">
+          <option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Staff</option>
+          <option value="admin" ${s.role === 'admin' ? 'selected' : ''}>Admin</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="field-row">
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">Primary Shift</label>
+        <select class="add-staff-input" id="esPrimary">
+          ${['M','E','N','D','E4','N12','X'].map(p => 
+            `<option value="${p}" ${s.primary === p ? 'selected' : ''}>${p}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">Fixed Shift</label>
+        <select class="add-staff-input" id="esFixed">
+          <option value="" ${!s.fixed ? 'selected' : ''}>None</option>
+          ${['M','E','N','D','E4','N12'].map(p => 
+            `<option value="${p}" ${s.fixed === p ? 'selected' : ''}>${p}</option>`
+          ).join('')}
+        </select>
+      </div>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Multi Shifts</label>
+      <input type="text" class="add-staff-input" id="esMulti" value="${(s.multi || []).join(',')}">
+    </div>
+
+    <!-- LOGIN SECTION -->
+    <div class="login-fields-section">
+      <div class="login-fields-title">
+        🔐 Login Credentials
+      </div>
+      
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Mobile Number</label>
+        <input type="tel" class="add-staff-input" id="esMobile" 
+               value="${escapeHtml(s.mobile || '')}" 
+               placeholder="03001234567" maxlength="11" inputmode="numeric"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      </div>
+      
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Password</label>
+        <div style="display:flex;gap:6px">
+          <input type="text" class="add-staff-input" id="esPassword" 
+                 value="${escapeHtml(s.password || '1234')}" 
+                 placeholder="Min 4 chars" style="flex:1">
+          <button class="gen-pass-btn" onclick="generateEditPassword()">
+            🎲
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Active</label>
+      <select class="add-staff-input" id="esActive">
+        <option value="true" ${s.active !== false ? 'selected' : ''}>✅ Active</option>
+        <option value="false" ${s.active === false ? 'selected' : ''}>❌ Inactive</option>
+      </select>
+    </div>
+    
+    <button class="add-staff-submit" onclick="updateStaff('${s._id}')">
+      💾 Save Changes
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+  
+  setTimeout(fixDateInputs, 100);
+};
+
+function generateEditPassword(){
+  const chars = '0123456789';
+  let pass = '';
+  for(let i = 0; i < 4; i++){
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  const input = document.getElementById('esPassword');
+  if(input){
+    input.value = pass;
+    input.select();
+  }
+  toast('🎲 Password: ' + pass);
+}
+
+/* ============ UPDATE STAFF — Save login ============ */
+window.updateStaff = function(id){
+  const name = ($('esName')?.value || '').trim();
+  const gender = $('esGender')?.value;
+  const role = $('esRole')?.value;
+  const primary = $('esPrimary')?.value;
+  const fixed = $('esFixed')?.value || null;
+  const multi = ($('esMulti')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const mobile = ($('esMobile')?.value || '').trim();
+  const password = ($('esPassword')?.value || '').trim();
+  const active = $('esActive')?.value === 'true';
+  
+  if(!name){ toast('⚠️ Name required', 'error'); return; }
+  
+  // Mobile validation
+  if(role !== 'admin' && mobile){
+    if(mobile.length !== 11){
+      toast('⚠️ Mobile must be 11 digits', 'error');
+      return;
+    }
+    if(!mobile.startsWith('03')){
+      toast('⚠️ Mobile must start with 03', 'error');
+      return;
+    }
+  }
+  
+  // Password validation
+  if(role !== 'admin' && mobile && password.length < 4){
+    toast('⚠️ Password min 4 characters', 'error');
+    return;
+  }
+  
+  // Check duplicate mobile (excluding self)
+  const staffList = LocalDB.get('staff', []);
+  if(mobile && staffList.some(s => s.mobile === mobile && s._id !== id)){
+    toast('⚠️ Mobile number already used', 'error');
+    return;
+  }
+  
+  const idx = staffList.findIndex(x => x._id === id);
+  if(idx === -1) return;
+  
+  // Female safety
+  const finalMulti = gender === 'Female'
+    ? multi.filter(m => !['N','N12','E4'].includes(m))
+    : multi;
+  
+  staffList[idx] = {
+    ...staffList[idx],
+    name: name,
+    gender: gender,
+    role: role,
+    primary: primary,
+    fixed: fixed,
+    multi: finalMulti.length > 0 ? finalMulti : ['M'],
+    mobile: mobile,
+    password: password,
+    active: active,
+    updatedAt: nowTs()
+  };
+  
+  LocalDB.set('staff', staffList);
+  State.staff = staffList;
+  
+  toast('✅ Updated successfully');
+  closeModal();
+  renderRosterView();
+};
+
+/* ============ APPLY ON LOAD ============ */
+const _origShowApp15 = window.showApp;
+window.showApp = function(){
+  _origShowApp15.call(this);
+  
+  // Ensure admin is excluded from any existing roster
+  setTimeout(() => {
+    const adminIds = State.staff.filter(s => s.role === 'admin').map(s => s._id);
+    console.log('🔒 Admin IDs to exclude:', adminIds);
+  }, 500);
+};
+
+console.log('✅ Part 15 loaded — Admin excluded + Staff login creation');
+</script>
+
+<!-- ============ END OF PART 15 ============ -->
+   
+<!-- ═══════════════════════════════════════════════════════════
+     PART 16 — KIH OFFICIAL LOGO (Sidebar + Header)
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== KIH OFFICIAL LOGO — Sidebar ===== */
+.sidebar-kih-logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 4px;
+  cursor:pointer;
+}
+
+/* Red + Cyan Symbol */
+.kih-symbol-box{
+  display:flex;
+  align-items:stretch;
+  width:56px;
+  height:48px;
+  border-radius:8px;
+  overflow:hidden;
+  flex-shrink:0;
+  box-shadow:0 4px 14px rgba(225,29,72,.25);
+}
+.kih-symbol-red{
+  width:22px;
+  background:#dc2626;
+  position:relative;
+}
+.kih-symbol-cyan{
+  width:34px;
+  background:#06b6d4;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+/* White "C" curve */
+.kih-symbol-cyan::before{
+  content:'';
+  position:absolute;
+  width:28px;
+  height:34px;
+  border:3px solid #fff;
+  border-radius:50%;
+  border-right-color:transparent;
+  border-top-color:transparent;
+  transform:rotate(-45deg);
+  top:5px;
+  left:-1px;
+}
+/* Small white line */
+.kih-symbol-cyan::after{
+  content:'';
+  position:absolute;
+  width:22px;
+  height:3px;
+  background:#fff;
+  transform:rotate(-40deg);
+  top:24px;
+  left:3px;
+  border-radius:2px;
+}
+
+/* Text */
+.kih-text-block{
+  display:flex;
+  flex-direction:column;
+  line-height:1;
+}
+.kih-text-kulsum{
+  font-family:'Outfit',system-ui,sans-serif;
+  font-size:14px;
+  font-weight:900;
+  color:#dc2626;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  line-height:1;
+  margin-bottom:3px;
+}
+.kih-text-intl{
+  font-family:'Outfit',system-ui,sans-serif;
+  font-size:8px;
+  font-weight:600;
+  color:#06b6d4;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  line-height:1.2;
+}
+
+/* ===== Header Logo (Top bar) ===== */
+.kih-header-logo{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+}
+.kih-header-logo .kih-symbol-box{
+  width:48px;
+  height:42px;
+  border-radius:6px;
+}
+.kih-header-logo .kih-symbol-red{
+  width:18px;
+}
+.kih-header-logo .kih-symbol-cyan{
+  width:30px;
+}
+.kih-header-logo .kih-symbol-cyan::before{
+  width:24px;
+  height:30px;
+  border-width:2.5px;
+  top:4px;
+  left:-1px;
+}
+.kih-header-logo .kih-symbol-cyan::after{
+  width:18px;
+  height:2.5px;
+  top:20px;
+  left:3px;
+}
+.kih-header-logo .kih-text-kulsum{
+  font-size:13px;
+  margin-bottom:2px;
+}
+.kih-header-logo .kih-text-intl{
+  font-size:7.5px;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 16 — KIH OFFICIAL LOGO
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ KIH LOGO HTML ============ */
+function getKIHLogoHTML(variant){
+  const isHeader = variant === 'header';
+  return `
+    <div class="${isHeader ? 'kih-header-logo' : 'sidebar-kih-logo'}">
+      <div class="kih-symbol-box">
+        <div class="kih-symbol-red"></div>
+        <div class="kih-symbol-cyan"></div>
+      </div>
+      <div class="kih-text-block">
+        <div class="kih-text-kulsum">KULSUM</div>
+        <div class="kih-text-intl">International Hospital</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============ APPLY LOGO TO SIDEBAR ============ */
+function applyKIHLogoToSidebar(){
+  const sidebarHeader = document.querySelector('.sidebar-header');
+  if(!sidebarHeader) return;
+  
+  // Remove existing logo
+  sidebarHeader.innerHTML = '';
+  
+  // Add KIH logo
+  sidebarHeader.innerHTML = getKIHLogoHTML('sidebar');
+  
+  // Add click handler to go home
+  sidebarHeader.querySelector('.sidebar-kih-logo').onclick = () => {
+    showView('home');
+    toggleSidebar(false);
+  };
+  
+  console.log('🎨 KIH logo applied to sidebar');
+}
+
+/* ============ APPLY LOGO TO HEADER ============ */
+function applyKIHLogoToHeader(){
+  const headerLeft = document.querySelector('.header-left');
+  if(!headerLeft) return;
+  
+  // Remove everything except menu button
+  const menuBtn = headerLeft.querySelector('.menu-btn');
+  
+  // Clear all
+  headerLeft.innerHTML = '';
+  
+  // Re-add menu button
+  if(menuBtn){
+    headerLeft.appendChild(menuBtn);
+  }
+  
+  // Add KIH logo
+  headerLeft.insertAdjacentHTML('beforeend', getKIHLogoHTML('header'));
+  
+  // Click handler
+  const logo = headerLeft.querySelector('.kih-header-logo');
+  if(logo){
+    logo.onclick = () => showView('home');
+  }
+  
+  console.log('🎨 KIH logo applied to header');
+}
+
+/* ============ APPLY ON LOAD ============ */
+const _origShowApp16 = window.showApp;
+window.showApp = function(){
+  _origShowApp16.call(this);
+  
+  setTimeout(() => {
+    applyKIHLogoToSidebar();
+    applyKIHLogoToHeader();
+  }, 300);
+};
+
+/* ============ APPLY IMMEDIATELY IF ALREADY LOADED ============ */
+setTimeout(() => {
+  if(document.querySelector('.sidebar') || document.querySelector('.header-left')){
+    applyKIHLogoToSidebar();
+    applyKIHLogoToHeader();
+  }
+}, 500);
+
+/* ============ OBSERVE DOM CHANGES (in case sidebar re-renders) ============ */
+const logoObserver = new MutationObserver((mutations) => {
+  for(const m of mutations){
+    if(m.type === 'childList' || m.type === 'attributes'){
+      const sidebarHeader = document.querySelector('.sidebar-header');
+      const headerLeft = document.querySelector('.header-left');
+      
+      // Check if sidebar logo is missing
+      if(sidebarHeader && !sidebarHeader.querySelector('.kih-symbol-box')){
+        applyKIHLogoToSidebar();
+      }
+      
+      // Check if header logo is missing
+      if(headerLeft && !headerLeft.querySelector('.kih-symbol-box')){
+        // Only if header exists
+        if(headerLeft.offsetParent !== null){
+          applyKIHLogoToHeader();
+        }
+      }
+    }
+  }
+});
+
+// Start observing
+if(document.body){
+  logoObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+console.log('✅ Part 16 loaded — KIH official logo applied');
+</script>
+
+<!-- ============ END OF PART 16 ============ -->
