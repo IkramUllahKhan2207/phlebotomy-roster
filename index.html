@@ -9277,3 +9277,943 @@ console.log('✅ Part 11 loaded — Language system ready');
 </script>
 
 <!-- ============ END OF PART 11 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 12 — CALENDAR FIX + DUTY EXCHANGE + LEAVE SYSTEM
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== CALENDAR INPUT FIX ===== */
+input[type="date"]{
+  position:relative;
+  cursor:pointer;
+  color-scheme:dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator{
+  filter:invert(1);
+  opacity:.8;
+  cursor:pointer;
+  padding:6px;
+  margin-right:-6px;
+  border-radius:6px;
+  background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(255,46,147,.2));
+  transition:all .2s;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover{
+  opacity:1;
+  background:linear-gradient(135deg,rgba(139,92,246,.5),rgba(255,46,147,.4));
+  transform:scale(1.15);
+}
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-outer-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+
+/* ===== EXCHANGE CARD ===== */
+.exchange-card{
+  margin:0 16px 12px;
+  padding:16px;
+  background:linear-gradient(145deg,rgba(108,92,255,.1),rgba(19,24,38,.95));
+  border:1px solid rgba(108,92,255,.25);
+  border-radius:18px;
+}
+.exchange-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.exchange-title{
+  font-family:'Outfit',sans-serif;
+  font-size:14px;font-weight:800;
+  color:#c4b5fd;
+  display:flex;align-items:center;gap:6px;
+}
+.exchange-status{
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:9px;font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+.exchange-status.pending{background:rgba(245,158,11,.2);color:#fcd34d;border:1px solid rgba(245,158,11,.4)}
+.exchange-status.approved{background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.4)}
+.exchange-status.rejected{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
+.exchange-info{
+  display:flex;align-items:center;gap:12px;
+  padding:10px;
+  background:rgba(0,0,0,.25);
+  border-radius:12px;
+  margin-bottom:10px;
+}
+.exchange-person{
+  flex:1;text-align:center;
+}
+.exchange-person-name{
+  font-size:12px;font-weight:800;
+  color:#fff;
+  margin-bottom:4px;
+}
+.exchange-person-shift{
+  font-size:10px;font-weight:700;
+  padding:3px 8px;
+  border-radius:6px;
+  display:inline-block;
+}
+.exchange-arrow{
+  font-size:18px;color:#8b5cf6;
+}
+.exchange-date{
+  font-size:10px;color:#64748b;
+  text-align:center;
+  font-weight:600;
+}
+
+/* ===== LEAVE BALANCE CARDS ===== */
+.leave-balance-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  padding:0 16px;
+  margin-bottom:14px;
+}
+.leave-bal-card{
+  padding:12px 8px;
+  background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(19,24,38,.95));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+}
+.leave-bal-card:active{transform:scale(.97)}
+.leave-bal-value{
+  font-family:'Outfit',sans-serif;
+  font-size:22px;font-weight:800;
+  letter-spacing:-.5px;
+  margin-bottom:2px;
+}
+.leave-bal-label{
+  font-size:9px;color:#64748b;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  font-weight:700;
+}
+.leave-bal-card.el .leave-bal-value{color:#f472b6}
+.leave-bal-card.cpl .leave-bal-value{color:#a78bfa}
+.leave-bal-card.cl .leave-bal-value{color:#5eead4}
+.leave-bal-card.sl .leave-bal-value{color:#fbbf24}
+.leave-bal-card.al .leave-bal-value{color:#60a5fa}
+.leave-bal-card.ph .leave-bal-value{color:#34d399}
+
+/* ===== REQUEST CARDS ===== */
+.request-card{
+  margin:0 16px 10px;
+  padding:14px;
+  background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(19,24,38,.95));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  position:relative;
+}
+.request-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.request-staff{
+  display:flex;align-items:center;gap:8px;
+}
+.request-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;
+  flex-shrink:0;
+}
+.request-avatar.female{background:linear-gradient(135deg,#ec4899,#f472b6)}
+.request-avatar.male{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
+.request-name{
+  font-size:12px;font-weight:800;color:#fff;
+}
+.request-meta{
+  font-size:10px;color:#64748b;font-weight:600;
+}
+.request-body{
+  font-size:11px;color:#a0aec0;
+  line-height:1.5;
+  padding:8px 10px;
+  background:rgba(0,0,0,.25);
+  border-radius:8px;
+  margin-bottom:10px;
+}
+.request-actions{
+  display:flex;gap:8px;
+}
+.request-actions .btn{flex:1;padding:8px;font-size:11px}
+
+/* ===== POLICY INFO CARDS ===== */
+.policy-info-card{
+  margin:0 16px 12px;
+  padding:14px;
+  background:linear-gradient(145deg,rgba(108,92,255,.08),rgba(19,24,38,.95));
+  border:1px solid rgba(108,92,255,.2);
+  border-radius:16px;
+}
+.policy-info-title{
+  font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:800;
+  color:#c4b5fd;
+  margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.policy-info-list{
+  font-size:11px;
+  color:#a0aec0;
+  line-height:1.8;
+}
+.policy-info-list li{
+  padding-left:16px;
+  position:relative;
+  margin-bottom:4px;
+}
+.policy-info-list li::before{
+  content:'•';
+  position:absolute;
+  left:4px;
+  color:#8b5cf6;
+  font-weight:800;
+}
+
+/* ===== TAB BAR ===== */
+.tabs-scroll{
+  display:flex;
+  gap:6px;
+  padding:0 16px 12px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tabs-scroll button{
+  padding:8px 14px;
+  border-radius:20px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  color:#a0aec0;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:inherit;
+}
+.tabs-scroll button.active{
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 4px 14px rgba(139,92,246,.4);
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 12 — CALENDAR FIX + EXCHANGE + LEAVES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ EXTEND STATE ============ */
+if(!State.exchanges) State.exchanges = [];
+if(!State.leaveRequests) State.leaveRequests = [];
+
+/* ============ FIX 1: Force date picker to work ============ */
+function fixDateInputs(){
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    if(input._dateFixed) return;
+    input._dateFixed = true;
+    
+    // Make entire field clickable to open picker
+    input.addEventListener('click', function(e){
+      if(typeof this.showPicker === 'function'){
+        try{ this.showPicker(); }catch(err){}
+      }
+    });
+    
+    // Also on focus
+    input.addEventListener('focus', function(){
+      if(typeof this.showPicker === 'function'){
+        try{ this.showPicker(); }catch(err){}
+      }
+    });
+  });
+}
+
+/* ============ OVERRIDE renderWizard to apply fix ============ */
+const _origRenderWizard = window.renderWizard || function(){};
+window.renderWizard = function(){
+  if(typeof _origRenderWizard === 'function'){
+    try{ _origRenderWizard.call(this); }catch(e){ console.warn(e); }
+  }
+  setTimeout(fixDateInputs, 100);
+};
+
+/* ============ EXTEND SIDEBAR — Add Exchange + Leaves ============ */
+function addSidebarItems(){
+  const sidebar = document.querySelector('.sidebar');
+  if(!sidebar) return;
+  if(sidebar.querySelector('[data-view="exchange"]')) return;
+  
+  // Find "Management" section
+  const sections = sidebar.querySelectorAll('.sidebar-section');
+  const mgmtSection = Array.from(sections).find(s => s.textContent.match(/Management|انتظامیہ|اداره/i));
+  if(!mgmtSection) return;
+  
+  const exchangeBtn = document.createElement('button');
+  exchangeBtn.className = 'sidebar-item';
+  exchangeBtn.dataset.view = 'exchange';
+  exchangeBtn.innerHTML = `
+    <span class="s-icon">🔄</span><span>Duty Exchange</span>
+    <span class="s-badge" id="exchangeBadge" style="display:none">0</span>
+  `;
+  exchangeBtn.onclick = () => navTo('exchange');
+  
+  const leavesBtn = document.createElement('button');
+  leavesBtn.className = 'sidebar-item';
+  leavesBtn.dataset.view = 'leaves';
+  leavesBtn.innerHTML = `
+    <span class="s-icon">🌴</span><span>Leave & CPL</span>
+    <span class="s-badge" id="leavesBadge" style="display:none">0</span>
+  `;
+  leavesBtn.onclick = () => navTo('leaves');
+  
+  // Insert after All Staff
+  const allStaff = sidebar.querySelector('[data-view="staffList"]');
+  if(allStaff){
+    allStaff.after(exchangeBtn);
+    exchangeBtn.after(leavesBtn);
+  } else {
+    mgmtSection.after(exchangeBtn);
+    exchangeBtn.after(leavesBtn);
+  }
+}
+
+/* ============ EXCHANGE VIEW ============ */
+function renderExchangeView(){
+  const view = document.getElementById('view-exchange');
+  if(!view){
+    // Create view if doesn't exist
+    const main = document.getElementById('appMain') || document.querySelector('.app');
+    if(!main) return;
+    
+    const newView = document.createElement('div');
+    newView.id = 'view-exchange';
+    newView.className = 'view';
+    main.appendChild(newView);
+  }
+  
+  const exchanges = State.exchanges || [];
+  const isAdmin = State.user?.role === 'admin';
+  const pending = exchanges.filter(e => e.status === 'pending');
+  const approved = exchanges.filter(e => e.status === 'approved');
+  const rejected = exchanges.filter(e => e.status === 'rejected');
+
+  const statusBadge = (status) => `
+    <span class="exchange-status ${status}">
+      ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+    </span>
+  `;
+
+  const renderExchange = (ex) => {
+    const s1 = State.staff.find(s => s._id === ex.staff1Id) || {};
+    const s2 = State.staff.find(s => s._id === ex.staff2Id) || {};
+    const s1F = s1.gender === 'Female';
+    const s2F = s2.gender === 'Female';
+    const s1Init = (s1.name || '?').split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+    const s2Init = (s2.name || '?').split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+
+    return `
+      <div class="exchange-card">
+        <div class="exchange-header">
+          <div class="exchange-title">🔄 Exchange Request</div>
+          ${statusBadge(ex.status)}
+        </div>
+        
+        <div class="exchange-info">
+          <div class="exchange-person">
+            <div class="request-avatar ${s1F ? 'female' : 'male'}" style="margin:0 auto 6px">${s1Init}</div>
+            <div class="exchange-person-name">${escapeHtml((s1.name || 'Unknown').split(' ')[0])}</div>
+            <div class="exchange-person-shift" style="background:rgba(139,92,246,.2);color:#c4b5fd">${ex.shift1 || '—'}</div>
+          </div>
+          <div class="exchange-arrow">⇄</div>
+          <div class="exchange-person">
+            <div class="request-avatar ${s2F ? 'female' : 'male'}" style="margin:0 auto 6px">${s2Init}</div>
+            <div class="exchange-person-name">${escapeHtml((s2.name || 'Unknown').split(' ')[0])}</div>
+            <div class="exchange-person-shift" style="background:rgba(236,72,153,.2);color:#f9a8d4">${ex.shift2 || '—'}</div>
+          </div>
+        </div>
+        
+        <div class="exchange-date">📅 ${fmtDisplay(ex.date)}</div>
+        
+        ${ex.reason ? `<div class="request-body" style="margin-top:10px">💬 ${escapeHtml(ex.reason)}</div>` : ''}
+        
+        ${isAdmin && ex.status === 'pending' ? `
+          <div class="request-actions" style="margin-top:10px">
+            <button class="btn btn-success" onclick="approveExchange('${ex._id}')">✅ Approve</button>
+            <button class="btn btn-danger" onclick="rejectExchange('${ex._id}')">❌ Reject</button>
+          </div>
+        ` : ''}
+        
+        ${isAdmin && ex.status !== 'pending' ? `
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="deleteExchange('${ex._id}')">
+            🗑️ Delete Record
+          </button>
+        ` : ''}
+      </div>
+    `;
+  };
+
+  view.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">🔄 Duty Exchange</div>
+      <div class="page-sub">Swap shifts with mutual consent + admin approval</div>
+    </div>
+
+    <div class="tabs-scroll">
+      <button class="active" onclick="switchExchangeTab('pending', this)">⏳ Pending (${pending.length})</button>
+      <button onclick="switchExchangeTab('approved', this)">✅ Approved (${approved.length})</button>
+      <button onclick="switchExchangeTab('rejected', this)">❌ Rejected (${rejected.length})</button>
+    </div>
+
+    <button class="btn btn-primary btn-block" style="width:calc(100% - 32px);margin:0 16px 14px" onclick="openExchangeModal()">
+      ➕ New Exchange Request
+    </button>
+
+    <div class="policy-info-card">
+      <div class="policy-info-title">📋 Exchange Policy</div>
+      <ul class="policy-info-list">
+        <li>Both staff must consent to the exchange</li>
+        <li>Admin final approval required</li>
+        <li>Changed shift will be highlighted <b style="color:#facc15">yellow</b> in roster</li>
+        <li>Cannot violate Female Safety rules (N/N12/E4)</li>
+        <li>Cannot exceed 12-hour duty limit</li>
+      </ul>
+    </div>
+
+    <div id="exchangeList">
+      ${pending.length === 0 ? '<div class="empty" style="padding:20px">No pending exchanges</div>' : pending.map(renderExchange).join('')}
+    </div>
+  `;
+
+  // Update sidebar badge
+  const badge = document.getElementById('exchangeBadge');
+  if(badge){
+    if(pending.length > 0){
+      badge.textContent = pending.length;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function switchExchangeTab(tab, btn){
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const exchanges = State.exchanges || [];
+  const filtered = exchanges.filter(e => e.status === tab);
+  
+  const list = document.getElementById('exchangeList');
+  if(!list) return;
+  
+  if(filtered.length === 0){
+    list.innerHTML = `<div class="empty" style="padding:20px">No ${tab} exchanges</div>`;
+    return;
+  }
+  
+  list.innerHTML = filtered.map(ex => {
+    const s1 = State.staff.find(s => s._id === ex.staff1Id) || {};
+    const s2 = State.staff.find(s => s._id === ex.staff2Id) || {};
+    const s1F = s1.gender === 'Female';
+    const s2F = s2.gender === 'Female';
+    const s1Init = (s1.name || '?').split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+    const s2Init = (s2.name || '?').split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+    const isAdmin = State.user?.role === 'admin';
+    
+    return `
+      <div class="exchange-card">
+        <div class="exchange-header">
+          <div class="exchange-title">🔄 Exchange</div>
+          <span class="exchange-status ${ex.status}">${ex.status === 'pending' ? '⏳ Pending' : ex.status === 'approved' ? '✅ Approved' : '❌ Rejected'}</span>
+        </div>
+        <div class="exchange-info">
+          <div class="exchange-person">
+            <div class="request-avatar ${s1F ? 'female' : 'male'}" style="margin:0 auto 6px">${s1Init}</div>
+            <div class="exchange-person-name">${escapeHtml((s1.name || '?').split(' ')[0])}</div>
+            <div class="exchange-person-shift" style="background:rgba(139,92,246,.2);color:#c4b5fd">${ex.shift1 || '—'}</div>
+          </div>
+          <div class="exchange-arrow">⇄</div>
+          <div class="exchange-person">
+            <div class="request-avatar ${s2F ? 'female' : 'male'}" style="margin:0 auto 6px">${s2Init}</div>
+            <div class="exchange-person-name">${escapeHtml((s2.name || '?').split(' ')[0])}</div>
+            <div class="exchange-person-shift" style="background:rgba(236,72,153,.2);color:#f9a8d4">${ex.shift2 || '—'}</div>
+          </div>
+        </div>
+        <div class="exchange-date">📅 ${fmtDisplay(ex.date)}</div>
+        ${isAdmin ? `
+          <button class="btn btn-danger btn-sm" style="width:100%;margin-top:10px" onclick="deleteExchange('${ex._id}')">
+            🗑️ Delete
+          </button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ============ OPEN EXCHANGE MODAL ============ */
+function openExchangeModal(){
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const staffOpts = staffList.map(s => 
+    `<option value="${s._id}">${escapeHtml(s.name)} (${s.gender})</option>`
+  ).join('');
+  
+  const shiftOpts = ['M','E','N','D','X','E4','N12','OFF']
+    .map(s => `<option value="${s}">${s}</option>`).join('');
+  
+  openModal('🔄 New Exchange Request', `
+    <div class="info-box">
+      <b>Rules:</b> Both staff must agree. Admin final approval required.
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Staff 1 (Requesting)</label>
+      <select class="add-staff-input" id="exStaff1">${staffOpts}</select>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Staff 1 Current Shift</label>
+      <select class="add-staff-input" id="exShift1">${shiftOpts}</select>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Staff 2 (Swapping With)</label>
+      <select class="add-staff-input" id="exStaff2">${staffOpts}</select>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Staff 2 Current Shift</label>
+      <select class="add-staff-input" id="exShift2">${shiftOpts}</select>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Exchange Date</label>
+      <input type="date" class="add-staff-input" id="exDate" value="${ymd(new Date())}">
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Reason (optional)</label>
+      <textarea class="add-staff-input" id="exReason" rows="2" placeholder="e.g., Doctor appointment"></textarea>
+    </div>
+    
+    <div class="safety-toggle-row">
+      <div class="safety-toggle-label">✅ Both staff have agreed</div>
+      <div class="safety-toggle" id="exAgreed" onclick="this.classList.toggle('on')"></div>
+    </div>
+    
+    <button class="add-staff-submit" onclick="saveExchange()">
+      📤 Submit Request
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+}
+
+/* ============ SAVE EXCHANGE ============ */
+function saveExchange(){
+  const staff1Id = document.getElementById('exStaff1')?.value;
+  const staff2Id = document.getElementById('exStaff2')?.value;
+  const shift1 = document.getElementById('exShift1')?.value;
+  const shift2 = document.getElementById('exShift2')?.value;
+  const date = document.getElementById('exDate')?.value;
+  const reason = document.getElementById('exReason')?.value?.trim();
+  const agreed = document.getElementById('exAgreed')?.classList.contains('on');
+  
+  if(!staff1Id || !staff2Id){ toast('⚠️ Select both staff', 'error'); return; }
+  if(staff1Id === staff2Id){ toast('⚠️ Cannot exchange with self', 'error'); return; }
+  if(!date){ toast('⚠️ Select date', 'error'); return; }
+  if(!agreed){ toast('⚠️ Both must agree', 'error'); return; }
+  
+  // Female safety check
+  const s2 = State.staff.find(s => s._id === staff2Id);
+  if(s2 && s2.gender === 'Female' && ['N','N12','E4'].includes(shift1)){
+    toast('❌ Female cannot take ' + shift1, 'error');
+    return;
+  }
+  
+  const s1 = State.staff.find(s => s._id === staff1Id);
+  if(s1 && s1.gender === 'Female' && ['N','N12','E4'].includes(shift2)){
+    toast('❌ Female cannot take ' + shift2, 'error');
+    return;
+  }
+  
+  const exchanges = LocalDB.get('exchanges', []);
+  exchanges.push({
+    _id: uid(),
+    staff1Id, staff2Id, shift1, shift2,
+    date, reason,
+    status: 'pending',
+    requestedBy: State.user?.name || 'Staff',
+    createdAt: nowTs()
+  });
+  LocalDB.set('exchanges', exchanges);
+  State.exchanges = exchanges;
+  
+  toast('✅ Request submitted — Admin approval pending');
+  closeModal();
+  renderExchangeView();
+}
+
+/* ============ APPROVE / REJECT ============ */
+function approveExchange(id){
+  const exchanges = LocalDB.get('exchanges', []);
+  const idx = exchanges.findIndex(e => e._id === id);
+  if(idx === -1) return;
+  
+  exchanges[idx].status = 'approved';
+  exchanges[idx].approvedBy = State.user?.name;
+  exchanges[idx].approvedAt = nowTs();
+  LocalDB.set('exchanges', exchanges);
+  State.exchanges = exchanges;
+  
+  // Apply to roster if exists
+  applyExchangeToRoster(exchanges[idx]);
+  
+  toast('✅ Exchange approved');
+  vibrate(100);
+  fireConfetti();
+  renderExchangeView();
+}
+
+function rejectExchange(id){
+  const exchanges = LocalDB.get('exchanges', []);
+  const idx = exchanges.findIndex(e => e._id === id);
+  if(idx === -1) return;
+  exchanges[idx].status = 'rejected';
+  exchanges[idx].rejectedBy = State.user?.name;
+  exchanges[idx].rejectedAt = nowTs();
+  LocalDB.set('exchanges', exchanges);
+  State.exchanges = exchanges;
+  toast('❌ Exchange rejected', 'warn');
+  renderExchangeView();
+}
+
+function deleteExchange(id){
+  if(!confirm('Delete this exchange record?')) return;
+  const exchanges = LocalDB.get('exchanges', []).filter(e => e._id !== id);
+  LocalDB.set('exchanges', exchanges);
+  State.exchanges = exchanges;
+  toast('🗑️ Deleted');
+  renderExchangeView();
+}
+
+function applyExchangeToRoster(ex){
+  if(!State.roster || !State.roster.grid) return;
+  const grid = State.roster.grid;
+  if(!grid[ex.date]) return;
+  
+  // Swap shifts
+  grid[ex.date][ex.staff1Id] = ex.shift2;
+  grid[ex.date][ex.staff2Id] = ex.shift1;
+  
+  // Add to changed cells for yellow highlight
+  if(!State.roster.changedCells) State.roster.changedCells = {};
+  State.roster.changedCells[ex.date + '_' + ex.staff1Id] = true;
+  State.roster.changedCells[ex.date + '_' + ex.staff2Id] = true;
+  
+  LocalDB.set('roster_' + ex.date.split('-')[0] + '_' + ex.date, State.roster);
+  console.log('🔄 Exchange applied to roster');
+}
+
+/* ============ LEAVES VIEW ============ */
+function renderLeavesView(){
+  let view = document.getElementById('view-leaves');
+  if(!view){
+    const main = document.getElementById('appMain') || document.querySelector('.app');
+    if(!main) return;
+    view = document.createElement('div');
+    view.id = 'view-leaves';
+    view.className = 'view';
+    main.appendChild(view);
+  }
+  
+  const isAdmin = State.user?.role === 'admin';
+  const leaves = State.leaveRequests || [];
+  
+  // Compute balances
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const balances = {
+    EL: leaves.filter(l => l.type === 'EL' && l.status === 'approved').length,
+    CPL: leaves.filter(l => l.type === 'CPL' && l.status === 'approved').length,
+    CL: leaves.filter(l => l.type === 'CL' && l.status === 'approved').length,
+    SL: leaves.filter(l => l.type === 'SL' && l.status === 'approved').length,
+    AL: leaves.filter(l => l.type === 'AL' && l.status === 'approved').length,
+    PH: leaves.filter(l => l.type === 'PH' && l.status === 'approved').length
+  };
+  
+  view.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">🌴 Leave & CPL</div>
+      <div class="page-sub">Earned, Compensatory, Casual & More</div>
+    </div>
+
+    <div class="leave-balance-grid">
+      <div class="leave-bal-card el">
+        <div class="leave-bal-value">${balances.EL}</div>
+        <div class="leave-bal-label">EL</div>
+      </div>
+      <div class="leave-bal-card cpl">
+        <div class="leave-bal-value">${balances.CPL}</div>
+        <div class="leave-bal-label">CPL</div>
+      </div>
+      <div class="leave-bal-card cl">
+        <div class="leave-bal-value">${balances.CL}</div>
+        <div class="leave-bal-label">CL</div>
+      </div>
+      <div class="leave-bal-card sl">
+        <div class="leave-bal-value">${balances.SL}</div>
+        <div class="leave-bal-label">SL</div>
+      </div>
+      <div class="leave-bal-card al">
+        <div class="leave-bal-value">${balances.AL}</div>
+        <div class="leave-bal-label">AL</div>
+      </div>
+      <div class="leave-bal-card ph">
+        <div class="leave-bal-value">${balances.PH}</div>
+        <div class="leave-bal-label">PH</div>
+      </div>
+    </div>
+
+    <div class="policy-info-card">
+      <div class="policy-info-title">📋 Leave Policy</div>
+      <ul class="policy-info-list">
+        <li><b>EL (Earned Leave)</b> — 1 per 12 working days</li>
+        <li><b>CPL (Compensatory)</b> — 1 CPL = 8 extra hours OR 1 PH unused</li>
+        <li><b>CL (Casual)</b> — Emergency, max 5 per month</li>
+        <li><b>SL (Sick)</b> — Medical certificate required</li>
+        <li><b>AL (Annual)</b> — Planned, 30 days notice</li>
+        <li><b>PH (Public Holiday)</b> — Auto-credited on gazetted holidays</li>
+        <li>All leaves require <b>admin approval</b></li>
+      </ul>
+    </div>
+
+    ${isAdmin ? `
+      <button class="btn btn-primary btn-block" style="width:calc(100% - 32px);margin:0 16px 14px" onclick="openLeaveRequestModal()">
+        ➕ New Leave Request
+      </button>
+    ` : ''}
+
+    <div id="leavesList">
+      ${leaves.length === 0 
+        ? '<div class="empty" style="padding:20px">No leave requests yet</div>' 
+        : leaves.slice().reverse().map(l => {
+          const s = State.staff.find(x => x._id === l.staffId) || {};
+          const isF = s.gender === 'Female';
+          const init = (s.name || '?').split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+          return `
+            <div class="request-card">
+              <div class="request-header">
+                <div class="request-staff">
+                  <div class="request-avatar ${isF ? 'female' : 'male'}">${init}</div>
+                  <div>
+                    <div class="request-name">${escapeHtml(s.name || 'Unknown')}</div>
+                    <div class="request-meta">${fmtDateTime(l.createdAt)}</div>
+                  </div>
+                </div>
+                <span class="exchange-status ${l.status}">
+                  ${l.status === 'pending' ? '⏳' : l.status === 'approved' ? '✅' : '❌'} ${l.type}
+                </span>
+              </div>
+              <div class="request-body">
+                📅 ${fmtDisplay(l.startDate)} ${l.endDate !== l.startDate ? '→ ' + fmtDisplay(l.endDate) : ''}
+                ${l.reason ? '<br>💬 ' + escapeHtml(l.reason) : ''}
+              </div>
+              ${isAdmin && l.status === 'pending' ? `
+                <div class="request-actions">
+                  <button class="btn btn-success" onclick="approveLeaveReq('${l._id}')">✅ Approve</button>
+                  <button class="btn btn-danger" onclick="rejectLeaveReq('${l._id}')">❌ Reject</button>
+                </div>
+              ` : ''}
+              ${isAdmin && l.status !== 'pending' ? `
+                <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="deleteLeaveReq('${l._id}')">
+                  🗑️ Delete
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('')
+      }
+    </div>
+  `;
+  
+  // Update badge
+  const pendingCount = leaves.filter(l => l.status === 'pending').length;
+  const badge = document.getElementById('leavesBadge');
+  if(badge){
+    if(pendingCount > 0){
+      badge.textContent = pendingCount;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+/* ============ OPEN LEAVE MODAL ============ */
+function openLeaveRequestModal(){
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  const staffOpts = staffList.map(s => 
+    `<option value="${s._id}">${escapeHtml(s.name)}</option>`
+  ).join('');
+  
+  const today = ymd(new Date());
+  
+  openModal('🌴 New Leave Request', `
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Staff</label>
+      <select class="add-staff-input" id="lvStaff">${staffOpts}</select>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Leave Type</label>
+      <select class="add-staff-input" id="lvType">
+        <option value="EL">EL — Earned Leave</option>
+        <option value="CPL">CPL — Compensatory Leave</option>
+        <option value="CL">CL — Casual Leave</option>
+        <option value="SL">SL — Sick Leave</option>
+        <option value="AL">AL — Annual Leave</option>
+        <option value="PH">PH — Public Holiday</option>
+      </select>
+    </div>
+    
+    <div class="field-row">
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">Start Date</label>
+        <input type="date" class="add-staff-input" id="lvStart" value="${today}">
+      </div>
+      <div class="add-staff-form-group" style="flex:1">
+        <label class="add-staff-label">End Date</label>
+        <input type="date" class="add-staff-input" id="lvEnd" value="${today}">
+      </div>
+    </div>
+    
+    <div class="add-staff-form-group">
+      <label class="add-staff-label">Reason</label>
+      <textarea class="add-staff-input" id="lvReason" rows="3" placeholder="Reason for leave..."></textarea>
+    </div>
+    
+    <button class="add-staff-submit" onclick="saveLeaveRequest()">
+      📤 Submit Leave Request
+    </button>
+  `, [{ label: 'Cancel', cls: 'btn-ghost', onclick: 'closeModal()' }]);
+  
+  setTimeout(fixDateInputs, 100);
+}
+
+/* ============ SAVE LEAVE ============ */
+function saveLeaveRequest(){
+  const staffId = document.getElementById('lvStaff')?.value;
+  const type = document.getElementById('lvType')?.value;
+  const startDate = document.getElementById('lvStart')?.value;
+  const endDate = document.getElementById('lvEnd')?.value;
+  const reason = document.getElementById('lvReason')?.value?.trim();
+  
+  if(!staffId || !startDate){ toast('⚠️ Fill required fields', 'error'); return; }
+  if(endDate < startDate){ toast('⚠️ End before start', 'error'); return; }
+  
+  const leaves = LocalDB.get('leaveRequests', []);
+  leaves.push({
+    _id: uid(),
+    staffId, type,
+    startDate, endDate: endDate || startDate,
+    reason,
+    status: 'pending',
+    requestedBy: State.user?.name || 'Staff',
+    createdAt: nowTs()
+  });
+  LocalDB.set('leaveRequests', leaves);
+  State.leaveRequests = leaves;
+  
+  toast('✅ Leave request submitted');
+  closeModal();
+  renderLeavesView();
+}
+
+function approveLeaveReq(id){
+  const leaves = LocalDB.get('leaveRequests', []);
+  const idx = leaves.findIndex(l => l._id === id);
+  if(idx === -1) return;
+  leaves[idx].status = 'approved';
+  leaves[idx].approvedBy = State.user?.name;
+  leaves[idx].approvedAt = nowTs();
+  LocalDB.set('leaveRequests', leaves);
+  State.leaveRequests = leaves;
+  toast('✅ Leave approved');
+  vibrate(80);
+  renderLeavesView();
+}
+
+function rejectLeaveReq(id){
+  const leaves = LocalDB.get('leaveRequests', []);
+  const idx = leaves.findIndex(l => l._id === id);
+  if(idx === -1) return;
+  leaves[idx].status = 'rejected';
+  LocalDB.set('leaveRequests', leaves);
+  State.leaveRequests = leaves;
+  toast('❌ Leave rejected', 'warn');
+  renderLeavesView();
+}
+
+function deleteLeaveReq(id){
+  if(!confirm('Delete this leave request?')) return;
+  const leaves = LocalDB.get('leaveRequests', []).filter(l => l._id !== id);
+  LocalDB.set('leaveRequests', leaves);
+  State.leaveRequests = leaves;
+  toast('🗑️ Deleted');
+  renderLeavesView();
+}
+
+/* ============ OVERRIDE showView to handle new views ============ */
+const _origShowView12 = window.showView;
+window.showView = function(name){
+  _origShowView12.call(this, name);
+  
+  if(name === 'exchange') renderExchangeView();
+  if(name === 'leaves') renderLeavesView();
+  
+  // Sync sidebar
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === name);
+  });
+};
+
+/* ============ LOAD DATA ON INIT ============ */
+const _origShowApp12 = window.showApp;
+window.showApp = function(){
+  _origShowApp12.call(this);
+  
+  State.exchanges = LocalDB.get('exchanges', []);
+  State.leaveRequests = LocalDB.get('leaveRequests', []);
+  
+  setTimeout(() => {
+    addSidebarItems();
+    fixDateInputs();
+  }, 300);
+};
+
+/* ============ APPLY ON LOAD ============ */
+setTimeout(() => {
+  State.exchanges = LocalDB.get('exchanges', []);
+  State.leaveRequests = LocalDB.get('leaveRequests', []);
+  addSidebarItems();
+  fixDateInputs();
+  
+  // Re-fix dates whenever wizard opens
+  document.addEventListener('click', () => setTimeout(fixDateInputs, 100), true);
+}, 1500);
+
+console.log('✅ Part 12 loaded — Calendar + Exchange + Leaves');
+</script>
+
+<!-- ============ END OF PART 12 ============ -->
