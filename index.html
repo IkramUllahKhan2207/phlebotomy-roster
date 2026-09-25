@@ -20204,3 +20204,503 @@ console.log('✅ Part 32 loaded — AI learning notification ready');
 </script>
 
 <!-- ============ END OF PART 32 ============ -->
+   
+<!-- ═══════════════════════════════════════════════════════════
+     PART 33 — INLINE KEYBOARD EDITING (Excel-Style)
+     Click cell → type code → auto-save
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== KEYBOARD HINT BAR ===== */
+.kb-hint-bar{
+  display:flex;
+  gap:6px;
+  padding:10px 16px;
+  background:linear-gradient(90deg,rgba(108,92,255,.1),rgba(16,185,129,.05));
+  border-bottom:1px solid rgba(255,255,255,.05);
+  overflow-x:auto;
+  scrollbar-width:none;
+  flex-shrink:0;
+}
+.kb-hint-bar::-webkit-scrollbar{display:none}
+.kb-hint{
+  padding:4px 9px;
+  border-radius:6px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+  color:#a0aec0;
+  font-family:monospace;
+}
+.kb-hint b{
+  color:#22d3ee;
+  font-weight:900;
+}
+
+/* ===== FOCUSED CELL ===== */
+.fe-roster-table td.editable-cell:focus{
+  outline:3px solid #22d3ee !important;
+  outline-offset:-3px;
+  background:rgba(34,211,238,.15) !important;
+  z-index:20;
+  position:relative;
+  box-shadow:0 0 20px rgba(34,211,238,.5);
+  animation:cellFocusPulse .8s ease-out;
+}
+@keyframes cellFocusPulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+
+/* ===== TABINDEX FIX ===== */
+.fe-roster-table td.editable-cell{
+  tabindex:0;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* ===== TOAST FOR CHANGE ===== */
+.fe-cell-toast{
+  position:fixed;
+  top:100px;
+  left:50%;
+  transform:translateX(-50%) translateY(-20px);
+  padding:10px 18px;
+  border-radius:12px;
+  background:linear-gradient(135deg,rgba(16,185,129,.95),rgba(6,182,212,.95));
+  color:#fff;
+  font-family:'Outfit',sans-serif;
+  font-size:14px;
+  font-weight:800;
+  box-shadow:0 8px 32px rgba(16,185,129,.5);
+  z-index:600;
+  opacity:0;
+  transition:all .3s cubic-bezier(.68,-.55,.27,1.55);
+  pointer-events:none;
+}
+.fe-cell-toast.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 33 — INLINE KEYBOARD EDITING
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ KEY TO SHIFT MAP ============ */
+const KEY_TO_SHIFT = {
+  'm': 'M',
+  'e': 'E',
+  'n': 'N',
+  '4': 'E4',
+  '2': 'N12',
+  'd': 'D',
+  'x': 'X',
+  'o': 'OFF',
+  'l': 'EL',
+  'c': 'CPL',
+  'p': 'PH',
+  'k': 'CL'
+};
+
+const SHIFT_TO_KEY = {
+  'M': 'M', 'E': 'E', 'N': 'N', 'N12': '2',
+  'E4': '4', 'D': 'D', 'X': 'X', 'OFF': 'O',
+  'EL': 'L', 'CPL': 'C', 'PH': 'P', 'CL': 'K'
+};
+
+/* ============ FOCUSED CELL TRACKER ============ */
+let FE_FOCUS = { staffId: null, date: null, row: 0, col: 0 };
+
+/* ============ ADD HINT BAR (called from buildFullEditor) ============ */
+function addKeyboardHintBar(){
+  const editor = document.getElementById('fullRosterEditor');
+  if (!editor) return;
+  
+  // Remove existing
+  const existing = editor.querySelector('.kb-hint-bar');
+  if (existing) existing.remove();
+  
+  // Find stats bar
+  const statsBar = editor.querySelector('.fe-stats-bar');
+  if (!statsBar) return;
+  
+  // Create hint bar
+  const hintBar = document.createElement('div');
+  hintBar.className = 'kb-hint-bar';
+  hintBar.innerHTML = `
+    <div class="kb-hint"><b>M</b> Morning</div>
+    <div class="kb-hint"><b>E</b> Evening</div>
+    <div class="kb-hint"><b>N</b> Night</div>
+    <div class="kb-hint"><b>2</b> N12</div>
+    <div class="kb-hint"><b>4</b> E4</div>
+    <div class="kb-hint"><b>D</b> Day</div>
+    <div class="kb-hint"><b>X</b> Standby</div>
+    <div class="kb-hint"><b>O</b> OFF</div>
+    <div class="kb-hint"><b>L</b> EL</div>
+    <div class="kb-hint"><b>C</b> CPL</div>
+    <div class="kb-hint"><b>P</b> PH</div>
+    <div class="kb-hint"><b>K</b> CL</div>
+    <div class="kb-hint"><b>⌫</b> Clear</div>
+    <div class="kb-hint"><b>←↑↓→</b> Move</div>
+  `;
+  
+  // Insert after stats bar
+  statsBar.after(hintBar);
+}
+
+/* ============ MAKE CELLS KEYBOARD-EDITABLE ============ */
+function makeCellsKeyboardEditable(){
+  const table = document.getElementById('feRosterTable');
+  if (!table) return;
+  
+  // Remove onclick for edit modal — replace with focus
+  const cells = table.querySelectorAll('td.editable-cell');
+  cells.forEach(cell => {
+    // Add tabindex
+    cell.setAttribute('tabindex', '0');
+    
+    // Remove old onclick (opens modal) — replace with focus only
+    cell.onclick = null;
+    
+    // New click → focus only
+    cell.addEventListener('click', function(e) {
+      this.focus();
+      updateFocusFromCell(this);
+    });
+    
+    // Add key handler
+    cell.addEventListener('keydown', handleCellKeydown);
+    
+    // Add focus handler
+    cell.addEventListener('focus', function() {
+      updateFocusFromCell(this);
+    });
+  });
+  
+  console.log('⌨️ Keyboard editable cells:', cells.length);
+}
+
+/* ============ UPDATE FOCUS TRACKER ============ */
+function updateFocusFromCell(cell){
+  const staffId = cell.dataset.staff;
+  const date = cell.dataset.date;
+  if (!staffId || !date) return;
+  
+  FE_FOCUS.staffId = staffId;
+  FE_FOCUS.date = date;
+  FE_FOCUS.col = WIZ.dates.indexOf(date);
+  FE_FOCUS.row = WIZ.staffArr.findIndex(s => s._id === staffId);
+}
+
+/* ============ HANDLE KEYDOWN ============ */
+function handleCellKeydown(e){
+  const cell = this;
+  const key = e.key.toLowerCase();
+  
+  // Prevent default for our keys
+  const handledKeys = ['m','e','n','4','2','d','x','o','l','c','p','k',
+                       'arrowup','arrowdown','arrowleft','arrowright',
+                       'enter','escape','backspace','delete','tab'];
+  
+  if (!handledKeys.includes(key)) return;
+  
+  e.preventDefault();
+  
+  // ===== DELETE / BACKSPACE → Clear =====
+  if (key === 'backspace' || key === 'delete') {
+    applyInlineChange(cell, '');
+    return;
+  }
+  
+  // ===== ESCAPE → Blur =====
+  if (key === 'escape') {
+    cell.blur();
+    return;
+  }
+  
+  // ===== ARROW KEYS → Navigate =====
+  if (key.startsWith('arrow')) {
+    navigateCell(key);
+    return;
+  }
+  
+  // ===== ENTER → Next row (same column) =====
+  if (key === 'enter') {
+    navigateCell('arrowdown');
+    return;
+  }
+  
+  // ===== TAB → Next cell =====
+  if (key === 'tab') {
+    e.preventDefault();
+    navigateCell(e.shiftKey ? 'arrowleft' : 'arrowright');
+    return;
+  }
+  
+  // ===== SHIFT KEYS =====
+  if (KEY_TO_SHIFT[key]) {
+    const code = KEY_TO_SHIFT[key];
+    applyInlineChange(cell, code);
+    
+    // Auto-advance to next cell
+    setTimeout(() => navigateCell('arrowright'), 100);
+    return;
+  }
+}
+
+/* ============ APPLY CHANGE ============ */
+function applyInlineChange(cell, code){
+  const staffId = cell.dataset.staff;
+  const date = cell.dataset.date;
+  
+  if (!staffId || !date) return;
+  if (!WIZ.grid[date]) return;
+  
+  const staff = State.staff.find(s => s._id === staffId);
+  if (!staff) return;
+  
+  // Female safety check
+  if (code && RE.isFemale(staff) && RE.maleOnly(code)) {
+    showCellToast('❌ Female: ' + code + ' not allowed', true);
+    vibrate(100);
+    return;
+  }
+  
+  // Get old code
+  const oldCode = WIZ.grid[date][staffId] || '';
+  
+  // If same, skip
+  if (oldCode === code) return;
+  
+  // Apply
+  WIZ.grid[date][staffId] = code;
+  incrementEditCount();
+  recountOff();
+  revalidate();
+  
+  // Update cell visual
+  updateCellVisual(cell, code);
+  
+  // Update stats bar
+  updateLiveStatsBar();
+  
+  // Update summary
+  updateSummaryInEditor();
+  
+  // Show feedback
+  if (code) {
+    showCellToast('✅ ' + (code === 'OFF' ? 'OFF' : code) + ' set');
+  } else {
+    showCellToast('🗑️ Cleared');
+  }
+  
+  vibrate(20);
+}
+
+/* ============ UPDATE CELL VISUAL ============ */
+function updateCellVisual(cell, code){
+  // Remove old class
+  cell.className = 'editable-cell';
+  cell.classList.add(code ? `cell-${code}` : 'cell-X');
+  cell.textContent = code || '—';
+  
+  // Flash effect
+  cell.style.transition = 'background .2s';
+  const origBg = cell.style.background;
+  cell.style.background = 'rgba(34,211,238,.4)';
+  setTimeout(() => {
+    cell.style.background = origBg;
+  }, 200);
+}
+
+/* ============ NAVIGATE CELLS ============ */
+function navigateCell(direction){
+  if (FE_FOCUS.row < 0 || FE_FOCUS.col < 0) return;
+  
+  let newRow = FE_FOCUS.row;
+  let newCol = FE_FOCUS.col;
+  
+  switch(direction){
+    case 'arrowup': newRow = Math.max(0, newRow - 1); break;
+    case 'arrowdown': newRow = Math.min(WIZ.staffArr.length - 1, newRow + 1); break;
+    case 'arrowleft': newCol = Math.max(0, newCol - 1); break;
+    case 'arrowright': newCol = Math.min(WIZ.dates.length - 1, newCol + 1); break;
+  }
+  
+  const table = document.getElementById('feRosterTable');
+  if (!table) return;
+  
+  const rows = table.querySelectorAll('tbody tr');
+  if (newRow >= rows.length) return;
+  
+  const cells = rows[newRow].querySelectorAll('td.editable-cell');
+  if (newCol >= cells.length) return;
+  
+  FE_FOCUS.row = newRow;
+  FE_FOCUS.col = newCol;
+  
+  cells[newCol].focus();
+}
+
+/* ============ UPDATE LIVE STATS BAR ============ */
+function updateLiveStatsBar(){
+  const stats = { M:0, E:0, N:0, N12:0, E4:0, D:0, X:0, OFF:0 };
+  Object.keys(WIZ.grid).forEach(d => {
+    Object.keys(WIZ.grid[d]).forEach(sid => {
+      const c = WIZ.grid[d][sid];
+      if (stats[c] !== undefined) stats[c]++;
+    });
+  });
+  
+  const statEls = document.querySelectorAll('.fe-stat');
+  statEls.forEach(el => {
+    const label = el.textContent.trim().split(' ')[0];
+    const b = el.querySelector('b');
+    if (b && stats[label] !== undefined) {
+      b.textContent = stats[label];
+    }
+  });
+}
+
+/* ============ UPDATE SUMMARY ============ */
+function updateSummaryInEditor(){
+  const summaryTable = document.querySelector('.fe-summary-table tbody');
+  if (!summaryTable) return;
+  
+  const rows = summaryTable.querySelectorAll('tr');
+  WIZ.staffArr.forEach((s, idx) => {
+    if (idx >= rows.length) return;
+    const row = rows[idx];
+    const off = WIZ.offCount[s._id] || 0;
+    const target = WIZ.offTarget || 0;
+    const diff = off - target;
+    
+    const cells = row.querySelectorAll('td');
+    if (cells[1]) cells[1].innerHTML = `<b>${off}</b>`;
+    if (cells[3]) {
+      cells[3].textContent = (diff > 0 ? '+' : '') + diff;
+      cells[3].className = diff === 0 ? 'diff-ok' : 'diff-bad';
+    }
+  });
+  
+  // Update warning box
+  const warnBox = document.querySelector('.fe-warning');
+  if (warnBox) {
+    if ((WIZ.warnings || []).length > 0) {
+      warnBox.className = 'fe-warning error';
+      warnBox.innerHTML = `⚠️ <b>${WIZ.warnings.length} warning(s)</b> — Please fix before saving`;
+    } else {
+      warnBox.className = 'fe-warning success';
+      warnBox.innerHTML = `✅ Ready to save · Type keys to edit`;
+    }
+  }
+  
+  // Update save buttons
+  const hasWarnings = (WIZ.warnings || []).length > 0;
+  document.querySelectorAll('.fe-save-btn, .fe-bottom-bar .btn-success, .fe-bottom-bar .btn-primary').forEach(btn => {
+    if (hasWarnings) {
+      btn.disabled = true;
+      btn.style.opacity = '.4';
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  });
+}
+
+/* ============ SHOW CELL TOAST ============ */
+function showCellToast(msg, isError){
+  let toast = document.getElementById('feCellToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'feCellToast';
+    toast.className = 'fe-cell-toast';
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = msg;
+  toast.style.background = isError 
+    ? 'linear-gradient(135deg,rgba(239,68,68,.95),rgba(220,38,38,.95))'
+    : 'linear-gradient(135deg,rgba(16,185,129,.95),rgba(6,182,212,.95))';
+  toast.classList.add('show');
+  
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 900);
+}
+
+/* ============ OVERRIDE buildFullEditor TO ADD KEYBOARD SUPPORT ============ */
+const _origBuildFullEditor33 = window.buildFullEditor || buildFullEditor;
+window.buildFullEditor = function(){
+  if (typeof _origBuildFullEditor33 === 'function') {
+    _origBuildFullEditor33.call(this);
+  }
+  
+  // Add hint bar
+  setTimeout(() => {
+    addKeyboardHintBar();
+    makeCellsKeyboardEditable();
+  }, 50);
+};
+
+// Also patch local function
+if (typeof buildFullEditor === 'function') {
+  const _localBuild = buildFullEditor;
+  buildFullEditor = function(){
+    _localBuild.call(this);
+    setTimeout(() => {
+      addKeyboardHintBar();
+      makeCellsKeyboardEditable();
+    }, 50);
+  };
+}
+
+/* ============ DISABLE MODAL ON CELL CLICK (fallback) ============ */
+// Override openShiftPickerFull — only allow if user explicitly right-clicks or long-presses
+window.openShiftPickerFull = function(staffId, date){
+  // Redirect to inline focus instead of modal
+  const table = document.getElementById('feRosterTable');
+  if (!table) return;
+  
+  const cell = table.querySelector(`td[data-staff="${staffId}"][data-date="${date}"]`);
+  if (cell) cell.focus();
+};
+
+/* ============ APPLY ON LOAD ============ */
+const _origOpenFullEditor33 = window.openFullRosterEditor;
+window.openFullRosterEditor = function(){
+  if (typeof _origOpenFullEditor33 === 'function') {
+    _origOpenFullEditor33.call(this);
+  }
+  
+  // Re-enable keyboard editing
+  setTimeout(() => {
+    addKeyboardHintBar();
+    makeCellsKeyboardEditable();
+  }, 150);
+};
+
+/* ============ INIT LOG ============ */
+setTimeout(() => {
+  console.log('═══════════════════════════════════════');
+  console.log('✅ Part 33 — Inline Keyboard Editing');
+  console.log('═══════════════════════════════════════');
+  console.log('Keys:');
+  console.log('  M = Morning    E = Evening    N = Night');
+  console.log('  2 = N12        4 = E4         D = Day');
+  console.log('  X = Standby    O = OFF        L = EL');
+  console.log('  C = CPL        P = PH         K = CL');
+  console.log('  ⌫ = Clear      ←↑↓→ = Move     Esc = Blur');
+  console.log('═══════════════════════════════════════');
+}, 2500);
+
+console.log('✅ Part 33 loaded — Inline keyboard editing ready');
+</script>
+
+<!-- ============ END OF PART 33 ============ -->
