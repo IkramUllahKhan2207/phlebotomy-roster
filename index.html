@@ -20704,3 +20704,450 @@ console.log('✅ Part 33 loaded — Inline keyboard editing ready');
 </script>
 
 <!-- ============ END OF PART 33 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 33.1 — ROBUST KEYBOARD + ON-SCREEN KEYBOARD
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ===== ON-SCREEN KEYBOARD BAR ===== */
+.osk-bar{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px 6px max(8px, env(safe-area-inset-bottom));
+  background:rgba(10,14,26,.98);
+  backdrop-filter:blur(20px);
+  border-top:2px solid rgba(139,92,246,.4);
+  display:none;
+  grid-template-columns:repeat(7,1fr);
+  gap:4px;
+  z-index:400;
+  box-shadow:0 -4px 24px rgba(0,0,0,.5);
+}
+.osk-bar.show{display:grid}
+
+.osk-key{
+  padding:10px 4px;
+  border-radius:8px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  color:#e6ecf5;
+  font-family:'Outfit',sans-serif;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .1s;
+  text-align:center;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.osk-key:active{
+  transform:scale(.9);
+  background:rgba(139,92,246,.4);
+}
+.osk-key.m{background:rgba(59,130,246,.2);color:#93c5fd;border-color:rgba(59,130,246,.35)}
+.osk-key.e{background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.35)}
+.osk-key.n{background:rgba(139,92,246,.2);color:#c4b5fd;border-color:rgba(139,92,246,.35)}
+.osk-key.n12{background:rgba(236,72,153,.2);color:#f9a8d4;border-color:rgba(236,72,153,.35)}
+.osk-key.e4{background:rgba(20,184,166,.2);color:#5eead4;border-color:rgba(20,184,166,.35)}
+.osk-key.d{background:rgba(244,63,94,.2);color:#fda4af;border-color:rgba(244,63,94,.35)}
+.osk-key.x{background:rgba(100,116,139,.2);color:#cbd5e1;border-color:rgba(100,116,139,.35)}
+.osk-key.off{background:rgba(0,0,0,.5);color:#94a3b8;border-color:rgba(255,255,255,.15)}
+.osk-key.special{
+  background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(236,72,153,.3));
+  color:#fff;
+  border-color:rgba(139,92,246,.5);
+  grid-column:span 2;
+}
+
+.osk-label{
+  font-size:9px;
+  opacity:.7;
+  display:block;
+  margin-top:1px;
+}
+
+/* ===== SELECTED CELL INDICATOR ===== */
+.fe-roster-table td.editable-cell.selected{
+  outline:3px solid #22d3ee !important;
+  outline-offset:-3px;
+  background:rgba(34,211,238,.15) !important;
+  z-index:20;
+  position:relative;
+  box-shadow:0 0 20px rgba(34,211,238,.5);
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 33.1 — ROBUST KEYBOARD SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ GLOBAL FOCUS TRACKER ============ */
+let SELECTED_CELL = null;
+
+/* ============ SET SELECTED CELL ============ */
+function setSelectedCell(cell){
+  // Remove previous selection
+  if (SELECTED_CELL && SELECTED_CELL !== cell) {
+    SELECTED_CELL.classList.remove('selected');
+  }
+  
+  SELECTED_CELL = cell;
+  
+  if (cell) {
+    cell.classList.add('selected');
+    cell.focus();
+    
+    // Store position
+    const staffId = cell.dataset.staff;
+    const date = cell.dataset.date;
+    FE_FOCUS.staffId = staffId;
+    FE_FOCUS.date = date;
+    FE_FOCUS.col = WIZ.dates.indexOf(date);
+    FE_FOCUS.row = WIZ.staffArr.findIndex(s => s._id === staffId);
+    
+    // Show on-screen keyboard
+    showOnScreenKeyboard();
+    
+    console.log('📍 Selected:', staffId, date, 'Row:', FE_FOCUS.row, 'Col:', FE_FOCUS.col);
+  }
+}
+
+/* ============ DOCUMENT-LEVEL KEYBOARD HANDLER ============ */
+document.addEventListener('keydown', function(e) {
+  // Only handle if editor is open and cell is selected
+  const editor = document.getElementById('fullRosterEditor');
+  if (!editor || !editor.classList.contains('open')) return;
+  if (!SELECTED_CELL) return;
+  
+  const key = e.key.toLowerCase();
+  
+  // Prevent default
+  const handledKeys = ['m','e','n','4','2','d','x','o','l','c','p','k',
+                       'arrowup','arrowdown','arrowleft','arrowright',
+                       'enter','escape','backspace','delete','tab'];
+  
+  if (!handledKeys.includes(key)) return;
+  
+  console.log('⌨️ Key pressed:', key);
+  e.preventDefault();
+  
+  // Handle
+  if (key === 'backspace' || key === 'delete') {
+    applyInlineChange(SELECTED_CELL, '');
+    return;
+  }
+  
+  if (key === 'escape') {
+    SELECTED_CELL.classList.remove('selected');
+    SELECTED_CELL = null;
+    hideOnScreenKeyboard();
+    return;
+  }
+  
+  if (key.startsWith('arrow') || key === 'enter' || key === 'tab') {
+    let dir = key;
+    if (key === 'enter') dir = 'arrowdown';
+    if (key === 'tab') dir = e.shiftKey ? 'arrowleft' : 'arrowright';
+    navigateCell(dir);
+    return;
+  }
+  
+  if (KEY_TO_SHIFT[key]) {
+    applyInlineChange(SELECTED_CELL, KEY_TO_SHIFT[key]);
+    // Auto-advance
+    setTimeout(() => navigateCell('arrowright'), 150);
+    return;
+  }
+}, true);  // ✅ Use capture phase for reliability
+
+/* ============ DOCUMENT-LEVEL CLICK DELEGATION ============ */
+document.addEventListener('click', function(e) {
+  // Check if clicked element or parent is a roster cell
+  let target = e.target;
+  while (target && target !== document) {
+    if (target.classList && target.classList.contains('editable-cell')) {
+      console.log('👆 Cell clicked:', target.dataset.staff, target.dataset.date);
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedCell(target);
+      return;
+    }
+    target = target.parentElement;
+  }
+}, true);  // ✅ Use capture
+
+/* ============ ON-SCREEN KEYBOARD ============ */
+function showOnScreenKeyboard(){
+  let osk = document.getElementById('oskBar');
+  if (!osk) {
+    osk = document.createElement('div');
+    osk.id = 'oskBar';
+    osk.className = 'osk-bar';
+    osk.innerHTML = `
+      <div class="osk-key m" onclick="oskTap('M')">M<span class="osk-label">Morning</span></div>
+      <div class="osk-key e" onclick="oskTap('E')">E<span class="osk-label">Evening</span></div>
+      <div class="osk-key n" onclick="oskTap('N')">N<span class="osk-label">Night</span></div>
+      <div class="osk-key n12" onclick="oskTap('N12')">N12<span class="osk-label">Night-12</span></div>
+      <div class="osk-key e4" onclick="oskTap('E4')">E4<span class="osk-label">Eve-4</span></div>
+      <div class="osk-key d" onclick="oskTap('D')">D<span class="osk-label">Day</span></div>
+      <div class="osk-key x" onclick="oskTap('X')">X<span class="osk-label">Standby</span></div>
+      
+      <div class="osk-key off" onclick="oskTap('OFF')">OFF<span class="osk-label">Off</span></div>
+      <div class="osk-key el" onclick="oskTap('EL')" style="background:rgba(236,72,153,.2);color:#f9a8d4;border-color:rgba(236,72,153,.35)">EL<span class="osk-label">Earn Leave</span></div>
+      <div class="osk-key cpl" onclick="oskTap('CPL')" style="background:rgba(168,85,247,.2);color:#d8b4fe;border-color:rgba(168,85,247,.35)">CPL<span class="osk-label">Comp Lv</span></div>
+      <div class="osk-key ph" onclick="oskTap('PH')" style="background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.35)">PH<span class="osk-label">Pub Hol</span></div>
+      <div class="osk-key cl" onclick="oskTap('CL')" style="background:rgba(20,184,166,.2);color:#5eead4;border-color:rgba(20,184,166,.35)">CL<span class="osk-label">Casual</span></div>
+      <div class="osk-key special" onclick="oskTap('')">🗑️ Clear</div>
+      <div class="osk-key special" onclick="hideOnScreenKeyboard()" style="background:linear-gradient(135deg,rgba(239,68,68,.3),rgba(220,38,38,.3));border-color:rgba(239,68,68,.5)">✕ Close</div>
+    `;
+    document.body.appendChild(osk);
+  }
+  osk.classList.add('show');
+  document.body.classList.add('osk-active');
+  
+  // Add padding to bottom to prevent overlap
+  const editor = document.getElementById('fullRosterEditor');
+  if (editor) {
+    const content = editor.querySelector('.fe-content');
+    if (content) content.style.paddingBottom = '180px';
+  }
+}
+
+function hideOnScreenKeyboard(){
+  const osk = document.getElementById('oskBar');
+  if (osk) osk.classList.remove('show');
+  document.body.classList.remove('osk-active');
+  
+  const editor = document.getElementById('fullRosterEditor');
+  if (editor) {
+    const content = editor.querySelector('.fe-content');
+    if (content) content.style.paddingBottom = '90px';
+  }
+}
+
+/* ============ OSK TAP HANDLER ============ */
+window.oskTap = function(code){
+  if (!SELECTED_CELL) {
+    showCellToast('⚠️ Pehle kisi cell pe click karein', true);
+    return;
+  }
+  
+  applyInlineChange(SELECTED_CELL, code);
+  vibrate(30);
+  
+  // Flash cell
+  SELECTED_CELL.style.transform = 'scale(1.1)';
+  setTimeout(() => {
+    SELECTED_CELL.style.transform = '';
+  }, 150);
+};
+
+/* ============ APPLY CHANGE (Robust) ============ */
+function applyInlineChange(cell, code){
+  if (!cell) return;
+  
+  const staffId = cell.dataset.staff;
+  const date = cell.dataset.date;
+  
+  if (!staffId || !date) {
+    console.warn('Missing staff/date', staffId, date);
+    return;
+  }
+  if (!WIZ.grid[date]) {
+    console.warn('No grid for date', date);
+    return;
+  }
+  
+  const staff = State.staff.find(s => s._id === staffId);
+  if (!staff) return;
+  
+  // Female safety check
+  if (code && RE.isFemale(staff) && RE.maleOnly(code)) {
+    showCellToast('❌ Female: ' + code + ' not allowed', true);
+    vibrate(100);
+    return;
+  }
+  
+  const oldCode = WIZ.grid[date][staffId] || '';
+  if (oldCode === code) return;
+  
+  // Apply
+  WIZ.grid[date][staffId] = code;
+  incrementEditCount();
+  recountOff();
+  revalidate();
+  
+  // Update visuals
+  updateCellVisual(cell, code);
+  updateLiveStatsBar();
+  updateSummaryInEditor();
+  
+  // Feedback
+  if (code) {
+    showCellToast('✅ ' + code + ' set');
+  } else {
+    showCellToast('🗑️ Cleared');
+  }
+  
+  vibrate(20);
+  console.log('✅ Applied:', staffId, date, code);
+}
+
+/* ============ NAVIGATE CELL ============ */
+function navigateCell(direction){
+  if (FE_FOCUS.row < 0 || FE_FOCUS.col < 0) return;
+  
+  let newRow = FE_FOCUS.row;
+  let newCol = FE_FOCUS.col;
+  
+  switch(direction){
+    case 'arrowup': newRow = Math.max(0, newRow - 1); break;
+    case 'arrowdown': newRow = Math.min(WIZ.staffArr.length - 1, newRow + 1); break;
+    case 'arrowleft': newCol = Math.max(0, newCol - 1); break;
+    case 'arrowright': newCol = Math.min(WIZ.dates.length - 1, newCol + 1); break;
+  }
+  
+  const table = document.getElementById('feRosterTable');
+  if (!table) return;
+  
+  const rows = table.querySelectorAll('tbody tr');
+  if (newRow >= rows.length) return;
+  
+  const cells = rows[newRow].querySelectorAll('td.editable-cell');
+  if (newCol >= cells.length) return;
+  
+  FE_FOCUS.row = newRow;
+  FE_FOCUS.col = newCol;
+  
+  setSelectedCell(cells[newCol]);
+  
+  // Scroll into view
+  cells[newCol].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+}
+
+/* ============ PATCH buildFullEditor to RE-ATTACH ============ */
+const _origBFE331 = window.buildFullEditor || buildFullEditor;
+window.buildFullEditor = function(){
+  if (typeof _origBFE331 === 'function') {
+    _origBFE331.call(this);
+  }
+  
+  // Clear selection
+  SELECTED_CELL = null;
+  
+  setTimeout(() => {
+    addKeyboardHintBar();
+    // Mark all cells as editable but DO NOT attach individual handlers
+    const table = document.getElementById('feRosterTable');
+    if (table) {
+      const cells = table.querySelectorAll('td.editable-cell');
+      cells.forEach(c => {
+        c.setAttribute('tabindex', '0');
+        // Remove old onclick — handled by document delegation
+        c.onclick = null;
+      });
+      console.log('✅ Cells prepared for keyboard:', cells.length);
+    }
+  }, 100);
+};
+
+// Also patch local function
+if (typeof buildFullEditor === 'function') {
+  const _localBFE = buildFullEditor;
+  buildFullEditor = function(){
+    _localBFE.call(this);
+    SELECTED_CELL = null;
+    setTimeout(() => {
+      addKeyboardHintBar();
+      const table = document.getElementById('feRosterTable');
+      if (table) {
+        const cells = table.querySelectorAll('td.editable-cell');
+        cells.forEach(c => {
+          c.setAttribute('tabindex', '0');
+          c.onclick = null;
+        });
+      }
+    }, 100);
+  };
+}
+
+/* ============ UPDATE HINT BAR ============ */
+function addKeyboardHintBar(){
+  const editor = document.getElementById('fullRosterEditor');
+  if (!editor) return;
+  
+  const existing = editor.querySelector('.kb-hint-bar');
+  if (existing) existing.remove();
+  
+  const statsBar = editor.querySelector('.fe-stats-bar');
+  if (!statsBar) return;
+  
+  const hintBar = document.createElement('div');
+  hintBar.className = 'kb-hint-bar';
+  hintBar.innerHTML = `
+    <div class="kb-hint">💡 <b>Click cell</b> then type</div>
+    <div class="kb-hint"><b>M</b> Morning</div>
+    <div class="kb-hint"><b>E</b> Evening</div>
+    <div class="kb-hint"><b>N</b> Night</div>
+    <div class="kb-hint"><b>2</b> N12</div>
+    <div class="kb-hint"><b>4</b> E4</div>
+    <div class="kb-hint"><b>D</b> Day</div>
+    <div class="kb-hint"><b>X</b> Standby</div>
+    <div class="kb-hint"><b>O</b> OFF</div>
+    <div class="kb-hint"><b>L</b> EL</div>
+    <div class="kb-hint"><b>C</b> CPL</div>
+    <div class="kb-hint"><b>P</b> PH</div>
+    <div class="kb-hint"><b>K</b> CL</div>
+    <div class="kb-hint"><b>⌫</b> Clear</div>
+  `;
+  
+  statsBar.after(hintBar);
+}
+
+/* ============ DISABLE OLD openShiftPickerFull ============ */
+window.openShiftPickerFull = function(staffId, date){
+  console.log('🚫 Modal blocked — use inline editing');
+  // Find cell and select it
+  const table = document.getElementById('feRosterTable');
+  if (!table) return;
+  const cell = table.querySelector(`td[data-staff="${staffId}"][data-date="${date}"]`);
+  if (cell) setSelectedCell(cell);
+};
+
+/* ============ CLEANUP ON CLOSE ============ */
+const _origCloseFE = window.closeFullRosterEditor;
+window.closeFullRosterEditor = function(){
+  SELECTED_CELL = null;
+  hideOnScreenKeyboard();
+  if (typeof _origCloseFE === 'function') {
+    _origCloseFE.call(this);
+  }
+};
+
+/* ============ INIT LOG ============ */
+setTimeout(() => {
+  console.log('═══════════════════════════════════════');
+  console.log('✅ Part 33.1 — Robust Keyboard System');
+  console.log('═══════════════════════════════════════');
+  console.log('How to use:');
+  console.log('  1. Open Roster Editor');
+  console.log('  2. Tap/click any cell → Cyan outline');
+  console.log('  3. On-screen keyboard appears (mobile)');
+  console.log('  4. Type on physical keyboard OR tap on-screen');
+  console.log('  5. Navigate with arrow keys');
+  console.log('═══════════════════════════════════════');
+  console.log('Debug: Watch console for [👆][⌨️][✅] logs');
+  console.log('═══════════════════════════════════════');
+}, 2500);
+
+console.log('✅ Part 33.1 loaded');
+</script>
+
+<!-- ============ END OF PART 33.1 ============ -->
+   
