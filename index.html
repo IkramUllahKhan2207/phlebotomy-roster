@@ -14940,3 +14940,332 @@ console.log('✅ Part 23 loaded — Strict OFF target enforcement');
 </script>
 
 <!-- ============ END OF PART 23 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 24 — STRICT SUNDAY + N12/N STABILITY FIX
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 24 — FINAL STABILITY ENGINE
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ HOME SHIFT RESOLVER ============ */
+function getHomeShift(staff){
+  if(staff.fixed) return staff.fixed;
+  if(staff.primary) return staff.primary;
+  if(staff.multi && staff.multi.length > 0) return staff.multi[0];
+  return 'M';
+}
+
+/* ============ SHIFT FAMILY ============ */
+function shiftFamily(code){
+  if(code === 'N' || code === 'N12') return 'NIGHT';
+  if(code === 'E' || code === 'E4') return 'EVENING';
+  if(code === 'M' || code === 'D' || code === 'D2') return 'MORNING';
+  return code;
+}
+
+/* ============ STRICT SLOT ASSIGNMENT ============ */
+window.wizFillDailyShifts = function(){
+  wizLog && wizLog('═══════════════════════════════════');
+  wizLog && wizLog('🎯 STRICT shift filling');
+  wizLog && wizLog('═══════════════════════════════════');
+  
+  const target = WIZ.offTarget;
+  const lastShift = {};
+  WIZ.staffArr.forEach(s => { lastShift[s._id] = getHomeShift(s); });
+  
+  let totalRotations = 0;
+  
+  WIZ.dates.forEach((date, dayIdx) => {
+    const isHol = !!WIZ.confirmedHolidays.find(h => h.date === date);
+    const isSun = isSunday(date);
+    const isSat = isSaturday(date);
+    const prevDate = dayIdx > 0 ? WIZ.dates[dayIdx - 1] : null;
+    
+    /* ═══════ STEP 1: N/N12 REST (with OFF cap) ═══════ */
+    if(prevDate){
+      WIZ.staffArr.forEach(s => {
+        if(WIZ.grid[date][s._id] !== '') return;
+        if(WIZ.locked[date][s._id]) return;
+        
+        const prevCode = WIZ.grid[prevDate][s._id];
+        if(prevCode === 'N' || prevCode === 'N12'){
+          const currentOff = WIZ.offCount[s._id] || 0;
+          const atTarget = currentOff >= target;
+          const maxOff = (isSun || isHol) ? 6 : isSat ? 2 : 1;  // Sunday max 6 (7th slot for OFF count check)
+          const curOff = WIZ.staffArr.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+          
+          if(!atTarget && curOff < maxOff){
+            WIZ.grid[date][s._id] = 'OFF';
+            WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+          } else {
+            // No room — put on E4 (if male) or E
+            WIZ.grid[date][s._id] = s.gender === 'Male' ? 'E4' : 'E';
+          }
+        }
+      });
+    }
+    
+    /* ═══════ STEP 2: EXACT PATTERN PER DAY TYPE ═══════ */
+    // Sunday/Holiday: EXACTLY 2M + 2E + 1N = 5 duty
+    // Saturday: 3M + 3E + 1N12 + 1E4 + 1D + 1X
+    // Weekday: 4M + 4E + 1N12 + 1E4 + 1D + 1X
+    
+    let need;
+    if(isSun || isHol){
+      need = { M: 2, E: 2, N: 1 };  // STRICT: exactly 5
+    } else if(isSat){
+      need = { M: 3, E: 3, N12: 1, E4: 1, D: 1, X: 1 };
+    } else {
+      need = { M: 4, E: 4, N12: 1, E4: 1, D: 1, X: 1 };
+    }
+    
+    /* ═══════ STEP 3: Count LOCKED cells that are WORKING shifts ═══════ */
+    const workingFamily = { MORNING: 0, EVENING: 0, NIGHT: 0, OTHER: 0 };
+    const alreadyAssigned = new Set();
+    
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[date][s._id];
+      if(!code) return;
+      alreadyAssigned.add(s._id);
+      
+      // Count family coverage
+      const fam = shiftFamily(code);
+      if(workingFamily[fam] !== undefined){
+        workingFamily[fam]++;
+      }
+    });
+    
+    /* ═══════ STEP 4: Fill MISSING shifts from HIGHEST PRIORITY staff ═══════ */
+    // Priority order: N/N12 first (most critical), then E/E4, then M
+    
+    Object.keys(need).forEach(code => {
+      const required = need[code];
+      const current = WIZ.staffArr.filter(s => WIZ.grid[date][s._id] === code).length;
+      const remaining = Math.max(0, required - current);
+      if(remaining === 0) return;
+      
+      const shift = SHIFTS[code];
+      if(!shift) return;
+      
+      // Eligible staff
+      const candidates = WIZ.staffArr.filter(s => {
+        if(alreadyAssigned.has(s._id)) return false;
+        if(WIZ.locked[date][s._id]) return false;
+        if(shift.gender === 'Male' && s.gender !== 'Male') return false;
+        if(shift.gender === 'Female' && s.gender !== 'Female') return false;
+        return true;
+      });
+      
+      // Sort: exact match > family match > last shift > multi match
+      candidates.sort((a, b) => {
+        const aHome = getHomeShift(a);
+        const bHome = getHomeShift(b);
+        
+        // Exact home match
+        if(aHome === code && bHome !== code) return -1;
+        if(bHome === code && aHome !== code) return 1;
+        
+        // Family match
+        const aFam = shiftFamily(aHome) === shiftFamily(code);
+        const bFam = shiftFamily(bHome) === shiftFamily(code);
+        if(aFam && !bFam) return -1;
+        if(bFam && !aFam) return 1;
+        
+        // Yesterday shift match
+        const aPrev = lastShift[a._id] === code;
+        const bPrev = lastShift[b._id] === code;
+        if(aPrev && !bPrev) return -1;
+        if(bPrev && !aPrev) return 1;
+        
+        // Multi match
+        const aM = (a.multi || []).includes(code);
+        const bM = (b.multi || []).includes(code);
+        if(aM && !bM) return -1;
+        if(bM && !aM) return 1;
+        
+        return 0;
+      });
+      
+      // Assign
+      for(let i = 0; i < remaining && i < candidates.length; i++){
+        WIZ.grid[date][candidates[i]._id] = code;
+        alreadyAssigned.add(candidates[i]._id);
+      }
+    });
+    
+    /* ═══════ STEP 5: STRICT MODE — Sunday/Holiday: remaining → OFF ═══════ */
+    if(isSun || isHol){
+      WIZ.staffArr.forEach(s => {
+        if(WIZ.grid[date][s._id] !== '') return;
+        if(WIZ.locked[date][s._id]) return;
+        
+        // Sunday: force OFF (no X, no extra duty)
+        WIZ.grid[date][s._id] = 'OFF';
+        WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+      });
+    } else {
+      /* ═══════ STEP 6: Weekday/Saturday — Fill D, X ═══════ */
+      const stillFree = WIZ.staffArr.filter(s => 
+        WIZ.grid[date][s._id] === '' && !WIZ.locked[date][s._id]
+      );
+      
+      // Assign D (Day) — prefer female or multi contains D
+      if(stillFree.length > 0 && need.D){
+        const dCount = WIZ.staffArr.filter(s => WIZ.grid[date][s._id] === 'D').length;
+        if(dCount < need.D){
+          const dCandidate = stillFree.find(s => 
+            (s.multi || []).includes('D') || s.gender === 'Female'
+          );
+          if(dCandidate){
+            WIZ.grid[date][dCandidate._id] = 'D';
+            const idx = stillFree.indexOf(dCandidate);
+            if(idx > -1) stillFree.splice(idx, 1);
+          }
+        }
+      }
+      
+      // Assign X
+      if(stillFree.length > 0 && need.X){
+        const xCount = WIZ.staffArr.filter(s => WIZ.grid[date][s._id] === 'X').length;
+        if(xCount < need.X){
+          WIZ.grid[date][stillFree[0]._id] = 'X';
+          stillFree.splice(0, 1);
+        }
+      }
+      
+      // Remaining → X
+      stillFree.forEach(s => {
+        WIZ.grid[date][s._id] = 'X';
+      });
+    }
+    
+    /* ═══════ STEP 7: Coverage log ═══════ */
+    const cov = {};
+    WIZ.staffArr.forEach(s => {
+      const c = WIZ.grid[date][s._id];
+      cov[c] = (cov[c] || 0) + 1;
+    });
+    
+    const dayLabel = isSun ? 'SUN' : isHol ? 'HOL' : isSat ? 'SAT' : 'WK';
+    const totalDuty = (cov.M||0) + (cov.E||0) + (cov.N||0) + (cov.N12||0) + (cov.E4||0) + (cov.D||0);
+    wizLog && wizLog(`  ${date.slice(5)} [${dayLabel}] M:${cov.M||0} E:${cov.E||0} N:${cov.N||0} N12:${cov.N12||0} E4:${cov.E4||0} D:${cov.D||0} X:${cov.X||0} OFF:${cov.OFF||0} → Duty:${totalDuty}`);
+    
+    /* ═══════ STEP 8: Update lastShift ═══════ */
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[date][s._id];
+      if(code && !['OFF','PH','CPL','EL','CL','SL','AL','GH','X'].includes(code)){
+        lastShift[s._id] = code;
+      }
+    });
+    
+    /* ═══════ STEP 9: Count rotations ═══════ */
+    if(prevDate){
+      let dayRotations = 0;
+      WIZ.staffArr.forEach(s => {
+        const today = WIZ.grid[date][s._id];
+        const prev = WIZ.grid[prevDate][s._id];
+        const working = ['M','E','N','N12','E4','D'];
+        if(working.includes(today) && working.includes(prev)){
+          if(shiftFamily(today) !== shiftFamily(prev)){
+            dayRotations++;
+          }
+        }
+      });
+      totalRotations += dayRotations;
+    }
+  });
+  
+  WIZ.rotationCount = totalRotations;
+  wizLog && wizLog(`🎯 Cross-family rotations: ${totalRotations}`);
+  wizLog && wizLog('✅ Done');
+};
+
+/* ============ OVERRIDE autoFixMissingShifts (no-op) ============ */
+window.autoFixMissingShifts = function(){ /* handled by engine */ };
+
+/* ============ OVERRIDE applyN12PriorityRest ============ */
+window.applyN12PriorityRest = function(date){ /* handled by engine */ };
+
+/* ============ STRICT FINAL VALIDATION ============ */
+window.finalizeGeneration = function(){
+  wizLog && wizLog('Validating...');
+  
+  // Recount OFF
+  WIZ.staffArr.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.dates.forEach(d => {
+      if(WIZ.grid[d][s._id] === 'OFF') WIZ.offCount[s._id]++;
+    });
+  });
+  
+  WIZ.warnings = [];
+  const target = WIZ.offTarget;
+  
+  // V1: OFF target
+  WIZ.staffArr.forEach(s => {
+    const diff = (WIZ.offCount[s._id] || 0) - target;
+    if(diff !== 0){
+      const icon = diff > 0 ? '❌' : '⚠️';
+      const word = diff > 0 ? 'OVER' : 'UNDER';
+      WIZ.warnings.push(`${icon} ${s.name}: ${WIZ.offCount[s._id]} OFF — ${word} target ${target}`);
+    }
+  });
+  
+  // V2: Gender
+  WIZ.dates.forEach(d => {
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[d][s._id];
+      if(s.gender === 'Female' && ['N','N12','E4'].includes(code)){
+        WIZ.warnings.push(`❌ ${s.name} on ${fmtDisplay(d)}: Female + ${code}`);
+      }
+    });
+  });
+  
+  // V3: Empty
+  WIZ.dates.forEach(d => {
+    WIZ.staffArr.forEach(s => {
+      if(!WIZ.grid[d][s._id]){
+        WIZ.warnings.push(`⚠️ ${s.name} on ${fmtDisplay(d)}: empty`);
+      }
+    });
+  });
+  
+  // V4: Sunday strict pattern
+  WIZ.dates.forEach(d => {
+    const isHol = WIZ.confirmedHolidays.find(h => h.date === d);
+    if(isSunday(d) || isHol){
+      const duty = WIZ.staffArr.filter(s => {
+        const c = WIZ.grid[d][s._id];
+        return ['M','E','N'].includes(c);
+      }).length;
+      if(duty !== 5){
+        WIZ.warnings.push(`⚠️ ${fmtDisplay(d)} (Sunday/Holiday): ${duty} on duty, should be 5`);
+      }
+    }
+  });
+  
+  // V5: N/N12 rest
+  WIZ.dates.forEach((d, idx) => {
+    if(idx === 0) return;
+    const prev = WIZ.dates[idx - 1];
+    WIZ.staffArr.forEach(s => {
+      const prevCode = WIZ.grid[prev][s._id];
+      const currCode = WIZ.grid[d][s._id];
+      if(['N', 'N12'].includes(prevCode)){
+        if(!['OFF', 'E4', 'E', 'X'].includes(currCode)){
+          WIZ.warnings.push(`⚠️ ${s.name}: N on ${fmtDisplay(prev)}, ${currCode} on ${fmtDisplay(d)}`);
+        }
+      }
+    });
+  });
+  
+  wizLog && wizLog(`📊 Warnings: ${WIZ.warnings.length}`);
+};
+
+console.log('✅ Part 24 loaded — Final stability engine');
+</script>
+
+<!-- ============ END OF PART 24 ============ -->
