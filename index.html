@@ -15777,3 +15777,428 @@ console.log('✅ Part 25 loaded — Perfect OFF distribution');
 </script>
 
 <!-- ============ END OF PART 25 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 26 — SAFETY GUARDS + STRICT OFF CAP + LOW ROTATION
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 26 — FIXES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ FIX 1: SAFE VIBRATE ============ */
+window.vibrate = function(ms){
+  try{
+    if(navigator && navigator.vibrate && document.hasFocus()){
+      navigator.vibrate(ms);
+    }
+  } catch(e){ /* silent */ }
+};
+
+/* ============ FIX 2: SAFE updateStats ============ */
+window.updateStats = function(){
+  try{
+    const staff = State.staff || [];
+    const staffCount = staff.filter(s => s.role !== 'admin' && s.active !== false).length;
+    
+    const rosterEl = document.getElementById('kRoster');
+    const staffEl = document.getElementById('kStaff');
+    
+    if(staffEl) staffEl.textContent = staffCount;
+    
+    if(rosterEl){
+      if(State.roster){
+        const start = State.roster.start?.slice(5) || '—';
+        const end = State.roster.end?.slice(5) || '—';
+        rosterEl.textContent = start + '→' + end;
+      } else {
+        rosterEl.textContent = '—';
+      }
+    }
+  } catch(e){
+    console.warn('updateStats safe-guarded:', e.message);
+  }
+};
+
+/* ============ FIX 3: SAFE renderHomeView ============ */
+const _origRenderHomeView26 = window.renderHomeView;
+window.renderHomeView = function(){
+  try{
+    // Ensure State.staff exists
+    if(!State.staff || !Array.isArray(State.staff)){
+      State.staff = LocalDB.get('staff', []);
+    }
+    if(!State.staff || State.staff.length === 0){
+      State.staff = [DEFAULT_ADMIN];
+    }
+    
+    if(typeof _origRenderHomeView26 === 'function'){
+      _origRenderHomeView26.call(this);
+    }
+  } catch(e){
+    console.warn('renderHomeView safe-guarded:', e.message);
+    // Fallback render
+    const view = document.getElementById('view-home');
+    if(view){
+      view.innerHTML = `
+        <div class="page-head">
+          <div class="page-title">🏠 Dashboard</div>
+          <div class="page-sub">Reloading…</div>
+        </div>
+        <div class="card" style="text-align:center;padding:30px">
+          <div style="font-size:40px;margin-bottom:12px">🔄</div>
+          <p style="color:#a0aec0;font-size:13px">Please refresh the page</p>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="location.reload()">
+            Reload App
+          </button>
+        </div>
+      `;
+    }
+  }
+};
+
+/* ============ FIX 4: STRICT OFF CAP (No extras anywhere) ============ */
+
+/* Track which staff already reached target */
+function hasReachedOffTarget(staffId, target){
+  return (WIZ.offCount[staffId] || 0) >= target;
+}
+
+/* Override daily shift filling — apply strict OFF cap */
+window.wizFillDailyShifts = function(){
+  wizLog && wizLog('═══════════════════════════════════');
+  wizLog && wizLog('🎯 STRICT shift filling');
+  wizLog && wizLog('═══════════════════════════════════');
+  
+  const target = WIZ.offTarget;
+  const lastShift = {};
+  WIZ.staffArr.forEach(s => { lastShift[s._id] = getHomeShift(s); });
+  
+  let totalRotations = 0;
+  const rotationLog = [];
+  
+  WIZ.dates.forEach((date, dayIdx) => {
+    const isHol = !!WIZ.confirmedHolidays.find(h => h.date === date);
+    const isSun = isSunday(date);
+    const isSat = isSaturday(date);
+    const prevDate = dayIdx > 0 ? WIZ.dates[dayIdx - 1] : null;
+    
+    /* ═══════ STEP 1: N/N12 REST (with strict cap) ═══════ */
+    if(prevDate){
+      WIZ.staffArr.forEach(s => {
+        if(WIZ.grid[date][s._id] !== '') return;
+        if(WIZ.locked[date][s._id]) return;
+        
+        const prevCode = WIZ.grid[prevDate][s._id];
+        if(prevCode === 'N' || prevCode === 'N12'){
+          // ✅ STRICT: Only if target not reached
+          const atTarget = hasReachedOffTarget(s._id, target);
+          
+          let maxOff;
+          if(isSun || isHol) maxOff = 7;
+          else if(isSat) maxOff = 2;
+          else maxOff = 1;
+          
+          const curOff = WIZ.staffArr.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+          
+          if(!atTarget && curOff < maxOff){
+            WIZ.grid[date][s._id] = 'OFF';
+            WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+          } else {
+            // ✅ User's rule: put on X duty (not OFF) if no room
+            const shift = s.gender === 'Male' ? 'E4' : 'E';
+            WIZ.grid[date][s._id] = shift;
+          }
+        }
+      });
+    }
+    
+    /* ═══════ STEP 2: Need pattern ═══════ */
+    let need;
+    if(isSun || isHol){
+      need = { M: 2, E: 2, N: 1 };
+    } else if(isSat){
+      need = { M: 3, E: 3, N12: 1, E4: 1, D: 1, X: 1 };
+    } else {
+      need = { M: 4, E: 4, N12: 1, E4: 1, D: 1, X: 1 };
+    }
+    
+    const assigned = new Set();
+    WIZ.staffArr.forEach(s => {
+      if(WIZ.grid[date][s._id] !== '') assigned.add(s._id);
+    });
+    
+    /* ═══════ STEP 3: STRICT SLOT ASSIGNMENT ═══════ */
+    // Order: N, N12, E4, E, D, M (critical first)
+    ['N', 'N12', 'E4', 'E', 'D', 'M'].forEach(code => {
+      if(!need[code]) return;
+      const required = need[code];
+      const current = WIZ.staffArr.filter(s => WIZ.grid[date][s._id] === code).length;
+      const remaining = Math.max(0, required - current);
+      if(remaining === 0) return;
+      
+      const shift = SHIFTS[code];
+      if(!shift) return;
+      
+      const candidates = WIZ.staffArr.filter(s => {
+        if(assigned.has(s._id)) return false;
+        if(WIZ.locked[date][s._id]) return false;
+        if(shift.gender === 'Male' && s.gender !== 'Male') return false;
+        if(shift.gender === 'Female' && s.gender !== 'Female') return false;
+        return true;
+      });
+      
+      // ✅ STRICT SORT — exact home match ONLY first, then family, then last shift
+      candidates.sort((a, b) => {
+        const aHome = getHomeShift(a);
+        const bHome = getHomeShift(b);
+        
+        // 1. EXACT match (highest priority)
+        if(aHome === code && bHome !== code) return -1;
+        if(bHome === code && aHome !== code) return 1;
+        
+        // 2. Multi contains exact
+        const aMExact = (a.multi || []).includes(code);
+        const bMExact = (b.multi || []).includes(code);
+        if(aMExact && !bMExact) return -1;
+        if(bMExact && !aMExact) return 1;
+        
+        // 3. Yesterday's exact shift (stability)
+        const aPrevExact = lastShift[a._id] === code;
+        const bPrevExact = lastShift[b._id] === code;
+        if(aPrevExact && !bPrevExact) return -1;
+        if(bPrevExact && !aPrevExact) return 1;
+        
+        // 4. Family match
+        const aFam = shiftFamily(aHome) === shiftFamily(code);
+        const bFam = shiftFamily(bHome) === shiftFamily(code);
+        if(aFam && !bFam) return -1;
+        if(bFam && !aFam) return 1;
+        
+        return 0;
+      });
+      
+      for(let i = 0; i < remaining && i < candidates.length; i++){
+        WIZ.grid[date][candidates[i]._id] = code;
+        assigned.add(candidates[i]._id);
+      }
+    });
+    
+    /* ═══════ STEP 4: Handle remaining staff ═══════ */
+    WIZ.staffArr.forEach(s => {
+      if(WIZ.grid[date][s._id] !== '') return;
+      if(WIZ.locked[date][s._id]) return;
+      
+      // ✅ STRICT: Sunday/Holiday only
+      if(isSun || isHol){
+        const atTarget = hasReachedOffTarget(s._id, target);
+        if(!atTarget){
+          WIZ.grid[date][s._id] = 'OFF';
+          WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+        } else {
+          // At target — give X (shouldn't happen on Sunday, but safe)
+          WIZ.grid[date][s._id] = 'X';
+        }
+        return;
+      }
+      
+      // ✅ STRICT: Weekday/Saturday — check target
+      const atTarget = hasReachedOffTarget(s._id, target);
+      const maxOff = isSat ? 2 : 1;
+      const curOff = WIZ.staffArr.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+      
+      if(!atTarget && curOff < maxOff){
+        WIZ.grid[date][s._id] = 'OFF';
+        WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+      } else {
+        // ✅ User's rule: X duty instead of extra OFF
+        WIZ.grid[date][s._id] = 'X';
+      }
+    });
+    
+    /* ═══════ STEP 5: Coverage log ═══════ */
+    const cov = {};
+    WIZ.staffArr.forEach(s => {
+      const c = WIZ.grid[date][s._id];
+      cov[c] = (cov[c] || 0) + 1;
+    });
+    
+    const dayLabel = isSun ? 'SUN' : isHol ? 'HOL' : isSat ? 'SAT' : 'WK';
+    wizLog && wizLog(`  ${date.slice(5)} [${dayLabel}] M:${cov.M||0} D:${cov.D||0} X:${cov.X||0} E:${cov.E||0} E4:${cov.E4||0} N12:${cov.N12||0} N:${cov.N||0} OFF:${cov.OFF||0}`);
+    
+    /* ═══════ STEP 6: Update lastShift ═══════ */
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[date][s._id];
+      if(code && !['OFF','PH','CPL','EL','CL','SL','AL','GH','X'].includes(code)){
+        lastShift[s._id] = code;
+      }
+    });
+    
+    /* ═══════ STEP 7: Rotation count ═══════ */
+    if(prevDate){
+      WIZ.staffArr.forEach(s => {
+        const today = WIZ.grid[date][s._id];
+        const prev = WIZ.grid[prevDate][s._id];
+        const working = ['M','E','N','N12','E4','D'];
+        if(working.includes(today) && working.includes(prev)){
+          // Only count if family changed
+          if(shiftFamily(today) !== shiftFamily(prev)){
+            totalRotations++;
+            rotationLog.push(`${s.name}: ${prev}→${today} on ${date.slice(5)}`);
+          }
+        }
+      });
+    }
+  });
+  
+  WIZ.rotationCount = totalRotations;
+  WIZ.rotationLog = rotationLog;
+  
+  wizLog && wizLog(`🎯 Cross-family rotations: ${totalRotations}`);
+  if(rotationLog.length > 0 && rotationLog.length <= 10){
+    rotationLog.forEach(r => wizLog && wizLog(`  🔄 ${r}`));
+  }
+  wizLog && wizLog('✅ Done');
+};
+
+/* ============ FIX 5: Final validation with strict cap ============ */
+window.finalizeGeneration = function(){
+  wizLog && wizLog('Validating...');
+  
+  // Recount
+  WIZ.staffArr.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.dates.forEach(d => {
+      if(WIZ.grid[d][s._id] === 'OFF') WIZ.offCount[s._id]++;
+    });
+  });
+  
+  WIZ.warnings = [];
+  const target = WIZ.offTarget;
+  
+  // V1: OFF target — STRICT
+  WIZ.staffArr.forEach(s => {
+    const diff = (WIZ.offCount[s._id] || 0) - target;
+    if(diff !== 0){
+      const icon = diff > 0 ? '❌' : '⚠️';
+      const word = diff > 0 ? 'OVER' : 'UNDER';
+      WIZ.warnings.push(`${icon} ${s.name}: ${WIZ.offCount[s._id]} OFF — ${word} target ${target}`);
+    }
+  });
+  
+  // V2: Gender
+  WIZ.dates.forEach(d => {
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[d][s._id];
+      if(s.gender === 'Female' && ['N','N12','E4'].includes(code)){
+        WIZ.warnings.push(`❌ ${s.name} on ${fmtDisplay(d)}: Female + ${code}`);
+      }
+    });
+  });
+  
+  // V3: Empty
+  WIZ.dates.forEach(d => {
+    WIZ.staffArr.forEach(s => {
+      if(!WIZ.grid[d][s._id]){
+        WIZ.warnings.push(`⚠️ ${s.name} on ${fmtDisplay(d)}: empty`);
+      }
+    });
+  });
+  
+  // V4: Sunday strict
+  WIZ.dates.forEach(d => {
+    const isHol = WIZ.confirmedHolidays.find(h => h.date === d);
+    if(isSunday(d) || isHol){
+      const duty = WIZ.staffArr.filter(s => {
+        const c = WIZ.grid[d][s._id];
+        return ['M','E','N'].includes(c);
+      }).length;
+      if(duty !== 5){
+        WIZ.warnings.push(`⚠️ ${fmtDisplay(d)}: ${duty} duty, should be 5`);
+      }
+    }
+  });
+  
+  // V5: N/N12 rest
+  WIZ.dates.forEach((d, idx) => {
+    if(idx === 0) return;
+    const prev = WIZ.dates[idx - 1];
+    WIZ.staffArr.forEach(s => {
+      const prevCode = WIZ.grid[prev][s._id];
+      const currCode = WIZ.grid[d][s._id];
+      if(['N', 'N12'].includes(prevCode)){
+        if(!['OFF', 'E4', 'E', 'X'].includes(currCode)){
+          WIZ.warnings.push(`⚠️ ${s.name}: N on ${fmtDisplay(prev)}, ${currCode} on ${fmtDisplay(d)}`);
+        }
+      }
+    });
+  });
+  
+  wizLog && wizLog(`📊 Warnings: ${WIZ.warnings.length}`);
+};
+
+/* ============ FIX 6: initState guard ============ */
+const _origInit26 = window.init || function(){};
+window.init = function(){
+  // Ensure State.staff is always defined
+  if(!State.staff || !Array.isArray(State.staff) || State.staff.length === 0){
+    const saved = LocalDB.get('staff', null);
+    if(saved && Array.isArray(saved) && saved.length > 0){
+      State.staff = saved;
+    } else {
+      State.staff = [DEFAULT_ADMIN, ...JSON.parse(JSON.stringify(DEFAULT_STAFF))];
+      LocalDB.set('staff', State.staff);
+    }
+  }
+  
+  if(typeof _origInit26 === 'function'){
+    try{ _origInit26.call(this); } catch(e){ console.warn('init error:', e); }
+  }
+};
+
+/* ============ FIX 7: Guard on showView ============ */
+const _origShowView26 = window.showView;
+window.showView = function(name){
+  // Ensure State.staff exists before any render
+  if(!State.staff || !Array.isArray(State.staff) || State.staff.length === 0){
+    State.staff = LocalDB.get('staff', [DEFAULT_ADMIN]);
+  }
+  
+  try{
+    if(typeof _origShowView26 === 'function'){
+      _origShowView26.call(this, name);
+    }
+  } catch(e){
+    console.warn(`showView(${name}) error:`, e.message);
+  }
+};
+
+/* ============ APPLY ON LOAD ============ */
+setTimeout(() => {
+  // Bootstrap State.staff if missing
+  if(!State.staff || !Array.isArray(State.staff) || State.staff.length === 0){
+    const saved = LocalDB.get('staff', null);
+    State.staff = (saved && saved.length) ? saved : [DEFAULT_ADMIN, ...JSON.parse(JSON.stringify(DEFAULT_STAFF))];
+    LocalDB.set('staff', State.staff);
+  }
+  
+  console.log('═══════════════════════════════════════');
+  console.log('✅ Part 26 Loaded');
+  console.log('═══════════════════════════════════════');
+  console.log('Fixes:');
+  console.log('  ✅ Safe vibrate (no console errors)');
+  console.log('  ✅ updateStats guard');
+  console.log('  ✅ renderHomeView guard');
+  console.log('  ✅ Strict OFF cap');
+  console.log('  ✅ X duty instead of extra OFF');
+  console.log('  ✅ Improved rotation sorting');
+  console.log('  ✅ State.staff bootstrap');
+  console.log('═══════════════════════════════════════');
+  console.log('Staff loaded:', State.staff.length);
+}, 2500);
+
+console.log('✅ Part 26 loaded — Safety + strict OFF');
+</script>
+
+<!-- ============ END OF PART 26 ============ -->
