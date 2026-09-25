@@ -16202,3 +16202,457 @@ console.log('✅ Part 26 loaded — Safety + strict OFF');
 </script>
 
 <!-- ============ END OF PART 26 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 27 — SLOT OWNER ENGINE (Final Fix)
+     Fixed staff → Fixed slots · Sunday strict · No cross-rotation
+     ═══════════════════════════════════════════════════════════ -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 27 — SLOT OWNER ENGINE
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ HOME SHIFT ============ */
+function getHomeShift(staff){
+  if(staff.fixed) return staff.fixed;
+  if(staff.primary) return staff.primary;
+  if(staff.multi && staff.multi.length > 0) return staff.multi[0];
+  return 'M';
+}
+
+function shiftFamily(code){
+  if(code === 'N' || code === 'N12') return 'NIGHT';
+  if(code === 'E' || code === 'E4') return 'EVENING';
+  if(code === 'M' || code === 'D' || code === 'D2') return 'MORNING';
+  return code;
+}
+
+/* ============ IDENTIFY SLOT OWNERS ============ */
+function identifySlotOwners(){
+  const owners = {
+    N12: null,   // Primary N or N12 male
+    E4: null,    // Primary E4 male
+    N: null,     // For Sunday
+    D: null,     // Day shift
+    X: null      // Standby
+  };
+  
+  const males = WIZ.staffArr.filter(s => s.gender === 'Male');
+  const females = WIZ.staffArr.filter(s => s.gender === 'Female');
+  
+  // N12 owner: primary N/N12
+  const n12Candidates = males.filter(s => {
+    const h = getHomeShift(s);
+    return h === 'N12' || h === 'N';
+  });
+  if(n12Candidates.length > 0){
+    // Prefer exact N12, else N
+    n12Candidates.sort((a, b) => {
+      const aH = getHomeShift(a), bH = getHomeShift(b);
+      if(aH === 'N12' && bH !== 'N12') return -1;
+      if(bH === 'N12' && aH !== 'N12') return 1;
+      return 0;
+    });
+    owners.N12 = n12Candidates[0]._id;
+    owners.N = n12Candidates[0]._id;  // Same person covers Sunday N
+  }
+  
+  // E4 owner: primary E4 (male)
+  const e4Candidates = males.filter(s => getHomeShift(s) === 'E4');
+  if(e4Candidates.length > 0){
+    owners.E4 = e4Candidates[0]._id;
+  } else {
+    // Fallback: male with E4 in multi
+    const fallback = males.find(s => (s.multi || []).includes('E4'));
+    if(fallback) owners.E4 = fallback._id;
+  }
+  
+  // D owner: female or primary D
+  const dCandidates = WIZ.staffArr.filter(s => getHomeShift(s) === 'D');
+  if(dCandidates.length > 0){
+    owners.D = dCandidates[0]._id;
+  } else {
+    // Fallback: any female with D in multi
+    const dFallback = females.find(s => (s.multi || []).includes('D'));
+    if(dFallback) owners.D = dFallback._id;
+  }
+  
+  // X owner: someone with X in multi (typically a flexible staff)
+  const xCandidate = WIZ.staffArr.find(s => (s.multi || []).includes('X'));
+  if(xCandidate) owners.X = xCandidate._id;
+  
+  wizLog && wizLog('🎯 Slot Owners:');
+  wizLog && wizLog(`  N12 → ${WIZ.staffArr.find(s => s._id === owners.N12)?.name || 'none'}`);
+  wizLog && wizLog(`  E4  → ${WIZ.staffArr.find(s => s._id === owners.E4)?.name || 'none'}`);
+  wizLog && wizLog(`  D   → ${WIZ.staffArr.find(s => s._id === owners.D)?.name || 'none'}`);
+  wizLog && wizLog(`  X   → ${WIZ.staffArr.find(s => s._id === owners.X)?.name || 'none'}`);
+  
+  return owners;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN ENGINE — SLOT OWNER BASED
+   ═══════════════════════════════════════════════════════════ */
+window.wizFillDailyShifts = function(){
+  wizLog && wizLog('═══════════════════════════════════');
+  wizLog && wizLog('🎯 SLOT OWNER ENGINE');
+  wizLog && wizLog('═══════════════════════════════════');
+  
+  const owners = identifySlotOwners();
+  const target = WIZ.offTarget;
+  let totalRotations = 0;
+  
+  WIZ.dates.forEach((date, dayIdx) => {
+    const isHol = !!WIZ.confirmedHolidays.find(h => h.date === date);
+    const isSun = isSunday(date);
+    const isSat = isSaturday(date);
+    const prevDate = dayIdx > 0 ? WIZ.dates[dayIdx - 1] : null;
+    
+    /* ══════════════════════════════════════════════
+       SUNDAY / HOLIDAY — STRICT RESET
+       Only 2M + 2E + 1N. Everyone else OFF.
+       ══════════════════════════════════════════════ */
+    if(isSun || isHol){
+      // Clear non-locked cells
+      WIZ.staffArr.forEach(s => {
+        if(!WIZ.locked[date][s._id]) WIZ.grid[date][s._id] = '';
+      });
+      
+      // ==== N slot (1) — Priority: N12 owner ====
+      const nCandidates = WIZ.staffArr.filter(s => {
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        if(s.gender !== 'Male') return false;
+        return true;
+      }).sort((a, b) => {
+        // Prefer N12 owner
+        if(a._id === owners.N12 && b._id !== owners.N12) return -1;
+        if(b._id === owners.N12 && a._id !== owners.N12) return 1;
+        // Then NIGHT family
+        const aFam = shiftFamily(getHomeShift(a)) === 'NIGHT' ? 0 : 1;
+        const bFam = shiftFamily(getHomeShift(b)) === 'NIGHT' ? 0 : 1;
+        return aFam - bFam;
+      });
+      if(nCandidates[0]) WIZ.grid[date][nCandidates[0]._id] = 'N';
+      
+      // ==== E slots (2) — Priority: EVENING family ====
+      const eCandidates = WIZ.staffArr.filter(s => {
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        return true;
+      }).sort((a, b) => {
+        const aFam = shiftFamily(getHomeShift(a)) === 'EVENING' ? 0 : 1;
+        const bFam = shiftFamily(getHomeShift(b)) === 'EVENING' ? 0 : 1;
+        return aFam - bFam;
+      });
+      for(let i = 0; i < 2 && i < eCandidates.length; i++){
+        WIZ.grid[date][eCandidates[i]._id] = 'E';
+      }
+      
+      // ==== M slots (2) — Priority: MORNING family ====
+      const mCandidates = WIZ.staffArr.filter(s => {
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        return true;
+      }).sort((a, b) => {
+        const aFam = shiftFamily(getHomeShift(a)) === 'MORNING' ? 0 : 1;
+        const bFam = shiftFamily(getHomeShift(b)) === 'MORNING' ? 0 : 1;
+        return aFam - bFam;
+      });
+      for(let i = 0; i < 2 && i < mCandidates.length; i++){
+        WIZ.grid[date][mCandidates[i]._id] = 'M';
+      }
+      
+      // ==== Everyone else → OFF ====
+      WIZ.staffArr.forEach(s => {
+        if(WIZ.grid[date][s._id] === '' && !WIZ.locked[date][s._id]){
+          WIZ.grid[date][s._id] = 'OFF';
+          WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+        }
+      });
+      
+      // Log
+      const cov = {};
+      WIZ.staffArr.forEach(s => {
+        const c = WIZ.grid[date][s._id];
+        cov[c] = (cov[c] || 0) + 1;
+      });
+      wizLog && wizLog(`  ${date.slice(5)} [${isSun?'SUN':'HOL'}] M:${cov.M||0} E:${cov.E||0} N:${cov.N||0} OFF:${cov.OFF||0} ✅ STRICT`);
+      return;
+    }
+    
+    /* ══════════════════════════════════════════════
+       SATURDAY / WEEKDAY — Slot Owner Based
+       ══════════════════════════════════════════════ */
+    
+    // Clear non-locked cells (fresh fill)
+    WIZ.staffArr.forEach(s => {
+      if(!WIZ.locked[date][s._id]) WIZ.grid[date][s._id] = '';
+    });
+    
+    /* ==== STEP 1: N/N12 post-rest → OFF if room, else keep ==== */
+    if(prevDate){
+      WIZ.staffArr.forEach(s => {
+        if(WIZ.locked[date][s._id]) return;
+        if(WIZ.grid[date][s._id] !== '') return;
+        
+        const prevCode = WIZ.grid[prevDate][s._id];
+        if(prevCode !== 'N' && prevCode !== 'N12') return;
+        
+        const atTarget = (WIZ.offCount[s._id] || 0) >= target;
+        const maxOff = isSat ? 2 : 1;
+        const curOff = WIZ.staffArr.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+        
+        if(!atTarget && curOff < maxOff){
+          WIZ.grid[date][s._id] = 'OFF';
+          WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+        }
+        // Else: leave empty, will be filled by slot owner logic below
+      });
+    }
+    
+    /* ==== STEP 2: Fill N12 slot — OWNER ONLY ==== */
+    if(owners.N12 && !WIZ.grid[date][owners.N12] && !WIZ.locked[date][owners.N12]){
+      WIZ.grid[date][owners.N12] = 'N12';
+    } else if(owners.N12 && WIZ.grid[date][owners.N12] === 'OFF'){
+      // Owner is OFF — need replacement for N12
+      const replacement = WIZ.staffArr.find(s => {
+        if(s._id === owners.N12) return false;
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        if(s.gender !== 'Male') return false;
+        const h = getHomeShift(s);
+        return h === 'N12' || h === 'N' || (s.multi || []).includes('N12');
+      });
+      if(replacement) WIZ.grid[date][replacement._id] = 'N12';
+    }
+    
+    /* ==== STEP 3: Fill E4 slot — OWNER ONLY ==== */
+    if(owners.E4 && !WIZ.grid[date][owners.E4] && !WIZ.locked[date][owners.E4]){
+      WIZ.grid[date][owners.E4] = 'E4';
+    } else if(owners.E4 && WIZ.grid[date][owners.E4] === 'OFF'){
+      // Owner is OFF — need replacement
+      const replacement = WIZ.staffArr.find(s => {
+        if(s._id === owners.E4) return false;
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        if(s.gender !== 'Male') return false;
+        const h = getHomeShift(s);
+        return h === 'E4' || (s.multi || []).includes('E4');
+      });
+      if(replacement) WIZ.grid[date][replacement._id] = 'E4';
+    }
+    
+    /* ==== STEP 4: Fill D slot — OWNER or Female ==== */
+    let dFilled = WIZ.staffArr.some(s => WIZ.grid[date][s._id] === 'D');
+    if(!dFilled){
+      if(owners.D && !WIZ.grid[date][owners.D] && !WIZ.locked[date][owners.D]){
+        WIZ.grid[date][owners.D] = 'D';
+        dFilled = true;
+      } else {
+        // Fallback: female with D in multi
+        const dFemale = WIZ.staffArr.find(s => {
+          if(WIZ.grid[date][s._id] !== '') return false;
+          if(WIZ.locked[date][s._id]) return false;
+          if(s.gender !== 'Female') return false;
+          return (s.multi || []).includes('D') || getHomeShift(s) === 'D';
+        });
+        if(dFemale){ WIZ.grid[date][dFemale._id] = 'D'; dFilled = true; }
+      }
+    }
+    
+    /* ==== STEP 5: Fill E slots ==== */
+    const eNeeded = isSat ? 3 : 4;
+    let eFilled = WIZ.staffArr.filter(s => WIZ.grid[date][s._id] === 'E').length;
+    while(eFilled < eNeeded){
+      const candidate = WIZ.staffArr.filter(s => {
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        return true;
+      }).sort((a, b) => {
+        const aFam = shiftFamily(getHomeShift(a)) === 'EVENING' ? 0 : 1;
+        const bFam = shiftFamily(getHomeShift(b)) === 'EVENING' ? 0 : 1;
+        if(aFam !== bFam) return aFam - bFam;
+        // Prefer yesterday's E
+        const aPrev = prevDate && WIZ.grid[prevDate][a._id] === 'E' ? 0 : 1;
+        const bPrev = prevDate && WIZ.grid[prevDate][b._id] === 'E' ? 0 : 1;
+        return aPrev - bPrev;
+      })[0];
+      if(!candidate) break;
+      WIZ.grid[date][candidate._id] = 'E';
+      eFilled++;
+    }
+    
+    /* ==== STEP 6: Fill M slots ==== */
+    const mNeeded = isSat ? 3 : 4;
+    let mFilled = WIZ.staffArr.filter(s => WIZ.grid[date][s._id] === 'M').length;
+    while(mFilled < mNeeded){
+      const candidate = WIZ.staffArr.filter(s => {
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        return true;
+      }).sort((a, b) => {
+        const aFam = shiftFamily(getHomeShift(a)) === 'MORNING' ? 0 : 1;
+        const bFam = shiftFamily(getHomeShift(b)) === 'MORNING' ? 0 : 1;
+        if(aFam !== bFam) return aFam - bFam;
+        const aPrev = prevDate && WIZ.grid[prevDate][a._id] === 'M' ? 0 : 1;
+        const bPrev = prevDate && WIZ.grid[prevDate][b._id] === 'M' ? 0 : 1;
+        return aPrev - bPrev;
+      })[0];
+      if(!candidate) break;
+      WIZ.grid[date][candidate._id] = 'M';
+      mFilled++;
+    }
+    
+    /* ==== STEP 7: X slot ==== */
+    let xFilled = WIZ.staffArr.some(s => WIZ.grid[date][s._id] === 'X');
+    if(!xFilled){
+      const xCandidate = WIZ.staffArr.find(s => {
+        if(WIZ.grid[date][s._id] !== '') return false;
+        if(WIZ.locked[date][s._id]) return false;
+        return true;
+      });
+      if(xCandidate) WIZ.grid[date][xCandidate._id] = 'X';
+    }
+    
+    /* ==== STEP 8: Remaining → OFF (if target not reached and room) or X ==== */
+    WIZ.staffArr.forEach(s => {
+      if(WIZ.grid[date][s._id] !== '') return;
+      if(WIZ.locked[date][s._id]) return;
+      
+      const atTarget = (WIZ.offCount[s._id] || 0) >= target;
+      const maxOff = isSat ? 2 : 1;
+      const curOff = WIZ.staffArr.filter(x => WIZ.grid[date][x._id] === 'OFF').length;
+      
+      if(!atTarget && curOff < maxOff){
+        WIZ.grid[date][s._id] = 'OFF';
+        WIZ.offCount[s._id] = (WIZ.offCount[s._id] || 0) + 1;
+      } else {
+        WIZ.grid[date][s._id] = 'X';
+      }
+    });
+    
+    /* ==== Coverage log ==== */
+    const cov = {};
+    WIZ.staffArr.forEach(s => {
+      const c = WIZ.grid[date][s._id];
+      cov[c] = (cov[c] || 0) + 1;
+    });
+    wizLog && wizLog(`  ${date.slice(5)} [${isSat?'SAT':'WK '}] M:${cov.M||0} D:${cov.D||0} X:${cov.X||0} E:${cov.E||0} E4:${cov.E4||0} N12:${cov.N12||0} OFF:${cov.OFF||0}`);
+    
+    /* ==== Rotation count ==== */
+    if(prevDate){
+      WIZ.staffArr.forEach(s => {
+        const today = WIZ.grid[date][s._id];
+        const prev = WIZ.grid[prevDate][s._id];
+        const working = ['M','E','N','N12','E4','D'];
+        if(working.includes(today) && working.includes(prev)){
+          if(shiftFamily(today) !== shiftFamily(prev)){
+            totalRotations++;
+          }
+        }
+      });
+    }
+  });
+  
+  WIZ.rotationCount = totalRotations;
+  wizLog && wizLog(`🎯 Cross-family rotations: ${totalRotations}`);
+  wizLog && wizLog('✅ Done');
+};
+
+/* ═══════════════════════════════════════════════════════════
+   OVERRIDES (no-op)
+   ═══════════════════════════════════════════════════════════ */
+window.autoFixMissingShifts = function(){};
+window.applyN12PriorityRest = function(){};
+
+/* ═══════════════════════════════════════════════════════════
+   VALIDATION
+   ═══════════════════════════════════════════════════════════ */
+window.finalizeGeneration = function(){
+  wizLog && wizLog('Validating...');
+  
+  WIZ.staffArr.forEach(s => {
+    WIZ.offCount[s._id] = 0;
+    WIZ.dates.forEach(d => {
+      if(WIZ.grid[d][s._id] === 'OFF') WIZ.offCount[s._id]++;
+    });
+  });
+  
+  WIZ.warnings = [];
+  const target = WIZ.offTarget;
+  
+  // V1: OFF target
+  WIZ.staffArr.forEach(s => {
+    const diff = (WIZ.offCount[s._id] || 0) - target;
+    if(diff !== 0){
+      const icon = diff > 0 ? '❌' : '⚠️';
+      WIZ.warnings.push(`${icon} ${s.name}: ${WIZ.offCount[s._id]} OFF — ${diff > 0 ? 'OVER' : 'UNDER'} target ${target}`);
+    }
+  });
+  
+  // V2: Gender
+  WIZ.dates.forEach(d => {
+    WIZ.staffArr.forEach(s => {
+      const code = WIZ.grid[d][s._id];
+      if(s.gender === 'Female' && ['N','N12','E4'].includes(code)){
+        WIZ.warnings.push(`❌ ${s.name} on ${fmtDisplay(d)}: Female + ${code}`);
+      }
+    });
+  });
+  
+  // V3: Empty
+  WIZ.dates.forEach(d => {
+    WIZ.staffArr.forEach(s => {
+      if(!WIZ.grid[d][s._id]){
+        WIZ.warnings.push(`⚠️ ${s.name} on ${fmtDisplay(d)}: empty`);
+      }
+    });
+  });
+  
+  // V4: Sunday strict pattern
+  WIZ.dates.forEach(d => {
+    const isHol = WIZ.confirmedHolidays.find(h => h.date === d);
+    if(isSunday(d) || isHol){
+      const duty = WIZ.staffArr.filter(s => {
+        const c = WIZ.grid[d][s._id];
+        return ['M','E','N'].includes(c);
+      }).length;
+      if(duty !== 5){
+        WIZ.warnings.push(`⚠️ ${fmtDisplay(d)} (Sun/Hol): ${duty} duty, should be 5`);
+      }
+      
+      // No E4/N12 on Sunday
+      const badShifts = WIZ.staffArr.filter(s => {
+        const c = WIZ.grid[d][s._id];
+        return ['E4','N12','D'].includes(c);
+      });
+      if(badShifts.length > 0){
+        WIZ.warnings.push(`❌ ${fmtDisplay(d)}: E4/N12/D not allowed on Sunday/Holiday`);
+      }
+    }
+  });
+  
+  wizLog && wizLog(`📊 Warnings: ${WIZ.warnings.length}`);
+};
+
+/* ═══════════════════════════════════════════════════════════
+   APPLY ON LOAD
+   ═══════════════════════════════════════════════════════════ */
+setTimeout(() => {
+  console.log('═══════════════════════════════════════');
+  console.log('🎯 Part 27 — SLOT OWNER ENGINE Active');
+  console.log('═══════════════════════════════════════');
+  console.log('How it works:');
+  console.log('  1. Identify slot owners (Waqas → N12, Asim → E4)');
+  console.log('  2. Sunday: STRICT reset + 2M+2E+1N only');
+  console.log('  3. Weekday: Owner fills their slot every day');
+  console.log('  4. Only rotate if owner is OFF/Leave');
+  console.log('═══════════════════════════════════════');
+}, 2500);
+
+console.log('✅ Part 27 loaded — Slot Owner Engine');
+</script>
+
+<!-- ============ END OF PART 27 ============ -->
