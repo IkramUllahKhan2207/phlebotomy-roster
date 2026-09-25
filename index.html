@@ -6531,3 +6531,1019 @@ console.log('✅ Part 8 loaded — Sidebar + Staff/Settings ready');
 </script>
 
 <!-- ============ END OF PART 8 ============ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     PART 9 — DESIGN OVERHAUL
+     Glassmorphism · KIH Logo · Beautiful Dashboard
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   PART 9 — NEW DESIGN SYSTEM (2026 Premium)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ===== KIH LOGO ===== */
+.kih-logo{
+  display:flex;align-items:center;gap:10px;
+}
+.kih-logo-mark{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,#e11d48 0%,#f43f5e 40%,#06b6d4 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+  font-size:22px;font-weight:900;
+  color:#fff;
+  box-shadow:0 4px 20px rgba(225,29,72,.4);
+  position:relative;overflow:hidden;
+  flex-shrink:0;
+}
+.kih-logo-mark::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);
+  animation:shimmer 3s infinite;
+}
+.kih-logo-text{
+  font-family:var(--font-display);
+  line-height:1;
+}
+.kih-logo-text .brand-top{
+  font-size:14px;font-weight:900;
+  color:#e11d48;
+  letter-spacing:-.3px;
+}
+.kih-logo-text .brand-bottom{
+  font-size:9px;font-weight:600;
+  color:#06b6d4;
+  letter-spacing:.5px;
+  margin-top:2px;
+  text-transform:uppercase;
+}
+
+/* ===== GLASS CARDS (Premium) ===== */
+.glass-card{
+  background:linear-gradient(145deg,
+    rgba(108,92,255,.10) 0%,
+    rgba(26,33,51,.85) 50%,
+    rgba(19,24,38,.95) 100%);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;
+  padding:18px;
+  margin:0 16px 14px;
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  position:relative;overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+.glass-card::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+}
+.glass-card::after{
+  content:'';position:absolute;
+  top:-50%;right:-50%;
+  width:100%;height:100%;
+  background:radial-gradient(circle,rgba(255,46,147,.08),transparent 70%);
+  pointer-events:none;
+}
+
+/* ===== NEW DASHBOARD HEADER ===== */
+.dash-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px;
+  gap:12px;
+}
+.dash-title{
+  font-family:var(--font-display);
+  font-size:22px;
+  font-weight:800;
+  letter-spacing:-.5px;
+  line-height:1.2;
+  display:flex;align-items:center;gap:6px;
+}
+.dash-title .sparkle-gold{
+  font-size:18px;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:pulse 2s infinite;
+}
+.dash-subtitle{
+  font-size:11px;color:var(--fg-3);
+  margin-top:2px;font-weight:500;
+}
+.dash-header-right{
+  display:flex;align-items:center;gap:8px;
+}
+.notif-btn{
+  width:42px;height:42px;border-radius:50%;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;
+  position:relative;
+  transition:all .2s;
+}
+.notif-btn:active{transform:scale(.92);background:var(--glass-3)}
+.user-avatar-img{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#06b6d4,#6c5cff);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+  font-weight:800;font-size:14px;color:#fff;
+  cursor:pointer;
+  border:2px solid rgba(255,255,255,.15);
+  box-shadow:0 4px 14px rgba(6,182,212,.3);
+  transition:all .2s;
+}
+.user-avatar-img:active{transform:scale(.92)}
+
+/* ===== STAT CARDS (Bento Premium) ===== */
+.premium-stats{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  padding:0 16px;
+  margin-bottom:16px;
+}
+.pstat{
+  background:linear-gradient(145deg,
+    rgba(108,92,255,.15) 0%,
+    rgba(19,24,38,.95) 100%);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:14px 10px;
+  text-align:center;
+  position:relative;overflow:hidden;
+  backdrop-filter:blur(20px);
+  transition:all .25s;
+  cursor:pointer;
+}
+.pstat:active{transform:scale(.97)}
+.pstat::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,currentColor,transparent);
+  opacity:.7;
+}
+.pstat.purple::before{color:#8b5cf6}
+.pstat.cyan::before{color:#06b6d4}
+.pstat.green::before{color:#10b981}
+.pstat-icon{
+  font-size:22px;
+  margin-bottom:8px;
+  display:block;
+  filter:drop-shadow(0 2px 8px currentColor);
+}
+.pstat-value{
+  font-family:var(--font-display);
+  font-size:24px;
+  font-weight:800;
+  letter-spacing:-1px;
+  line-height:1;
+  margin-bottom:2px;
+}
+.pstat.purple .pstat-value{color:#a78bfa}
+.pstat.cyan .pstat-value{color:#22d3ee}
+.pstat.green .pstat-value{color:#34d399}
+.pstat-label{
+  font-size:9px;
+  color:var(--fg-3);
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  font-weight:700;
+}
+.pstat-trend{
+  font-size:9px;
+  margin-top:4px;
+  font-weight:600;
+}
+.pstat-trend.up{color:#34d399}
+.pstat-trend.down{color:#f87171}
+
+/* ===== SHIFT COVERAGE (Progress bars) ===== */
+.shift-coverage-title{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:800;
+  color:var(--fg-0);
+  margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.shift-coverage-title small{
+  font-size:10px;color:var(--fg-3);font-weight:500;
+}
+.shift-bar-row{
+  display:flex;align-items:center;
+  gap:12px;
+  margin-bottom:12px;
+}
+.shift-chip{
+  min-width:52px;height:36px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+  font-size:11px;font-weight:800;
+  flex-shrink:0;
+  position:relative;overflow:hidden;
+}
+.shift-chip.m{
+  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
+  color:#fff;
+  box-shadow:0 4px 12px rgba(139,92,246,.4);
+}
+.shift-chip.e{
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#000;
+  box-shadow:0 4px 12px rgba(245,158,11,.4);
+}
+.shift-chip.n{
+  background:linear-gradient(135deg,#3b82f6,#60a5fa);
+  color:#fff;
+  box-shadow:0 4px 12px rgba(59,130,246,.4);
+}
+.shift-info{flex:1;min-width:0}
+.shift-info-top{
+  display:flex;justify-content:space-between;
+  align-items:baseline;
+  font-size:11px;margin-bottom:6px;
+}
+.shift-info-top b{font-weight:700;color:var(--fg-1)}
+.shift-info-top span{color:var(--fg-3);font-size:10px;font-weight:600}
+.shift-progress{
+  height:7px;border-radius:4px;
+  background:rgba(255,255,255,.06);
+  overflow:hidden;
+  position:relative;
+}
+.shift-progress-fill{
+  height:100%;border-radius:4px;
+  transition:width .6s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;
+}
+.shift-progress-fill::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+  animation:shimmer 2s infinite;
+}
+.shift-progress-fill.m{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+.shift-progress-fill.e{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.shift-progress-fill.n{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.shift-count{
+  font-family:var(--font-display);
+  font-size:13px;font-weight:800;
+  color:var(--fg-1);
+  min-width:32px;text-align:right;
+}
+
+/* ===== SHIFT ASSIGNMENT (Segmented) ===== */
+.shift-assign{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px solid var(--border);
+  text-align:center;
+}
+.shift-assign-label{
+  font-size:11px;color:var(--fg-3);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  margin-bottom:10px;
+}
+.shift-assign-btns{
+  display:flex;gap:8px;justify-content:center;
+}
+.shift-assign-btn{
+  padding:9px 24px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--border);
+  color:var(--fg-2);
+  font-family:var(--font-display);
+  font-size:12px;font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+}
+.shift-assign-btn.active{
+  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
+  color:#fff;border-color:transparent;
+  box-shadow:0 4px 14px rgba(139,92,246,.4);
+}
+
+/* ===== SAFETY BANNER ===== */
+.safety-banner-premium{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;
+  background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,182,212,.1));
+  border:1px solid rgba(16,185,129,.3);
+  border-radius:16px;
+  margin:0 16px 14px;
+  font-size:11px;font-weight:600;
+  color:#6ee7b7;
+}
+.safety-banner-premium .icon{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  flex-shrink:0;
+  box-shadow:0 3px 10px rgba(16,185,129,.4);
+}
+
+/* ===== STAFF CARDS (with avatar) ===== */
+.staff-grid-premium{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.staff-card-premium{
+  background:linear-gradient(145deg,
+    rgba(255,255,255,.04) 0%,
+    rgba(19,24,38,.95) 100%);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:12px;
+  position:relative;overflow:hidden;
+  transition:all .25s;
+}
+.staff-card-premium:active{transform:scale(.97)}
+.staff-avatar{
+  width:46px;height:46px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+  font-size:16px;font-weight:800;color:#fff;
+  position:relative;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);
+}
+.staff-avatar.female{
+  background:linear-gradient(135deg,#ec4899,#f472b6);
+}
+.staff-avatar.male{
+  background:linear-gradient(135deg,#06b6d4,#3b82f6);
+}
+.staff-avatar .check-badge{
+  position:absolute;bottom:-2px;right:-2px;
+  width:16px;height:16px;border-radius:50%;
+  background:#10b981;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:#fff;
+  border:2px solid #0a0e1a;
+}
+.staff-card-top{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;
+}
+.staff-name-premium{
+  font-family:var(--font-display);
+  font-size:12px;font-weight:800;
+  color:var(--fg-0);line-height:1.2;
+  margin-bottom:2px;
+}
+.staff-role-premium{
+  font-size:9px;color:var(--fg-3);
+  font-weight:500;
+}
+.staff-tags-premium{
+  display:flex;flex-direction:column;gap:5px;
+}
+.staff-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 9px;
+  border-radius:20px;
+  font-size:9px;font-weight:700;
+  border:1px solid transparent;
+  width:fit-content;
+  max-width:100%;
+}
+.staff-tag.safety{
+  background:rgba(236,72,153,.15);
+  border-color:rgba(236,72,153,.3);
+  color:#f9a8d4;
+}
+.staff-tag.shift{
+  background:rgba(139,92,246,.15);
+  border-color:rgba(139,92,246,.3);
+  color:#c4b5fd;
+}
+.staff-tag.lab{
+  background:rgba(100,116,139,.15);
+  border-color:rgba(100,116,139,.3);
+  color:#cbd5e1;
+}
+
+/* ===== ADD STAFF FORM (matches image) ===== */
+.add-staff-container{
+  padding:16px;
+}
+.upload-photo-box{
+  width:100px;height:100px;
+  border-radius:20px;
+  border:2px dashed rgba(139,92,246,.5);
+  background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(255,46,147,.05));
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;
+  transition:all .25s;
+  margin-bottom:16px;
+}
+.upload-photo-box:active{
+  transform:scale(.95);
+  border-color:rgba(139,92,246,.8);
+  background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(255,46,147,.1));
+}
+.upload-photo-icon{font-size:26px;opacity:.8}
+.upload-photo-text{
+  font-size:9px;
+  color:var(--fg-3);
+  text-align:center;
+  line-height:1.2;
+  font-weight:600;
+}
+.add-staff-form-group{margin-bottom:14px}
+.add-staff-label{
+  font-size:11px;font-weight:700;
+  color:var(--fg-2);
+  margin-bottom:6px;display:block;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.add-staff-input{
+  width:100%;padding:12px 14px;
+  background:rgba(0,0,0,.3);
+  border:1px solid var(--border-2);
+  border-radius:12px;
+  color:var(--fg-1);
+  font-family:var(--font-body);
+  font-size:13px;
+  outline:none;transition:all .2s;
+}
+.add-staff-input:focus{
+  border-color:#8b5cf6;
+  box-shadow:0 0 0 3px rgba(139,92,246,.15);
+}
+.safety-tag-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;
+  padding:10px 14px;
+  background:linear-gradient(135deg,rgba(236,72,153,.1),rgba(255,46,147,.05));
+  border:1px solid rgba(236,72,153,.25);
+  border-radius:12px;
+  margin-bottom:12px;
+}
+.safety-tag-text{
+  font-size:12px;font-weight:700;
+  color:#f9a8d4;
+}
+.safety-tag-x{
+  width:24px;height:24px;
+  border-radius:50%;
+  background:rgba(236,72,153,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#f9a8d4;
+  cursor:pointer;
+}
+.safety-toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;
+  margin-bottom:12px;
+}
+.safety-toggle-label{
+  font-size:12px;font-weight:600;
+  color:var(--fg-2);
+}
+.safety-toggle{
+  width:44px;height:24px;
+  background:rgba(255,255,255,.1);
+  border-radius:12px;
+  position:relative;
+  cursor:pointer;
+  transition:all .3s;
+}
+.safety-toggle.on{
+  background:linear-gradient(135deg,#ec4899,#f472b6);
+}
+.safety-toggle::after{
+  content:'';position:absolute;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;top:3px;left:3px;
+  transition:all .3s;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.safety-toggle.on::after{left:23px}
+
+.shift-segment-row{
+  display:flex;gap:6px;
+  background:rgba(0,0,0,.3);
+  padding:4px;
+  border-radius:14px;
+  margin-bottom:14px;
+}
+.shift-segment-btn{
+  flex:1;
+  padding:10px 12px;
+  border-radius:10px;
+  background:transparent;
+  color:var(--fg-3);
+  font-family:var(--font-display);
+  font-size:11px;font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  border:none;
+}
+.shift-segment-btn.active{
+  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
+  color:#fff;
+  box-shadow:0 4px 14px rgba(139,92,246,.4);
+}
+
+.shift-type-btns{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px;
+  margin-bottom:14px;
+}
+.shift-type-btn{
+  padding:10px 8px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);
+  color:var(--fg-2);
+  font-family:var(--font-display);
+  font-size:11px;font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.shift-type-btn.active.morning{
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#000;border-color:transparent;
+  box-shadow:0 4px 14px rgba(245,158,11,.4);
+}
+.shift-type-btn.active.evening{
+  background:linear-gradient(135deg,#8b5cf6,#a78bfa);
+  color:#fff;border-color:transparent;
+  box-shadow:0 4px 14px rgba(139,92,246,.4);
+}
+.shift-type-btn.active.night{
+  background:linear-gradient(135deg,#3b82f6,#60a5fa);
+  color:#fff;border-color:transparent;
+  box-shadow:0 4px 14px rgba(59,130,246,.4);
+}
+
+.add-staff-submit{
+  width:100%;
+  padding:16px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#8b5cf6,#ec4899);
+  color:#fff;
+  font-family:var(--font-display);
+  font-size:15px;font-weight:800;
+  border:none;
+  cursor:pointer;
+  box-shadow:0 8px 25px rgba(139,92,246,.4);
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  letter-spacing:-.2px;
+}
+.add-staff-submit:active{
+  transform:scale(.97);
+  box-shadow:0 4px 15px rgba(139,92,246,.3);
+}
+
+.notify-banner{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  background:linear-gradient(135deg,rgba(6,182,212,.1),rgba(16,185,129,.08));
+  border:1px solid rgba(6,182,212,.3);
+  border-radius:12px;
+  font-size:11px;
+  color:#67e8f9;
+  font-weight:600;
+  margin-bottom:16px;
+}
+
+/* ===== MOBILE & DESKTOP ===== */
+@media(min-width:768px){
+  .premium-stats{grid-template-columns:repeat(3,1fr)}
+  .staff-grid-premium{grid-template-columns:repeat(3,1fr)}
+  .add-staff-container{max-width:600px;margin:0 auto}
+}
+@media(min-width:1024px){
+  .staff-grid-premium{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PART 9 — DESIGN OVERHAUL JS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ============ NEW HOME VIEW ============ */
+window.renderHomeView = function(){
+  const today = new Date();
+  const weekNum = Math.ceil((today - new Date(today.getFullYear(),0,1)) / 86400000 / 7);
+  const staffCount = State.staff.filter(s => s.role !== 'admin' && s.active !== false).length;
+  const testsCount = (window.TESTS_DB || []).length;
+  const totalStaff = staffCount;
+
+  // Calculate shift coverage
+  let mCount = 0, eCount = 0, nCount = 0;
+  const staffList = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  staffList.forEach(s => {
+    if(['M','D','X'].includes(s.primary)) mCount++;
+    else if(['E','E4'].includes(s.primary)) eCount++;
+    else if(['N','N12'].includes(s.primary)) nCount++;
+  });
+
+  const mPct = Math.min(100, Math.round((mCount / 5) * 100));
+  const ePct = Math.min(100, Math.round((eCount / 5) * 100));
+  const nPct = Math.min(100, Math.round((nCount / 3) * 100));
+
+  const femaleCount = staffList.filter(s => s.gender === 'Female').length;
+  const safetyPct = Math.round((femaleCount / Math.max(1, staffList.length)) * 100);
+
+  const html = `
+    <!-- Dashboard Header -->
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">
+          Dashboard Analytics <span class="sparkle-gold">✦</span>
+        </div>
+        <div class="dash-subtitle">
+          ${today.toLocaleDateString('en-PK', {day:'numeric',month:'short',year:'numeric'})} · Week ${weekNum}
+        </div>
+      </div>
+      <div class="dash-header-right">
+        <div class="notif-btn" onclick="showNotifications()">
+          🔔
+          <div class="badge-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium Stats -->
+    <div class="premium-stats">
+      <div class="pstat purple" onclick="showView('roster')">
+        <span class="pstat-icon">🧪</span>
+        <div class="pstat-value">${State.roster ? '100%' : '—'}</div>
+        <div class="pstat-label">Roster Status</div>
+        <div class="pstat-trend up">${State.roster ? '✅ Ready' : '⏳ Pending'}</div>
+      </div>
+      <div class="pstat cyan" onclick="openStaffListModal()">
+        <span class="pstat-icon">👥</span>
+        <div class="pstat-value">${staffCount}</div>
+        <div class="pstat-label">Active Staff</div>
+        <div class="pstat-trend up">${mCount + eCount + nCount} on shift</div>
+      </div>
+      <div class="pstat green">
+        <span class="pstat-icon">🛡️</span>
+        <div class="pstat-value">${safetyPct}%</div>
+        <div class="pstat-label">Safety Rate</div>
+        <div class="pstat-trend up">Female: 100%</div>
+      </div>
+    </div>
+
+    <!-- Shift Coverage -->
+    <div class="glass-card">
+      <div class="shift-coverage-title">
+        Shift Coverage Today
+        <small>Total: ${staffList.length}</small>
+      </div>
+
+      <div class="shift-bar-row">
+        <div class="shift-chip m">M</div>
+        <div class="shift-info">
+          <div class="shift-info-top">
+            <b>Morning</b>
+            <span>06:00 – 14:00</span>
+          </div>
+          <div class="shift-progress">
+            <div class="shift-progress-fill m" style="width:${mPct}%"></div>
+          </div>
+        </div>
+        <div class="shift-count">${mCount}</div>
+      </div>
+
+      <div class="shift-bar-row">
+        <div class="shift-chip e">E</div>
+        <div class="shift-info">
+          <div class="shift-info-top">
+            <b>Evening</b>
+            <span>14:00 – 22:00</span>
+          </div>
+          <div class="shift-progress">
+            <div class="shift-progress-fill e" style="width:${ePct}%"></div>
+          </div>
+        </div>
+        <div class="shift-count">${eCount}</div>
+      </div>
+
+      <div class="shift-bar-row">
+        <div class="shift-chip n">N</div>
+        <div class="shift-info">
+          <div class="shift-info-top">
+            <b>Night</b>
+            <span>22:00 – 06:00</span>
+          </div>
+          <div class="shift-progress">
+            <div class="shift-progress-fill n" style="width:${nPct}%"></div>
+          </div>
+        </div>
+        <div class="shift-count">${nCount}</div>
+      </div>
+
+      <div class="shift-assign">
+        <div class="shift-assign-label">Shift Assignment</div>
+        <div class="shift-assign-btns">
+          <button class="shift-assign-btn active">Primary</button>
+          <button class="shift-assign-btn" onclick="toast('Secondary view coming soon')">Secondary</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safety Banner -->
+    <div class="safety-banner-premium">
+      <div class="icon">🛡️</div>
+      <div>All female staff have safety compliance active</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="glass-card">
+      <div class="card-title">⚡ Quick Actions</div>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('tests')">
+        🧪 Search Test Protocol
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('difficult')">
+        🩸 Difficult Draw Guide
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('rejection')">
+        ⚠️ Specimen Rejection Guide
+      </button>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:8px" onclick="showView('communication')">
+        💬 Communication Scripts
+      </button>
+      <button class="btn btn-ghost btn-block" onclick="showView('historyForms')">
+        📋 History Forms
+      </button>
+    </div>
+
+    <!-- Recent Announcements -->
+    <div class="glass-card">
+      <div class="card-title">📢 Recent Announcements</div>
+      <div id="homeAnnouncements" class="empty">No announcements yet</div>
+    </div>
+  `;
+
+  const main = $('appContent') || document.querySelector('.app');
+  if(main){
+    const view = document.getElementById('view-home');
+    if(view) view.innerHTML = html;
+  }
+  
+  updateStats();
+};
+
+/* ============ NEW STAFF GRID ============ */
+window.renderStaffList = function(){
+  const el = $('staffList');
+  if(!el) return;
+  
+  const staffOnly = State.staff.filter(s => s.role !== 'admin' && s.active !== false);
+  
+  if(staffOnly.length === 0){
+    el.innerHTML = '<div class="empty">No staff added yet</div>';
+    return;
+  }
+  
+  el.className = 'staff-grid-premium';
+  el.innerHTML = staffOnly.map(s => {
+    const isF = s.gender === 'Female';
+    const initials = s.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
+    const primary = s.primary || s.fixed || 'M';
+    
+    return `
+      <div class="staff-card-premium" onclick="editStaff('${s._id}')">
+        <div class="staff-card-top">
+          <div class="staff-avatar ${isF ? 'female' : 'male'}">
+            ${initials}
+            <div class="check-badge">✓</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="staff-name-premium">${escapeHtml(s.name.split(' ').slice(0,2).join(' '))}</div>
+            <div class="staff-role-premium">Phlebotomist</div>
+          </div>
+        </div>
+        <div class="staff-tags-premium">
+          ${isF ? '<span class="staff-tag safety">🩷 Female Safety</span>' : '<span class="staff-tag shift">🛡️ Safety Certified</span>'}
+          <span class="staff-tag shift">${primary} Roster: Primary</span>
+          <span class="staff-tag lab">Lab A · Phlebotomy</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+/* ============ NEW ADD STAFF MODAL ============ */
+window.openAddStaffModal = function(){
+  openModal('➕ Add New Staff', `
+    <div class="add-staff-container">
+      <!-- Upload Photo -->
+      <div class="upload-photo-box" onclick="document.getElementById('photoInput').click()">
+        <div class="upload-photo-icon">📷</div>
+        <div class="upload-photo-text">Upload<br>Photo</div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewStaffPhoto(event)">
+
+      <!-- Full Name -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Full Name</label>
+        <input type="text" class="add-staff-input" id="nsName" placeholder="e.g. Emma Rodriguez">
+      </div>
+
+      <!-- Role -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Role</label>
+        <select class="add-staff-input" id="nsRole">
+          <option value="staff">Phlebotomist</option>
+          <option value="admin">Supervisor</option>
+        </select>
+      </div>
+
+      <!-- Safety Tag -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Safety Tag</label>
+        <div class="safety-tag-row">
+          <div class="safety-tag-text">🩷 Female Safety · Active</div>
+          <div class="safety-tag-x" onclick="this.parentElement.style.display='none'">✕</div>
+        </div>
+      </div>
+
+      <!-- Enable Female Safety Protocol -->
+      <div class="safety-toggle-row">
+        <div class="safety-toggle-label">Enable Female Safety Protocol</div>
+        <div class="safety-toggle on" id="safetyToggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+
+      <!-- Shift Assignment -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Shift Assignment</label>
+        <div class="shift-segment-row">
+          <button class="shift-segment-btn active" onclick="setShiftSegment(this, 'primary')">Primary Shift</button>
+          <button class="shift-segment-btn" onclick="setShiftSegment(this, 'secondary')">Secondary Shift</button>
+        </div>
+      </div>
+
+      <!-- Shift Type -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Shift Type (M/E/N)</label>
+        <div class="shift-type-btns">
+          <button class="shift-type-btn active morning" onclick="setShiftType(this, 'M')">☀️ Morning</button>
+          <button class="shift-type-btn" onclick="setShiftType(this, 'E')">🌆 Evening</button>
+          <button class="shift-type-btn" onclick="setShiftType(this, 'N')">🌙 Night</button>
+        </div>
+      </div>
+
+      <!-- Gender (Hidden but needed) -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Gender</label>
+        <select class="add-staff-input" id="nsGender">
+          <option value="Male">👨 Male</option>
+          <option value="Female">🩷 Female</option>
+        </select>
+      </div>
+
+      <!-- Department -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Department</label>
+        <select class="add-staff-input" id="nsDept">
+          <option>Lab A · Phlebotomy</option>
+          <option>Lab B · Pediatric</option>
+          <option>Lab C · Emergency</option>
+        </select>
+      </div>
+
+      <!-- Mobile -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Mobile (for login)</label>
+        <input type="tel" class="add-staff-input" id="nsMobile" placeholder="03XXXXXXXXX" maxlength="11">
+      </div>
+
+      <!-- Password -->
+      <div class="add-staff-form-group">
+        <label class="add-staff-label">Password</label>
+        <input type="text" class="add-staff-input" id="nsPassword" value="1234">
+      </div>
+
+      <!-- Notify Banner -->
+      <div class="notify-banner">
+        🔔 Will notify staff via secure app alert
+      </div>
+
+      <!-- Submit -->
+      <button class="add-staff-submit" onclick="saveNewStaff()">
+        ➕ Add Staff to Roster
+      </button>
+    </div>
+  `, null, true);
+};
+
+/* ============ HELPER FUNCTIONS ============ */
+window.setShiftSegment = function(btn, type){
+  btn.parentElement.querySelectorAll('.shift-segment-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.setShiftType = function(btn, code){
+  btn.parentElement.querySelectorAll('.shift-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  btn.dataset.code = code;
+  // Set the hidden primary select value
+  const primarySel = document.getElementById('nsPrimary');
+  if(primarySel) primarySel.value = code;
+};
+
+window.previewStaffPhoto = function(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const box = document.querySelector('.upload-photo-box');
+    if(box){
+      box.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:18px">`;
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+/* ============ OVERRIDE OPENMODAL TO SUPPORT WIDE ============ */
+const _originalOpenModal = window.openModal;
+window.openModal = function(title, body, buttons, wide){
+  const modal = document.querySelector('.modal');
+  if(modal){
+    if(wide) modal.classList.add('modal-wide');
+    else modal.classList.remove('modal-wide');
+  }
+  _originalOpenModal.call(this, title, body, buttons);
+};
+
+/* ============ ADD WIDE MODAL CSS ============ */
+const style = document.createElement('style');
+style.textContent = `
+  .modal.modal-wide{max-width:640px}
+  .modal.modal-wide .modal-body{padding:0}
+`;
+document.head.appendChild(style);
+
+/* ============ LOGO INTEGRATION ============ */
+function integrateLogo(){
+  const headerLeft = document.querySelector('.header-left');
+  if(!headerLeft || headerLeft.querySelector('.kih-logo')) return;
+  
+  // Replace existing logo
+  const existingLogo = headerLeft.querySelector('.logo');
+  const existingTitle = headerLeft.querySelector('.header-title');
+  
+  if(existingLogo) existingLogo.remove();
+  if(existingTitle) existingTitle.remove();
+  
+  const logoHtml = `
+    <div class="kih-logo">
+      <div class="kih-logo-mark">K</div>
+      <div class="kih-logo-text">
+        <div class="brand-top">KULSUM</div>
+        <div class="brand-bottom">Phlebotomy · KIH</div>
+      </div>
+    </div>
+  `;
+  
+  headerLeft.insertAdjacentHTML('afterbegin', logoHtml);
+}
+
+/* ============ APPLY ON LOAD ============ */
+const _originalShowApp2 = window.showApp;
+window.showApp = function(){
+  _originalShowApp2.call(this);
+  setTimeout(() => {
+    integrateLogo();
+    renderHomeView();
+    console.log('🎨 Part 9 — Design applied');
+  }, 200);
+};
+
+// Apply if already loaded
+setTimeout(() => {
+  if($('appHeader')?.style.display !== 'none'){
+    integrateLogo();
+    renderHomeView();
+    console.log('🎨 Part 9 — Design applied (late)');
+  }
+}, 2500);
+
+console.log('✅ Part 9 loaded — Design overhaul ready');
+</script>
+
+<!-- ============ END OF PART 9 ============ -->
