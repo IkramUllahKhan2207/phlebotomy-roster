@@ -1,423 +1,221 @@
-<!DOCTYPE html>
-<html lang="ur" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KIH Phlebotomy Roster Engine Pro</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .grid-container {
-            display: grid;
-            grid-template-columns: 180px repeat(var(--days-count, 30), minmax(42px, 1fr)) 120px;
+<!-- ═══════════════════════════════════════════════════════════
+     KIH PHLEBOTOMY PRO — 2026 COMPLETE JAVASCRIPT ENGINE
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+/* ===== GLOBAL STATE ===== */
+const DEFAULT_STAFF = [
+    { id: 1, name: 'Waqas Aziz', gender: 'M', isNightPrimary: true },
+    { id: 2, name: 'Muhammad Zakarya', gender: 'M', isNightPrimary: true },
+    { id: 3, name: 'Bilal', gender: 'M', isNightPrimary: false },
+    { id: 4, name: 'Aamir', gender: 'M', isNightPrimary: false },
+    { id: 5, name: 'Sher Ali', gender: 'M', isNightPrimary: false },
+    { id: 6, name: 'Asad', gender: 'M', isNightPrimary: false },
+    { id: 7, name: 'Yasir', gender: 'M', isNightPrimary: false },
+    { id: 8, name: 'Daniyal', gender: 'M', isNightPrimary: false },
+    { id: 9, name: 'Haseeb', gender: 'M', isNightPrimary: false },
+    { id: 10, name: 'Aqsa', gender: 'F', isNightPrimary: false },
+    { id: 11, name: 'Naila', gender: 'F', isNightPrimary: false },
+    { id: 12, name: 'Samia', gender: 'F', isNightPrimary: false }
+];
+
+let appState = {
+    user: null,
+    staff: [],
+    roster: {},
+    cycleDates: [],
+    startDate: '2026-09-26',
+    endDate: '2026-10-25'
+};
+
+/* ===== INITIALIZATION & SESSION PERSISTENCE ===== */
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthSession();
+    initCycleDates();
+    loadStaffData();
+});
+
+function checkAuthSession() {
+    const savedSession = localStorage.getItem('kih_session');
+    if (savedSession) {
+        const session = JSON.parse(savedSession);
+        const now = new Date().getTime();
+        // Check 30-day expiry
+        if (now - session.timestamp < 30 * 24 * 60 * 60 * 1000) {
+            appState.user = session.user;
+            hideLoginScreen();
+            return;
         }
-        .sticky-col {
-            position: sticky;
-            left: 0;
-            background-color: #1e293b;
-            z-index: 10;
-        }
-        .sticky-col-right {
-            position: sticky;
-            right: 0;
-            background-color: #1e293b;
-            z-index: 10;
-        }
-        /* Color Badges for Shifts */
-        .shift-M { background-color: #0284c7; color: white; } /* Morning: Blue */
-        .shift-D { background-color: #0d9488; color: white; } /* Day: Teal */
-        .shift-X { background-color: #d97706; color: white; } /* Standby: Amber */
-        .shift-E { background-color: #7c3aed; color: white; } /* Evening: Purple */
-        .shift-E4 { background-color: #c026d3; color: white; } /* Evening 4: Pink */
-        .shift-N12 { background-color: #4338ca; color: white; } /* Night 12: Indigo */
-        .shift-N { background-color: #1e1b4b; color: #a5f3fc; border: 1px solid #38bdf8; } /* Night: Dark */
-        .shift-OFF { background-color: #15803d; color: white; } /* OFF: Green */
-        .shift-CPL { background-color: #ea580c; color: white; } /* CPL: Orange */
-        .shift-EL, .shift-CL, .shift-SL { background-color: #dc2626; color: white; } /* Leaves: Red */
-    </style>
-</head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+    }
+    showLoginScreen();
+}
 
-    <!-- Top Navigation Header -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <div class="flex items-center space-x-3">
-            <div class="bg-rose-600 text-white font-bold text-xl px-3 py-1 rounded-lg">KIH</div>
-            <div>
-                <h1 class="text-lg font-bold leading-tight">Phlebotomy Roster & Staff Management</h1>
-                <p class="text-xs text-slate-400">Kulsum International Hospital, Islamabad</p>
-            </div>
-        </div>
-        <div class="flex space-x-2">
-            <button onclick="generateRoster()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Generate Roster
-            </button>
-            <button onclick="validateRoster()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition">
-                <i class="fa-solid fa-circle-check"></i> Validate Rules
-            </button>
-            <button onclick="exportToCSV()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-3 py-2 rounded-lg transition">
-                <i class="fa-solid fa-download"></i> Export
-            </button>
-        </div>
-    </header>
+function doLogin() {
+    const mobile = document.getElementById('loginMobile').value;
+    const pass = document.getElementById('loginPassword').value;
+    const keepSigned = document.getElementById('keepSignedIn').checked;
 
-    <!-- Main Content Layout -->
-    <div class="flex-1 flex overflow-hidden">
+    if (!mobile || !pass) {
+        showToast('Please enter mobile number and password', 'error');
+        return;
+    }
 
-        <!-- Sidebar Column -->
-        <aside class="w-64 bg-slate-800 border-r border-slate-700 p-4 flex flex-col justify-between shrink-0">
-            <div class="space-y-6">
-                <!-- Controls & Period -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Roster Period</label>
-                    <div class="space-y-2">
-                        <input type="date" id="startDate" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" value="2026-09-26" onchange="initApp()">
-                        <input type="date" id="endDate" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" value="2026-10-25" onchange="initApp()">
-                    </div>
-                </div>
+    const user = { name: 'Admin User', role: 'Manager', mobile: mobile };
+    appState.user = user;
 
-                <!-- Stats Panel -->
-                <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 space-y-2">
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">Total Days:</span>
-                        <span id="statDays" class="font-bold text-white">30</span>
-                    </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">Total Sundays:</span>
-                        <span id="statSundays" class="font-bold text-emerald-400">5</span>
-                    </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">Target OFF / Staff:</span>
-                        <span id="statTargetOff" class="font-bold text-emerald-400">5</span>
-                    </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-400">Total Staff:</span>
-                        <span class="font-bold text-white">12 (9M / 3F)</span>
-                    </div>
-                </div>
+    if (keepSigned) {
+        localStorage.setItem('kih_session', JSON.stringify({
+            user: user,
+            timestamp: new Date().getTime()
+        }));
+    }
 
-                <!-- Shift Legend -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Shift Legend</label>
-                    <div class="grid grid-cols-2 gap-1 text-[10px]">
-                        <span class="shift-M p-1 rounded text-center">M: 07-15</span>
-                        <span class="shift-E p-1 rounded text-center">E: 15-23</span>
-                        <span class="shift-D p-1 rounded text-center">D: 09-17</span>
-                        <span class="shift-X p-1 rounded text-center">X: 11-19</span>
-                        <span class="shift-E4 p-1 rounded text-center">E4: 16-00</span>
-                        <span class="shift-N12 p-1 rounded text-center">N12: 00-08</span>
-                        <span class="shift-N p-1 rounded text-center">N: 23-07</span>
-                        <span class="shift-OFF p-1 rounded text-center">OFF: Rest</span>
-                    </div>
-                </div>
-            </div>
+    hideLoginScreen();
+    showToast('Signed in successfully!');
+}
 
-            <!-- Validation Status Box -->
-            <div id="validationBox" class="p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs space-y-1">
-                <div class="font-semibold text-slate-300 flex items-center gap-2">
-                    <span id="valIcon" class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span id="valStatus">Ready</span>
-                </div>
-                <p id="valMsg" class="text-[11px] text-slate-400">Click Auto Generate to create a conflict-free roster.</p>
-            </div>
-        </aside>
+function doGuestLogin() {
+    appState.user = { name: 'Guest User', role: 'Viewer' };
+    hideLoginScreen();
+    showToast('Logged in as Guest');
+}
 
-        <!-- Main Roster Area -->
-        <main class="flex-1 overflow-auto p-4 bg-slate-950">
-            <div id="rosterWrapper" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                <!-- Dynamic Grid Rendered Here -->
-            </div>
-        </main>
-    </div>
+function showLoginScreen() {
+    document.getElementById('loginScreen').style.display = 'flex';
+}
 
-    <!-- Application Script Engine -->
-    <script>
-        // 1. BASE STAFF DATA (12 Members: 9 Male, 3 Female)
-        const staffList = [
-            { id: 1, name: 'Waqas Aziz', gender: 'M', role: 'Night Primary' },
-            { id: 2, name: 'Muhammad Zakarya', gender: 'M', role: 'Night Primary' },
-            { id: 3, name: 'Bilal', gender: 'M', role: 'General' },
-            { id: 4, name: 'Aamir', gender: 'M', role: 'General' },
-            { id: 5, name: 'Sher Ali', gender: 'M', role: 'General' },
-            { id: 6, name: 'Asad', gender: 'M', role: 'General' },
-            { id: 7, name: 'Yasir', gender: 'M', role: 'General' },
-            { id: 8, name: 'Daniyal', gender: 'M', role: 'General' },
-            { id: 9, name: 'Haseeb', gender: 'M', role: 'General' },
-            { id: 10, name: 'Aqsa', gender: 'F', role: 'General' },
-            { id: 11, name: 'Naila', gender: 'F', role: 'General' },
-            { id: 12, name: 'Samia', gender: 'F', role: 'General' }
-        ];
+function hideLoginScreen() {
+    document.getElementById('loginScreen').style.display = 'none';
+}
 
-        let dates = [];
-        let rosterGrid = {}; // Structure: { staffId: { 'YYYY-MM-DD': 'SHIFT' } }
+/* ===== DATE CALCULATIONS ===== */
+function initCycleDates() {
+    const start = new Date(appState.startDate);
+    const end = new Date(appState.endDate);
+    appState.cycleDates = [];
 
-        // Initialize App
-        function initApp() {
-            calculateDates();
-            buildEmptyGrid();
-            renderGrid();
-        }
+    let current = new Date(start);
+    while (current <= end) {
+        const dateStr = current.toISOString().split('T')[0];
+        const dayOfWeek = current.getDay();
+        appState.cycleDates.push({
+            dateStr: dateStr,
+            dayNum: current.getDate(),
+            dayOfWeek: dayOfWeek,
+            isSunday: dayOfWeek === 0,
+            isSaturday: dayOfWeek === 6
+        });
+        current.setDate(current.getDate() + 1);
+    }
+}
 
-        // Calculate Date Range & Sundays
-        function calculateDates() {
-            const start = new Date(document.getElementById('startDate').value);
-            const end = new Date(document.getElementById('endDate').value);
-            dates = [];
-            let sundayCount = 0;
+function loadStaffData() {
+    const savedStaff = localStorage.getItem('kih_staff');
+    appState.staff = savedStaff ? JSON.parse(savedStaff) : DEFAULT_STAFF;
+}
 
-            let current = new Date(start);
-            while (current <= end) {
-                const dateStr = current.toISOString().split('T')[0];
-                const dayOfWeek = current.getDay(); // 0 = Sunday
-                if (dayOfWeek === 0) sundayCount++;
-                
-                dates.push({
-                    dateStr: dateStr,
-                    dayNum: current.getDate(),
-                    dayOfWeek: dayOfWeek,
-                    isSunday: dayOfWeek === 0,
-                    isSaturday: dayOfWeek === 6
-                });
-                current.setDate(current.getDate() + 1);
-            }
+/* ===== ROSTER AUTO GENERATION ENGINE ===== */
+function autoGenerateRosterEngine() {
+    initCycleDates();
+    appState.roster = {};
+    
+    appState.staff.forEach(s => { appState.roster[s.id] = {}; });
 
-            document.getElementById('statDays').innerText = dates.length;
-            document.getElementById('statSundays').innerText = sundayCount;
-            document.getElementById('statTargetOff').innerText = sundayCount;
-            
-            document.documentElement.style.setProperty('--days-count', dates.length);
-        }
+    appState.cycleDates.forEach((d, dateIdx) => {
+        const prevDateStr = dateIdx > 0 ? appState.cycleDates[dateIdx - 1].dateStr : null;
 
-        function buildEmptyGrid() {
-            rosterGrid = {};
-            staffList.forEach(s => {
-                rosterGrid[s.id] = {};
-                dates.forEach(d => {
-                    rosterGrid[s.id][d.dateStr] = '';
-                });
-            });
-        }
+        if (d.isSunday) {
+            // STRICT SUNDAY RULE: 2M + 2E + 1N + 7 OFF
+            let reqM = 2, reqE = 2, reqN = 1;
 
-        // AUTO-ROSTER GENERATION ALGORITHM (All Rules Enforced)
-        function generateRoster() {
-            calculateDates();
-            buildEmptyGrid();
-            const targetOff = parseInt(document.getElementById('statTargetOff').innerText);
-
-            // Step 1: Assign Sundays (Strict Pattern: 2M, 2E, 1N, 7 OFF)
-            dates.forEach(d => {
-                if (d.isSunday) {
-                    let assignedM = 0, assignedE = 0, assignedN = 0;
-                    
-                    staffList.forEach(s => {
-                        // Female Restriction Check
-                        if (s.gender === 'F') {
-                            if (assignedM < 2) { rosterGrid[s.id][d.dateStr] = 'M'; assignedM++; }
-                            else if (assignedE < 2) { rosterGrid[s.id][d.dateStr] = 'E'; assignedE++; }
-                            else { rosterGrid[s.id][d.dateStr] = 'OFF'; }
-                        } else {
-                            if (assignedN < 1 && (s.id === 1 || s.id === 2)) {
-                                rosterGrid[s.id][d.dateStr] = 'N'; 
-                                assignedN++;
-                            } else if (assignedM < 2) {
-                                rosterGrid[s.id][d.dateStr] = 'M';
-                                assignedM++;
-                            } else if (assignedE < 2) {
-                                rosterGrid[s.id][d.dateStr] = 'E';
-                                assignedE++;
-                            } else {
-                                rosterGrid[s.id][d.dateStr] = 'OFF';
-                            }
-                        }
-                    });
+            // Females assigned Day shifts on Sunday
+            appState.staff.forEach(s => {
+                if (s.gender === 'F') {
+                    if (reqM > 0) { appState.roster[s.id][d.dateStr] = 'M'; reqM--; }
+                    else if (reqE > 0) { appState.roster[s.id][d.dateStr] = 'E'; reqE--; }
+                    else { appState.roster[s.id][d.dateStr] = 'OFF'; }
                 }
             });
 
-            // Step 2: Assign Weekdays & Saturdays with Constraints
-            dates.forEach((d, dateIdx) => {
-                if (d.isSunday) return;
-
-                const prevDateStr = dateIdx > 0 ? dates[dateIdx - 1].dateStr : null;
-
-                // Daily Quota Tracking
-                let reqM = d.isSaturday ? 3 : 4;
-                let reqE = d.isSaturday ? 3 : 4;
-                let reqE4 = 1, reqN12 = 1, reqD = 1, reqX = 1;
-
-                staffList.forEach(s => {
-                    // Check Night Rest Rule from Previous Day
-                    if (prevDateStr && (rosterGrid[s.id][prevDateStr] === 'N' || rosterGrid[s.id][prevDateStr] === 'N12')) {
-                        rosterGrid[s.id][d.dateStr] = 'OFF';
+            // Males assigned remaining duties with rest restriction check
+            appState.staff.forEach(s => {
+                if (s.gender === 'M') {
+                    if (prevDateStr && (appState.roster[s.id][prevDateStr] === 'N' || appState.roster[s.id][prevDateStr] === 'N12')) {
+                        appState.roster[s.id][d.dateStr] = 'OFF';
                         return;
                     }
 
-                    // FEMALE SAFETY ENFORCEMENT (Strict: No N, N12, E4)
-                    if (s.gender === 'F') {
-                        if (reqM > 0) { rosterGrid[s.id][d.dateStr] = 'M'; reqM--; }
-                        else if (reqE > 0) { rosterGrid[s.id][d.dateStr] = 'E'; reqE--; }
-                        else if (reqD > 0) { rosterGrid[s.id][d.dateStr] = 'D'; reqD--; }
-                        else if (reqX > 0) { rosterGrid[s.id][d.dateStr] = 'X'; reqX--; }
-                        else { rosterGrid[s.id][d.dateStr] = 'OFF'; }
+                    if (reqN > 0 && s.isNightPrimary) {
+                        appState.roster[s.id][d.dateStr] = 'N'; reqN--;
+                    } else if (reqM > 0) {
+                        appState.roster[s.id][d.dateStr] = 'M'; reqM--;
+                    } else if (reqE > 0) {
+                        appState.roster[s.id][d.dateStr] = 'E'; reqE--;
                     } else {
-                        // Males Shift Distribution
-                        if (reqN12 > 0 && (s.id === 1 || s.id === 2)) {
-                            rosterGrid[s.id][d.dateStr] = 'N12'; reqN12--;
-                        } else if (reqE4 > 0) {
-                            rosterGrid[s.id][d.dateStr] = 'E4'; reqE4--;
-                        } else if (reqM > 0) {
-                            rosterGrid[s.id][d.dateStr] = 'M'; reqM--;
-                        } else if (reqE > 0) {
-                            rosterGrid[s.id][d.dateStr] = 'E'; reqE--;
-                        } else if (reqD > 0) {
-                            rosterGrid[s.id][d.dateStr] = 'D'; reqD--;
-                        } else if (reqX > 0) {
-                            rosterGrid[s.id][d.dateStr] = 'X'; reqX--;
-                        } else {
-                            rosterGrid[s.id][d.dateStr] = 'OFF';
-                        }
+                        appState.roster[s.id][d.dateStr] = 'OFF';
                     }
-                });
-            });
-
-            renderGrid();
-            validateRoster();
-        }
-
-        // Render Roster Grid Table
-        function renderGrid() {
-            const wrapper = document.getElementById('rosterWrapper');
-            const targetOff = parseInt(document.getElementById('statTargetOff').innerText);
-
-            let html = `<div class="grid-container border-b border-slate-800 text-xs font-semibold bg-slate-800 text-slate-300">`;
-            
-            // Fixed Staff Name Header
-            html += `<div class="p-3 sticky-col border-r border-slate-700 flex items-center">Staff Member</div>`;
-
-            // Date Headers
-            dates.forEach(d => {
-                const dayClass = d.isSunday ? 'bg-rose-950 text-rose-300' : (d.isSaturday ? 'bg-slate-700' : '');
-                html += `<div class="p-2 text-center border-r border-slate-700/50 ${dayClass}">
-                    <div>${d.dayNum}</div>
-                    <div class="text-[9px] opacity-75">${d.isSunday ? 'SUN' : (d.isSaturday ? 'SAT' : 'WD')}</div>
-                </div>`;
-            });
-
-            // Summary Header
-            html += `<div class="p-3 sticky-col-right text-center">OFF / Target</div></div>`;
-
-            // Rows
-            staffList.forEach(s => {
-                let offCount = 0;
-                html += `<div class="grid-container border-b border-slate-800/60 text-xs hover:bg-slate-800/30 transition">`;
-                
-                // Staff Column
-                html += `<div class="p-2 sticky-col border-r border-slate-700 font-medium flex items-center justify-between">
-                    <span class="${s.gender === 'F' ? 'text-pink-400' : 'text-slate-200'}">${s.name}</span>
-                    <span class="text-[9px] px-1 rounded bg-slate-700 text-slate-400">${s.gender}</span>
-                </div>`;
-
-                // Shift Cells
-                dates.forEach(d => {
-                    const shift = rosterGrid[s.id][d.dateStr] || 'OFF';
-                    if (shift === 'OFF') offCount++;
-
-                    html += `<div class="p-1 border-r border-slate-800 flex items-center justify-center">
-                        <select onchange="updateCell(${s.id}, '${d.dateStr}', this.value)" class="w-full h-7 text-center rounded font-bold text-[10px] shift-${shift} cursor-pointer appearance-none">
-                            <option value="M" ${shift==='M'?'selected':''}>M</option>
-                            <option value="E" ${shift==='E'?'selected':''}>E</option>
-                            <option value="D" ${shift==='D'?'selected':''}>D</option>
-                            <option value="X" ${shift==='X'?'selected':''}>X</option>
-                            <option value="E4" ${shift==='E4'?'selected':''}>E4</option>
-                            <option value="N12" ${shift==='N12'?'selected':''}>N12</option>
-                            <option value="N" ${shift==='N'?'selected':''}>N</option>
-                            <option value="OFF" ${shift==='OFF'?'selected':''}>OFF</option>
-                            <option value="CPL" ${shift==='CPL'?'selected':''}>CPL</option>
-                            <option value="EL" ${shift==='EL'?'selected':''}>EL</option>
-                        </select>
-                    </div>`;
-                });
-
-                // OFF Summary
-                const offMatch = offCount === targetOff;
-                html += `<div class="p-2 sticky-col-right border-l border-slate-700 text-center font-bold ${offMatch ? 'text-emerald-400' : 'text-rose-400 bg-rose-950/30'} flex items-center justify-center">
-                    ${offCount} / ${targetOff}
-                </div></div>`;
-            });
-
-            wrapper.innerHTML = html;
-        }
-
-        function updateCell(staffId, dateStr, value) {
-            rosterGrid[staffId][dateStr] = value;
-            renderGrid();
-            validateRoster();
-        }
-
-        // VALIDATION CHECKPOINTS ENGINE
-        function validateRoster() {
-            let errors = [];
-            const targetOff = parseInt(document.getElementById('statTargetOff').innerText);
-
-            staffList.forEach(s => {
-                let offCount = 0;
-                dates.forEach((d, idx) => {
-                    const shift = rosterGrid[s.id][d.dateStr];
-                    if (shift === 'OFF') offCount++;
-
-                    // Check 1: Female Night Restriction
-                    if (s.gender === 'F' && ['N', 'N12', 'E4'].includes(shift)) {
-                        errors.push(`${s.name} (Female) assigned forbidden shift ${shift} on ${d.dateStr}`);
-                    }
-
-                    // Check 2: Night Rest Transition Rule
-                    if (idx > 0) {
-                        const prevShift = rosterGrid[s.id][dates[idx - 1].dateStr];
-                        if ((prevShift === 'N' || prevShift === 'N12') && ['M', 'D', 'N', 'N12'].includes(shift)) {
-                            errors.push(`${s.name} assigned ${shift} immediately after ${prevShift} on ${d.dateStr}`);
-                        }
-                    }
-                });
-
-                // Check 3: Exact OFF Target Match
-                if (offCount !== targetOff) {
-                    errors.push(`${s.name} has ${offCount} OFFs (Target is ${targetOff})`);
                 }
             });
 
-            // Update Validation UI
-            const box = document.getElementById('validationBox');
-            const icon = document.getElementById('valIcon');
-            const status = document.getElementById('valStatus');
-            const msg = document.getElementById('valMsg');
+        } else {
+            // WEEKDAYS & SATURDAYS
+            let req = d.isSaturday 
+                ? { M: 3, E: 3, E4: 1, N12: 1, D: 1, X: 1 } 
+                : { M: 4, E: 4, E4: 1, N12: 1, D: 1, X: 1 };
 
-            if (errors.length === 0) {
-                icon.className = "w-2 h-2 rounded-full bg-emerald-500";
-                status.innerText = "Validation Passed";
-                status.className = "text-emerald-400 font-semibold";
-                msg.innerText = "All hospital guidelines, female safety constraints, and OFF balances are 100% compliant.";
-            } else {
-                icon.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
-                status.innerText = `Validation Warnings (${errors.length})`;
-                status.className = "text-rose-400 font-semibold";
-                msg.innerText = errors[0] + (errors.length > 1 ? ` (+${errors.length - 1} more issues)` : '');
-            }
-        }
-
-        function exportToCSV() {
-            let csv = 'Staff Member,Gender,' + dates.map(d => d.dateStr).join(',') + '\n';
-            staffList.forEach(s => {
-                csv += `"${s.name}",${s.gender},` + dates.map(d => rosterGrid[s.id][d.dateStr] || 'OFF').join(',') + '\n';
+            // Female staff shifts
+            appState.staff.forEach(s => {
+                if (s.gender === 'F') {
+                    if (req.M > 0) { appState.roster[s.id][d.dateStr] = 'M'; req.M--; }
+                    else if (req.E > 0) { appState.roster[s.id][d.dateStr] = 'E'; req.E--; }
+                    else if (req.D > 0) { appState.roster[s.id][d.dateStr] = 'D'; req.D--; }
+                    else if (req.X > 0) { appState.roster[s.id][d.dateStr] = 'X'; req.X--; }
+                    else { appState.roster[s.id][d.dateStr] = 'OFF'; }
+                }
             });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `KIH_Phlebotomy_Roster_${dates[0].dateStr}.csv`;
-            a.click();
-        }
 
-        // Run on load
-        window.onload = initApp;
-    </script>
-</body>
-</html>
+            // Male staff shifts
+            appState.staff.forEach(s => {
+                if (s.gender === 'M') {
+                    // Mandatory 36-Hour Rest Check After Night Duty
+                    if (prevDateStr && (appState.roster[s.id][prevDateStr] === 'N' || appState.roster[s.id][prevDateStr] === 'N12')) {
+                        appState.roster[s.id][d.dateStr] = 'OFF';
+                        return;
+                    }
+
+                    if (req.N12 > 0 && s.isNightPrimary) {
+                        appState.roster[s.id][d.dateStr] = 'N12'; req.N12--;
+                    } else if (req.E4 > 0) {
+                        appState.roster[s.id][d.dateStr] = 'E4'; req.E4--;
+                    } else if (req.M > 0) {
+                        appState.roster[s.id][d.dateStr] = 'M'; req.M--;
+                    } else if (req.E > 0) {
+                        appState.roster[s.id][d.dateStr] = 'E'; req.E--;
+                    } else if (req.D > 0) {
+                        appState.roster[s.id][d.dateStr] = 'D'; req.D--;
+                    } else if (req.X > 0) {
+                        appState.roster[s.id][d.dateStr] = 'X'; req.X--;
+                    } else {
+                        appState.roster[s.id][d.dateStr] = 'OFF';
+                    }
+                }
+            });
+        }
+    });
+
+    showToast('Conflict-free roster generated!', 'success');
+}
+
+/* ===== TOAST NOTIFICATION ===== */
+function showToast(msg, type = 'info') {
+    let toast = document.getElementById('appToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'appToast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerText = msg;
+    toast.className = `toast show ${type}`;
+    setTimeout(() => { toast.className = 'toast'; }, 3000);
+}
+</script>
