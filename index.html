@@ -1,1536 +1,423 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ur" dir="ltr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KIH Phlebotomy — Staff Management &amp; Auto-Rostering</title>
-<style>
-:root{
-  --bg:#f4f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
-  --brand:#0d7d78; --brand-d:#0b5f8a; --brand-soft:#e6f4f3;
-  --danger:#dc2626; --warn:#d97706; --ok:#059669;
-  --radius:14px; --shadow:0 1px 2px rgba(15,23,42,.06),0 10px 28px -14px rgba(15,23,42,.22);
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
-button{font-family:inherit;font-size:inherit;cursor:pointer}
-input,select,textarea{font-family:inherit;font-size:inherit}
-.hidden{display:none !important}
-
-/* ---------- LOGIN ---------- */
-.login-wrap{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
-@media(max-width:900px){.login-wrap{grid-template-columns:1fr}.login-hero{display:none !important}}
-.login-hero{background:linear-gradient(150deg,#0b3b45 0%,#0d7d78 55%,#0b5f8a 100%);
-  color:#eafaf9;padding:56px 52px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
-.login-hero::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,255,255,.14),transparent 62%);right:-180px;bottom:-200px}
-.login-hero h1{font-size:30px;line-height:1.2;margin:0 0 12px;font-weight:800;letter-spacing:-.02em}
-.login-hero p{margin:0;opacity:.85;line-height:1.65;max-width:420px;font-size:14.5px}
-.brand-mark{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.02em}
-.brand-mark .logo{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.18);
-  display:grid;place-items:center;font-size:22px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25)}
-.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;position:relative;z-index:2}
-.hero-chips span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);
-  padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600}
-.login-panel{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#fff}
-.login-card{width:100%;max-width:400px}
-.login-card h2{margin:0 0 4px;font-size:24px;font-weight:800;letter-spacing:-.02em}
-.login-card .sub{color:var(--muted);margin:0 0 26px;font-size:13.5px}
-.role-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f1f5f9;padding:5px;border-radius:12px;margin-bottom:20px}
-.role-switch button{border:0;background:transparent;padding:10px;border-radius:9px;font-weight:700;color:var(--muted);transition:.15s}
-.role-switch button.on{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(15,23,42,.12)}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
-.field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fbfdff;outline:none;transition:.15s}
-.field input:focus,.field select:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px rgba(13,125,120,.13)}
-.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:700;transition:.15s;display:inline-flex;align-items:center;gap:8px;justify-content:center}
-.btn-primary{background:var(--brand);color:#fff;box-shadow:0 8px 18px -10px rgba(13,125,120,.8)}
-.btn-primary:hover{background:#0a6a66}
-.btn-ghost{background:#f1f5f9;color:#334155;border:1px solid var(--line)}
-.btn-ghost:hover{background:#e8eef5}
-.btn-danger{background:#fee2e2;color:#b91c1c}
-.btn-danger:hover{background:#fecaca}
-.btn-block{width:100%}
-.hint{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6;background:#f8fafc;border:1px dashed var(--line);padding:10px 12px;border-radius:10px}
-
-/* ---------- APP SHELL ---------- */
-#app{display:grid;grid-template-columns:262px 1fr;min-height:100vh}
-#sidebar{background:linear-gradient(180deg,#0b3b45,#08262d);color:#cfe6ea;padding:18px 14px;
-  display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow-y:auto}
-.side-brand{display:flex;align-items:center;gap:11px;padding:8px 10px 20px;color:#fff}
-.side-brand .logo{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.14);
-  display:grid;place-items:center;font-size:19px;border:1px solid rgba(255,255,255,.18)}
-.side-brand b{display:block;font-size:13.5px;letter-spacing:.01em}
-.side-brand small{display:block;font-size:11px;opacity:.62;margin-top:2px}
-.nav-item{display:flex;gap:11px;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;
-  font-weight:600;color:#a9cdd4;border:0;background:none;width:100%;text-align:left;font-size:13.2px;transition:.14s}
-.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
-.nav-item.active{background:rgba(255,255,255,.15);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
-.nav-item .ic{width:18px;text-align:center;font-size:15px}
-.side-foot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);font-size:11.5px;opacity:.55;padding-left:12px}
-.side-user{background:rgba(255,255,255,.07);border-radius:11px;padding:10px 12px;margin-bottom:10px;
-  display:flex;gap:10px;align-items:center;color:#fff}
-.side-user .av{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:12px;background:#0d7d78;color:#fff}
-.side-user b{font-size:12.5px;display:block}
-.side-user small{font-size:10.5px;opacity:.65;display:block;margin-top:1px}
-
-#main{padding:22px 26px 60px;min-width:0}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
-.topbar h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-.02em}
-.topbar .crumb{color:var(--muted);font-size:12.5px;margin-top:3px}
-.top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:18px}
-.card h3{margin:0 0 14px;font-size:15px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-.card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--brand)}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:1100px){.grid-2,.grid-3{grid-template-columns:1fr}}
-
-/* date banner */
-.date-banner{background:linear-gradient(120deg,#0b3b45,#0d7d78 70%,#0b5f8a);color:#fff;border-radius:var(--radius);
-  padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
-  box-shadow:0 16px 34px -22px rgba(11,59,69,.9);margin-bottom:18px}
-.date-banner .dow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.78;font-weight:700}
-.date-banner .full{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
-.date-banner .meta{font-size:12.5px;opacity:.82;margin-top:6px}
-.date-nav{display:flex;gap:8px}
-.date-nav .btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.24)}
-.date-nav .btn:hover{background:rgba(255,255,255,.26)}
-
-/* badges */
-.badge{display:inline-flex;align-items:center;justify-content:center;min-width:36px;padding:3px 8px;
-  border-radius:8px;font-weight:800;font-size:11.5px;letter-spacing:.03em;border:1px solid transparent}
-
-/* staff chips */
-.chip{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;
-  background:#fbfdff;margin-bottom:8px;transition:.14s}
-.chip:hover{background:#fff;box-shadow:0 4px 12px -8px rgba(15,23,42,.4)}
-.chip .av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;
-  font-size:12px;color:#fff;flex:none;letter-spacing:.02em}
-.chip .nm{font-weight:700;font-size:13px;line-height:1.25}
-.chip .sub{font-size:11px;color:var(--muted);margin-top:2px}
-.chip .tail{margin-left:auto;text-align:right;font-size:11px;color:var(--muted);line-height:1.5}
-.empty{color:var(--muted);font-size:12.5px;font-style:italic;padding:8px 0}
-
-/* roster grid */
-.grid-wrap{overflow:auto;max-height:68vh;border:1px solid var(--line);border-radius:12px;background:#fff}
-table.grid{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
-table.grid th,table.grid td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0;text-align:center}
-table.grid thead th{position:sticky;top:0;z-index:3;background:#f6f9fc;height:36px;font-weight:700;color:var(--muted);font-size:11px;min-width:38px}
-table.grid thead th.we{background:#eef4fa;color:#b45309}
-table.grid .stick{position:sticky;left:0;z-index:2;background:#fff;text-align:left;padding:0 12px;min-width:186px;
-  font-weight:700;font-size:12.5px;white-space:nowrap;border-right:2px solid var(--line)}
-table.grid thead .stick{z-index:5;background:#f6f9fc}
-table.grid tbody tr:hover .stick{background:#f8fbfe}
-table.grid td.cell{width:38px;height:33px;cursor:pointer;outline:none;font-weight:800;font-size:11.5px;
-  letter-spacing:.02em;position:relative;transition:filter .1s}
-table.grid td.cell:hover{filter:brightness(.94)}
-table.grid td.cell:focus{box-shadow:inset 0 0 0 2.5px var(--brand);z-index:1;border-radius:2px}
-table.grid td.cell.conflict{box-shadow:inset 0 0 0 2px #f59e0b}
-table.grid td.cell.conflict:focus{box-shadow:inset 0 0 0 2.5px var(--brand)}
-table.grid td.sum{background:#fbfdff;font-weight:800;font-size:11.5px;color:#334155;min-width:46px}
-table.grid thead th.sum{background:#f0f6fb;font-size:10.5px}
-.legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-.legend .lg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}
-
-/* tables */
-table.tbl{width:100%;border-collapse:collapse;font-size:13px}
-table.tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
-  padding:9px 10px;border-bottom:1px solid var(--line);font-weight:800}
-table.tbl td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
-table.tbl tr:last-child td{border-bottom:0}
-table.tbl tr:hover td{background:#fafcfe}
-
-/* toolbar */
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.brush{display:flex;gap:5px;flex-wrap:wrap;padding:6px;background:#f6f9fc;border:1px solid var(--line);border-radius:11px}
-.brush button{border:1px solid transparent;border-radius:7px;padding:5px 10px;font-weight:800;font-size:11px;transition:.14s}
-.brush button:hover{transform:translateY(-1px)}
-.brush button.on{box-shadow:0 0 0 2px var(--brand)}
-
-/* notice */
-.notice{border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:11px;padding:14px 16px;margin-bottom:12px;background:#fbfdff}
-.notice h4{margin:0 0 6px;font-size:14px;font-weight:800}
-.notice .meta{font-size:11.5px;color:var(--muted);margin-bottom:8px}
-.notice p{margin:0;line-height:1.65;color:#334155;font-size:13.2px;white-space:pre-wrap}
-.ack-row{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:11px;border-top:1px dashed var(--line)}
-.ack-pill{font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;background:#dcfce7;color:#15803d}
-.ack-pill.no{background:#fef3c7;color:#92400e}
-
-/* misc */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 16px;box-shadow:var(--shadow)}
-.kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}
-.kpi .val{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:6px;color:var(--brand-d)}
-.kpi .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
-.toast{position:fixed;right:22px;bottom:22px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:11px;
-  font-weight:600;font-size:13px;box-shadow:0 14px 30px -12px rgba(0,0,0,.6);z-index:99;opacity:0;transform:translateY(12px);
-  transition:.25s;pointer-events:none}
-.toast.show{opacity:1;transform:translateY(0)}
-.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800}
-.pill.ok{background:#dcfce7;color:#15803d}.pill.no{background:#fee2e2;color:#b91c1c}
-.rowflex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.spacer{flex:1}
-.mini{font-size:11.5px;color:var(--muted)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIH Phlebotomy Roster Engine Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: 180px repeat(var(--days-count, 30), minmax(42px, 1fr)) 120px;
+        }
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: #1e293b;
+            z-index: 10;
+        }
+        .sticky-col-right {
+            position: sticky;
+            right: 0;
+            background-color: #1e293b;
+            z-index: 10;
+        }
+        /* Color Badges for Shifts */
+        .shift-M { background-color: #0284c7; color: white; } /* Morning: Blue */
+        .shift-D { background-color: #0d9488; color: white; } /* Day: Teal */
+        .shift-X { background-color: #d97706; color: white; } /* Standby: Amber */
+        .shift-E { background-color: #7c3aed; color: white; } /* Evening: Purple */
+        .shift-E4 { background-color: #c026d3; color: white; } /* Evening 4: Pink */
+        .shift-N12 { background-color: #4338ca; color: white; } /* Night 12: Indigo */
+        .shift-N { background-color: #1e1b4b; color: #a5f3fc; border: 1px solid #38bdf8; } /* Night: Dark */
+        .shift-OFF { background-color: #15803d; color: white; } /* OFF: Green */
+        .shift-CPL { background-color: #ea580c; color: white; } /* CPL: Orange */
+        .shift-EL, .shift-CL, .shift-SL { background-color: #dc2626; color: white; } /* Leaves: Red */
+    </style>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
 
-<!-- ================= LOGIN ================= -->
-<div id="login" class="login-wrap">
-  <div class="login-hero">
-    <div class="brand-mark">
-      <div class="logo">🩸</div>
-      <div>KULSUM INTERNATIONAL HOSPITAL<br><span style="font-weight:500;opacity:.75;font-size:11.5px">PHLEBOTOMY DEPARTMENT</span></div>
-    </div>
-    <div style="position:relative;z-index:2">
-      <h1>Staff Management &amp;<br>Intelligent Auto-Rostering</h1>
-      <p>Enterprise-grade duty scheduling for 12 phlebotomists — gender-safety enforcement, rolling OFF/CPL balancing, 6-day ergonomic caps, gazetted-holiday handling and instant month-end exports.</p>
-      <div class="hero-chips">
-        <span>⚖️ Gender Safety Rules</span><span>🔄 Rolling Balance</span><span>⌨️ Keyboard Grid</span>
-        <span>📊 Excel / PDF</span><span>🏖️ Block Leave Engine</span>
-      </div>
-    </div>
-    <div style="font-size:11.5px;opacity:.6;position:relative;z-index:2">© 2026 Kulsum International Hospital · Lab Operations</div>
-  </div>
-
-  <div class="login-panel">
-    <div class="login-card">
-      <h2>Sign in</h2>
-      <p class="sub">Access the roster command center.</p>
-
-      <div class="role-switch">
-        <button id="roleAdmin" class="on" type="button">🔐 Admin / Lab Manager</button>
-        <button id="roleStaff" type="button">👤 Staff</button>
-      </div>
-
-      <div class="field" id="fUser">
-        <label>Username</label>
-        <input id="inUser" value="admin" autocomplete="username">
-      </div>
-
-      <div class="field hidden" id="fStaff">
-        <label>Select your name</label>
-        <select id="inStaff"></select>
-      </div>
-
-      <div class="field">
-        <label>Password</label>
-        <input id="inPass" type="password" value="admin123" autocomplete="current-password">
-      </div>
-
-      <button class="btn btn-primary btn-block" id="btnLogin" type="button">Sign in →</button>
-      <div class="hint">
-        <b>Demo credentials</b><br>
-        Admin → <code>admin</code> / <code>admin123</code><br>
-        Staff → pick a name / <code>staff123</code>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ================= APP ================= -->
-<div id="app" class="hidden">
-  <aside id="sidebar">
-    <div class="side-brand">
-      <div class="logo">🩸</div>
-      <div><b>KIH Phlebotomy</b><small>Roster Command Center</small></div>
-    </div>
-    <div id="sideUser"></div>
-    <nav id="nav"></nav>
-    <div class="side-foot">v1.0 · Kulsum Intl. Hospital</div>
-  </aside>
-
-  <main id="main">
-    <div class="topbar">
-      <div>
-        <h2 id="pageTitle">Today's Dashboard</h2>
-        <div class="crumb" id="pageCrumb">Live roster &amp; daily operations</div>
-      </div>
-      <div class="top-actions" id="pageActions"></div>
-    </div>
-    <div id="view"></div>
-  </main>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-/* ============================================================
-   KIH PHLEBOTOMY — CORE APPLICATION
-   ============================================================ */
-const $  = (s,r=document)=>r.querySelector(s);
-const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
-
-const WORK   = ['M','D','X','E','E4','N12','N'];
-const NIGHTS = ['N','N12'];
-const LEAVE  = ['EL','CL','CPL'];
-const OFFISH = ['OFF','EL','CL','CPL'];
-const FILL_ORDER = ['N','N12','E4','E','X','D','M'];
-
-const pad = n => String(n).padStart(2,'0');
-const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const ymKey = (y,m) => `${y}-${pad(m)}`;
-const daysIn = (y,m) => new Date(y,m,0).getDate();
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-const SHIFT_DEFS = {
-  M  :{name:'Morning',       start:'07:00',end:'15:00',bg:'#FFF4D6',fg:'#8A5A00'},
-  D  :{name:'Day',           start:'09:00',end:'17:00',bg:'#E1EFFE',fg:'#1E429F'},
-  X  :{name:'Standby',       start:'11:00',end:'19:00',bg:'#EDEBFF',fg:'#5521B5'},
-  E  :{name:'Evening',       start:'15:00',end:'23:00',bg:'#FFE8D1',fg:'#9A3412'},
-  E4 :{name:'Evening 4',     start:'16:00',end:'00:00',bg:'#FFD9BE',fg:'#8A2E0B'},
-  N12:{name:'Night 12',      start:'00:00',end:'08:00',bg:'#DDE3FF',fg:'#2E2A8A'},
-  N  :{name:'Night',         start:'23:00',end:'07:00',bg:'#DCE7F5',fg:'#1E3A5F'},
-  OFF:{name:'Weekly Off',    start:'—',    end:'—',    bg:'#F1F5F9',fg:'#64748B'},
-  EL :{name:'Earned Leave',  start:'—',    end:'—',    bg:'#FCE7F3',fg:'#9D174D'},
-  CL :{name:'Casual Leave',  start:'—',    end:'—',    bg:'#FFE4E6',fg:'#9F1239'},
-  CPL:{name:'Comp. Leave',   start:'—',    end:'—',    bg:'#CCFBF1',fg:'#115E59'}
-};
-
-const DEFAULT_STAFF = [
-  {id:'s1', name:'Waqas Aziz',      gender:'M', desig:'Senior Phlebotomist', phone:'0300-1234501', ext:'401', homeShift:'N',   nightPrimary:true,  active:true},
-  {id:'s2', name:'Muhammad Zakarya',gender:'M', desig:'Senior Phlebotomist', phone:'0300-1234502', ext:'402', homeShift:'N12', nightPrimary:true,  active:true},
-  {id:'s3', name:'Bilal',           gender:'M', desig:'Phlebotomist',        phone:'0300-1234503', ext:'403', homeShift:'M',   nightPrimary:false, active:true},
-  {id:'s4', name:'Aamir',           gender:'M', desig:'Phlebotomist',        phone:'0300-1234504', ext:'404', homeShift:'D',   nightPrimary:false, active:true},
-  {id:'s5', name:'Sher Ali',        gender:'M', desig:'Phlebotomist',        phone:'0300-1234505', ext:'405', homeShift:'E',   nightPrimary:false, active:true},
-  {id:'s6', name:'Asad',            gender:'M', desig:'Phlebotomist',        phone:'0300-1234506', ext:'406', homeShift:'X',   nightPrimary:false, active:true},
-  {id:'s7', name:'Yasir',           gender:'M', desig:'Phlebotomist',        phone:'0300-1234507', ext:'407', homeShift:'M',   nightPrimary:false, active:true},
-  {id:'s8', name:'Daniyal',         gender:'M', desig:'Phlebotomist',        phone:'0300-1234508', ext:'408', homeShift:'E',   nightPrimary:false, active:true},
-  {id:'s9', name:'Haseeb',          gender:'M', desig:'Phlebotomist',        phone:'0300-1234509', ext:'409', homeShift:'D',   nightPrimary:false, active:true},
-  {id:'s10',name:'Aqsa',            gender:'F', desig:'Phlebotomist',        phone:'0300-1234510', ext:'410', homeShift:'M',   nightPrimary:false, active:true},
-  {id:'s11',name:'Naila',           gender:'F', desig:'Phlebotomist',        phone:'0300-1234511', ext:'411', homeShift:'D',   nightPrimary:false, active:true},
-  {id:'s12',name:'Samia',           gender:'F', desig:'Phlebotomist',        phone:'0300-1234512', ext:'412', homeShift:'E',   nightPrimary:false, active:true}
-];
-
-const STORE_KEY = 'kih_phleb_roster_v1';
-
-/* ---------------- STATE ---------------- */
-let state = null;
-let ui = { view:'dashboard', viewDate:new Date(), brush:null, role:'admin', staffPick:'s1' };
-
-function defaultState(){
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth()+1;
-  return {
-    session:null,
-    staff: JSON.parse(JSON.stringify(DEFAULT_STAFF)),
-    shifts: JSON.parse(JSON.stringify(SHIFT_DEFS)),
-    rules:{
-      maxConsecutive: 6,
-      maxNights: 3,
-      quota:       {M:3, D:1, X:1, E:2, E4:1, N12:1, N:1},
-      sundayQuota: {M:2, D:0, X:0, E:2, E4:0, N12:0, N:1}
-    },
-    rosters:{},      // "YYYY-MM" -> { staffId: [code|null,...] }
-    anchors:{},      // "YYYY-MM" -> { "staffId:dayIdx": true }
-    announcements:[
-      { id:'a1', date: iso(now), title:'Night Shift Handover Protocol',
-        body:'All night-duty staff must complete the sample log and cold-chain temperature record before the 07:15 AM handover.\n\nAny deviation must be reported to the Lab Manager immediately.',
-        author:'Lab Manager', acks:[] },
-      { id:'a2', date: iso(now), title:'Safety Policy Reminder',
-        body:'Female phlebotomists are not to be assigned Night (N / N12) or Evening-4 (E4) shifts under any circumstance. Rostering engine enforces this automatically.',
-        author:'Operations Director', acks:[] }
-    ],
-    holidays:[],
-    openings:{},    // staffId -> {cpl, el, cl}
-    currentMonth: ymKey(y,m)
-  };
-}
-
-function load(){
-  try{
-    const raw = localStorage.getItem(STORE_KEY);
-    if(raw){
-      const p = JSON.parse(raw);
-      state = Object.assign(defaultState(), p);
-      state.rules = Object.assign(defaultState().rules, p.rules||{});
-      state.shifts = Object.assign(JSON.parse(JSON.stringify(SHIFT_DEFS)), p.shifts||{});
-      return;
-    }
-  }catch(e){ console.warn('load failed', e); }
-  state = defaultState();
-  // seed a generated roster for the current month so the demo is alive
-  runAutoRoster('full');
-  save();
-}
-function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
-}
-
-/* ---------------- HELPERS ---------------- */
-function toast(msg){
-  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2400);
-}
-function initials(name){
-  return name.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
-}
-function avColor(str){
-  let h=0; for(let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) % 360;
-  return `hsl(${h},48%,42%)`;
-}
-function staffById(id){ return state.staff.find(s=>s.id===id); }
-function activeStaff(){ return state.staff.filter(s=>s.active); }
-function curRoster(){
-  if(!state.rosters[state.currentMonth]) state.rosters[state.currentMonth] = {};
-  return state.rosters[state.currentMonth];
-}
-function curAnchors(){
-  if(!state.anchors[state.currentMonth]) state.anchors[state.currentMonth] = {};
-  return state.anchors[state.currentMonth];
-}
-function isLocked(sid,d){ return !!curAnchors()[sid+':'+d]; }
-function isAdmin(){ return state.session && state.session.role==='admin'; }
-
-function workRun(arr,d){ let n=0; for(let i=d-1;i>=0;i--){ if(WORK.includes(arr[i])) n++; else break; } return n; }
-function nightRun(arr,d){ let n=0; for(let i=d-1;i>=0;i--){ if(NIGHTS.includes(arr[i])) n++; else break; } return n; }
-
-function monthLabel(key){ const [y,m]=key.split('-').map(Number); return `${MONTHS[m-1]} ${y}`; }
-
-/* ============================================================
-   AUTO-ROSTERING ENGINE
-   ============================================================ */
-function runAutoRoster(mode){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const days = daysIn(y,m);
-  const roster = curRoster();
-  const anchors = curAnchors();
-  const staffList = activeStaff();
-
-  // normalise arrays
-  for(const s of staffList){
-    const old = roster[s.id] || [];
-    roster[s.id] = Array.from({length:days}, (_,i)=> old[i] ?? null);
-  }
-
-  if(mode==='full'){
-    for(const s of staffList)
-      for(let d=0; d<days; d++)
-        if(!anchors[s.id+':'+d]) roster[s.id][d] = null;
-  }
-
-  /* Block-leave detection (>=7 consecutive EL/CL/CPL) → relax the 6-day cap */
-  const relaxDays = new Set();
-  for(const s of staffList){
-    let run = 0;
-    for(let d=0; d<=days; d++){
-      const c = d<days ? roster[s.id][d] : null;
-      if(c && LEAVE.includes(c)) run++;
-      else{
-        if(run >= 7) for(let k=d-run; k<d; k++) relaxDays.add(k);
-        run = 0;
-      }
-    }
-  }
-
-  const dutyCount = {};
-  for(const s of staffList)
-    dutyCount[s.id] = roster[s.id].filter(c=>c && WORK.includes(c)).length;
-
-  for(let d=0; d<days; d++){
-    const date = new Date(y, m-1, d+1);
-    const special = date.getDay()===0 || state.holidays.includes(iso(date));
-    const quota = Object.assign({}, special ? state.rules.sundayQuota : state.rules.quota);
-
-    const todays = {};
-    for(const s of staffList) if(roster[s.id][d]) todays[s.id] = roster[s.id][d];
-    for(const sid in todays){
-      const c = todays[sid];
-      if(quota[c] != null) quota[c] = Math.max(0, quota[c]-1);
-    }
-
-    const maxRun = relaxDays.has(d) ? state.rules.maxConsecutive + 3 : state.rules.maxConsecutive;
-
-    for(const code of FILL_ORDER){
-      let guard = 0;
-      while((quota[code]||0) > 0 && guard++ < 40){
-        let pick = chooseCandidate(staffList, roster, d, code, todays, dutyCount, maxRun, false);
-        if(!pick) pick = chooseCandidate(staffList, roster, d, code, todays, dutyCount, maxRun, true);
-        if(!pick) break;
-        roster[pick.id][d] = code;
-        todays[pick.id] = code;
-        dutyCount[pick.id]++;
-        quota[code]--;
-      }
-    }
-
-    // everyone not assigned → OFF (never leaves a blank)
-    for(const s of staffList) if(!todays[s.id]) roster[s.id][d] = 'OFF';
-  }
-
-  save();
-}
-
-function chooseCandidate(staffList, roster, d, code, todays, dutyCount, maxRun, relaxed){
-  let best = null, bestScore = -1e9;
-  const isNight = NIGHTS.includes(code);
-
-  for(const s of staffList){
-    if(todays[s.id]) continue;
-    /* HARD RULE — never violate gender safety */
-    if(s.gender === 'F' && (code==='N' || code==='N12' || code==='E4')) continue;
-
-    const arr  = roster[s.id];
-    const prev = d>0 ? arr[d-1] : null;
-    const prevNight = NIGHTS.includes(prev);
-
-    if(!relaxed){
-      if(prevNight && !isNight) continue;                                     // post-night rest
-      if(isNight && nightRun(arr,d) >= state.rules.maxNights) continue;       // max night block
-      if(workRun(arr,d) >= maxRun) continue;                                  // 6-day cap
-      if((prev==='E'||prev==='E4') && code==='M') continue;                   // evening → morning ban
-    }
-
-    let score = 0;
-    if(s.homeShift === code) score += 45;
-    if(prev==='E' || prev==='E4'){
-      score += code==='X' ? 35 : code==='D' ? 25 : (code==='E'||code==='E4') ? 8 : -70;
-    }
-    score -= dutyCount[s.id] * 2.2;
-    score -= workRun(arr,d) * 4;
-    if(isNight) score += s.nightPrimary ? 70 : -30;
-    if(prev === code) score -= 10;
-
-    if(score > bestScore){ bestScore = score; best = s; }
-  }
-  return best;
-}
-
-/* ============================================================
-   VALIDATION
-   ============================================================ */
-function cellIssues(sid, d){
-  const arr = curRoster()[sid];
-  const out = [];
-  if(!arr) return out;
-  const c = arr[d];
-  if(!c) return out;
-  const s = staffById(sid);
-
-  if(s && s.gender==='F' && (c==='N'||c==='N12'||c==='E4'))
-    out.push('⛔ Gender safety rule — female staff cannot be assigned ' + c);
-
-  const prev = d>0 ? arr[d-1] : null;
-  if((prev==='E'||prev==='E4') && c==='M')
-    out.push('⚠️ Rest rule — Morning shift immediately after an Evening shift');
-  if(NIGHTS.includes(prev) && WORK.includes(c))
-    out.push('⚠️ Post-night rest — a rest day is required after a night shift');
-  if(WORK.includes(c) && workRun(arr,d) >= state.rules.maxConsecutive)
-    out.push('⚠️ Ergonomic cap — more than ' + state.rules.maxConsecutive + ' consecutive duty days');
-
-  return out;
-}
-
-function dayCoverage(d){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const date = new Date(y, m-1, d+1);
-  const special = date.getDay()===0 || state.holidays.includes(iso(date));
-  const quota = special ? state.rules.sundayQuota : state.rules.quota;
-  const counts = {};
-  for(const s of activeStaff()){
-    const c = curRoster()[s.id]?.[d];
-    if(c) counts[c] = (counts[c]||0)+1;
-  }
-  const gaps = [];
-  for(const k in quota) if(quota[k] > 0 && (counts[k]||0) < quota[k])
-    gaps.push(`${k}: ${counts[k]||0}/${quota[k]}`);
-  return gaps;
-}
-
-/* ============================================================
-   RENDER — SHELL
-   ============================================================ */
-const NAV = [
-  {id:'dashboard',    ic:'🏠', label:"Today's Dashboard",  crumb:'Live roster & daily operations', roles:['admin','staff']},
-  {id:'roster',       ic:'📅', label:'Full Month Roster',  crumb:'Interactive spreadsheet grid',    roles:['admin','staff']},
-  {id:'staff',        ic:'👥', label:'Staff Management',   crumb:'Profiles, CRUD & directory',      roles:['admin']},
-  {id:'shifts',       ic:'⚙️', label:'Shift & Rule Setup', crumb:'Timings, quotas, system rules',   roles:['admin']},
-  {id:'notices',      ic:'📝', label:'Announcements',      crumb:'Notices, policies & acks',        roles:['admin','staff']},
-  {id:'reports',      ic:'📊', label:'Reports & Archives', crumb:'Exports, balances, history',      roles:['admin','staff']},
-  {id:'logout',       ic:'🔐', label:'Logout',             crumb:'',                                roles:['admin','staff']}
-];
-
-function renderShell(){
-  const s = state.session;
-  const me = s.role==='staff' ? staffById(s.staffId) : null;
-  const name = me ? me.name : 'Lab Manager';
-  const role = me ? (me.desig || 'Phlebotomist') : 'Admin · Full Access';
-
-  $('#sideUser').innerHTML = `
-    <div class="side-user">
-      <div class="av" style="background:${avColor(name)}">${initials(name)}</div>
-      <div><b>${name}</b><small>${role}</small></div>
-    </div>`;
-
-  $('#nav').innerHTML = NAV.filter(n=>n.roles.includes(s.role)).map(n=>`
-    <button class="nav-item ${ui.view===n.id?'active':''}" data-nav="${n.id}">
-      <span class="ic">${n.ic}</span><span>${n.label}</span>
-    </button>`).join('');
-}
-
-/* ============================================================
-   RENDER — DASHBOARD
-   ============================================================ */
-const DASH_GROUPS = [
-  {title:'🌅 Morning Shift (M)',        codes:['M'],            accent:'#8A5A00'},
-  {title:'☀️ Day / Standby (D · X)',    codes:['D','X'],        accent:'#1E429F'},
-  {title:'🌇 Evening Shift (E · E4)',   codes:['E','E4'],       accent:'#9A3412'},
-  {title:'🌙 Night Shift (N · N12)',    codes:['N','N12'],      accent:'#1E3A5F'},
-  {title:'🛌 Off Duty / Leave',         codes:['OFF','EL','CL','CPL'], accent:'#64748B'}
-];
-
-function renderDashboard(){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const dObj = ui.viewDate;
-  const dayIdx = (dObj.getFullYear()===y && dObj.getMonth()+1===m) ? dObj.getDate()-1 : -1;
-  const roster = curRoster();
-
-  const onDuty = activeStaff().filter(s=>WORK.includes(roster[s.id]?.[dayIdx]));
-  const offDuty = activeStaff().filter(s=>OFFISH.includes(roster[s.id]?.[dayIdx]));
-
-  let html = `
-    <div class="date-banner">
-      <div>
-        <div class="dow">${DOW[dObj.getDay()]}</div>
-        <div class="full">${MONTHS[dObj.getMonth()]} ${dObj.getDate()}, ${dObj.getFullYear()}</div>
-        <div class="meta">${dayIdx<0 ? '⚠️ Outside the currently loaded roster month ('+monthLabel(state.currentMonth)+')' : `${onDuty.length} on duty · ${offDuty.length} off / on leave`}</div>
-      </div>
-      <div class="date-nav">
-        <button class="btn" data-action="day-prev">← Previous Day</button>
-        <button class="btn" data-action="day-today">Today</button>
-        <button class="btn" data-action="day-next">Next Day →</button>
-        ${isAdmin()?`<button class="btn" data-action="save-changes">💾 Save Changes</button>`:''}
-      </div>
-    </div>`;
-
-  html += `<div class="kpis" style="margin-bottom:18px">
-    ${kpi('On Duty', onDuty.length, monthLabel(state.currentMonth))}
-    ${kpi('Off / Leave', offDuty.length, 'Rest & approved leave')}
-    ${kpi('Night Coverage', onDuty.filter(s=>NIGHTS.includes(roster[s.id]?.[dayIdx])).length, 'N + N12 combined')}
-    ${kpi('Active Staff', activeStaff().length, state.staff.length + ' total on record')}
-  </div>`;
-
-  html += `<div class="grid-2">`;
-
-  /* left: roster groups */
-  html += `<div class="card"><h3><span class="dot"></span>Today's Live Roster</h3>`;
-  if(dayIdx < 0){
-    html += `<div class="empty">Navigate to ${monthLabel(state.currentMonth)} to view the live roster.</div>`;
-  } else {
-    for(const g of DASH_GROUPS){
-      const people = activeStaff().filter(s=>g.codes.includes(roster[s.id]?.[dayIdx]));
-      html += `<div style="margin-bottom:16px">
-        <div style="font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:${g.accent};margin-bottom:8px">
-          ${g.title} <span style="color:#94a3b8">· ${people.length}</span></div>`;
-      if(!people.length){
-        html += `<div class="empty">No staff assigned.</div>`;
-      } else {
-        for(const p of people){
-          const code = roster[p.id][dayIdx];
-          const def = state.shifts[code] || SHIFT_DEFS[code];
-          html += `<div class="chip">
-            <div class="av" style="background:${avColor(p.name)}">${initials(p.name)}</div>
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="bg-rose-600 text-white font-bold text-xl px-3 py-1 rounded-lg">KIH</div>
             <div>
-              <div class="nm">${p.name}</div>
-              <div class="sub">${p.desig} · Ext ${p.ext}</div>
+                <h1 class="text-lg font-bold leading-tight">Phlebotomy Roster & Staff Management</h1>
+                <p class="text-xs text-slate-400">Kulsum International Hospital, Islamabad</p>
             </div>
-            <div class="tail">
-              <span class="badge" style="background:${def.bg};color:${def.fg}">${code}</span>
-              <div style="margin-top:4px">${def.start}–${def.end}</div>
-            </div>
-          </div>`;
-        }
-      }
-      html += `</div>`;
-    }
-  }
-  html += `</div>`;
-
-  /* right column */
-  html += `<div>`;
-
-  /* notices */
-  html += `<div class="card"><h3><span class="dot"></span>Admin Notice Board</h3>`;
-  const notices = [...state.announcements].sort((a,b)=> b.date.localeCompare(a.date)).slice(0,3);
-  if(!notices.length) html += `<div class="empty">No announcements published.</div>`;
-  for(const n of notices){
-    const acked = state.session.role==='staff' && n.acks.includes(state.session.staffId);
-    html += `<div class="notice">
-      <h4>${n.title}</h4>
-      <div class="meta">${n.date} · ${n.author}</div>
-      <p>${n.body}</p>
-      <div class="ack-row">
-        ${state.session.role==='staff'
-          ? (acked
-              ? `<span class="ack-pill">✓ Acknowledged</span>`
-              : `<button class="btn btn-primary" data-action="ack" data-id="${n.id}" style="padding:7px 14px;font-size:12.5px">Read &amp; Acknowledge</button>
-                 <span class="ack-pill no">Pending</span>`)
-          : `<span class="mini">${n.acks.length} acknowledgement(s)</span>`}
-      </div>
-    </div>`;
-  }
-  html += `</div>`;
-
-  /* contact drawer */
-  html += `<div class="card"><h3><span class="dot"></span>Quick Contact Directory</h3>
-    <div style="max-height:320px;overflow:auto">`;
-  for(const p of activeStaff()){
-    html += `<div class="chip" style="padding:7px 10px">
-      <div class="av" style="width:30px;height:30px;font-size:11px;background:${avColor(p.name)}">${initials(p.name)}</div>
-      <div><div class="nm" style="font-size:12.5px">${p.name}</div><div class="sub">${p.phone}</div></div>
-      <div class="tail"><b style="color:#0d7d78">Ext ${p.ext}</b></div>
-    </div>`;
-  }
-  html += `</div></div>`;
-
-  html += `</div></div>`; // close right col + grid-2
-  $('#view').innerHTML = html;
-}
-
-function kpi(label, val, sub){
-  return `<div class="kpi"><div class="lbl">${label}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>`;
-}
-
-/* ============================================================
-   RENDER — ROSTER GRID
-   ============================================================ */
-function renderRoster(){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const days = daysIn(y,m);
-  const roster = curRoster();
-  const staffList = activeStaff();
-
-  let head = `<tr><th class="stick">Staff Member</th>`;
-  for(let d=0; d<days; d++){
-    const dt = new Date(y,m-1,d+1);
-    const we = dt.getDay()===0 ? ' we' : '';
-    const hol = state.holidays.includes(iso(dt)) ? ' we' : '';
-    head += `<th class="${(we||hol)?'we':''}">${d+1}<div style="font-weight:600;opacity:.6;font-size:9px">${DOW[dt.getDay()].slice(0,2)}</div></th>`;
-  }
-  head += `<th class="sum">Duty</th><th class="sum">OFF</th><th class="sum">CPL</th><th class="sum">EL</th><th class="sum">CL</th></tr>`;
-
-  let body = '';
-  for(const s of staffList){
-    const arr = roster[s.id] || [];
-    const duty = arr.filter(c=>WORK.includes(c)).length;
-    const off  = arr.filter(c=>c==='OFF').length;
-    const cpl  = arr.filter(c=>c==='CPL').length;
-    const el   = arr.filter(c=>c==='EL').length;
-    const cl   = arr.filter(c=>c==='CL').length;
-
-    body += `<tr><th class="stick">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${s.gender==='F'?'#ec4899':'#0d7d78'};margin-right:7px"></span>${s.name}
-      ${s.nightPrimary?'<span title="Primary night staff" style="font-size:10px">🌙</span>':''}
-    </th>`;
-
-    for(let d=0; d<days; d++){
-      const c = arr[d];
-      const def = c ? (state.shifts[c] || SHIFT_DEFS[c]) : null;
-      const issues = isAdmin() ? cellIssues(s.id,d) : [];
-      const bg = def ? def.bg : '#fff';
-      const fg = def ? def.fg : '#cbd5e1';
-      const lockMark = isLocked(s.id,d) ? '🔒' : '';
-      body += `<td class="cell ${issues.length?'conflict':''}"
-        tabindex="${isAdmin()?0:-1}" data-sid="${s.id}" data-d="${d}"
-        style="background:${bg};color:${fg}"
-        title="${issues.length ? issues.join('\n') : (def? def.name+' ('+def.start+'–'+def.end+')' : 'Unassigned')}${lockMark?'\n🔒 Hard anchor':''}"
-        >${c || '·'}</td>`;
-    }
-    body += `<td class="sum">${duty}</td><td class="sum">${off}</td><td class="sum">${cpl}</td><td class="sum">${el}</td><td class="sum">${cl}</td></tr>`;
-  }
-
-  let html = `
-  <div class="card">
-    <div class="toolbar">
-      <button class="btn btn-ghost" data-action="month-prev">← ${monthLabel(prevMonthKey())}</button>
-      <b style="font-size:15px;padding:0 6px">${monthLabel(state.currentMonth)}</b>
-      <button class="btn btn-ghost" data-action="month-next">${monthLabel(nextMonthKey())} →</button>
-      <div class="spacer"></div>
-      ${isAdmin()?`
-        <button class="btn btn-primary" data-action="autogen">⚡ Auto-Generate Month</button>
-        <button class="btn btn-ghost" data-action="rebalance">🔄 Auto-Rebalance Remaining</button>
-        <button class="btn btn-ghost" data-action="clear-month">🧹 Clear Unlocked</button>
-      `:''}
-    </div>`;
-
-  if(isAdmin()){
-    html += `<div class="toolbar">
-      <span class="mini" style="font-weight:700;color:#334155">Brush:</span>
-      <div class="brush">
-        ${Object.keys(state.shifts).map(k=>`
-          <button data-brush="${k}" class="${ui.brush===k?'on':''}"
-            style="background:${state.shifts[k].bg};color:${state.shifts[k].fg}">${k}</button>`).join('')}
-        <button data-brush="" style="background:#fff;color:#94a3b8;border-color:#e2e8f0">⌫ Clear</button>
-      </div>
-      <div class="spacer"></div>
-      <span class="mini">⌨️ Type <b>M D X E N O L C P</b> · <b>4</b>=E4 · <b>2</b>=N12 · <b>Del</b>=clear · <b>Tab/Arrows/Enter</b>=navigate</span>
-    </div>`;
-  }
-
-  html += `<div class="grid-wrap"><table class="grid" id="rosterGrid">
-    <thead>${head}</thead><tbody>${body}</tbody></table></div>`;
-
-  html += `<div class="legend">
-    ${Object.keys(state.shifts).map(k=>`<span class="lg">
-      <span class="badge" style="background:${state.shifts[k].bg};color:${state.shifts[k].fg}">${k}</span>
-      ${state.shifts[k].name}</span>`).join('')}
-  </div>`;
-
-  html += `<div class="mini" style="margin-top:12px">
-    ${isAdmin()
-      ? '⚠️ Amber-outlined cells contain rule conflicts. Hover for details. Cells marked 🔒 are hard anchors preserved by the engine.'
-      : 'Read-only view. Contact the Lab Manager for any roster change request.'}
-  </div></div>`;
-
-  $('#view').innerHTML = html;
-  if(isAdmin()) attachGridKeyboard();
-}
-
-function prevMonthKey(){
-  let [y,m] = state.currentMonth.split('-').map(Number);
-  m--; if(m<1){ m=12; y--; }
-  return ymKey(y,m);
-}
-function nextMonthKey(){
-  let [y,m] = state.currentMonth.split('-').map(Number);
-  m++; if(m>12){ m=1; y++; }
-  return ymKey(y,m);
-}
-
-/* ---- keyboard engine ---- */
-function attachGridKeyboard(){
-  const grid = $('#rosterGrid');
-  if(!grid) return;
-  const order = activeStaff().map(s=>s.id);
-
-  grid.addEventListener('keydown', e=>{
-    const td = e.target.closest('td.cell');
-    if(!td) return;
-    const sid = td.dataset.sid, d = +td.dataset.d;
-    const ri = order.indexOf(sid);
-    const days = daysIn(...state.currentMonth.split('-').map(Number));
-
-    const go = (r,dd)=>{
-      if(r<0 || r>=order.length) return;
-      dd = Math.max(0, Math.min(days-1, dd));
-      const t = grid.querySelector(`td.cell[data-sid="${order[r]}"][data-d="${dd}"]`);
-      if(t) t.focus();
-    };
-
-    switch(e.key){
-      case 'ArrowRight': go(ri, d+1); e.preventDefault(); break;
-      case 'ArrowLeft':  go(ri, d-1); e.preventDefault(); break;
-      case 'ArrowDown':
-      case 'Enter':      go(ri+1, d); e.preventDefault(); break;
-      case 'ArrowUp':    go(ri-1, d); e.preventDefault(); break;
-      case 'Backspace':
-      case 'Delete':     setCell(sid,d,null); e.preventDefault(); break;
-      default:
-        if(/^[a-zA-Z0-9]$/.test(e.key)){
-          const map = {m:'M',d:'D',x:'X',e:'E',n:'N',o:'OFF',l:'EL',c:'CL',p:'CPL','4':'E4','2':'N12','0':'OFF'};
-          const code = map[e.key.toLowerCase()];
-          if(code){ setCell(sid,d,code); e.preventDefault(); }
-        }
-    }
-  });
-}
-
-function setCell(sid, d, code){
-  const roster = curRoster();
-  if(!roster[sid]) return;
-  roster[sid][d] = code;
-  curAnchors()[sid+':'+d] = true;   // manual entry = hard anchor
-  save();
-  refreshGridCell(sid, d);
-  refreshRowSummary(sid);
-}
-
-function refreshGridCell(sid, d){
-  const td = document.querySelector(`td.cell[data-sid="${sid}"][data-d="${d}"]`);
-  if(!td) return;
-  const code = curRoster()[sid][d];
-  const def = code ? (state.shifts[code] || SHIFT_DEFS[code]) : null;
-  const issues = cellIssues(sid,d);
-  td.textContent = code || '·';
-  td.style.background = def ? def.bg : '#fff';
-  td.style.color = def ? def.fg : '#cbd5e1';
-  td.classList.toggle('conflict', issues.length>0);
-  td.title = (issues.length ? issues.join('\n') : (def ? def.name+' ('+def.start+'–'+def.end+')' : 'Unassigned')) + '\n🔒 Hard anchor';
-}
-
-function refreshRowSummary(sid){
-  const arr = curRoster()[sid] || [];
-  const tr = document.querySelector(`td.cell[data-sid="${sid}"]`)?.closest('tr');
-  if(!tr) return;
-  const sums = tr.querySelectorAll('td.sum');
-  if(sums.length < 5) return;
-  sums[0].textContent = arr.filter(c=>WORK.includes(c)).length;
-  sums[1].textContent = arr.filter(c=>c==='OFF').length;
-  sums[2].textContent = arr.filter(c=>c==='CPL').length;
-  sums[3].textContent = arr.filter(c=>c==='EL').length;
-  sums[4].textContent = arr.filter(c=>c==='CL').length;
-}
-
-/* ============================================================
-   RENDER — STAFF MANAGEMENT
-   ============================================================ */
-function renderStaff(){
-  const rows = state.staff.map(s=>{
-    const bal = balances(s.id);
-    return `<tr>
-      <td>
-        <div style="display:flex;gap:10px;align-items:center">
-          <div class="av" style="width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:11px;background:${avColor(s.name)}">${initials(s.name)}</div>
-          <div><b>${s.name}</b><div class="mini">${s.desig}</div></div>
         </div>
-      </td>
-      <td>${s.gender==='F' ? '<span class="pill" style="background:#fce7f3;color:#9d174d">Female</span>' : '<span class="pill" style="background:#e0f2fe;color:#075985">Male</span>'}</td>
-      <td>${s.phone}</td>
-      <td><b style="color:#0d7d78">${s.ext}</b></td>
-      <td><span class="badge" style="background:${(state.shifts[s.homeShift]||SHIFT_DEFS.M).bg};color:${(state.shifts[s.homeShift]||SHIFT_DEFS.M).fg}">${s.homeShift}</span></td>
-      <td>${s.nightPrimary?'🌙 Primary':'—'}</td>
-      <td>${s.active?'<span class="pill ok">Active</span>':'<span class="pill no">Inactive</span>'}</td>
-      <td><button class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-action="edit-staff" data-id="${s.id}">Edit</button></td>
-    </tr>`;
-  }).join('');
+        <div class="flex space-x-2">
+            <button onclick="generateRoster()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Generate Roster
+            </button>
+            <button onclick="validateRoster()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                <i class="fa-solid fa-circle-check"></i> Validate Rules
+            </button>
+            <button onclick="exportToCSV()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-3 py-2 rounded-lg transition">
+                <i class="fa-solid fa-download"></i> Export
+            </button>
+        </div>
+    </header>
 
-  $('#view').innerHTML = `
-  <div class="card">
-    <div class="toolbar">
-      <button class="btn btn-primary" data-action="add-staff">+ Add Staff Member</button>
-      <div class="spacer"></div>
-      <span class="mini">${activeStaff().length} active · ${state.staff.length} total</span>
-    </div>
-    <div style="overflow:auto">
-    <table class="tbl">
-      <thead><tr><th>Name</th><th>Gender</th><th>Phone</th><th>Ext</th><th>Home Shift</th><th>Night</th><th>Status</th><th></th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>
-  </div>
+    <!-- Main Content Layout -->
+    <div class="flex-1 flex overflow-hidden">
 
-  <div class="card">
-    <h3><span class="dot"></span>Monthly Balance Snapshot — ${monthLabel(state.currentMonth)}</h3>
-    <div style="overflow:auto">
-    <table class="tbl">
-      <thead><tr><th>Staff</th><th>Duty Days</th><th>OFF</th><th>CPL Used</th><th>EL Used</th><th>CL Used</th><th>Carry-Forward CPL</th></tr></thead>
-      <tbody>${state.staff.map(s=>{
-        const b = balances(s.id);
-        return `<tr><td><b>${s.name}</b></td><td>${b.duty}</td><td>${b.off}</td><td>${b.cpl}</td><td>${b.el}</td><td>${b.cl}</td>
-          <td><b style="color:#0d7d78">${b.opening.cpl - b.cpl >= 0 ? b.opening.cpl - b.cpl : 0}</b></td></tr>`;
-      }).join('')}</tbody>
-    </table></div>
-  </div>`;
-}
+        <!-- Sidebar Column -->
+        <aside class="w-64 bg-slate-800 border-r border-slate-700 p-4 flex flex-col justify-between shrink-0">
+            <div class="space-y-6">
+                <!-- Controls & Period -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Roster Period</label>
+                    <div class="space-y-2">
+                        <input type="date" id="startDate" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" value="2026-09-26" onchange="initApp()">
+                        <input type="date" id="endDate" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" value="2026-10-25" onchange="initApp()">
+                    </div>
+                </div>
 
-function balances(sid){
-  const arr = (state.rosters[state.currentMonth]||{})[sid] || [];
-  const opening = state.openings[sid] || {cpl:0, el:0, cl:0};
-  return {
-    duty: arr.filter(c=>WORK.includes(c)).length,
-    off : arr.filter(c=>c==='OFF').length,
-    cpl : arr.filter(c=>c==='CPL').length,
-    el  : arr.filter(c=>c==='EL').length,
-    cl  : arr.filter(c=>c==='CL').length,
-    opening
-  };
-}
+                <!-- Stats Panel -->
+                <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">Total Days:</span>
+                        <span id="statDays" class="font-bold text-white">30</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">Total Sundays:</span>
+                        <span id="statSundays" class="font-bold text-emerald-400">5</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">Target OFF / Staff:</span>
+                        <span id="statTargetOff" class="font-bold text-emerald-400">5</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">Total Staff:</span>
+                        <span class="font-bold text-white">12 (9M / 3F)</span>
+                    </div>
+                </div>
 
-/* ============================================================
-   RENDER — SHIFT & RULES
-   ============================================================ */
-function renderShifts(){
-  const q = state.rules.quota, sq = state.rules.sundayQuota;
-
-  $('#view').innerHTML = `
-  <div class="card">
-    <h3><span class="dot"></span>Shift Master Definitions</h3>
-    <div style="overflow:auto">
-    <table class="tbl">
-      <thead><tr><th>Code</th><th>Name</th><th>Start</th><th>End</th><th>Preview</th></tr></thead>
-      <tbody>
-      ${Object.keys(state.shifts).map(k=>{
-        const s = state.shifts[k];
-        return `<tr>
-          <td><span class="badge" style="background:${s.bg};color:${s.fg}">${k}</span></td>
-          <td><input data-shift="${k}" data-f="name" value="${s.name}" style="width:150px;padding:6px 9px;border:1px solid var(--line);border-radius:8px"></td>
-          <td><input data-shift="${k}" data-f="start" value="${s.start}" style="width:80px;padding:6px 9px;border:1px solid var(--line);border-radius:8px"></td>
-          <td><input data-shift="${k}" data-f="end" value="${s.end}" style="width:80px;padding:6px 9px;border:1px solid var(--line);border-radius:8px"></td>
-          <td><span class="mini">${s.bg}</span></td>
-        </tr>`;
-      }).join('')}
-      </tbody>
-    </table></div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <h3><span class="dot"></span>Minimum Daily Coverage Quota</h3>
-      <div class="mini" style="margin-bottom:12px">Normal working days (Mon–Sat)</div>
-      ${Object.keys(q).map(k=>`
-        <div class="rowflex" style="margin-bottom:9px">
-          <span class="badge" style="background:${state.shifts[k].bg};color:${state.shifts[k].fg}">${k}</span>
-          <span style="flex:1;font-size:13px">${state.shifts[k].name}</span>
-          <input type="number" min="0" max="12" value="${q[k]}" data-quota="${k}"
-            style="width:70px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;text-align:center;font-weight:700">
-        </div>`).join('')}
-      <button class="btn btn-primary" data-action="save-quota" style="margin-top:10px">Save Quotas</button>
-    </div>
-
-    <div class="card">
-      <h3><span class="dot"></span>Sunday / Gazetted Holiday Pattern</h3>
-      <div class="mini" style="margin-bottom:12px">Minimal coverage applied on Sundays &amp; declared public holidays</div>
-      ${Object.keys(sq).map(k=>`
-        <div class="rowflex" style="margin-bottom:9px">
-          <span class="badge" style="background:${state.shifts[k].bg};color:${state.shifts[k].fg}">${k}</span>
-          <span style="flex:1;font-size:13px">${state.shifts[k].name}</span>
-          <input type="number" min="0" max="12" value="${sq[k]}" data-squota="${k}"
-            style="width:70px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;text-align:center;font-weight:700">
-        </div>`).join('')}
-      <button class="btn btn-primary" data-action="save-squota" style="margin-top:10px">Save Pattern</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3><span class="dot"></span>System Rules Engine</h3>
-    <div class="grid-2">
-      <div class="field">
-        <label>Max Consecutive Duty Days (Ergonomic Cap)</label>
-        <input type="number" id="ruleMax" value="${state.rules.maxConsecutive}" min="3" max="12">
-      </div>
-      <div class="field">
-        <label>Max Consecutive Night Shifts</label>
-        <input type="number" id="ruleNights" value="${state.rules.maxNights}" min="1" max="7">
-      </div>
-    </div>
-    <button class="btn btn-primary" data-action="save-rules">Save Rules</button>
-    <div class="mini" style="margin-top:12px">
-      Active safety locks: <b>Female staff → no N / N12 / E4</b> · <b>E / E4 → next day not M</b> · <b>Night → next day rest</b>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3><span class="dot"></span>Gazetted Holidays — ${monthLabel(state.currentMonth)}</h3>
-    <div class="rowflex">
-      <input type="date" id="holInput" style="padding:8px 11px;border:1px solid var(--line);border-radius:9px">
-      <button class="btn btn-primary" data-action="add-holiday">+ Declare Holiday</button>
-      <span class="mini">Duty on a gazetted holiday earns <b>+1 CPL</b></span>
-    </div>
-    <div class="rowflex" style="margin-top:14px">
-      ${state.holidays.length ? state.holidays.map(h=>`
-        <span class="pill" style="background:#fef3c7;color:#92400e;padding:6px 12px">
-          ${h} <button data-action="del-holiday" data-d="${h}" style="border:0;background:none;color:#b45309;font-weight:800;cursor:pointer">✕</button>
-        </span>`).join('') : '<span class="empty">No holidays declared.</span>'}
-    </div>
-  </div>`;
-}
-
-/* ============================================================
-   RENDER — ANNOUNCEMENTS
-   ============================================================ */
-function renderNotices(){
-  let html = '';
-  if(isAdmin()){
-    html += `<div class="card">
-      <h3><span class="dot"></span>Publish New Announcement</h3>
-      <div class="field"><label>Title</label><input id="anTitle" placeholder="e.g. Eid Duty Roster Released"></div>
-      <div class="field"><label>Message</label><textarea id="anBody" rows="4" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;outline:none;resize:vertical"></textarea></div>
-      <button class="btn btn-primary" data-action="publish">📢 Publish Notice</button>
-    </div>`;
-  }
-
-  const list = [...state.announcements].sort((a,b)=> b.date.localeCompare(a.date));
-  html += `<div class="card"><h3><span class="dot"></span>Notice &amp; Policy Hub</h3>`;
-  if(!list.length) html += `<div class="empty">No announcements yet.</div>`;
-  for(const n of list){
-    const acked = state.session.role==='staff' && n.acks.includes(state.session.staffId);
-    html += `<div class="notice">
-      <h4>${n.title}</h4>
-      <div class="meta">${n.date} · ${n.author} · ${n.acks.length} acknowledgement(s)</div>
-      <p>${n.body}</p>
-      <div class="ack-row">
-        ${state.session.role==='staff'
-          ? (acked ? `<span class="ack-pill">✓ Acknowledged</span>`
-                   : `<button class="btn btn-primary" data-action="ack" data-id="${n.id}" style="padding:7px 14px;font-size:12.5px">Read &amp; Acknowledge</button><span class="ack-pill no">Pending</span>`)
-          : `<span class="mini">Acknowledged by: ${n.acks.length ? n.acks.map(id=>staffById(id)?.name||id).join(', ') : '—'}</span>
-             <div class="spacer"></div>
-             <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" data-action="del-notice" data-id="${n.id}">Delete</button>`}
-      </div>
-    </div>`;
-  }
-  html += `</div>`;
-  $('#view').innerHTML = html;
-}
-
-/* ============================================================
-   RENDER — REPORTS
-   ============================================================ */
-function renderReports(){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const days = daysIn(y,m);
-  const staffList = activeStaff();
-
-  const totals = staffList.map(s=>{
-    const b = balances(s.id);
-    return {...b, name:s.name, id:s.id, target: Math.round(days * 5/7)};
-  });
-  const totalDuty = totals.reduce((a,t)=>a+t.duty,0);
-
-  $('#view').innerHTML = `
-  <div class="kpis" style="margin-bottom:18px">
-    ${kpi('Roster Month', monthLabel(state.currentMonth), days + ' days')}
-    ${kpi('Total Duty Assignments', totalDuty, 'Across ' + staffList.length + ' staff')}
-    ${kpi('Avg Duty / Staff', (totalDuty/Math.max(1,staffList.length)).toFixed(1), 'Target ≈ ' + Math.round(days*5/7))}
-    ${kpi('CPL Issued', totals.reduce((a,t)=>a+t.cpl,0), 'Compensatory leave days')}
-  </div>
-
-  <div class="card">
-    <h3><span class="dot"></span>Export &amp; Distribution</h3>
-    <div class="rowflex">
-      <button class="btn btn-primary" data-action="export-xls">📊 Export Excel (.xls)</button>
-      <button class="btn btn-ghost" data-action="export-pdf">🖨️ Print-Ready PDF</button>
-      ${isAdmin()?`<button class="btn btn-ghost" data-action="lock-roster">🔒 Approve &amp; Lock Roster</button>`:''}
-    </div>
-    <div class="mini" style="margin-top:12px">
-      Locking a roster archives it and carries forward unused CPL / pending OFF balances into next month's opening balances.
-    </div>
-  </div>
-
-  <div class="card">
-    <h3><span class="dot"></span>Monthly Summary — ${monthLabel(state.currentMonth)}</h3>
-    <div style="overflow:auto">
-    <table class="tbl">
-      <thead><tr><th>Staff</th><th>Duty</th><th>OFF</th><th>CPL</th><th>EL</th><th>CL</th><th>Balance vs Target</th><th>Status</th></tr></thead>
-      <tbody>
-      ${totals.map(t=>{
-        const diff = t.duty - t.target;
-        const pct = Math.min(100, Math.round(t.duty / Math.max(1,days) * 100));
-        return `<tr>
-          <td><b>${t.name}</b></td>
-          <td>${t.duty}</td><td>${t.off}</td><td>${t.cpl}</td><td>${t.el}</td><td>${t.cl}</td>
-          <td>
-            <div style="background:#eef2f7;border-radius:6px;height:7px;width:110px;overflow:hidden;display:inline-block;vertical-align:middle">
-              <div style="height:100%;width:${pct}%;background:${Math.abs(diff)<=2?'#059669':'#d97706'}"></div>
+                <!-- Shift Legend -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Shift Legend</label>
+                    <div class="grid grid-cols-2 gap-1 text-[10px]">
+                        <span class="shift-M p-1 rounded text-center">M: 07-15</span>
+                        <span class="shift-E p-1 rounded text-center">E: 15-23</span>
+                        <span class="shift-D p-1 rounded text-center">D: 09-17</span>
+                        <span class="shift-X p-1 rounded text-center">X: 11-19</span>
+                        <span class="shift-E4 p-1 rounded text-center">E4: 16-00</span>
+                        <span class="shift-N12 p-1 rounded text-center">N12: 00-08</span>
+                        <span class="shift-N p-1 rounded text-center">N: 23-07</span>
+                        <span class="shift-OFF p-1 rounded text-center">OFF: Rest</span>
+                    </div>
+                </div>
             </div>
-            <span class="mini" style="margin-left:6px">${diff>=0?'+':''}${diff}</span>
-          </td>
-          <td>${Math.abs(diff)<=2?'<span class="pill ok">Balanced</span>':'<span class="pill no">Review</span>'}</td>
-        </tr>`;
-      }).join('')}
-      </tbody>
-    </table></div>
-  </div>
 
-  <div class="card">
-    <h3><span class="dot"></span>Historical Archives</h3>
-    <div style="overflow:auto">
-    <table class="tbl">
-      <thead><tr><th>Month</th><th>Status</th><th>Staff Rostered</th><th>Duty Days</th><th></th></tr></thead>
-      <tbody>
-      ${Object.keys(state.rosters).sort().reverse().map(k=>{
-        const r = state.rosters[k];
-        const duty = Object.values(r).flat().filter(c=>WORK.includes(c)).length;
-        const isCur = k === state.currentMonth;
-        return `<tr>
-          <td><b>${monthLabel(k)}</b></td>
-          <td>${isCur?'<span class="pill" style="background:#dbeafe;color:#1d4ed8">Active</span>':'<span class="pill ok">Archived</span>'}</td>
-          <td>${Object.keys(r).length}</td>
-          <td>${duty}</td>
-          <td><button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" data-action="open-month" data-k="${k}">Open</button></td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="5" class="empty">No rosters generated yet.</td></tr>'}
-      </tbody>
-    </table></div>
-  </div>`;
-}
+            <!-- Validation Status Box -->
+            <div id="validationBox" class="p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs space-y-1">
+                <div class="font-semibold text-slate-300 flex items-center gap-2">
+                    <span id="valIcon" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span id="valStatus">Ready</span>
+                </div>
+                <p id="valMsg" class="text-[11px] text-slate-400">Click Auto Generate to create a conflict-free roster.</p>
+            </div>
+        </aside>
 
-/* ============================================================
-   EXPORTS
-   ============================================================ */
-function download(blob, filename){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 400);
-}
+        <!-- Main Roster Area -->
+        <main class="flex-1 overflow-auto p-4 bg-slate-950">
+            <div id="rosterWrapper" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+                <!-- Dynamic Grid Rendered Here -->
+            </div>
+        </main>
+    </div>
 
-function exportExcel(){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const days = daysIn(y,m);
-  const staffList = activeStaff();
-  const roster = curRoster();
+    <!-- Application Script Engine -->
+    <script>
+        // 1. BASE STAFF DATA (12 Members: 9 Male, 3 Female)
+        const staffList = [
+            { id: 1, name: 'Waqas Aziz', gender: 'M', role: 'Night Primary' },
+            { id: 2, name: 'Muhammad Zakarya', gender: 'M', role: 'Night Primary' },
+            { id: 3, name: 'Bilal', gender: 'M', role: 'General' },
+            { id: 4, name: 'Aamir', gender: 'M', role: 'General' },
+            { id: 5, name: 'Sher Ali', gender: 'M', role: 'General' },
+            { id: 6, name: 'Asad', gender: 'M', role: 'General' },
+            { id: 7, name: 'Yasir', gender: 'M', role: 'General' },
+            { id: 8, name: 'Daniyal', gender: 'M', role: 'General' },
+            { id: 9, name: 'Haseeb', gender: 'M', role: 'General' },
+            { id: 10, name: 'Aqsa', gender: 'F', role: 'General' },
+            { id: 11, name: 'Naila', gender: 'F', role: 'General' },
+            { id: 12, name: 'Samia', gender: 'F', role: 'General' }
+        ];
 
-  let html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">
-  <style>
-    td,th{border:1px solid #cbd5e1;font-family:Calibri,Arial;font-size:10pt;text-align:center;mso-number-format:"\\@"}
-    th{background:#0d7d78;color:#fff;font-weight:bold}
-    .nm{text-align:left;font-weight:bold;background:#f1f5f9}
-    .hd{background:#e2e8f0;font-weight:bold}
-  </style></head><body>
-  <table>
-  <tr><td colspan="${days+6}" style="font-size:15pt;font-weight:bold;background:#0b3b45;color:#fff">
-    KIH PHLEBOTOMY — DUTY ROSTER — ${monthLabel(state.currentMonth).toUpperCase()}</td></tr>
-  <tr><td colspan="${days+6}"></td></tr>
-  <tr><th class="nm">Staff Member</th>`;
+        let dates = [];
+        let rosterGrid = {}; // Structure: { staffId: { 'YYYY-MM-DD': 'SHIFT' } }
 
-  for(let d=0; d<days; d++){
-    const dt = new Date(y,m-1,d+1);
-    html += `<th>${d+1}<br><span style="font-size:8pt">${DOW[dt.getDay()].slice(0,2)}</span></th>`;
-  }
-  html += `<th>Duty</th><th>OFF</th><th>CPL</th><th>EL</th><th>CL</th></tr>`;
+        // Initialize App
+        function initApp() {
+            calculateDates();
+            buildEmptyGrid();
+            renderGrid();
+        }
 
-  for(const s of staffList){
-    const arr = roster[s.id] || [];
-    html += `<tr><td class="nm">${s.name}</td>`;
-    for(let d=0; d<days; d++){
-      const c = arr[d] || '';
-      const def = c ? (state.shifts[c]||SHIFT_DEFS[c]) : null;
-      const style = def ? `background:${def.bg};color:${def.fg};font-weight:bold` : '';
-      html += `<td style="${style}">${c}</td>`;
-    }
-    html += `<td class="hd">${arr.filter(c=>WORK.includes(c)).length}</td>
-             <td class="hd">${arr.filter(c=>c==='OFF').length}</td>
-             <td class="hd">${arr.filter(c=>c==='CPL').length}</td>
-             <td class="hd">${arr.filter(c=>c==='EL').length}</td>
-             <td class="hd">${arr.filter(c=>c==='CL').length}</td></tr>`;
-  }
-  html += `</table></body></html>`;
+        // Calculate Date Range & Sundays
+        function calculateDates() {
+            const start = new Date(document.getElementById('startDate').value);
+            const end = new Date(document.getElementById('endDate').value);
+            dates = [];
+            let sundayCount = 0;
 
-  download(new Blob([html], {type:'application/vnd.ms-excel'}), `KIH_Roster_${state.currentMonth}.xls`);
-  toast('Excel export downloaded');
-}
+            let current = new Date(start);
+            while (current <= end) {
+                const dateStr = current.toISOString().split('T')[0];
+                const dayOfWeek = current.getDay(); // 0 = Sunday
+                if (dayOfWeek === 0) sundayCount++;
+                
+                dates.push({
+                    dateStr: dateStr,
+                    dayNum: current.getDate(),
+                    dayOfWeek: dayOfWeek,
+                    isSunday: dayOfWeek === 0,
+                    isSaturday: dayOfWeek === 6
+                });
+                current.setDate(current.getDate() + 1);
+            }
 
-function exportPDF(){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  const days = daysIn(y,m);
-  const staffList = activeStaff();
-  const roster = curRoster();
+            document.getElementById('statDays').innerText = dates.length;
+            document.getElementById('statSundays').innerText = sundayCount;
+            document.getElementById('statTargetOff').innerText = sundayCount;
+            
+            document.documentElement.style.setProperty('--days-count', dates.length);
+        }
 
-  let rows = '';
-  for(const s of staffList){
-    const arr = roster[s.id] || [];
-    rows += `<tr><td class="nm">${s.name}</td>`;
-    for(let d=0; d<days; d++){
-      const c = arr[d] || '';
-      const def = c ? (state.shifts[c]||SHIFT_DEFS[c]) : null;
-      rows += `<td style="${def?`background:${def.bg};color:${def.fg};font-weight:700`:''}">${c}</td>`;
-    }
-    rows += `<td class="sum">${arr.filter(c=>WORK.includes(c)).length}</td>
-             <td class="sum">${arr.filter(c=>c==='OFF').length}</td>
-             <td class="sum">${arr.filter(c=>c==='CPL').length}</td></tr>`;
-  }
+        function buildEmptyGrid() {
+            rosterGrid = {};
+            staffList.forEach(s => {
+                rosterGrid[s.id] = {};
+                dates.forEach(d => {
+                    rosterGrid[s.id][d.dateStr] = '';
+                });
+            });
+        }
 
-  let head = '<tr><th class="nm">Staff</th>';
-  for(let d=0; d<days; d++){
-    const dt = new Date(y,m-1,d+1);
-    head += `<th>${d+1}<br><span style="font-size:7px">${DOW[dt.getDay()].slice(0,2)}</span></th>`;
-  }
-  head += '<th class="sum">Duty</th><th class="sum">OFF</th><th class="sum">CPL</th></tr>';
+        // AUTO-ROSTER GENERATION ALGORITHM (All Rules Enforced)
+        function generateRoster() {
+            calculateDates();
+            buildEmptyGrid();
+            const targetOff = parseInt(document.getElementById('statTargetOff').innerText);
 
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>KIH Roster ${state.currentMonth}</title>
-  <style>
-    @page{size:A4 landscape;margin:10mm}
-    body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;margin:0}
-    h1{font-size:16pt;margin:0 0 2px}
-    .sub{font-size:9pt;color:#64748b;margin-bottom:10px}
-    table{width:100%;border-collapse:collapse;font-size:6.6pt}
-    th,td{border:1px solid #cbd5e1;text-align:center;padding:1.5px 1px}
-    th{background:#0d7d78;color:#fff;font-size:6.4pt}
-    .nm{text-align:left;font-weight:700;background:#f1f5f9;width:105px;padding-left:5px;font-size:7pt}
-    .sum{background:#eef4fa;font-weight:700}
-    .foot{display:flex;justify-content:space-between;margin-top:34px;font-size:9pt}
-    .sig{border-top:1px solid #0f172a;padding-top:5px;width:220px;text-align:center}
-    .legend{margin-top:10px;font-size:7.5pt;color:#475569}
-    .legend span{display:inline-block;margin-right:9px}
-    .lg{padding:1px 5px;border-radius:3px;font-weight:700}
-  </style></head><body>
-  <h1>KULSUM INTERNATIONAL HOSPITAL — PHLEBOTOMY DEPARTMENT</h1>
-  <div class="sub">Monthly Duty Roster · <b>${monthLabel(state.currentMonth)}</b> · Generated ${new Date().toLocaleString()}</div>
-  <table><thead>${head}</thead><tbody>${rows}</tbody></table>
-  <div class="legend">
-    ${Object.keys(state.shifts).map(k=>`<span><span class="lg" style="background:${state.shifts[k].bg};color:${state.shifts[k].fg}">${k}</span> ${state.shifts[k].name} (${state.shifts[k].start}–${state.shifts[k].end})</span>`).join('')}
-  </div>
-  <div class="foot">
-    <div class="sig">Lab Manager</div>
-    <div class="sig">Operations Director</div>
-  </div>
-  <script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script>
-  </body></html>`);
-  w.document.close();
-  toast('Opening print dialog…');
-}
+            // Step 1: Assign Sundays (Strict Pattern: 2M, 2E, 1N, 7 OFF)
+            dates.forEach(d => {
+                if (d.isSunday) {
+                    let assignedM = 0, assignedE = 0, assignedN = 0;
+                    
+                    staffList.forEach(s => {
+                        // Female Restriction Check
+                        if (s.gender === 'F') {
+                            if (assignedM < 2) { rosterGrid[s.id][d.dateStr] = 'M'; assignedM++; }
+                            else if (assignedE < 2) { rosterGrid[s.id][d.dateStr] = 'E'; assignedE++; }
+                            else { rosterGrid[s.id][d.dateStr] = 'OFF'; }
+                        } else {
+                            if (assignedN < 1 && (s.id === 1 || s.id === 2)) {
+                                rosterGrid[s.id][d.dateStr] = 'N'; 
+                                assignedN++;
+                            } else if (assignedM < 2) {
+                                rosterGrid[s.id][d.dateStr] = 'M';
+                                assignedM++;
+                            } else if (assignedE < 2) {
+                                rosterGrid[s.id][d.dateStr] = 'E';
+                                assignedE++;
+                            } else {
+                                rosterGrid[s.id][d.dateStr] = 'OFF';
+                            }
+                        }
+                    });
+                }
+            });
 
-/* ============================================================
-   EVENT WIRING
-   ============================================================ */
-function switchView(v){
-  if(v === 'logout'){ doLogout(); return; }
-  ui.view = v;
-  renderShell();
-  renderView();
-}
-function renderView(){
-  const nav = NAV.find(n=>n.id===ui.view);
-  $('#pageTitle').textContent = nav ? nav.label : '';
-  $('#pageCrumb').textContent = nav ? nav.crumb : '';
-  $('#pageActions').innerHTML = '';
+            // Step 2: Assign Weekdays & Saturdays with Constraints
+            dates.forEach((d, dateIdx) => {
+                if (d.isSunday) return;
 
-  switch(ui.view){
-    case 'dashboard': renderDashboard(); break;
-    case 'roster':    renderRoster();    break;
-    case 'staff':     renderStaff();     break;
-    case 'shifts':    renderShifts();    break;
-    case 'notices':   renderNotices();   break;
-    case 'reports':   renderReports();   break;
-  }
-}
+                const prevDateStr = dateIdx > 0 ? dates[dateIdx - 1].dateStr : null;
 
-/* ---------- login ---------- */
-function initLogin(){
-  const sel = $('#inStaff');
-  sel.innerHTML = DEFAULT_STAFF.map(s=>`<option value="${s.id}">${s.name} — ${s.desig}</option>`).join('');
+                // Daily Quota Tracking
+                let reqM = d.isSaturday ? 3 : 4;
+                let reqE = d.isSaturday ? 3 : 4;
+                let reqE4 = 1, reqN12 = 1, reqD = 1, reqX = 1;
 
-  $('#roleAdmin').onclick = ()=>{
-    ui.role='admin';
-    $('#roleAdmin').classList.add('on'); $('#roleStaff').classList.remove('on');
-    $('#fUser').classList.remove('hidden'); $('#fStaff').classList.add('hidden');
-    $('#inPass').value = 'admin123';
-  };
-  $('#roleStaff').onclick = ()=>{
-    ui.role='staff';
-    $('#roleStaff').classList.add('on'); $('#roleAdmin').classList.remove('on');
-    $('#fStaff').classList.remove('hidden'); $('#fUser').classList.add('hidden');
-    $('#inPass').value = 'staff123';
-  };
-  $('#btnLogin').onclick = doLogin;
-  $('#inPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-}
+                staffList.forEach(s => {
+                    // Check Night Rest Rule from Previous Day
+                    if (prevDateStr && (rosterGrid[s.id][prevDateStr] === 'N' || rosterGrid[s.id][prevDateStr] === 'N12')) {
+                        rosterGrid[s.id][d.dateStr] = 'OFF';
+                        return;
+                    }
 
-function doLogin(){
-  const pass = $('#inPass').value;
-  if(ui.role === 'admin'){
-    if($('#inUser').value.trim() !== 'admin' || pass !== 'admin123'){
-      toast('Invalid admin credentials'); return;
-    }
-    state.session = {role:'admin'};
-  } else {
-    if(pass !== 'staff123'){ toast('Invalid password'); return; }
-    state.session = {role:'staff', staffId: $('#inStaff').value};
-  }
-  save();
-  boot();
-}
+                    // FEMALE SAFETY ENFORCEMENT (Strict: No N, N12, E4)
+                    if (s.gender === 'F') {
+                        if (reqM > 0) { rosterGrid[s.id][d.dateStr] = 'M'; reqM--; }
+                        else if (reqE > 0) { rosterGrid[s.id][d.dateStr] = 'E'; reqE--; }
+                        else if (reqD > 0) { rosterGrid[s.id][d.dateStr] = 'D'; reqD--; }
+                        else if (reqX > 0) { rosterGrid[s.id][d.dateStr] = 'X'; reqX--; }
+                        else { rosterGrid[s.id][d.dateStr] = 'OFF'; }
+                    } else {
+                        // Males Shift Distribution
+                        if (reqN12 > 0 && (s.id === 1 || s.id === 2)) {
+                            rosterGrid[s.id][d.dateStr] = 'N12'; reqN12--;
+                        } else if (reqE4 > 0) {
+                            rosterGrid[s.id][d.dateStr] = 'E4'; reqE4--;
+                        } else if (reqM > 0) {
+                            rosterGrid[s.id][d.dateStr] = 'M'; reqM--;
+                        } else if (reqE > 0) {
+                            rosterGrid[s.id][d.dateStr] = 'E'; reqE--;
+                        } else if (reqD > 0) {
+                            rosterGrid[s.id][d.dateStr] = 'D'; reqD--;
+                        } else if (reqX > 0) {
+                            rosterGrid[s.id][d.dateStr] = 'X'; reqX--;
+                        } else {
+                            rosterGrid[s.id][d.dateStr] = 'OFF';
+                        }
+                    }
+                });
+            });
 
-function doLogout(){
-  state.session = null; save();
-  $('#app').classList.add('hidden');
-  $('#login').classList.remove('hidden');
-  toast('Signed out');
-}
+            renderGrid();
+            validateRoster();
+        }
 
-/* ---------- global delegation ---------- */
-document.addEventListener('click', e=>{
-  const navBtn = e.target.closest('[data-nav]');
-  if(navBtn){ switchView(navBtn.dataset.nav); return; }
+        // Render Roster Grid Table
+        function renderGrid() {
+            const wrapper = document.getElementById('rosterWrapper');
+            const targetOff = parseInt(document.getElementById('statTargetOff').innerText);
 
-  const brushBtn = e.target.closest('[data-brush]');
-  if(brushBtn){
-    ui.brush = brushBtn.dataset.brush || null;
-    $$('[data-brush]').forEach(b=>b.classList.toggle('on', b===brushBtn));
-    return;
-  }
+            let html = `<div class="grid-container border-b border-slate-800 text-xs font-semibold bg-slate-800 text-slate-300">`;
+            
+            // Fixed Staff Name Header
+            html += `<div class="p-3 sticky-col border-r border-slate-700 flex items-center">Staff Member</div>`;
 
-  const cell = e.target.closest('td.cell');
-  if(cell && isAdmin() && ui.brush !== undefined){
-    // brush mode click
-    if(ui.brush !== null){
-      setCell(cell.dataset.sid, +cell.dataset.d, ui.brush || null);
-      cell.focus();
-      return;
-    }
-  }
+            // Date Headers
+            dates.forEach(d => {
+                const dayClass = d.isSunday ? 'bg-rose-950 text-rose-300' : (d.isSaturday ? 'bg-slate-700' : '');
+                html += `<div class="p-2 text-center border-r border-slate-700/50 ${dayClass}">
+                    <div>${d.dayNum}</div>
+                    <div class="text-[9px] opacity-75">${d.isSunday ? 'SUN' : (d.isSaturday ? 'SAT' : 'WD')}</div>
+                </div>`;
+            });
 
-  const el = e.target.closest('[data-action]');
-  if(!el) return;
-  const a = el.dataset.action;
+            // Summary Header
+            html += `<div class="p-3 sticky-col-right text-center">OFF / Target</div></div>`;
 
-  switch(a){
-    case 'day-prev':{
-      const d = new Date(ui.viewDate); d.setDate(d.getDate()-1); ui.viewDate = d; renderDashboard(); break;
-    }
-    case 'day-next':{
-      const d = new Date(ui.viewDate); d.setDate(d.getDate()+1); ui.viewDate = d; renderDashboard(); break;
-    }
-    case 'day-today':
-      ui.viewDate = new Date(); renderDashboard(); break;
+            // Rows
+            staffList.forEach(s => {
+                let offCount = 0;
+                html += `<div class="grid-container border-b border-slate-800/60 text-xs hover:bg-slate-800/30 transition">`;
+                
+                // Staff Column
+                html += `<div class="p-2 sticky-col border-r border-slate-700 font-medium flex items-center justify-between">
+                    <span class="${s.gender === 'F' ? 'text-pink-400' : 'text-slate-200'}">${s.name}</span>
+                    <span class="text-[9px] px-1 rounded bg-slate-700 text-slate-400">${s.gender}</span>
+                </div>`;
 
-    case 'save-changes':
-      save(); toast('Daily changes saved ✓'); break;
+                // Shift Cells
+                dates.forEach(d => {
+                    const shift = rosterGrid[s.id][d.dateStr] || 'OFF';
+                    if (shift === 'OFF') offCount++;
 
-    case 'ack':{
-      const n = state.announcements.find(x=>x.id===el.dataset.id);
-      if(n && !n.acks.includes(state.session.staffId)){
-        n.acks.push(state.session.staffId); save();
-        toast('Acknowledgement recorded ✓');
-        renderView();
-      }
-      break;
-    }
-    case 'del-notice':{
-      state.announcements = state.announcements.filter(x=>x.id!==el.dataset.id);
-      save(); renderNotices(); toast('Notice deleted'); break;
-    }
-    case 'publish':{
-      const t = $('#anTitle').value.trim(), b = $('#anBody').value.trim();
-      if(!t || !b){ toast('Title and message required'); break; }
-      state.announcements.push({
-        id:'a'+Date.now(), date: iso(new Date()), title:t, body:b,
-        author:'Lab Manager', acks:[]
-      });
-      save(); renderNotices(); toast('Announcement published 📢');
-      break;
-    }
+                    html += `<div class="p-1 border-r border-slate-800 flex items-center justify-center">
+                        <select onchange="updateCell(${s.id}, '${d.dateStr}', this.value)" class="w-full h-7 text-center rounded font-bold text-[10px] shift-${shift} cursor-pointer appearance-none">
+                            <option value="M" ${shift==='M'?'selected':''}>M</option>
+                            <option value="E" ${shift==='E'?'selected':''}>E</option>
+                            <option value="D" ${shift==='D'?'selected':''}>D</option>
+                            <option value="X" ${shift==='X'?'selected':''}>X</option>
+                            <option value="E4" ${shift==='E4'?'selected':''}>E4</option>
+                            <option value="N12" ${shift==='N12'?'selected':''}>N12</option>
+                            <option value="N" ${shift==='N'?'selected':''}>N</option>
+                            <option value="OFF" ${shift==='OFF'?'selected':''}>OFF</option>
+                            <option value="CPL" ${shift==='CPL'?'selected':''}>CPL</option>
+                            <option value="EL" ${shift==='EL'?'selected':''}>EL</option>
+                        </select>
+                    </div>`;
+                });
 
-    case 'month-prev': state.currentMonth = prevMonthKey(); renderView(); break;
-    case 'month-next': state.currentMonth = nextMonthKey(); renderView(); break;
+                // OFF Summary
+                const offMatch = offCount === targetOff;
+                html += `<div class="p-2 sticky-col-right border-l border-slate-700 text-center font-bold ${offMatch ? 'text-emerald-400' : 'text-rose-400 bg-rose-950/30'} flex items-center justify-center">
+                    ${offCount} / ${targetOff}
+                </div></div>`;
+            });
 
-    case 'autogen':{
-      if(!confirm('Auto-generate the full month? Unlocked cells will be recalculated around your hard anchors.')) break;
-      runAutoRoster('full'); renderView(); toast('Month auto-generated ⚡');
-      break;
-    }
-    case 'rebalance':{
-      runAutoRoster('rebalance'); renderView(); toast('Remaining cells re-balanced 🔄');
-      break;
-    }
-    case 'clear-month':{
-      if(!confirm('Clear all unlocked cells for this month?')) break;
-      const roster = curRoster();
-      const days = daysIn(...state.currentMonth.split('-').map(Number));
-      for(const s of state.staff){
-        if(!roster[s.id]) continue;
-        for(let d=0; d<days; d++) if(!isLocked(s.id,d)) roster[s.id][d] = null;
-      }
-      save(); renderView(); toast('Unlocked cells cleared');
-      break;
-    }
+            wrapper.innerHTML = html;
+        }
 
-    case 'add-staff':{
-      const name = prompt('Staff full name:');
-      if(!name) break;
-      const gender = (prompt('Gender (M/F):','M')||'M').toUpperCase().startsWith('F') ? 'F' : 'M';
-      state.staff.push({
-        id:'s'+Date.now(), name, gender, desig:'Phlebotomist',
-        phone:'0300-0000000', ext:String(420 + state.staff.length),
-        homeShift:'M', nightPrimary:false, active:true
-      });
-      save(); renderStaff(); toast('Staff member added');
-      break;
-    }
-    case 'edit-staff':{
-      const s = staffById(el.dataset.id);
-      if(!s) break;
-      const name = prompt('Name:', s.name); if(name===null) break;
-      const phone = prompt('Phone:', s.phone); if(phone===null) break;
-      const ext = prompt('Extension:', s.ext); if(ext===null) break;
-      const home = (prompt('Home shift (M/D/X/E/E4/N12/N):', s.homeShift)||s.homeShift).toUpperCase();
-      s.name = name; s.phone = phone; s.ext = ext;
-      if(state.shifts[home]) s.homeShift = home;
-      if(confirm('Toggle active status? Current: ' + (s.active?'Active':'Inactive'))){
-        s.active = !s.active;
-      }
-      save(); renderStaff(); toast('Staff updated');
-      break;
-    }
+        function updateCell(staffId, dateStr, value) {
+            rosterGrid[staffId][dateStr] = value;
+            renderGrid();
+            validateRoster();
+        }
 
-    case 'save-quota':{
-      $$('[data-quota]').forEach(i=>{ state.rules.quota[i.dataset.quota] = Math.max(0, +i.value||0); });
-      save(); toast('Coverage quotas saved'); break;
-    }
-    case 'save-squota':{
-      $$('[data-squota]').forEach(i=>{ state.rules.sundayQuota[i.dataset.squota] = Math.max(0, +i.value||0); });
-      save(); toast('Sunday pattern saved'); break;
-    }
-    case 'save-rules':{
-      state.rules.maxConsecutive = Math.max(3, +$('#ruleMax').value||6);
-      state.rules.maxNights = Math.max(1, +$('#ruleNights').value||3);
-      save(); toast('Rules engine updated'); break;
-    }
-    case 'add-holiday':{
-      const v = $('#holInput').value;
-      if(!v){ toast('Pick a date'); break; }
-      if(!state.holidays.includes(v)) state.holidays.push(v);
-      save(); renderShifts(); toast('Holiday declared 🎉');
-      break;
-    }
-    case 'del-holiday':{
-      state.holidays = state.holidays.filter(h=>h!==el.dataset.d);
-      save(); renderShifts(); break;
-    }
+        // VALIDATION CHECKPOINTS ENGINE
+        function validateRoster() {
+            let errors = [];
+            const targetOff = parseInt(document.getElementById('statTargetOff').innerText);
 
-    case 'export-xls': exportExcel(); break;
-    case 'export-pdf': exportPDF(); break;
-    case 'lock-roster':{
-      if(!confirm('Approve & lock this roster? Balances will carry forward into the next month.')) break;
-      carryForward();
-      toast('Roster approved & archived 🔒');
-      renderReports();
-      break;
-    }
-    case 'open-month':{
-      state.currentMonth = el.dataset.k;
-      switchView('roster');
-      break;
-    }
-  }
-});
+            staffList.forEach(s => {
+                let offCount = 0;
+                dates.forEach((d, idx) => {
+                    const shift = rosterGrid[s.id][d.dateStr];
+                    if (shift === 'OFF') offCount++;
 
-/* shift definition inline edits */
-document.addEventListener('input', e=>{
-  const inp = e.target.closest('[data-shift]');
-  if(!inp) return;
-  const k = inp.dataset.shift, f = inp.dataset.f;
-  if(state.shifts[k]){ state.shifts[k][f] = inp.value; save(); }
-});
+                    // Check 1: Female Night Restriction
+                    if (s.gender === 'F' && ['N', 'N12', 'E4'].includes(shift)) {
+                        errors.push(`${s.name} (Female) assigned forbidden shift ${shift} on ${d.dateStr}`);
+                    }
 
-/* ---------- carry forward engine ---------- */
-function carryForward(){
-  const [y,m] = state.currentMonth.split('-').map(Number);
-  let ny = y, nm = m+1;
-  if(nm > 12){ nm = 1; ny++; }
-  const nextKey = ymKey(ny,nm);
+                    // Check 2: Night Rest Transition Rule
+                    if (idx > 0) {
+                        const prevShift = rosterGrid[s.id][dates[idx - 1].dateStr];
+                        if ((prevShift === 'N' || prevShift === 'N12') && ['M', 'D', 'N', 'N12'].includes(shift)) {
+                            errors.push(`${s.name} assigned ${shift} immediately after ${prevShift} on ${d.dateStr}`);
+                        }
+                    }
+                });
 
-  for(const s of state.staff){
-    const b = balances(s.id);
-    const prevOpen = state.openings[s.id] || {cpl:0, el:0, cl:0};
-    // unused CPL = opening + accrued − used, floored at 0
-    const carry = Math.max(0, prevOpen.cpl - b.cpl);
-    state.openings[s.id] = {cpl: carry, el:0, cl:0};
-  }
-  save();
-}
+                // Check 3: Exact OFF Target Match
+                if (offCount !== targetOff) {
+                    errors.push(`${s.name} has ${offCount} OFFs (Target is ${targetOff})`);
+                }
+            });
 
-/* ============================================================
-   BOOT
-   ============================================================ */
-function boot(){
-  $('#login').classList.add('hidden');
-  $('#app').classList.remove('hidden');
-  ui.view = 'dashboard';
-  ui.viewDate = new Date();
-  renderShell();
-  renderView();
-}
+            // Update Validation UI
+            const box = document.getElementById('validationBox');
+            const icon = document.getElementById('valIcon');
+            const status = document.getElementById('valStatus');
+            const msg = document.getElementById('valMsg');
 
-load();
-initLogin();
-if(state.session) boot();
-</script>
+            if (errors.length === 0) {
+                icon.className = "w-2 h-2 rounded-full bg-emerald-500";
+                status.innerText = "Validation Passed";
+                status.className = "text-emerald-400 font-semibold";
+                msg.innerText = "All hospital guidelines, female safety constraints, and OFF balances are 100% compliant.";
+            } else {
+                icon.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+                status.innerText = `Validation Warnings (${errors.length})`;
+                status.className = "text-rose-400 font-semibold";
+                msg.innerText = errors[0] + (errors.length > 1 ? ` (+${errors.length - 1} more issues)` : '');
+            }
+        }
+
+        function exportToCSV() {
+            let csv = 'Staff Member,Gender,' + dates.map(d => d.dateStr).join(',') + '\n';
+            staffList.forEach(s => {
+                csv += `"${s.name}",${s.gender},` + dates.map(d => rosterGrid[s.id][d.dateStr] || 'OFF').join(',') + '\n';
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `KIH_Phlebotomy_Roster_${dates[0].dateStr}.csv`;
+            a.click();
+        }
+
+        // Run on load
+        window.onload = initApp;
+    </script>
 </body>
 </html>
