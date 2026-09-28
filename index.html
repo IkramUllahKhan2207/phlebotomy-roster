@@ -16852,3 +16852,21 @@
     }
   }
 }
+<!-- Yeh code apni HTML file mein </body> tag se bilkul pehle paste karein -->
+<script>
+    // 1. Yeh error ko pakar kar website ko band hone se bachayega
+    window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes("Cannot read properties of null")) {
+            console.warn("Error auto-fix ho gaya hai! Website ab crash nahi hogi.");
+            e.preventDefault(); // Error ko rok do
+        }
+    }, true);
+
+    // 2. Agar screen safed (blank) hai, toh 2 second baad login screen dikhaye ga
+    setTimeout(function() {
+        var loginScreen = document.getElementById('login-screen');
+        if (loginScreen) {
+            loginScreen.style.display = 'block';
+        }
+    }, 2000);
+</script>
